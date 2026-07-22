@@ -18,14 +18,15 @@ function withRouter(element: React.ReactNode) {
 describe("house interactions", () => {
   it("links each destination to a dedicated room route", () => {
     withRouter(<HouseHall />);
+    expect(screen.getByRole("link", { name: /Strategy Room/ })).toHaveAttribute(
+      "href",
+      "/rooms/strategy",
+    );
     expect(
-      screen.getByRole("link", { name: /Enter Strategy Room/ }),
-    ).toHaveAttribute("href", "/rooms/strategy");
-    expect(
-      screen.getByRole("link", { name: /Enter Creator Studio/ }),
+      screen.getByRole("link", { name: /Creator Studio/ }),
     ).toHaveAttribute("href", "/rooms/creator");
     expect(
-      screen.getByRole("link", { name: /Enter Investor Lounge/ }),
+      screen.getByRole("link", { name: /Investor Lounge/ }),
     ).toHaveAttribute("href", "/rooms/investor");
   });
 

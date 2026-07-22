@@ -218,6 +218,26 @@ img {
 .chapter-section {
   padding: clamp(5rem, 8vw, 7.5rem) max(2rem, calc((100vw - 1280px) / 2));
 }
+.story-chapter {
+  position: relative;
+  isolation: isolate;
+}
+@supports (animation-timeline: view()) {
+  .story-chapter .section-intro,
+  .story-chapter > .archive-copy,
+  .story-chapter > .membership-copy,
+  .story-chapter > div:first-child {
+    animation: chapter-arrive both ease-out;
+    animation-timeline: view();
+    animation-range: entry 10% cover 32%;
+  }
+  @keyframes chapter-arrive {
+    from {
+      opacity: 0;
+      transform: translateY(34px);
+    }
+  }
+}
 .section-intro {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 0.75fr);
@@ -255,7 +275,7 @@ img {
 .arrival-media {
   position: absolute;
   inset: 0;
-  background: url("/assets/house/arrival.webp") center 28% / cover no-repeat;
+  background: url("/assets/house/arrival-v2.webp") center 46% / cover no-repeat;
   transform: scale(1.02);
   animation: arrival-breathe 18s ease-in-out infinite alternate;
 }
@@ -266,9 +286,9 @@ img {
     linear-gradient(
       0deg,
       #090b14 0%,
-      #090b1430 35%,
-      #090b1420 65%,
-      #05070dbd 100%
+      #090b1420 38%,
+      transparent 68%,
+      #05070d9e 100%
     ),
     radial-gradient(circle at 50% 45%, transparent 35%, #05070d99 100%);
 }
@@ -276,14 +296,52 @@ img {
   position: absolute;
   z-index: 4;
   left: 50%;
-  bottom: 7vh;
+  bottom: 6vh;
   transform: translateX(-50%);
   width: min(620px, calc(100% - 2rem));
   text-align: center;
-  padding: 1rem 1.25rem;
-  background: linear-gradient(#090b1422, #090b14bb);
-  border-radius: 1.2rem;
-  backdrop-filter: blur(7px);
+  padding: 1rem 1.25rem 2rem;
+  text-shadow:
+    0 3px 22px #05070d,
+    0 1px 4px #05070d;
+}
+.arrival-orbit {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 56%;
+  width: min(34vw, 430px);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border: 1px solid #f7c84a28;
+  border-radius: 50%;
+  animation: orbit-turn 22s linear infinite;
+  pointer-events: none;
+}
+.arrival-orbit span {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 0 18px var(--yellow);
+}
+.arrival-orbit span:nth-child(1) {
+  left: 10%;
+  top: 22%;
+}
+.arrival-orbit span:nth-child(2) {
+  right: 7%;
+  top: 42%;
+}
+.arrival-orbit span:nth-child(3) {
+  left: 42%;
+  bottom: -3px;
+}
+@keyframes orbit-turn {
+  to {
+    rotate: 1turn;
+  }
 }
 .arrival-copy h1 {
   font-size: clamp(2.15rem, 4vw, 3.4rem);
@@ -372,7 +430,7 @@ img {
     linear-gradient(#090b14, #0d111b);
 }
 .hall-stage {
-  min-height: 730px;
+  min-height: 720px;
   position: relative;
   border: 1px solid var(--hair);
   border-radius: 1.7rem;
@@ -382,15 +440,20 @@ img {
 }
 .hall-stage > img {
   width: 100%;
-  height: 730px;
+  height: 720px;
   object-fit: cover;
-  opacity: 0.8;
+  opacity: 0.92;
+  transition:
+    transform 1s ease,
+    filter 0.5s ease;
 }
 .hall-stage::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(#090b1430, #090b1408 60%, #090b14aa);
+  background:
+    radial-gradient(circle at 50% 50%, transparent 38%, #090b1438 76%),
+    linear-gradient(#090b1430, transparent 54%, #090b1485);
   pointer-events: none;
 }
 .hall-room-list {
@@ -400,55 +463,120 @@ img {
 }
 .hall-room {
   position: absolute;
-  width: min(360px, 28%);
-  min-height: 168px;
-  padding: 1.15rem 1.2rem;
-  border: 1px solid var(--line);
-  border-radius: 1.1rem;
-  background: linear-gradient(135deg, #090b14e8, #090b14b8);
-  backdrop-filter: blur(9px);
-  box-shadow: 0 16px 40px #0008;
-  transition: 0.25s;
+  width: 34%;
+  min-height: 30%;
+  padding: clamp(1rem, 2vw, 1.7rem);
+  border: 1px solid transparent;
+  border-radius: 48% 48% 18% 18%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  background: radial-gradient(
+    circle,
+    #090b14c9 0%,
+    #090b1480 52%,
+    transparent 72%
+  );
+  filter: saturate(0.75) brightness(0.8);
+  transition:
+    transform 0.35s ease,
+    filter 0.35s ease,
+    background 0.35s ease;
 }
 .hall-room-founder {
-  left: 3%;
-  top: 9%;
+  left: 2.5%;
+  top: 5%;
 }
 .hall-room-creator {
-  right: 3%;
-  top: 9%;
+  right: 2.5%;
+  top: 5%;
 }
 .hall-room-investor {
   left: 50%;
-  bottom: 4%;
+  bottom: 0;
   transform: translateX(-50%);
 }
-.hall-room.is-dimmed {
-  opacity: 0.32;
+.hall-room:hover,
+.hall-room:focus-visible,
+.hall-room.is-active {
+  filter: saturate(1.15) brightness(1.12);
+  background: radial-gradient(
+    circle,
+    #090b14e3 0%,
+    #f04f8735 52%,
+    transparent 73%
+  );
 }
-.hall-room > span {
+.hall-room-founder:hover,
+.hall-room-founder:focus-visible,
+.hall-room-founder.is-active,
+.hall-room-creator:hover,
+.hall-room-creator:focus-visible,
+.hall-room-creator.is-active {
+  transform: translateY(-6px);
+}
+.hall-room-investor:hover,
+.hall-room-investor:focus-visible,
+.hall-room-investor.is-active {
+  transform: translate(-50%, -6px);
+}
+.hall-room-kicker {
   color: var(--yellow);
   font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.13em;
 }
 .hall-room h3 {
-  font-size: 1.45rem;
+  font-size: clamp(1.35rem, 2.2vw, 2rem);
   margin: 0.45rem 0;
 }
 .hall-room p {
   color: #d0d3da;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   line-height: 1.55;
+  max-width: 260px;
+  margin: 0 auto;
+  opacity: 0;
+  transform: translateY(5px);
+  transition: 0.25s ease;
 }
-.hall-room > a {
+.hall-room:hover p,
+.hall-room:focus-visible p,
+.hall-room.is-active p {
+  opacity: 1;
+  transform: none;
+}
+.hall-room-enter {
   min-height: 44px;
   color: var(--pink);
   font-weight: 700;
   padding: 0.75rem 0;
   display: inline-flex;
+  justify-content: center;
   align-items: center;
   gap: 0.4rem;
+}
+.hall-heart {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: #fff7bf;
+  box-shadow:
+    0 0 20px 8px #f04f87,
+    0 0 70px 25px #f04f8766;
+  animation: hall-pulse 2.8s ease-in-out infinite;
+}
+@keyframes hall-pulse {
+  50% {
+    scale: 1.35;
+    opacity: 0.65;
+  }
 }
 .hall-pagination {
   display: none;
@@ -820,15 +948,27 @@ img {
   border-radius: 1.3rem;
   overflow: hidden;
   background: var(--surface);
-  display: grid;
-  grid-template-columns: 40% 60%;
+  position: relative;
+  min-height: 540px;
+  box-shadow: 0 30px 80px #0009;
 }
 .archive-image {
-  background: url("/assets/rooms/founder.webp") center/cover;
-  min-height: 440px;
+  background: url("/assets/house/archive-v2.webp") center/cover;
+  position: absolute;
+  inset: 0;
 }
 .archive-record > div:last-child {
-  padding: 2rem;
+  position: absolute;
+  z-index: 2;
+  left: 1.5rem;
+  bottom: 1.5rem;
+  width: min(390px, calc(100% - 3rem));
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: #090b14e8;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 20px 60px #0009;
 }
 .archive-record h3 {
   font-size: 2rem;
@@ -913,7 +1053,7 @@ img {
   gap: 1rem;
 }
 .final-welcome {
-  min-height: 540px;
+  min-height: 680px;
   padding: 7rem 2rem;
   text-align: center;
   display: flex;
@@ -921,8 +1061,8 @@ img {
   align-items: center;
   justify-content: center;
   background:
-    linear-gradient(#090b14aa, #090b14ee),
-    url("/assets/house/entrance.webp") center/cover;
+    linear-gradient(#090b144f, #090b14e8),
+    url("/assets/house/invitation-v2.webp") center/cover;
 }
 .final-welcome > img {
   width: 70px;
@@ -1014,7 +1154,7 @@ img {
 .auth-art {
   background:
     linear-gradient(#090b1455, #090b14dd),
-    url("/assets/house/entrance.webp") center/cover;
+    url("/assets/house/invitation-v2.webp") center/cover;
   border-left: 1px solid var(--hair);
   position: relative;
   overflow: hidden;
@@ -1381,6 +1521,25 @@ textarea:focus {
     min-width: min(82vw, 360px);
     width: auto;
     scroll-snap-align: center;
+    min-height: 190px;
+    border-radius: 1rem;
+    border-color: var(--line);
+    background: linear-gradient(135deg, #090b14f5, #17101be8);
+    filter: none;
+    text-align: left;
+    align-items: flex-start;
+    box-shadow: 0 18px 50px #0009;
+  }
+  .hall-room p {
+    opacity: 1;
+    transform: none;
+    margin: 0;
+  }
+  .hall-room-enter {
+    justify-content: flex-start;
+  }
+  .hall-heart {
+    top: 38%;
   }
   .hall-pagination {
     position: relative;
@@ -1579,10 +1738,17 @@ textarea:focus {
     max-width: none;
   }
   .archive-record {
-    grid-template-columns: 1fr;
+    min-height: 650px;
   }
   .archive-image {
-    min-height: 260px;
+    min-height: 0;
+    background-position: 58% center;
+  }
+  .archive-record > div:last-child {
+    left: 1rem;
+    bottom: 1rem;
+    width: calc(100% - 2rem);
+    padding: 1.2rem;
   }
   .membership-desk {
     padding: 1.2rem;
@@ -1664,6 +1830,8 @@ textarea:focus {
     scroll-behavior: auto;
   }
   .arrival-media,
+  .arrival-orbit,
+  .hall-heart,
   .petal {
     animation: none !important;
   }

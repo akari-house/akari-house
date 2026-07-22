@@ -7,11 +7,11 @@ test("desktop journey reaches the Hall, Common Table and Membership Desk", async
   await expect(
     page.getByRole("heading", { name: "Welcome to AKARI House" }),
   ).toBeVisible();
-  await page.getByRole("link", { name: /Enter the House/ }).click();
+  await page.getByRole("link", { name: /Follow the lanterns/ }).click();
   await expect(
     page.getByRole("heading", { name: "Your paths. One House." }),
   ).toBeVisible();
-  await page.getByRole("link", { name: /Enter Strategy Room/ }).click();
+  await page.getByRole("link", { name: /Strategy Room/ }).click();
   await expect(
     page.getByRole("heading", { name: "Strategy Room", level: 1 }),
   ).toBeVisible();

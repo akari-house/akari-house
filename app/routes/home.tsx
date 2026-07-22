@@ -38,7 +38,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <PetalField />
       <main id="main-content">
         <section
-          className="arrival"
+          className="arrival story-chapter"
           id="arrival"
           aria-labelledby="arrival-title"
         >
@@ -48,13 +48,18 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             aria-label="Founders, creators and investors arriving at a lantern-lit Inari sanctuary."
           />
           <div className="arrival-shade" />
+          <div className="arrival-orbit" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
           <div className="arrival-copy">
-            <span className="chapter">Chapter 01 · Arrival</span>
+            <span className="chapter">Chapter 01 · The invitation</span>
             <h1 id="arrival-title">Welcome to AKARI House</h1>
             <p>A private place for people building what comes next.</p>
             <div>
               <a className="button button-primary" href="#hall">
-                Enter the House <span aria-hidden="true">→</span>
+                Follow the lanterns <span aria-hidden="true">→</span>
               </a>
               <a className="quiet-link" href="#common">
                 Explore the experience
@@ -66,7 +71,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <HouseHall />
 
         <section
-          className="common-section chapter-section"
+          className="common-section chapter-section story-chapter"
           id="common"
           aria-labelledby="common-title"
         >
@@ -84,7 +89,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </section>
 
         <section
-          className="journey-section chapter-section"
+          className="journey-section chapter-section story-chapter"
           id="journey"
           aria-labelledby="journey-title"
         >
@@ -110,7 +115,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </section>
 
         <section
-          className="archive-section chapter-section"
+          className="archive-section chapter-section story-chapter"
           id="archive"
           aria-labelledby="archive-title"
         >

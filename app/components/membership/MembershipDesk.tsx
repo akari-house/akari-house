@@ -22,7 +22,7 @@ export function MembershipDesk() {
 
   return (
     <section
-      className="membership-section chapter-section"
+      className="membership-section chapter-section story-chapter"
       id="membership"
       aria-labelledby="membership-title"
     >

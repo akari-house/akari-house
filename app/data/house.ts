@@ -24,7 +24,7 @@ export const rooms: RoomDefinition[] = [
       "Validate ideas, sharpen positioning and find the right people to move with.",
     detail:
       "Coordinate the people and evidence required to move from plan to measurable market traction.",
-    image: "/assets/rooms/founder.webp",
+    image: "/assets/rooms/founder-v2.webp",
     action: "Create Your Startup Profile",
     features: [
       {
@@ -52,7 +52,7 @@ export const rooms: RoomDefinition[] = [
       "Present your expertise, audience and the work you want to be known for.",
     detail:
       "Build a verified professional presence and discover collaborations suited to your content and market strengths.",
-    image: "/assets/rooms/creator.webp",
+    image: "/assets/rooms/creator-v2.webp",
     action: "Build Your Creator Profile",
     features: [
       { title: "Creator identity", copy: "Channels, audience and portfolio." },
@@ -71,7 +71,7 @@ export const rooms: RoomDefinition[] = [
       "Review curated opportunities with privacy and permission built in.",
     detail:
       "Define a private investment thesis and review structured opportunities through considered introductions.",
-    image: "/assets/rooms/investor.webp",
+    image: "/assets/rooms/investor-v2.webp",
     action: "Set Your Investment Preferences",
     features: [
       {
