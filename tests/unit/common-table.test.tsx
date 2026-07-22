@@ -16,7 +16,9 @@ describe("CommonTable", () => {
     ).toHaveAttribute("aria-selected", "true");
     await user.click(screen.getByRole("tab", { name: "Investor Workspace" }));
     expect(
-      screen.getByText("New opportunities match your private thesis."),
+      screen.getByText(
+        "Keep your investment preferences intentional and private.",
+      ),
     ).toBeVisible();
     expect(screen.getByText("Kitsune Labs")).toBeVisible();
   });

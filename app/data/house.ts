@@ -95,11 +95,11 @@ export const workspaceData = {
   founder: {
     label: "Founder Workspace",
     person: "Haruki Tanaka · Founder",
-    heading: "Your venture has three high-signal actions waiting.",
+    heading: "Shape how your venture appears inside the House.",
     stats: [
-      ["Profile", "82%"],
-      ["Introductions", "3"],
-      ["GTM requests", "2"],
+      ["Profile", "In progress"],
+      ["Role", "Founder"],
+      ["Visibility", "Members"],
     ],
     opportunity: [
       "Aster Protocol",
@@ -115,11 +115,11 @@ export const workspaceData = {
   creator: {
     label: "Creator Profile",
     person: "Mina Sato · Creator",
-    heading: "Three briefs align with your audience and expertise.",
+    heading: "Present your expertise with the right context.",
     stats: [
-      ["Profile", "91%"],
-      ["Invitations", "4"],
-      ["Portfolio", "8"],
+      ["Profile", "In progress"],
+      ["Role", "Creator"],
+      ["Visibility", "Public"],
     ],
     opportunity: [
       "Common Ground",
@@ -135,11 +135,11 @@ export const workspaceData = {
   investor: {
     label: "Investor Workspace",
     person: "Noah Williams · Investor",
-    heading: "New opportunities match your private thesis.",
+    heading: "Keep your investment preferences intentional and private.",
     stats: [
-      ["Thesis", "Complete"],
-      ["Watchlist", "7"],
-      ["Updates", "2"],
+      ["Profile", "In progress"],
+      ["Role", "Investor"],
+      ["Visibility", "Private"],
     ],
     opportunity: [
       "Kitsune Labs",

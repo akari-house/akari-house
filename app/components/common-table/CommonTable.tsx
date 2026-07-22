@@ -58,21 +58,9 @@ export function CommonTable({ compact = false }: { compact?: boolean }) {
       </div>
       <div className="product-body">
         <nav aria-label="Workspace navigation">
-          {[
-            "Overview",
-            "Network",
-            "Opportunities",
-            "Introductions",
-            "Campaigns",
-            "Messages",
-            "Events",
-            "Articles",
-            "Saved",
-            "Notifications",
-          ].map((item, index) => (
+          {["Overview", "Profile", "Roles", "Visibility"].map((item, index) => (
             <span className={index === 0 ? "active" : ""} key={item}>
               {item}
-              {index > 4 && <small>Later</small>}
             </span>
           ))}
         </nav>
@@ -81,7 +69,7 @@ export function CommonTable({ compact = false }: { compact?: boolean }) {
           role="tabpanel"
           aria-labelledby={`workspace-${role}`}
         >
-          <span className="status-pill">Demonstration workspace</span>
+          <span className="status-pill">Foundation preview · Sample data</span>
           <h3>{data.heading}</h3>
           <div className="workspace-stats">
             {data.stats.map(([label, value]) => (

@@ -61,10 +61,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               </a>
             </div>
           </div>
-          <span className="arrival-note">
-            <b>Anime</b> for emotion · <b>Product UI</b> for clarity ·{" "}
-            <b>Evidence</b> for trust
-          </span>
         </section>
 
         <HouseHall />
@@ -80,8 +76,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               <h2 id="common-title">Where the House becomes a product.</h2>
             </div>
             <p>
-              One account supports multiple roles. Switch workspaces to see how
-              AKARI keeps context clear without splitting your identity.
+              One identity can hold multiple roles. Preview how AKARI keeps each
+              workspace focused without splitting your profile.
             </p>
           </div>
           <CommonTable />

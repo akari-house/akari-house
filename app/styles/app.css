@@ -80,13 +80,13 @@ img {
   position: fixed;
   z-index: 150;
   inset: 0 0 auto;
-  height: 78px;
+  height: 72px;
   display: grid;
-  grid-template-columns: 240px 1fr 240px;
+  grid-template-columns: 210px 1fr 210px;
   align-items: center;
   padding: 0 clamp(1rem, 3vw, 2.4rem);
-  background: linear-gradient(#060910f2, #06091099, transparent);
-  backdrop-filter: blur(10px);
+  background: linear-gradient(#060910f5, #060910b8 72%, transparent);
+  backdrop-filter: blur(12px);
 }
 .wordmark {
   display: flex;
@@ -96,7 +96,7 @@ img {
   letter-spacing: 0.06em;
 }
 .wordmark-image {
-  width: 142px;
+  width: 116px;
   height: auto;
 }
 .wordmark > span {
@@ -216,7 +216,7 @@ img {
   font-weight: 700;
 }
 .chapter-section {
-  padding: clamp(6rem, 10vw, 9rem) max(2rem, calc((100vw - 1380px) / 2));
+  padding: clamp(5rem, 8vw, 7.5rem) max(2rem, calc((100vw - 1280px) / 2));
 }
 .section-intro {
   display: grid;
@@ -401,13 +401,13 @@ img {
 .hall-room {
   position: absolute;
   width: min(360px, 28%);
-  min-height: 190px;
-  padding: 1.3rem;
+  min-height: 168px;
+  padding: 1.15rem 1.2rem;
   border: 1px solid var(--line);
   border-radius: 1.1rem;
-  background: #090b14d9;
-  backdrop-filter: blur(12px);
-  box-shadow: 0 20px 50px #0009;
+  background: linear-gradient(135deg, #090b14e8, #090b14b8);
+  backdrop-filter: blur(9px);
+  box-shadow: 0 16px 40px #0008;
   transition: 0.25s;
 }
 .hall-room-founder {
@@ -433,7 +433,7 @@ img {
   letter-spacing: 0.13em;
 }
 .hall-room h3 {
-  font-size: 1.65rem;
+  font-size: 1.45rem;
   margin: 0.45rem 0;
 }
 .hall-room p {
@@ -606,8 +606,8 @@ img {
   background: #090d16;
 }
 .common-section > .product-demo {
-  width: 75%;
-  min-width: 900px;
+  width: min(100%, 1040px);
+  min-width: 0;
   margin: auto;
 }
 .product-demo {
@@ -665,7 +665,7 @@ img {
 }
 .product-body {
   display: grid;
-  grid-template-columns: 190px minmax(0, 1fr);
+  grid-template-columns: 160px minmax(0, 1fr);
 }
 .product-body > nav {
   padding: 1rem;
@@ -726,7 +726,7 @@ img {
   font-size: 0.7rem;
 }
 .workspace-stats strong {
-  font-size: 1.3rem;
+  font-size: 1.05rem;
   margin-top: 0.45rem;
 }
 .opportunity-table {
