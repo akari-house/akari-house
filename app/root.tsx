@@ -11,10 +11,20 @@ import "./styles/app.css";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+  {
+    rel: "preconnect",
+    href: "https://fonts.gstatic.com",
+    crossOrigin: "anonymous",
+  },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
+  },
+  {
+    rel: "preload",
+    href: "/assets/house/arrival.webp",
+    as: "image",
+    type: "image/webp",
   },
 ];
 
@@ -43,18 +53,21 @@ export default function App() {
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   const status = isRouteErrorResponse(error) ? error.status : 500;
-  const message = status === 404
-    ? "This room does not exist."
-    : status === 403
-      ? "This room is private."
-      : "The lantern went out unexpectedly.";
+  const message =
+    status === 404
+      ? "This room does not exist."
+      : status === 403
+        ? "This room is private."
+        : "The lantern went out unexpectedly.";
 
   return (
     <main className="error-page">
       <span className="eyebrow">AKARI House · {status}</span>
       <h1>{message}</h1>
       <p>Please return to the Hall and try again.</p>
-      <a className="button button-primary" href="/">Return home</a>
+      <a className="button button-primary" href="/">
+        Return home
+      </a>
     </main>
   );
 }

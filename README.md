@@ -4,7 +4,7 @@ AKARI House is a curated Web3 relationship and GTM network for founders, creator
 
 ## Foundation scope
 
-This release contains the public homepage, authentication foundation, multi-role accounts, personal profiles, server-enforced visibility, an authenticated dashboard shell, and local Cloudflare D1/R2 bindings. Messaging, campaigns, articles, events, social synchronization, notifications, and AI matching are intentionally deferred.
+This release contains the Inari Arrival, spatial Hall and rooms, Common Table demonstration, Blossom Journey, Archive structure, Membership Desk, authentication foundation, multi-role accounts, personal profiles, server-enforced visibility, an authenticated dashboard shell, and local Cloudflare D1/R2 bindings. Messaging, campaigns, articles, events, social synchronization, notifications, and AI matching are intentionally deferred.
 
 ## Local development
 
@@ -24,6 +24,7 @@ Copy `.dev.vars.example` to `.dev.vars` only when local secrets are required. Ne
 npm run lint
 npm run typecheck
 npm test
+npm run test:e2e
 npm run build
 ```
 

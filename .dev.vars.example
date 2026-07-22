@@ -1,3 +1,6 @@
 # Copy this file to .dev.vars for local-only secrets.
 # The foundation does not require third-party secrets yet.
 APP_ENV=development
+
+# Optional when Turnstile is enabled during the provisioning phase.
+# TURNSTILE_SECRET_KEY=replace-with-a-local-test-key

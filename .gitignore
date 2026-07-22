@@ -11,3 +11,6 @@ coverage/
 *.tsbuildinfo
 worker-configuration.d.ts
 .DS_Store
+.reference-v7/
+playwright-report/
+test-results/

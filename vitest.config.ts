@@ -6,7 +6,7 @@ export default defineConfig({
     alias: { "~": fileURLToPath(new URL("./app", import.meta.url)) },
   },
   test: {
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.{ts,tsx}"],
     coverage: { reporter: ["text", "json"] },
   },
 });

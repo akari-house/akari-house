@@ -36,18 +36,28 @@ export async function hashPassword(password: string) {
 
 export async function verifyPassword(password: string, stored: string) {
   const [algorithm, count, saltValue, hashValue] = stored.split("$");
-  if (algorithm !== "pbkdf2-sha256" || Number(count) !== iterations || !saltValue || !hashValue) return false;
+  if (
+    algorithm !== "pbkdf2-sha256" ||
+    Number(count) !== iterations ||
+    !saltValue ||
+    !hashValue
+  )
+    return false;
   const expected = base64ToBytes(hashValue);
   const actual = await derivePassword(password, base64ToBytes(saltValue));
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
 export async function sha256(value: string) {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(value),
+  );
   return bytesToBase64(new Uint8Array(digest));
 }
 
 export function assertSameOrigin(request: Request) {
   const origin = request.headers.get("Origin");
-  if (!origin || origin !== new URL(request.url).origin) throw new Response("Invalid request origin", { status: 403 });
+  if (!origin || origin !== new URL(request.url).origin)
+    throw new Response("Invalid request origin", { status: 403 });
 }

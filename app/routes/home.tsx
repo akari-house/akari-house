@@ -1,80 +1,198 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/home";
+import { CommonTable } from "~/components/common-table/CommonTable";
+import { HouseHall } from "~/components/house/HouseHall";
+import { PetalField } from "~/components/house/PetalField";
+import { MembershipDesk } from "~/components/membership/MembershipDesk";
 import { SiteHeader } from "~/components/SiteHeader";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 
 export const meta: Route.MetaFunction = () => [
-  { title: "AKARI House — Trusted Web3 relationships" },
-  { name: "description", content: "A curated network for founders, creators and investors to build trusted relationships." },
+  { title: "AKARI House — A private Web3 professional network" },
+  {
+    name: "description",
+    content:
+      "A private place where Founders, Creators and Investors build trusted relationships and measurable traction.",
+  },
 ];
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  return { user: await getOptionalUser(request, context.get(cloudflareContext).env.DB) };
+  return {
+    user: await getOptionalUser(request, context.get(cloudflareContext).env.DB),
+  };
 }
 
-const rooms = [
-  { number: "01", title: "Strategy Room", audience: "For founders", copy: "Shape GTM direction, surface immediate needs and find the right people to move with." },
-  { number: "02", title: "Creator Studio", audience: "For creators", copy: "Present trusted expertise, relevant audiences and the work you want to be known for." },
-  { number: "03", title: "Investor Lounge", audience: "For investors", copy: "Discover curated opportunities while keeping access and introductions considered." },
+const journey = [
+  ["門", "Entrance", "Build your identity"],
+  ["策", "Strategy Room", "Define your goals"],
+  ["縁", "Network Terrace", "Discover relevant people"],
+  ["卓", "Common Table", "Collaborate privately"],
+  ["光", "Launch Deck", "Create measurable traction"],
 ];
 
 export default function Home({ loaderData }: Route.ComponentProps) {
   return (
     <div className="site-shell">
       <SiteHeader user={loaderData.user} />
-      <main>
-        <section className="hero">
-          <div className="petal petal-one" /><div className="petal petal-two" /><div className="petal petal-three" />
-          <div className="hero-copy">
-            <span className="eyebrow">A curated Web3 relationship &amp; GTM network</span>
-            <h1>Where considered<br /><em>connections</em> begin.</h1>
-            <p>AKARI House brings founders, creators and investors into one trusted space—built for relevant discovery, private connection and meaningful collaboration.</p>
-            <div className="hero-actions">
-              <Link className="button button-primary" to="/register">Enter the House <span>→</span></Link>
-              <a className="button button-quiet" href="#rooms">Explore the rooms</a>
+      <PetalField />
+      <main id="main-content">
+        <section
+          className="arrival"
+          id="arrival"
+          aria-labelledby="arrival-title"
+        >
+          <div
+            className="arrival-media"
+            role="img"
+            aria-label="Founders, creators and investors arriving at a lantern-lit Inari sanctuary."
+          />
+          <div className="arrival-shade" />
+          <div className="arrival-copy">
+            <span className="chapter">Chapter 01 · Arrival</span>
+            <h1 id="arrival-title">Welcome to AKARI House</h1>
+            <p>A private place for people building what comes next.</p>
+            <div>
+              <a className="button button-primary" href="#hall">
+                Enter the House <span aria-hidden="true">→</span>
+              </a>
+              <a className="quiet-link" href="#common">
+                Explore the experience
+              </a>
             </div>
-            <div className="trust-line"><span>Curated membership</span><span>Mutual connections</span><span>Privacy by design</span></div>
           </div>
-          <div className="house-scene" aria-label="An abstract lantern-lit Japanese house">
-            <div className="sun-disc" /><div className="roof roof-back" /><div className="house-body" />
-            <div className="roof roof-front" /><div className="door"><i /><i /></div>
-            <div className="lantern lantern-left">灯</div><div className="lantern lantern-right">灯</div>
-            <div className="path" />
-          </div>
+          <span className="arrival-note">
+            <b>Anime</b> for emotion · <b>Product UI</b> for clarity ·{" "}
+            <b>Evidence</b> for trust
+          </span>
         </section>
 
-        <section className="principle-strip" aria-label="AKARI principles">
-          <p>Not another feed.</p><i /> <p>Not a follower race.</p><i /> <p>A house built for trust.</p>
+        <HouseHall />
+
+        <section
+          className="common-section chapter-section"
+          id="common"
+          aria-labelledby="common-title"
+        >
+          <div className="section-intro">
+            <div>
+              <span className="chapter">Chapter 03 · The Common Table</span>
+              <h2 id="common-title">Where the House becomes a product.</h2>
+            </div>
+            <p>
+              One account supports multiple roles. Switch workspaces to see how
+              AKARI keeps context clear without splitting your identity.
+            </p>
+          </div>
+          <CommonTable />
         </section>
 
-        <section className="rooms-section" id="rooms">
-          <div className="section-heading">
-            <span className="eyebrow">Inside the House</span>
-            <h2>Different rooms.<br />One shared table.</h2>
-            <p>Your identity stays whole while each role gives you a focused place to work.</p>
+        <section
+          className="journey-section chapter-section"
+          id="journey"
+          aria-labelledby="journey-title"
+        >
+          <div>
+            <span className="chapter">Chapter 04 · The Blossom Journey</span>
+            <h2 id="journey-title">A path through the House.</h2>
+            <p>
+              Trust grows through identity, intent, discovery, private
+              collaboration and evidence—not through follower counts.
+            </p>
           </div>
-          <div className="room-grid">
-            {rooms.map((room) => (
-              <article className="room-card" key={room.number}>
-                <span className="room-number">{room.number}</span>
-                <span className="room-audience">{room.audience}</span>
-                <h3>{room.title}</h3>
-                <p>{room.copy}</p>
-                <span className="room-link">Coming into focus <b>↗</b></span>
-              </article>
+          <ol className="blossom-trail">
+            {journey.map(([icon, title, copy]) => (
+              <li key={title}>
+                <span aria-hidden="true">{icon}</span>
+                <div>
+                  <strong>{title}</strong>
+                  <small>{copy}</small>
+                </div>
+              </li>
             ))}
-          </div>
+          </ol>
         </section>
 
-        <section className="membership-section" id="membership">
-          <span className="eyebrow">Membership desk</span>
-          <h2>One identity.<br /><em>Every role you hold.</em></h2>
-          <p>Join as a founder, creator, investor—or any combination. You control what the network can see.</p>
-          <Link className="button button-primary" to="/register">Create your profile <span>→</span></Link>
+        <section
+          className="archive-section chapter-section"
+          id="archive"
+          aria-labelledby="archive-title"
+        >
+          <div className="archive-copy">
+            <span className="chapter">Chapter 05 · The Archive</span>
+            <h2 id="archive-title">Proof that can be inspected.</h2>
+            <p>
+              The Archive will document AKARI’s role, timeframe, evidence and
+              permission status. Until verified member outcomes are available,
+              this structure is clearly marked as a placeholder.
+            </p>
+          </div>
+          <article className="archive-record">
+            <div
+              className="archive-image"
+              role="img"
+              aria-label="A quiet discussion in an AKARI room"
+            />
+            <div>
+              <span className="status-pill">
+                Structure preview · Not a published case study
+              </span>
+              <h3>From context to an attributable outcome.</h3>
+              <dl>
+                <div>
+                  <dt>Relationship</dt>
+                  <dd>Founder × strategic partner</dd>
+                </div>
+                <div>
+                  <dt>AKARI contribution</dt>
+                  <dd>Curated introduction and working context</dd>
+                </div>
+                <div>
+                  <dt>Outcome</dt>
+                  <dd>Awaiting verified member evidence</dd>
+                </div>
+                <div>
+                  <dt>Permission</dt>
+                  <dd>Publication approval required</dd>
+                </div>
+              </dl>
+            </div>
+          </article>
+        </section>
+
+        <MembershipDesk />
+
+        <section className="final-welcome" aria-labelledby="final-title">
+          <img src="/assets/brand/flower.png" alt="" />
+          <span className="chapter">The door is open</span>
+          <h2 id="final-title">
+            Your role. Your network.
+            <br />
+            Your next opportunity.
+          </h2>
+          <Link className="button button-primary" to="/register">
+            Apply to Join AKARI
+          </Link>
         </section>
       </main>
-      <footer><span>灯 AKARI House</span><p>Trust before reach. Relevance before noise.</p><small>© 2026 AKARI House</small></footer>
+      <footer className="site-footer">
+        <div>
+          <span className="footer-brand">
+            <img src="/assets/brand/flower.png" alt="" /> AKARI House
+          </span>
+          <p>
+            A private place for Founders, Creators and Investors to build what
+            comes next—together.
+          </p>
+        </div>
+        <nav aria-label="Footer">
+          <a href="#hall">The Hall</a>
+          <a href="#common">Common Table</a>
+          <a href="#archive">Archive</a>
+          <a href="#membership">Membership</a>
+        </nav>
+        <small>© 2026 AKARI House</small>
+      </footer>
     </div>
   );
 }

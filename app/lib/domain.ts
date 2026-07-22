@@ -1,7 +1,12 @@
 export const roles = ["founder", "creator", "investor"] as const;
 export type Role = (typeof roles)[number];
 
-export const visibilities = ["public", "members", "connections", "private"] as const;
+export const visibilities = [
+  "public",
+  "members",
+  "connections",
+  "private",
+] as const;
 export type Visibility = (typeof visibilities)[number];
 
 export interface SessionUser {

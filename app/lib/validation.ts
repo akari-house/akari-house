@@ -29,7 +29,11 @@ export function selectedRoles(formData: FormData): Role[] {
     .filter((value): value is Role => roles.includes(value as Role));
 }
 
-export function selectedVisibility(value: FormDataEntryValue | null): Visibility {
+export function selectedVisibility(
+  value: FormDataEntryValue | null,
+): Visibility {
   const candidate = typeof value === "string" ? value : "private";
-  return visibilities.includes(candidate as Visibility) ? (candidate as Visibility) : "private";
+  return visibilities.includes(candidate as Visibility)
+    ? (candidate as Visibility)
+    : "private";
 }

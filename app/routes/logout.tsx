@@ -7,7 +7,9 @@ import { cloudflareContext } from "~/lib/cloudflare-context";
 export async function action({ request, context }: Route.ActionArgs) {
   assertSameOrigin(request);
   await destroySession(request, context.get(cloudflareContext).env.DB);
-  return redirect("/", { headers: { "Set-Cookie": clearSessionCookie(request) } });
+  return redirect("/", {
+    headers: { "Set-Cookie": clearSessionCookie(request) },
+  });
 }
 
 export function loader() {

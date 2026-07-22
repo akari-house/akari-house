@@ -1,5 +1,11 @@
 {
-  "include": ["vite.config.ts", "react-router.config.ts", "eslint.config.js", "vitest.config.ts"],
+  "include": [
+    "vite.config.ts",
+    "react-router.config.ts",
+    "eslint.config.js",
+    "vitest.config.ts",
+    "playwright.config.ts"
+  ],
   "compilerOptions": {
     "composite": true,
     "target": "ES2022",

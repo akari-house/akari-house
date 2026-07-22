@@ -1,0 +1,8 @@
+build
+node_modules
+.react-router
+.wrangler
+.reference-v7
+worker-configuration.d.ts
+package-lock.json
+public/assets
