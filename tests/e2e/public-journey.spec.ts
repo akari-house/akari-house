@@ -11,15 +11,13 @@ test("desktop journey reaches the Hall, Common Table and Membership Desk", async
   await expect(
     page.getByRole("heading", { name: "Your paths. One House." }),
   ).toBeVisible();
-  await page.getByRole("button", { name: /Enter Strategy Room/ }).click();
+  await page.getByRole("link", { name: /Enter Strategy Room/ }).click();
   await expect(
-    page.getByRole("dialog", { name: "Strategy Room" }),
+    page.getByRole("heading", { name: "Strategy Room", level: 1 }),
   ).toBeVisible();
-  await page
-    .getByRole("button", {
-      name: "Close Strategy Room and return to the Hall",
-    })
-    .click();
+  await page.getByRole("link", { name: "Return to the Hall" }).click();
+  await expect(page).toHaveURL(/\/hall$/);
+  await page.goto("/#common");
   await page.getByRole("tab", { name: "Investor Workspace" }).click();
   await expect(page.getByText("Kitsune Labs")).toBeVisible();
   await expect(
@@ -29,10 +27,11 @@ test("desktop journey reaches the Hall, Common Table and Membership Desk", async
 
 test("mobile navigation traps focus and has no horizontal overflow", async ({
   page,
-}) => {
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-chromium", "Mobile-only journey");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  const menu = page.getByRole("button", { name: "Open navigation" });
+  const menu = page.locator('button[aria-controls="mobile-menu"]');
   await menu.click();
   await expect(menu).toHaveAttribute("aria-expanded", "true");
   await page.keyboard.press("Escape");

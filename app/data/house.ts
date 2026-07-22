@@ -2,6 +2,7 @@ import type { Role } from "~/lib/domain";
 
 export interface RoomDefinition {
   role: Role;
+  slug: "strategy" | "creator" | "investor";
   number: string;
   audience: string;
   title: string;
@@ -15,6 +16,7 @@ export interface RoomDefinition {
 export const rooms: RoomDefinition[] = [
   {
     role: "founder",
+    slug: "strategy",
     number: "01",
     audience: "Founder space",
     title: "Strategy Room",
@@ -42,6 +44,7 @@ export const rooms: RoomDefinition[] = [
   },
   {
     role: "creator",
+    slug: "creator",
     number: "02",
     audience: "Creator space",
     title: "Creator Studio",
@@ -60,6 +63,7 @@ export const rooms: RoomDefinition[] = [
   },
   {
     role: "investor",
+    slug: "investor",
     number: "03",
     audience: "Investor space",
     title: "Investor Lounge",

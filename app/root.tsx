@@ -10,7 +10,13 @@ import type { Route } from "./+types/root";
 import "./styles/app.css";
 
 export const links: Route.LinksFunction = () => [
-  { rel: "icon", href: "/assets/brand/favicon.png", type: "image/png" },
+  { rel: "icon", href: "/assets/brand/favicon.ico", sizes: "any" },
+  {
+    rel: "icon",
+    href: "/assets/brand/favicon.png",
+    type: "image/png",
+    sizes: "64x64",
+  },
   {
     rel: "apple-touch-icon",
     href: "/assets/brand/apple-touch-icon.png",

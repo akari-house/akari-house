@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
@@ -16,19 +16,17 @@ function withRouter(element: React.ReactNode) {
 }
 
 describe("house interactions", () => {
-  it("opens a room, traps focus, closes with Escape and restores focus", async () => {
-    const user = userEvent.setup();
+  it("links each destination to a dedicated room route", () => {
     withRouter(<HouseHall />);
-    const trigger = screen.getByRole("button", { name: /Enter Strategy Room/ });
-    await user.click(trigger);
-    const close = screen.getByRole("button", {
-      name: "Close Strategy Room and return to the Hall",
-    });
-    expect(screen.getByRole("dialog", { name: "Strategy Room" })).toBeVisible();
-    expect(close).toHaveFocus();
-    await user.keyboard("{Escape}");
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(
+      screen.getByRole("link", { name: /Enter Strategy Room/ }),
+    ).toHaveAttribute("href", "/rooms/strategy");
+    expect(
+      screen.getByRole("link", { name: /Enter Creator Studio/ }),
+    ).toHaveAttribute("href", "/rooms/creator");
+    expect(
+      screen.getByRole("link", { name: /Enter Investor Lounge/ }),
+    ).toHaveAttribute("href", "/rooms/investor");
   });
 
   it("locks body scroll while mobile navigation is open", async () => {

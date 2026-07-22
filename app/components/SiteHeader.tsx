@@ -4,7 +4,7 @@ import type { SessionUser } from "~/lib/domain";
 
 const links = [
   ["House", "/#arrival"],
-  ["The Hall", "/#hall"],
+  ["The Hall", "/hall"],
   ["Common Table", "/#common"],
   ["Archive", "/#archive"],
   ["Membership", "/#membership"],
