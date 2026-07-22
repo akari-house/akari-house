@@ -12,8 +12,14 @@ const links = [
 
 export function SiteHeader({ user }: { user: SessionUser | null }) {
   const [open, setOpen] = useState(false);
+  const [interactive, setInteractive] = useState(false);
   const menuRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setInteractive(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -100,6 +106,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
             aria-expanded={open}
             aria-controls="mobile-menu"
             aria-label={open ? "Close navigation" : "Open navigation"}
+            disabled={!interactive}
             onClick={() => setOpen((value) => !value)}
           >
             {open ? "×" : "☰"}

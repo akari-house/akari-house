@@ -226,7 +226,7 @@ img {
   .story-chapter .section-intro,
   .story-chapter > .archive-copy,
   .story-chapter > .membership-copy,
-  .story-chapter > div:first-child {
+  .journey-section > div:first-child {
     animation: chapter-arrive both ease-out;
     animation-timeline: view();
     animation-range: entry 10% cover 32%;
@@ -276,8 +276,9 @@ img {
   position: absolute;
   inset: 0;
   background: url("/assets/house/arrival-v2.webp") center 46% / cover no-repeat;
-  transform: scale(1.02);
-  animation: arrival-breathe 18s ease-in-out infinite alternate;
+  transform-origin: 50% 52%;
+  animation: arrival-breathe 14s ease-in-out infinite alternate;
+  will-change: transform;
 }
 .arrival-shade {
   position: absolute;
@@ -372,8 +373,21 @@ img {
   color: var(--yellow);
 }
 @keyframes arrival-breathe {
+  from {
+    transform: translate3d(
+        calc(var(--pointer-x, 0) * -9px),
+        calc(var(--pointer-y, 0) * -7px),
+        0
+      )
+      scale(1.035);
+  }
   to {
-    transform: scale(1.065);
+    transform: translate3d(
+        calc(var(--pointer-x, 0) * -15px),
+        calc(var(--pointer-y, 0) * -11px),
+        0
+      )
+      scale(1.13);
   }
 }
 .petal-field {
@@ -444,8 +458,19 @@ img {
   object-fit: cover;
   opacity: 0.92;
   transition:
-    transform 1s ease,
+    transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1),
     filter 0.5s ease;
+  transform: scale(1.01);
+  will-change: transform;
+}
+.hall-stage[data-active-room="founder"] > img {
+  transform: scale(1.055) translate(1.3%, 1%);
+}
+.hall-stage[data-active-room="creator"] > img {
+  transform: scale(1.055) translate(-1.3%, 1%);
+}
+.hall-stage[data-active-room="investor"] > img {
+  transform: scale(1.065) translateY(-1.8%);
 }
 .hall-stage::after {
   content: "";
@@ -675,6 +700,27 @@ img {
 .room-hero-art {
   background-position: center;
   background-size: cover;
+  transform-origin: center;
+  animation: room-breathe 18s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes room-breathe {
+  from {
+    transform: translate3d(
+        calc(var(--pointer-x, 0) * -7px),
+        calc(var(--pointer-y, 0) * -5px),
+        0
+      )
+      scale(1.02);
+  }
+  to {
+    transform: translate3d(
+        calc(var(--pointer-x, 0) * -12px),
+        calc(var(--pointer-y, 0) * -9px),
+        0
+      )
+      scale(1.09);
+  }
 }
 .room-hero-shade {
   background:
@@ -956,6 +1002,18 @@ img {
   background: url("/assets/house/archive-v2.webp") center/cover;
   position: absolute;
   inset: 0;
+  animation: archive-breathe 16s ease-in-out infinite alternate;
+  will-change: transform, filter;
+}
+@keyframes archive-breathe {
+  from {
+    transform: scale(1.01) translateX(0);
+    filter: brightness(0.88);
+  }
+  to {
+    transform: scale(1.075) translateX(-1.2%);
+    filter: brightness(1.04);
+  }
 }
 .archive-record > div:last-child {
   position: absolute;
@@ -1060,9 +1118,46 @@ img {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background: #090b14;
+}
+.final-welcome::before,
+.final-welcome::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+.final-welcome::before {
+  inset: -4%;
   background:
     linear-gradient(#090b144f, #090b14e8),
     url("/assets/house/invitation-v2.webp") center/cover;
+  animation: invitation-breathe 17s ease-in-out infinite alternate;
+  will-change: transform;
+}
+.final-welcome::after {
+  inset: 0;
+  background: radial-gradient(circle at 50% 48%, #ffd33d26, transparent 22%);
+  animation: lantern-bloom 3.5s ease-in-out infinite;
+}
+.final-welcome > * {
+  position: relative;
+  z-index: 2;
+}
+@keyframes invitation-breathe {
+  from {
+    transform: scale(1.01);
+  }
+  to {
+    transform: scale(1.09);
+  }
+}
+@keyframes lantern-bloom {
+  50% {
+    opacity: 0.45;
+    transform: scale(1.08);
+  }
 }
 .final-welcome > img {
   width: 70px;
@@ -1832,6 +1927,10 @@ textarea:focus {
   .arrival-media,
   .arrival-orbit,
   .hall-heart,
+  .room-hero-art,
+  .archive-image,
+  .final-welcome::before,
+  .final-welcome::after,
   .petal {
     animation: none !important;
   }

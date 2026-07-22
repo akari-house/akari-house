@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import type { Route } from "./+types/room";
 import { CommonTable } from "~/components/common-table/CommonTable";
 import { PetalField } from "~/components/house/PetalField";
+import { SceneMotion } from "~/components/house/SceneMotion";
 import { SiteHeader } from "~/components/SiteHeader";
 import { rooms } from "~/data/house";
 import { getOptionalUser } from "~/lib/auth.server";
@@ -36,6 +37,7 @@ export default function Room({ loaderData }: Route.ComponentProps) {
     <div className="site-shell room-page">
       <SiteHeader user={user} />
       <PetalField />
+      <SceneMotion />
       <main id="main-content">
         <section className="room-hero" aria-labelledby="room-title">
           <div

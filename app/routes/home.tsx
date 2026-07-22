@@ -3,6 +3,7 @@ import type { Route } from "./+types/home";
 import { CommonTable } from "~/components/common-table/CommonTable";
 import { HouseHall } from "~/components/house/HouseHall";
 import { PetalField } from "~/components/house/PetalField";
+import { SceneMotion } from "~/components/house/SceneMotion";
 import { MembershipDesk } from "~/components/membership/MembershipDesk";
 import { SiteHeader } from "~/components/SiteHeader";
 import { getOptionalUser } from "~/lib/auth.server";
@@ -36,6 +37,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     <div className="site-shell">
       <SiteHeader user={loaderData.user} />
       <PetalField />
+      <SceneMotion />
       <main id="main-content">
         <section
           className="arrival story-chapter"

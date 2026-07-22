@@ -30,6 +30,16 @@ describe("house interactions", () => {
     ).toHaveAttribute("href", "/rooms/investor");
   });
 
+  it("moves the Hall focus toward the room being explored", async () => {
+    const user = userEvent.setup();
+    const { container } = withRouter(<HouseHall />);
+    await user.hover(screen.getByRole("link", { name: /Creator Studio/ }));
+    expect(container.querySelector(".hall-stage")).toHaveAttribute(
+      "data-active-room",
+      "creator",
+    );
+  });
+
   it("locks body scroll while mobile navigation is open", async () => {
     const user = userEvent.setup();
     withRouter(<SiteHeader user={null} />);

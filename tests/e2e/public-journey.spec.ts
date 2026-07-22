@@ -7,6 +7,10 @@ test("desktop journey reaches the Hall, Common Table and Membership Desk", async
   await expect(
     page.getByRole("heading", { name: "Welcome to AKARI House" }),
   ).toBeVisible();
+  await expect(page.locator(".arrival-media")).toHaveCSS(
+    "animation-name",
+    "arrival-breathe",
+  );
   await page.getByRole("link", { name: /Follow the lanterns/ }).click();
   await expect(
     page.getByRole("heading", { name: "Your paths. One House." }),

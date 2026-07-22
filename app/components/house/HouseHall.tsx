@@ -21,7 +21,7 @@ export function HouseHall() {
           purpose, then return to the shared table.
         </p>
       </div>
-      <div className="hall-stage">
+      <div className="hall-stage" data-active-room={activeRoom}>
         <img
           src="/assets/house/hall-v2.webp"
           alt="An anime night view of three pavilions surrounding AKARI's glowing sakura courtyard."
