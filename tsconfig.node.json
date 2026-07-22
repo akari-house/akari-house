@@ -1,0 +1,14 @@
+{
+  "include": ["vite.config.ts", "react-router.config.ts", "eslint.config.js", "vitest.config.ts"],
+  "compilerOptions": {
+    "composite": true,
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": true
+  }
+}
