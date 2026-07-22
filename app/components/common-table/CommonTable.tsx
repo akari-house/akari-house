@@ -29,7 +29,7 @@ export function CommonTable({ compact = false }: { compact?: boolean }) {
     <div className={`product-demo${compact ? " product-demo-compact" : ""}`}>
       <div className="product-bar">
         <span className="product-brand">
-          <img src="/assets/brand/flower.png" alt="" /> AKARI
+          <img src="/assets/brand/akari-mark.png" alt="" /> AKARI
         </span>
         <span className="product-person">{data.person}</span>
       </div>

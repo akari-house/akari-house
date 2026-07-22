@@ -163,7 +163,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <MembershipDesk />
 
         <section className="final-welcome" aria-labelledby="final-title">
-          <img src="/assets/brand/flower.png" alt="" />
+          <img src="/assets/brand/akari-mark.png" alt="" />
           <span className="chapter">The door is open</span>
           <h2 id="final-title">
             Your role. Your network.
@@ -178,7 +178,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <footer className="site-footer">
         <div>
           <span className="footer-brand">
-            <img src="/assets/brand/flower.png" alt="" /> AKARI House
+            <img src="/assets/brand/akari-logo.png" alt="AKARI" />
+            <span>House</span>
           </span>
           <p>
             A private place for Founders, Creators and Investors to build what

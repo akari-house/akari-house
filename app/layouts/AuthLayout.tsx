@@ -12,7 +12,8 @@ export function AuthLayout({
   return (
     <main className="auth-layout">
       <Link className="auth-brand" to="/">
-        灯 <span>AKARI House</span>
+        <img src="/assets/brand/akari-logo.png" alt="AKARI" />
+        <span>House</span>
       </Link>
       <section className="auth-panel">
         <span className="eyebrow">{eyebrow}</span>

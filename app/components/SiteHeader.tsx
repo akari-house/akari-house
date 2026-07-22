@@ -77,10 +77,9 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
       </a>
       <header className="site-header">
         <Link to="/" className="wordmark" aria-label="AKARI House home">
-          <img src="/assets/brand/flower.png" alt="" />
           <img
             className="wordmark-image"
-            src="/assets/brand/wordmark.png"
+            src="/assets/brand/akari-logo.png"
             alt="AKARI"
           />
           <span>House</span>

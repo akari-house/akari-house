@@ -95,13 +95,8 @@ img {
   font-weight: 700;
   letter-spacing: 0.06em;
 }
-.wordmark > img:first-child {
-  width: 34px;
-  height: 34px;
-  object-fit: contain;
-}
 .wordmark-image {
-  width: 98px;
+  width: 142px;
   height: auto;
 }
 .wordmark > span {
@@ -877,7 +872,13 @@ img {
   font-weight: 700;
 }
 .footer-brand img {
-  width: 28px;
+  width: 132px;
+  height: auto;
+}
+.footer-brand span {
+  color: #e7e8ed;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
 }
 .site-footer p {
   max-width: 460px;
@@ -905,6 +906,10 @@ img {
   display: flex;
   gap: 0.7rem;
   color: var(--yellow);
+}
+.auth-brand img {
+  width: 150px;
+  height: auto;
 }
 .auth-brand span {
   color: white;
