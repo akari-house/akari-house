@@ -275,8 +275,6 @@ img {
 .arrival-media {
   position: absolute;
   inset: 0;
-  --hero-x: 0;
-  --hero-y: 0;
   --hero-scroll: 0;
   overflow: hidden;
 }
@@ -289,12 +287,7 @@ img {
   object-position: 50% 50%;
   transform-origin: 57% 38%;
   will-change: transform;
-  transform: translate3d(
-      calc(var(--hero-x) * -10px),
-      calc(var(--hero-y) * -7px),
-      0
-    )
-    scale(calc(1.02 + var(--hero-scroll) * 0.08));
+  transform: scale(calc(1.02 + var(--hero-scroll) * 0.08));
   transition: transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 .arrival-sanctuary-light {
@@ -1856,11 +1849,45 @@ textarea:focus {
   background: #f04f8712;
 }
 .role-card input {
+  appearance: none;
   position: absolute;
   top: 0.7rem;
   right: 0.7rem;
-  width: auto;
-  accent-color: var(--pink);
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #ffffff3d;
+  border-radius: 42% 58% 46% 54%;
+  background: #090c15e8;
+  color: var(--yellow);
+  rotate: 45deg;
+}
+.role-card input::before {
+  content: "✦";
+  font-size: 0.65rem;
+  line-height: 1;
+  rotate: -45deg;
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 160ms ease,
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.role-card input:checked {
+  border-color: var(--yellow);
+  background: #2c1720;
+  box-shadow:
+    0 0 0 4px #ffd33d12,
+    0 0 18px #ffd33d35;
+}
+.role-card input:checked::before {
+  opacity: 1;
+  transform: scale(1);
+}
+.role-card input:focus-visible {
+  outline: 2px solid #fff2a5;
+  outline-offset: 4px;
 }
 .role-glyph {
   color: var(--yellow);
@@ -2941,33 +2968,45 @@ textarea:focus {
 
 .role-seal input {
   appearance: none;
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   display: grid;
   place-items: center;
-  border: 1px solid #ffffff4a;
-  border-radius: 50%;
+  border: 1px solid #ffffff3d;
+  border-radius: 42% 58% 46% 54%;
   background: #080b13d9;
   cursor: pointer;
+  rotate: 45deg;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 180ms ease;
 }
 
 .role-seal input::before {
-  content: "";
-  width: 9px;
-  height: 5px;
-  border-left: 2px solid #16060d;
-  border-bottom: 2px solid #16060d;
-  transform: rotate(-45deg) scale(0);
-  transition: transform 150ms ease;
+  content: "✦";
+  color: #220b13;
+  font-size: 0.72rem;
+  line-height: 1;
+  rotate: -45deg;
+  opacity: 0;
+  transform: scale(0.35);
+  transition:
+    opacity 150ms ease,
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .role-seal input:checked {
-  border-color: #ffd33d;
-  background: #ffd33d;
+  border-color: var(--role-accent);
+  background: var(--role-accent);
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--role-accent) 10%, transparent),
+    0 0 22px color-mix(in srgb, var(--role-accent) 34%, transparent);
 }
 
 .role-seal input:checked::before {
-  transform: rotate(-45deg) scale(1);
+  opacity: 1;
+  transform: scale(1);
 }
 
 .role-seal input:focus-visible {
@@ -3583,14 +3622,12 @@ textarea:focus {
   inset: -4%;
   width: 108%;
   height: 108%;
-  transform: translate3d(
-      calc(var(--hero-x) * -4px),
-      calc(var(--hero-y) * -3px + var(--hero-scroll) * -18px),
-      0
-    )
-    scale(calc(1 + var(--hero-scroll) * 0.2));
-  animation: hero-establishing-shot 2.6s cubic-bezier(0.22, 1, 0.36, 1) both;
-  transition: transform 80ms linear;
+  transform: translateY(calc(var(--hero-scroll) * -12px))
+    scale(calc(1.01 + var(--hero-scroll) * 0.11));
+  animation:
+    hero-establishing-shot 2.6s cubic-bezier(0.22, 1, 0.36, 1) both,
+    hero-cinematic-push 17s ease-in-out 2.6s infinite alternate;
+  transition: transform 120ms linear;
 }
 
 @keyframes hero-establishing-shot {
@@ -3604,16 +3641,12 @@ textarea:focus {
   }
 }
 
-.arrival-media {
-  animation: hero-camera-awaken 5s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-@keyframes hero-camera-awaken {
+@keyframes hero-cinematic-push {
   from {
     scale: 1;
   }
   to {
-    scale: 1.035;
+    scale: 1.09;
   }
 }
 
@@ -3887,8 +3920,8 @@ textarea:focus {
 @media (max-width: 700px) {
   .arrival-scene {
     object-position: 58% 50%;
-    transform: translateY(calc(var(--hero-scroll) * -10px))
-      scale(calc(1 + var(--hero-scroll) * 0.12));
+    transform: translateY(calc(var(--hero-scroll) * -8px))
+      scale(calc(1.01 + var(--hero-scroll) * 0.08));
   }
 
   .hall-stage {

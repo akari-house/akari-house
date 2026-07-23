@@ -10,13 +10,13 @@ test("hero performs a visible scroll-linked push-in", async ({
   await page.goto("/");
   const hero = page.locator(".arrival-scene");
   await expect(page.locator(".petal")).toHaveCount(30);
-  await page.waitForTimeout(2700);
+  await page.waitForTimeout(2900);
   const before = await hero.evaluate((element) => {
     const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform);
     return matrix.a;
   });
   expect(before).toBeGreaterThanOrEqual(0.99);
-  expect(before).toBeLessThan(1.05);
+  expect(before).toBeLessThan(1.04);
   await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.55));
   await expect
     .poll(() =>
@@ -27,7 +27,18 @@ test("hero performs a visible scroll-linked push-in", async ({
         return matrix.a;
       }),
     )
-    .toBeGreaterThan(1.16);
+    .toBeGreaterThan(1.08);
+  await page.evaluate(() =>
+    window.scrollTo(0, document.documentElement.scrollHeight),
+  );
+  await expect
+    .poll(() =>
+      page
+        .locator(".petal")
+        .first()
+        .evaluate((element) => getComputedStyle(element).animationPlayState),
+    )
+    .toBe("running");
 });
 
 test("desktop journey reaches the Hall, Common Table and Membership Desk", async ({
@@ -47,11 +58,11 @@ test("desktop journey reaches the Hall, Common Table and Membership Desk", async
   );
   if (testInfo.project.name === "desktop-chromium") {
     await page.mouse.move(80, 140);
-    await expect
-      .poll(() =>
-        heroLayer.evaluate((element) => getComputedStyle(element).transform),
-      )
-      .not.toBe(initialTransform);
+    await page.waitForTimeout(180);
+    const transformAfterPointer = await heroLayer.evaluate(
+      (element) => getComputedStyle(element).transform,
+    );
+    expect(transformAfterPointer).toBe(initialTransform);
   }
   await page.getByRole("link", { name: /Enter the House/ }).click();
   await expect(
