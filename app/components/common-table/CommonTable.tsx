@@ -27,6 +27,16 @@ export function CommonTable({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className={`product-demo${compact ? " product-demo-compact" : ""}`}>
+      {!compact && (
+        <div className="table-threshold">
+          <span>Inside the House</span>
+          <strong>A seat changes with your role.</strong>
+          <p>
+            Choose a seat to see the work, context and opportunities it brings
+            into focus.
+          </p>
+        </div>
+      )}
       <div className="product-bar">
         <span className="product-brand">
           <img src="/assets/brand/akari-mark.png" alt="" /> AKARI

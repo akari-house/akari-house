@@ -37,7 +37,7 @@ test("desktop journey reaches the Hall, Common Table and Membership Desk", async
   await page.getByRole("tab", { name: "Investor Workspace" }).click();
   await expect(page.getByText("Kitsune Labs")).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "How will you participate?" }),
+    page.getByRole("heading", { name: "How will you sit at the table?" }),
   ).toBeVisible();
 });
 
@@ -102,7 +102,8 @@ test("membership request remains gated before human approval", async ({
   await page.getByLabel("Display name").fill("Journey Member");
   await page.getByLabel("Username").fill(username);
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByLabel("Confirm password").fill(password);
   await page.getByLabel(/Founder/).check();
   await page.getByLabel(/Creator/).check();
   await page

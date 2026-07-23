@@ -39,18 +39,20 @@ export function MembershipDesk() {
         </p>
       </div>
       <div className="membership-desk">
-        <h3>How will you participate?</h3>
-        <p>Select all that apply. You can update your roles later.</p>
+        <span className="membership-seal-kicker">Choose your place</span>
+        <h3>How will you sit at the table?</h3>
+        <p>Select every role that is genuinely part of your work.</p>
         <fieldset>
           <legend className="sr-only">Choose your AKARI roles</legend>
           {(Object.keys(roleCopy) as Role[]).map((role) => (
-            <label key={role}>
+            <label key={role} className={`role-seal role-seal-${role}`}>
               <input
                 type="checkbox"
                 checked={selected.includes(role)}
                 onChange={() => toggle(role)}
               />
               <span>
+                <i aria-hidden="true">{role.slice(0, 1).toUpperCase()}</i>
                 <strong>{role[0].toUpperCase() + role.slice(1)}</strong>
                 <small>{roleCopy[role]}</small>
               </span>
@@ -71,6 +73,10 @@ export function MembershipDesk() {
               ? `${selected.length} role${selected.length > 1 ? "s" : ""} selected`
               : "Choose at least one role"}
           </small>
+          <p className="membership-review-note">
+            Every application is reviewed by a person. No follower threshold, no
+            public directory by default.
+          </p>
         </div>
       </div>
     </section>

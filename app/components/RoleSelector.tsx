@@ -6,9 +6,19 @@ const roleCopy: Record<Role, string> = {
   investor: "Explore relevant founders with privacy by default.",
 };
 
-export function RoleSelector({ selected = [] }: { selected?: Role[] }) {
+export function RoleSelector({
+  selected = [],
+  errorId,
+}: {
+  selected?: Role[];
+  errorId?: string;
+}) {
   return (
-    <fieldset className="role-grid">
+    <fieldset
+      className="role-grid"
+      aria-invalid={Boolean(errorId)}
+      aria-describedby={errorId}
+    >
       <legend>Select one or more roles</legend>
       {(Object.keys(roleCopy) as Role[]).map((role) => (
         <label className="role-card" key={role}>
@@ -19,7 +29,7 @@ export function RoleSelector({ selected = [] }: { selected?: Role[] }) {
             defaultChecked={selected.includes(role)}
           />
           <span className="role-glyph" aria-hidden="true">
-            {role === "founder" ? "創" : role === "creator" ? "彩" : "見"}
+            {role === "founder" ? "F" : role === "creator" ? "C" : "I"}
           </span>
           <strong>{role[0].toUpperCase() + role.slice(1)}</strong>
           <small>{roleCopy[role]}</small>

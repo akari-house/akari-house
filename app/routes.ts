@@ -7,6 +7,8 @@ export default [
   route("archive", "routes/archive.tsx"),
   route("archive/:slug", "routes/case-study.tsx"),
   route("login", "routes/login.tsx"),
+  route("forgot-password", "routes/forgot-password.tsx"),
+  route("reset-password", "routes/reset-password.tsx"),
   route("register", "routes/register.tsx"),
   route("membership/check-email", "routes/membership-check-email.tsx"),
   route("verify-email", "routes/verify-email.tsx"),

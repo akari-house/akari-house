@@ -29,12 +29,14 @@ export async function action({ request, context }: Route.ActionArgs) {
   const record = await findValidAccountToken(db, token, "email_verification");
   if (!record) return { confirmed: false as const };
 
-  const results = await db.batch([
-    db
-      .prepare(
-        "UPDATE account_tokens SET consumed_at = datetime('now') WHERE id = ? AND consumed_at IS NULL AND expires_at > datetime('now')",
-      )
-      .bind(record.id),
+  const consumed = await db
+    .prepare(
+      "UPDATE account_tokens SET consumed_at = datetime('now') WHERE id = ? AND consumed_at IS NULL AND expires_at > datetime('now')",
+    )
+    .bind(record.id)
+    .run();
+  if ((consumed.meta.changes ?? 0) !== 1) return { confirmed: false as const };
+  await db.batch([
     db
       .prepare(
         "UPDATE users SET email_verified_at = datetime('now'), updated_at = datetime('now') WHERE id = ?",
@@ -51,7 +53,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       )
       .bind(crypto.randomUUID(), record.userId, record.userId),
   ]);
-  return { confirmed: (results[0].meta.changes ?? 0) === 1 };
+  return { confirmed: true as const };
 }
 
 export default function VerifyEmail({

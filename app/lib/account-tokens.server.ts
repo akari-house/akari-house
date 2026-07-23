@@ -24,11 +24,6 @@ export async function issueAccountToken(
   await db.batch([
     db
       .prepare(
-        "UPDATE account_tokens SET consumed_at = datetime('now') WHERE user_id = ? AND purpose = ? AND consumed_at IS NULL",
-      )
-      .bind(userId, purpose),
-    db
-      .prepare(
         "INSERT INTO account_tokens (id, user_id, purpose, token_hash, expires_at) VALUES (?, ?, ?, ?, datetime('now', ?))",
       )
       .bind(
@@ -38,6 +33,9 @@ export async function issueAccountToken(
         tokenHash,
         tokenLifetimes[purpose],
       ),
+    db.prepare(
+      "DELETE FROM account_tokens WHERE expires_at <= datetime('now') OR (consumed_at IS NOT NULL AND consumed_at <= datetime('now', '-7 days'))",
+    ),
   ]);
   return token;
 }

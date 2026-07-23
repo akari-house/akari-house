@@ -39,3 +39,24 @@ The dedicated AKARI Worker is available at
 Production deployments use only the AKARI Cloudflare account, D1 database, R2
 bucket, Worker name, and GitHub repository. Apply reviewed D1 migrations before
 deploying application code that depends on them.
+
+### Release order
+
+1. Set the public variables `APP_URL`, `TURNSTILE_SITE_KEY`, and
+   `TURNSTILE_HOSTNAME` for the AKARI Worker.
+2. Add `TURNSTILE_SECRET_KEY`, `RESEND_API_KEY`, and `MEMBERSHIP_FROM_EMAIL`
+   with Cloudflare secret management. Never place their values in this
+   repository.
+3. Export a remote D1 backup and review pending migrations.
+4. Apply remote migrations before deploying code that depends on them.
+5. Grant the first administrator by inserting the exact, already verified AKARI
+   user ID into `admin_users`. Do not seed an email address in a migration.
+6. Run a preview smoke test covering registration, email verification,
+   application review, approval, login, profile visibility, password recovery,
+   and logout.
+7. Deploy the Worker, repeat the smoke test on production, check Workers logs,
+   and retain the previous Worker version for rollback.
+
+The application intentionally fails closed when production Turnstile
+configuration is missing. Registration email delivery must also be verified
+before inviting applicants.

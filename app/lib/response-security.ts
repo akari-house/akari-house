@@ -32,8 +32,9 @@ export function withSecurityHeaders(request: Request, response: Response) {
       "img-src 'self' data:",
       "font-src 'self' https://fonts.gstatic.com",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      `script-src 'self' 'unsafe-inline'${isLocalDevelopment ? " 'unsafe-eval'" : ""}`,
-      `connect-src 'self'${isLocalDevelopment ? " ws:" : ""}`,
+      `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${isLocalDevelopment ? " 'unsafe-eval'" : ""}`,
+      "frame-src https://challenges.cloudflare.com",
+      `connect-src 'self' https://challenges.cloudflare.com${isLocalDevelopment ? " ws:" : ""}`,
     ].join("; "),
   );
   if (url.protocol === "https:") {

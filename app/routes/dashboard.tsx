@@ -123,17 +123,11 @@ export default function Dashboard({
         <aside className="dashboard-nav">
           <span className="eyebrow">Your House</span>
           <Link className="active" to="/app">
-            Profile
+            Home
           </Link>
-          <span className="disabled-link">
-            Connections <small>Later</small>
-          </span>
-          <span className="disabled-link">
-            Messages <small>Later</small>
-          </span>
-          <span className="disabled-link">
-            Opportunities <small>Later</small>
-          </span>
+          <a href="#profile-editor">Profile</a>
+          <a href="#role-workspaces">Membership</a>
+          <a href="#privacy-controls">Privacy and security</a>
         </aside>
         <section className="dashboard-content">
           {loaderData.welcome && (
@@ -157,6 +151,7 @@ export default function Dashboard({
             </Link>
           </div>
           <section
+            id="role-workspaces"
             className="profile-completion"
             aria-label="Profile completion"
           >
@@ -190,7 +185,7 @@ export default function Dashboard({
             </h2>
             <CommonTable compact />
           </section>
-          <Form method="post" className="profile-form">
+          <Form method="post" className="profile-form" id="profile-editor">
             {actionData?.error && (
               <p className="form-error">{actionData.error}</p>
             )}
@@ -265,7 +260,7 @@ export default function Dashboard({
               <small>HTTPS links only.</small>
             </label>
             <RoleSelector selected={loaderData.user.roles} />
-            <fieldset className="visibility-fieldset">
+            <fieldset className="visibility-fieldset" id="privacy-controls">
               <legend>Who can see your profile?</legend>
               {[
                 ["public", "Public", "Visible to anyone"],

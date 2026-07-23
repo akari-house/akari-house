@@ -6,6 +6,8 @@ import { HouseHall } from "~/components/house/HouseHall";
 import { InteractiveArrival } from "~/components/house/InteractiveArrival";
 import { PetalField } from "~/components/house/PetalField";
 import { SceneMotion } from "~/components/house/SceneMotion";
+import { StoryProgress } from "~/components/house/StoryProgress";
+import { BlossomJourney } from "~/components/house/BlossomJourney";
 import { MembershipDesk } from "~/components/membership/MembershipDesk";
 import { SiteHeader } from "~/components/SiteHeader";
 import { getOptionalUser } from "~/lib/auth.server";
@@ -26,20 +28,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   };
 }
 
-const journey = [
-  ["門", "Entrance", "Build your identity"],
-  ["策", "Strategy Room", "Define your goals"],
-  ["縁", "Network Terrace", "Discover relevant people"],
-  ["卓", "Common Table", "Collaborate privately"],
-  ["光", "Launch Deck", "Create measurable traction"],
-];
-
 export default function Home({ loaderData }: Route.ComponentProps) {
   return (
     <div className="site-shell">
       <SiteHeader user={loaderData.user} />
       <PetalField />
       <SceneMotion />
+      <StoryProgress />
       <main id="main-content">
         <section
           className="arrival story-chapter"
@@ -61,6 +56,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               </a>
             </div>
           </div>
+          <a className="arrival-enter-cue" href="#hall">
+            <span>Scroll to enter</span>
+            <i aria-hidden="true" />
+          </a>
         </section>
 
         <HouseHall />
@@ -73,11 +72,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <div className="section-intro">
             <div>
               <span className="chapter">Chapter 03 · The Common Table</span>
-              <h2 id="common-title">Where the House becomes a product.</h2>
+              <h2 id="common-title">Take your seat at the shared table.</h2>
             </div>
             <p>
-              One identity can hold multiple roles. Preview how AKARI keeps each
-              workspace focused without splitting your profile.
+              Your seat changes with your role, while your identity stays whole.
+              See how the House brings the right work into view.
             </p>
           </div>
           <CommonTable />
@@ -96,17 +95,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               collaboration and evidence. Follower counts are not the measure.
             </p>
           </div>
-          <ol className="blossom-trail">
-            {journey.map(([icon, title, copy]) => (
-              <li key={title}>
-                <span aria-hidden="true">{icon}</span>
-                <div>
-                  <strong>{title}</strong>
-                  <small>{copy}</small>
-                </div>
-              </li>
-            ))}
-          </ol>
+          <BlossomJourney />
         </section>
 
         <section
@@ -118,7 +107,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <span className="chapter">Chapter 05 · The Archive</span>
             <h2 id="archive-title">Proof that can be inspected.</h2>
             <p>
-              The Archive will document AKARI’s role, timeframe, evidence and
+              The Archive Keeper records AKARI’s role, timeframe, evidence and
               permission status. Explore authorized outcomes with the proof
               behind every published claim.
             </p>
@@ -130,15 +119,13 @@ export default function Home({ loaderData }: Route.ComponentProps) {
 
         <section className="final-welcome" aria-labelledby="final-title">
           <img src="/assets/brand/akari-mark.png" alt="" />
-          <span className="chapter">The door is open</span>
+          <span className="chapter">Epilogue · The light stays on</span>
           <h2 id="final-title">
             Your role. Your network.
             <br />
             Your next opportunity.
           </h2>
-          <Link className="button button-primary" to="/register">
-            Apply to Join AKARI
-          </Link>
+          <p>When you are ready, the Membership Desk is waiting above.</p>
         </section>
       </main>
       <footer className="site-footer">
@@ -157,6 +144,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <a href="#common">Common Table</a>
           <Link to="/archive">Archive</Link>
           <a href="#membership">Membership</a>
+          <a href="mailto:hello@akari.house">Contact</a>
         </nav>
         <small>© 2026 AKARI House</small>
       </footer>

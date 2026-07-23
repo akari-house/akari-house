@@ -78,13 +78,6 @@ export function InteractiveArrival() {
         <span />
         <span />
       </div>
-      <a
-        className="arrival-crest-hotspot"
-        href="#hall"
-        aria-label="Enter the Hall through the illuminated crest"
-      >
-        <span />
-      </a>
     </div>
   );
 }

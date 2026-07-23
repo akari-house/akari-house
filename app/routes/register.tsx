@@ -2,6 +2,7 @@ import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/register";
 import { AuthLayout } from "~/layouts/AuthLayout";
 import { RoleSelector } from "~/components/RoleSelector";
+import { TurnstileWidget } from "~/components/TurnstileWidget";
 import { getOptionalUser } from "~/lib/auth.server";
 import { hashPassword, assertSameOrigin } from "~/lib/security.server";
 import { issueAccountToken } from "~/lib/account-tokens.server";
@@ -19,6 +20,15 @@ import {
 } from "~/lib/validation";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { roles } from "~/lib/domain";
+import {
+  verifyTurnstile,
+  type TurnstileEnvironment,
+} from "~/lib/turnstile.server";
+import { consumeAuthLimit } from "~/lib/rate-limit.server";
+
+type RegistrationEnvironment = CloudflareEnvironment &
+  MembershipEmailEnvironment &
+  TurnstileEnvironment & { TURNSTILE_SITE_KEY?: string };
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   if (await getOptionalUser(request, context.get(cloudflareContext).env.DB))
@@ -28,16 +38,29 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     (role): role is (typeof roles)[number] =>
       roles.includes(role as (typeof roles)[number]),
   );
-  return { selected };
+  const env = context.get(cloudflareContext).env as RegistrationEnvironment;
+  return { selected, siteKey: env.TURNSTILE_SITE_KEY };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
   assertSameOrigin(request);
   const formData = await request.formData();
+  const env = context.get(cloudflareContext).env as RegistrationEnvironment;
+  if (!(await verifyTurnstile(request, formData, env, "membership_request"))) {
+    const errors: Record<string, string> = {
+      form: "Complete the security check and try again.",
+    };
+    return {
+      errors,
+      values: {},
+      selected: [],
+    };
+  }
   const email = normalizeEmail(formData.get("email"));
   const username = normalizeUsername(formData.get("username"));
   const displayName = formText(formData.get("displayName")).trim();
   const password = formText(formData.get("password"));
+  const passwordConfirmation = formText(formData.get("passwordConfirmation"));
   const applicantNote = formText(formData.get("applicantNote")).trim();
   const membershipTerms = formData.get("membershipTerms") === "on";
   const selected = selectedRoles(formData);
@@ -47,7 +70,10 @@ export async function action({ request, context }: Route.ActionArgs) {
     errors.username = "Use 3 to 30 lowercase letters, numbers or hyphens.";
   if (displayName.length < 2 || displayName.length > 80)
     errors.displayName = "Enter a display name between 2 and 80 characters.";
-  if (password.length < 12) errors.password = "Use at least 12 characters.";
+  if (password.length < 12 || password.length > 128)
+    errors.password = "Use 12 to 128 characters.";
+  if (password !== passwordConfirmation)
+    errors.passwordConfirmation = "The passwords do not match.";
   if (applicantNote.length < 30 || applicantNote.length > 600)
     errors.applicantNote =
       "Tell us what brings you to AKARI in 30 to 600 characters.";
@@ -57,61 +83,69 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (Object.keys(errors).length)
     return {
       errors,
-      values: { email, username, displayName, applicantNote },
+      values: {
+        email,
+        username,
+        displayName,
+        applicantNote,
+        membershipTerms,
+      },
       selected,
     };
 
   const db = context.get(cloudflareContext).env.DB;
+  if (!(await consumeAuthLimit(db, request, "register", email, 3, 60)))
+    return redirect("/membership/check-email");
   const existing = await db
     .prepare("SELECT id FROM users WHERE email = ? OR username = ?")
     .bind(email, username)
     .first();
-  if (existing)
-    return {
-      errors: {
-        form: "If these details can continue, we will send the next step.",
-      },
-      values: { email, username, displayName, applicantNote },
-      selected,
-    };
+  if (existing) return redirect("/membership/check-email");
 
   const userId = crypto.randomUUID();
   const passwordHash = await hashPassword(password);
-  await db.batch([
-    db
-      .prepare(
-        "INSERT INTO users (id, email, username, password_hash, status) VALUES (?, ?, ?, ?, 'restricted')",
-      )
-      .bind(userId, email, username, passwordHash),
-    db
-      .prepare(
-        "INSERT INTO profiles (user_id, display_name, visibility) VALUES (?, ?, 'private')",
-      )
-      .bind(userId, displayName),
-    db
-      .prepare(
-        "INSERT INTO profile_visibility (user_id, visibility) VALUES (?, 'private')",
-      )
-      .bind(userId),
-    ...selected.map((role) =>
+  try {
+    await db.batch([
       db
-        .prepare("INSERT INTO user_roles (user_id, role) VALUES (?, ?)")
-        .bind(userId, role),
-    ),
-    db
-      .prepare(
-        "INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id) VALUES (?, ?, 'account.registered', 'user', ?)",
-      )
-      .bind(crypto.randomUUID(), userId, userId),
-    db
-      .prepare(
-        "INSERT INTO membership_applications (id, user_id, status, applicant_note) VALUES (?, ?, 'pending_email', ?)",
-      )
-      .bind(crypto.randomUUID(), userId, applicantNote),
-  ]);
+        .prepare(
+          "INSERT INTO users (id, email, username, password_hash, status) VALUES (?, ?, ?, ?, 'restricted')",
+        )
+        .bind(userId, email, username, passwordHash),
+      db
+        .prepare(
+          "INSERT INTO profiles (user_id, display_name, visibility) VALUES (?, ?, 'private')",
+        )
+        .bind(userId, displayName),
+      db
+        .prepare(
+          "INSERT INTO profile_visibility (user_id, visibility) VALUES (?, 'private')",
+        )
+        .bind(userId),
+      ...selected.map((role) =>
+        db
+          .prepare("INSERT INTO user_roles (user_id, role) VALUES (?, ?)")
+          .bind(userId, role),
+      ),
+      db
+        .prepare(
+          "INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id) VALUES (?, ?, 'account.registered', 'user', ?)",
+        )
+        .bind(crypto.randomUUID(), userId, userId),
+      db
+        .prepare(
+          "INSERT INTO membership_applications (id, user_id, status, applicant_note) VALUES (?, ?, 'pending_email', ?)",
+        )
+        .bind(crypto.randomUUID(), userId, applicantNote),
+    ]);
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message.toLowerCase().includes("unique constraint")
+    )
+      return redirect("/membership/check-email");
+    throw error;
+  }
   const token = await issueAccountToken(db, userId, "email_verification");
-  const env = context.get(cloudflareContext).env as CloudflareEnvironment &
-    MembershipEmailEnvironment;
   const delivery = await sendVerificationEmail(env, email, token);
   await db
     .prepare(
@@ -153,10 +187,16 @@ export default function Register({
             autoComplete="name"
             defaultValue={actionData?.values.displayName}
             required
+            aria-invalid={Boolean(actionData?.errors.displayName)}
+            aria-describedby={
+              actionData?.errors.displayName ? "display-name-error" : undefined
+            }
           />
         </label>
         {actionData?.errors.displayName && (
-          <small className="field-error">{actionData.errors.displayName}</small>
+          <small id="display-name-error" className="field-error">
+            {actionData.errors.displayName}
+          </small>
         )}
         <label>
           Username
@@ -166,10 +206,16 @@ export default function Register({
             defaultValue={actionData?.values.username}
             placeholder="your-name"
             required
+            aria-invalid={Boolean(actionData?.errors.username)}
+            aria-describedby={
+              actionData?.errors.username ? "username-error" : undefined
+            }
           />
         </label>
         {actionData?.errors.username && (
-          <small className="field-error">{actionData.errors.username}</small>
+          <small id="username-error" className="field-error">
+            {actionData.errors.username}
+          </small>
         )}
         <label>
           Email
@@ -179,10 +225,16 @@ export default function Register({
             autoComplete="email"
             defaultValue={actionData?.values.email}
             required
+            aria-invalid={Boolean(actionData?.errors.email)}
+            aria-describedby={
+              actionData?.errors.email ? "email-error" : undefined
+            }
           />
         </label>
         {actionData?.errors.email && (
-          <small className="field-error">{actionData.errors.email}</small>
+          <small id="email-error" className="field-error">
+            {actionData.errors.email}
+          </small>
         )}
         <label>
           Password
@@ -191,15 +243,49 @@ export default function Register({
             type="password"
             autoComplete="new-password"
             minLength={12}
+            maxLength={128}
             required
+            aria-invalid={Boolean(actionData?.errors.password)}
+            aria-describedby={
+              actionData?.errors.password ? "password-error" : undefined
+            }
           />
         </label>
         {actionData?.errors.password && (
-          <small className="field-error">{actionData.errors.password}</small>
+          <small id="password-error" className="field-error">
+            {actionData.errors.password}
+          </small>
         )}
-        <RoleSelector selected={actionData?.selected ?? loaderData.selected} />
+        <label>
+          Confirm password
+          <input
+            name="passwordConfirmation"
+            type="password"
+            autoComplete="new-password"
+            minLength={12}
+            maxLength={128}
+            required
+            aria-invalid={Boolean(actionData?.errors.passwordConfirmation)}
+            aria-describedby={
+              actionData?.errors.passwordConfirmation
+                ? "password-confirmation-error"
+                : undefined
+            }
+          />
+        </label>
+        {actionData?.errors.passwordConfirmation && (
+          <small id="password-confirmation-error" className="field-error">
+            {actionData.errors.passwordConfirmation}
+          </small>
+        )}
+        <RoleSelector
+          selected={actionData?.selected ?? loaderData.selected}
+          errorId={actionData?.errors.roles ? "roles-error" : undefined}
+        />
         {actionData?.errors.roles && (
-          <small className="field-error">{actionData.errors.roles}</small>
+          <small id="roles-error" className="field-error">
+            {actionData.errors.roles}
+          </small>
         )}
         <label>
           What brings you to AKARI?
@@ -211,25 +297,46 @@ export default function Register({
             defaultValue={actionData?.values.applicantNote}
             placeholder="Share what you are building, creating or investing in, and how you hope to participate."
             required
+            aria-invalid={Boolean(actionData?.errors.applicantNote)}
+            aria-describedby={
+              actionData?.errors.applicantNote
+                ? "applicant-note-error"
+                : undefined
+            }
           />
         </label>
         {actionData?.errors.applicantNote && (
-          <small className="field-error">
+          <small id="applicant-note-error" className="field-error">
             {actionData.errors.applicantNote}
           </small>
         )}
         <label className="consent-row">
-          <input name="membershipTerms" type="checkbox" required />
+          <input
+            name="membershipTerms"
+            type="checkbox"
+            required
+            defaultChecked={actionData?.values.membershipTerms}
+            aria-invalid={Boolean(actionData?.errors.membershipTerms)}
+            aria-describedby={
+              actionData?.errors.membershipTerms
+                ? "membership-terms-error"
+                : undefined
+            }
+          />
           <span>
             I understand that AKARI reviews every request and that submitting
             this form does not guarantee membership.
           </span>
         </label>
         {actionData?.errors.membershipTerms && (
-          <small className="field-error">
+          <small id="membership-terms-error" className="field-error">
             {actionData.errors.membershipTerms}
           </small>
         )}
+        <TurnstileWidget
+          siteKey={loaderData.siteKey}
+          action="membership_request"
+        />
         <button
           className="button button-primary button-wide"
           disabled={pending}

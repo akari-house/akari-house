@@ -2,6 +2,10 @@ import { Form, Link, useNavigation } from "react-router";
 import type { Route } from "./+types/admin-applications";
 import { SiteHeader } from "~/components/SiteHeader";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import {
+  sendApprovalEmail,
+  type MembershipEmailEnvironment,
+} from "~/lib/email.server";
 import { requireAdmin } from "~/lib/membership.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
@@ -40,13 +44,18 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export async function action({ request, context }: Route.ActionArgs) {
   assertSameOrigin(request);
-  const db = context.get(cloudflareContext).env.DB;
+  const env = context.get(cloudflareContext).env as CloudflareEnvironment &
+    MembershipEmailEnvironment;
+  const db = env.DB;
   const admin = await requireAdmin(request, db);
   const formData = await request.formData();
   const applicationId = formText(formData.get("applicationId"));
   const intent = formText(formData.get("intent"));
+  const decisionNote = formText(formData.get("decisionNote")).trim();
   if (!["approve", "waitlist", "decline"].includes(intent))
     throw new Response("Invalid decision", { status: 400 });
+  if (decisionNote.length < 5 || decisionNote.length > 500)
+    return { error: "Add a decision note between 5 and 500 characters." };
 
   const status =
     intent === "approve"
@@ -58,7 +67,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     .prepare(
       `UPDATE membership_applications
        SET status = ?, reviewed_by = ?, reviewed_at = datetime('now'),
-           updated_at = datetime('now')
+           decision_note = ?, updated_at = datetime('now')
        WHERE id = ? AND status IN ('pending_review', 'waitlisted')
          AND (? <> 'approved' OR EXISTS (
            SELECT 1 FROM users
@@ -66,7 +75,7 @@ export async function action({ request, context }: Route.ActionArgs) {
              AND users.email_verified_at IS NOT NULL
          ))`,
     )
-    .bind(status, admin.id, applicationId, status)
+    .bind(status, admin.id, decisionNote, applicationId, status)
     .run();
   if ((result.meta.changes ?? 0) !== 1)
     return {
@@ -89,9 +98,18 @@ export async function action({ request, context }: Route.ActionArgs) {
         crypto.randomUUID(),
         admin.id,
         applicationId,
-        JSON.stringify({ status }),
+        JSON.stringify({ status, decisionNote }),
       ),
   ]);
+  if (status === "approved") {
+    const approved = await db
+      .prepare(
+        "SELECT email FROM users WHERE id = (SELECT user_id FROM membership_applications WHERE id = ?)",
+      )
+      .bind(applicationId)
+      .first<{ email: string }>();
+    if (approved) await sendApprovalEmail(env, approved.email);
+  }
   return { saved: true };
 }
 
@@ -113,7 +131,11 @@ export default function AdminApplications({
             Return to profile
           </Link>
         </header>
-        {actionData?.error && <p className="form-error">{actionData.error}</p>}
+        {actionData?.error && (
+          <p className="form-error" role="alert">
+            {actionData.error}
+          </p>
+        )}
         {actionData?.saved && (
           <p className="notice success">Membership decision saved.</p>
         )}
@@ -154,6 +176,17 @@ export default function AdminApplications({
                     name="applicationId"
                     value={application.id}
                   />
+                  <label className="application-decision-note">
+                    Decision note
+                    <textarea
+                      name="decisionNote"
+                      minLength={5}
+                      maxLength={500}
+                      rows={3}
+                      required
+                      placeholder="Record the reason for this decision."
+                    />
+                  </label>
                   <button
                     className="button button-primary"
                     name="intent"
