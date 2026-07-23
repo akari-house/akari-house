@@ -72,14 +72,6 @@ export function InteractiveArrival() {
         width={1672}
         height={941}
       />
-      <div className="arrival-sanctuary-light" aria-hidden="true" />
-      <div className="arrival-lantern-path" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-        <span />
-        <span />
-      </div>
     </div>
   );
 }

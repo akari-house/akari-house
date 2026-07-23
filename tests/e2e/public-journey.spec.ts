@@ -28,7 +28,7 @@ test("desktop journey reaches the Hall, Common Table and Membership Desk", async
     page.getByRole("heading", { name: "Your paths. One House." }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Preview Strategy Room" }).click();
-  await page.getByRole("link", { name: /Cross the threshold/ }).click();
+  await page.getByRole("link", { name: /Enter room/ }).click();
   await expect(
     page.getByRole("heading", { name: "Strategy Room", level: 1 }),
   ).toBeVisible();
@@ -70,7 +70,7 @@ test("mobile navigation traps focus and has no horizontal overflow", async ({
 test("reduced motion disables environmental animation", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await expect(page.locator(".arrival-sanctuary-light")).toHaveCSS(
+  await expect(page.locator(".arrival-enter-cue i")).toHaveCSS(
     "animation-name",
     "none",
   );

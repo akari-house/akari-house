@@ -56,7 +56,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </div>
           <a className="arrival-enter-cue" href="#hall">
             <span>Scroll to enter</span>
-            <i aria-hidden="true" />
+            <i aria-hidden="true">⌄</i>
           </a>
         </section>
 

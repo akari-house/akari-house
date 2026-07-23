@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const petals = Array.from({ length: 18 }, (_, index) => ({
+const petals = Array.from({ length: 9 }, (_, index) => ({
   id: index,
   depth: index % 7 === 0 ? "front" : index % 3 === 0 ? "back" : "mid",
 }));
@@ -17,7 +17,7 @@ export function PetalField() {
       );
     const densityTimer = window.setTimeout(() => {
       if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) {
-        setDensity(10);
+        setDensity(5);
       }
     }, 0);
     document.addEventListener("visibilitychange", update);

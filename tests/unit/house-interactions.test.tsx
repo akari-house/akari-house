@@ -33,21 +33,23 @@ describe("house interactions", () => {
   it("previews rooms before exposing one dedicated entry link", async () => {
     const user = userEvent.setup();
     withRouter(<HouseHall />);
-    expect(
-      screen.getByRole("link", { name: /Cross the threshold/ }),
-    ).toHaveAttribute("href", "/rooms/strategy");
+    expect(screen.getByRole("link", { name: /Enter room/ })).toHaveAttribute(
+      "href",
+      "/rooms/strategy",
+    );
     await user.click(
       screen.getByRole("button", { name: "Preview Creator Studio" }),
     );
-    expect(
-      screen.getByRole("link", { name: /Cross the threshold/ }),
-    ).toHaveAttribute("href", "/rooms/creator");
+    expect(screen.getByRole("link", { name: /Enter room/ })).toHaveAttribute(
+      "href",
+      "/rooms/creator",
+    );
   });
 
   it("moves the Hall focus toward the room being explored", async () => {
     const user = userEvent.setup();
     const { container } = withRouter(<HouseHall />);
-    await user.hover(
+    await user.click(
       screen.getByRole("button", { name: "Preview Creator Studio" }),
     );
     expect(container.querySelector(".hall-stage")).toHaveAttribute(

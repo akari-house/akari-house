@@ -27,8 +27,9 @@ export function HouseHall() {
           src="/assets/house/hall-v2.webp"
           alt="An anime night view of three pavilions surrounding AKARI's glowing sakura courtyard."
           loading="lazy"
+          width={1792}
+          height={1024}
         />
-        <span className="hall-heart" aria-hidden="true" />
         <div
           className="hall-room-list"
           aria-label="Choose a room in AKARI House"
@@ -42,50 +43,49 @@ export function HouseHall() {
               aria-pressed={activeRoom === room.role}
               aria-label={`Preview ${room.title}`}
               onClick={() => setActiveRoom(room.role)}
-              onPointerEnter={() => setActiveRoom(room.role)}
-              onFocus={() => setActiveRoom(room.role)}
             >
-              <span className="hall-room-lantern" aria-hidden="true" />
-              <span className="hall-room-label">
-                <span className="hall-room-kicker">{room.number}</span>
-                <span className="hall-room-name">{room.title}</span>
-              </span>
+              <span className="hall-room-pulse" aria-hidden="true" />
+              <span className="hall-room-kicker">{room.number}</span>
+              <span className="sr-only">{room.title}</span>
             </button>
           ))}
         </div>
-        <div className="hall-detail" aria-live="polite">
-          <span>
-            {room.number} · {room.audience}
-          </span>
-          <h3>{room.title}</h3>
-          <p>{room.summary}</p>
-          <Link to={`/rooms/${room.slug}`}>
-            Cross the threshold <span aria-hidden="true">→</span>
-          </Link>
-        </div>
-        <div className="hall-pagination" aria-label="Choose a room">
+      </div>
+      <div className="hall-compass">
+        <div
+          className="hall-compass-tabs"
+          role="tablist"
+          aria-label="Explore AKARI rooms"
+        >
           {rooms.map((room) => (
             <button
               type="button"
               key={room.role}
-              aria-label={`Show ${room.title}`}
-              aria-pressed={activeRoom === room.role}
-              onClick={() => {
-                setActiveRoom(room.role);
-                document
-                  .getElementById(`hall-room-${room.role}`)
-                  ?.scrollIntoView({
-                    behavior: window.matchMedia(
-                      "(prefers-reduced-motion: reduce)",
-                    ).matches
-                      ? "auto"
-                      : "smooth",
-                    inline: "center",
-                    block: "nearest",
-                  });
-              }}
-            />
+              role="tab"
+              aria-selected={activeRoom === room.role}
+              aria-controls="hall-room-detail"
+              className={activeRoom === room.role ? "is-active" : undefined}
+              onClick={() => setActiveRoom(room.role)}
+            >
+              <span>{room.number}</span>
+              {room.title}
+            </button>
           ))}
+        </div>
+        <div
+          className="hall-compass-detail"
+          id="hall-room-detail"
+          role="tabpanel"
+          aria-live="polite"
+        >
+          <div>
+            <span>{room.audience}</span>
+            <h3>{room.title}</h3>
+            <p>{room.summary}</p>
+          </div>
+          <Link to={`/rooms/${room.slug}`}>
+            Enter room <span aria-hidden="true">→</span>
+          </Link>
         </div>
       </div>
     </section>
