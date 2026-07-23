@@ -12,6 +12,7 @@ import {
 } from "~/lib/validation";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { CommonTable } from "~/components/common-table/CommonTable";
+import { profileCompletion } from "~/lib/profile-completion";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -114,6 +115,7 @@ export default function Dashboard({
   actionData,
 }: Route.ComponentProps) {
   const navigation = useNavigation();
+  const completion = profileCompletion(loaderData.profile);
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -154,6 +156,30 @@ export default function Dashboard({
               View profile ↗
             </Link>
           </div>
+          <section
+            className="profile-completion"
+            aria-label="Profile completion"
+          >
+            <div>
+              <span className="chapter">Profile readiness</span>
+              <strong>{completion.percent}% complete</strong>
+              <p>
+                {completion.missing.length
+                  ? `Add ${completion.missing.slice(0, 2).join(" and ")} to help trusted members understand you.`
+                  : "Your introduction is ready. Keep it current as your work evolves."}
+              </p>
+            </div>
+            <div
+              className="completion-track"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={completion.percent}
+              aria-label="Profile completion"
+            >
+              <span style={{ width: `${completion.percent}%` }} />
+            </div>
+          </section>
           <section
             aria-labelledby="workspace-preview-title"
             className="dashboard-workspace"
