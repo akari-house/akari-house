@@ -32,4 +32,10 @@ npm run build
 
 `wrangler.jsonc` declares the `DB` D1 binding and `MEDIA` R2 binding without production resource IDs. Create dedicated AKARI resources in the AKARI Cloudflare account during the separate provisioning step, then let Cloudflare associate those resources with this Worker.
 
-Deployment is intentionally excluded from the foundation implementation step.
+## Production
+
+The dedicated AKARI Worker is available at
+[`akari-house.spacematesxyz.workers.dev`](https://akari-house.spacematesxyz.workers.dev/).
+Production deployments use only the AKARI Cloudflare account, D1 database, R2
+bucket, Worker name, and GitHub repository. Apply reviewed D1 migrations before
+deploying application code that depends on them.

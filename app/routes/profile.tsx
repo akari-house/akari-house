@@ -32,7 +32,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
   return (
     <div className="site-shell">
       <SiteHeader user={user} />
-      <main className="public-profile">
+      <main id="main-content" className="public-profile">
         <div className="profile-monogram">
           {profile.displayName.slice(0, 1).toUpperCase()}
         </div>

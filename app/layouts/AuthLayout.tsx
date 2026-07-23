@@ -10,7 +10,7 @@ export function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <main className="auth-layout">
+    <main id="main-content" className="auth-layout">
       <Link className="auth-brand" to="/">
         <img src="/assets/brand/akari-logo.png" alt="AKARI" />
         <span>House</span>

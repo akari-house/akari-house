@@ -14,6 +14,7 @@
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration tests/visibility.test.ts tests/security.test.ts",
     "test:e2e": "playwright test",
+    "test:e2e:serve": "npm run db:migrate:local && react-router dev --host 127.0.0.1",
     "test:watch": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

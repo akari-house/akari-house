@@ -119,7 +119,7 @@ export default function Dashboard({
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
-      <main className="dashboard-main">
+      <main id="main-content" className="dashboard-main">
         <aside className="dashboard-nav">
           <span className="eyebrow">Your House</span>
           <Link className="active" to="/app">
