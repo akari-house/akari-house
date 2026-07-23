@@ -60,3 +60,11 @@ deploying application code that depends on them.
 The application intentionally fails closed when production Turnstile
 configuration is missing. Registration email delivery must also be verified
 before inviting applicants.
+
+### Operational health
+
+`GET /health` verifies the D1 binding, R2 binding, and presence of all required
+production configuration without returning secret values. A ready deployment
+returns HTTP 200; an incomplete deployment returns HTTP 503. Wrangler also
+declares the required secret names so future full-backend deployments cannot
+silently omit them.

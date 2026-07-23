@@ -11,6 +11,16 @@
   "upload_source_maps": true,
   "vars": {
     "APP_ENV": "production",
+    "APP_URL": "https://akari-house.spacematesxyz.workers.dev",
+    "TURNSTILE_HOSTNAME": "akari-house.spacematesxyz.workers.dev",
+  },
+  "secrets": {
+    "required": [
+      "TURNSTILE_SITE_KEY",
+      "TURNSTILE_SECRET_KEY",
+      "RESEND_API_KEY",
+      "MEMBERSHIP_FROM_EMAIL",
+    ],
   },
   "d1_databases": [
     {

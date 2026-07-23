@@ -5,6 +5,6 @@ APP_URL=http://127.0.0.1:5173
 # Configure these only in .dev.vars locally and as Cloudflare secrets in production.
 # RESEND_API_KEY=
 # MEMBERSHIP_FROM_EMAIL=AKARI House <membership@example.com>
-# TURNSTILE_SITE_KEY=
+# TURNSTILE_SITE_KEY=1x00000000000000000000AA
 # TURNSTILE_SECRET_KEY=
 # TURNSTILE_HOSTNAME=localhost
