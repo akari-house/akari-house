@@ -9,6 +9,7 @@ import {
   normalizeWebsite,
   selectedRoles,
   selectedVisibility,
+  validateEmail,
 } from "~/lib/validation";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { CommonTable } from "~/components/common-table/CommonTable";
@@ -64,7 +65,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       visibility: string;
     }>();
   if (!profile) throw new Response("Profile missing", { status: 500 });
-  const [membership, socialAccounts, interests] = await Promise.all([
+  const [membership, socialAccounts, interests, contacts] = await Promise.all([
     membershipStatusForUser(db, user.id),
     loadSocialAccounts(db, user.id),
     db
@@ -73,6 +74,18 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       )
       .bind(user.id)
       .all<{ interestType: InterestType; status: string }>(),
+    db
+      .prepare(
+        `SELECT contact_type AS contactType, contact_value AS contactValue,
+                visibility
+         FROM profile_contacts WHERE user_id = ? ORDER BY contact_type`,
+      )
+      .bind(user.id)
+      .all<{
+        contactType: string;
+        contactValue: string;
+        visibility: string;
+      }>(),
   ]);
   return {
     user,
@@ -80,6 +93,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     membership,
     socialAccounts,
     interests: interests.results,
+    contacts: contacts.results,
     saved: new URL(request.url).searchParams.has("saved"),
     welcome: new URL(request.url).searchParams.has("welcome"),
   };
@@ -111,6 +125,17 @@ export async function action({ request, context }: Route.ActionArgs) {
       interestTypes.includes(value as InterestType),
     );
   const interestNote = formText(formData.get("interestNote")).trim();
+  const contactEmail = formText(formData.get("contactEmail"))
+    .trim()
+    .toLowerCase();
+  const telegramHandle = formText(formData.get("telegramHandle")).trim();
+  const contactVisibility = formText(formData.get("contactVisibility"));
+  const validContactVisibility = [
+    "private",
+    "connections",
+    "project_interests",
+    "connections_and_project_interests",
+  ].includes(contactVisibility);
   if (
     displayName.length < 2 ||
     displayName.length > 80 ||
@@ -129,7 +154,11 @@ export async function action({ request, context }: Route.ActionArgs) {
             followerCount < 0 ||
             followerCount > 2_000_000_000)),
     ) ||
-    interestNote.length > 500
+    interestNote.length > 500 ||
+    (contactEmail !== "" && !validateEmail(contactEmail)) ||
+    (telegramHandle !== "" &&
+      !/^@?[a-zA-Z0-9_]{5,32}$/.test(telegramHandle)) ||
+    !validContactVisibility
   ) {
     return {
       error:
@@ -227,6 +256,39 @@ export async function action({ request, context }: Route.ActionArgs) {
             )
             .bind(user.id, interestType),
     ),
+    ...[
+      ["email", contactEmail],
+      [
+        "telegram",
+        telegramHandle
+          ? `@${telegramHandle.replace(/^@/, "")}`
+          : "",
+      ],
+    ].map(([contactType, contactValue]) =>
+      contactValue
+        ? db
+            .prepare(
+              `INSERT INTO profile_contacts
+               (user_id, contact_type, contact_value, visibility, updated_at)
+               VALUES (?, ?, ?, ?, datetime('now'))
+               ON CONFLICT(user_id, contact_type) DO UPDATE SET
+                 contact_value = excluded.contact_value,
+                 visibility = excluded.visibility,
+                 verified_at = NULL,
+                 updated_at = excluded.updated_at`,
+            )
+            .bind(
+              user.id,
+              contactType,
+              contactValue,
+              contactVisibility,
+            )
+        : db
+            .prepare(
+              "DELETE FROM profile_contacts WHERE user_id = ? AND contact_type = ?",
+            )
+            .bind(user.id, contactType),
+    ),
     db
       .prepare(
         "INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id) VALUES (?, ?, 'profile.updated', 'profile', ?)",
@@ -248,6 +310,14 @@ export default function Dashboard({
       .filter((interest) => interest.status !== "withdrawn")
       .map((interest) => interest.interestType),
   );
+  const contactMap = new Map(
+    loaderData.contacts.map((contact) => [
+      contact.contactType,
+      contact.contactValue,
+    ]),
+  );
+  const savedContactVisibility =
+    loaderData.contacts[0]?.visibility ?? "connections";
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -260,6 +330,8 @@ export default function Dashboard({
           <a href="#profile-editor">Profile</a>
           <a href="#role-workspaces">Membership</a>
           <a href="#privacy-controls">Privacy and security</a>
+          <Link to="/projects">Projects</Link>
+          <Link to="/notifications">Notifications</Link>
         </aside>
         <section className="dashboard-content">
           {loaderData.welcome && (
@@ -473,6 +545,53 @@ export default function Dashboard({
                   maxLength={500}
                   placeholder="Tell us what you would like to contribute or discover."
                 />
+              </label>
+            </fieldset>
+            <fieldset className="profile-panel" id="contact-sharing">
+              <legend>Private contact sharing</legend>
+              <p className="field-help">
+                These details never appear publicly. A connection is mutual
+                only after acceptance. Project-interest sharing also requires
+                your explicit consent on the individual interest.
+              </p>
+              <div className="form-row">
+                <label>
+                  Contact email
+                  <input
+                    name="contactEmail"
+                    type="email"
+                    defaultValue={contactMap.get("email") ?? ""}
+                  />
+                </label>
+                <label>
+                  Telegram handle
+                  <input
+                    name="telegramHandle"
+                    defaultValue={contactMap.get("telegram") ?? ""}
+                    placeholder="@username"
+                    pattern="@?[a-zA-Z0-9_]{5,32}"
+                  />
+                  <small>
+                    A handle is contact information, not a linked Telegram
+                    account.
+                  </small>
+                </label>
+              </div>
+              <label>
+                Who may receive these details?
+                <select
+                  name="contactVisibility"
+                  defaultValue={savedContactVisibility}
+                >
+                  <option value="private">Only me</option>
+                  <option value="connections">Mutual connections</option>
+                  <option value="project_interests">
+                    Explicit project-interest sharing
+                  </option>
+                  <option value="connections_and_project_interests">
+                    Mutual connections and explicit project interests
+                  </option>
+                </select>
               </label>
             </fieldset>
             <fieldset className="visibility-fieldset" id="privacy-controls">

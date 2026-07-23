@@ -7,6 +7,7 @@ const links = [
   ["The Hall", "/#hall"],
   ["Common Table", "/#common"],
   ["Archive", "/archive"],
+  ["Projects", "/projects"],
   ["Membership", "/#membership"],
 ];
 
@@ -58,6 +59,9 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
     <>
       <Link className="text-link" to="/app">
         Dashboard
+      </Link>
+      <Link className="text-link" to="/notifications">
+        Updates
       </Link>
       <Form method="post" action="/logout">
         <button className="button button-quiet" type="submit">
