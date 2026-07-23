@@ -38,7 +38,7 @@ test("desktop journey reaches the Hall, Common Table and Membership Desk", async
   await page.getByRole("tab", { name: "Investor Workspace" }).click();
   await expect(page.getByText("Kitsune Labs")).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "How will you sit at the table?" }),
+    page.getByRole("heading", { name: "Which rooms should light for you?" }),
   ).toBeVisible();
 });
 
