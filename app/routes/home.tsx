@@ -39,25 +39,33 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           id="arrival"
           aria-labelledby="arrival-title"
         >
-          <InteractiveArrival />
-          <div className="arrival-shade" />
-          <div className="arrival-copy">
-            <span className="chapter">Chapter 01 · The invitation</span>
-            <h1 id="arrival-title">Welcome to AKARI House</h1>
-            <p>A private place for people building what comes next.</p>
-            <div>
-              <a className="button button-primary" href="#hall">
-                Enter the House <span aria-hidden="true">→</span>
-              </a>
-              <a className="quiet-link" href="#common">
-                Explore the experience
-              </a>
+          <div className="arrival-frame">
+            <InteractiveArrival />
+            <div className="arrival-shade" />
+            <div className="arrival-copy">
+              <span className="chapter">Chapter 01 · The invitation</span>
+              <h1 id="arrival-title">Welcome to AKARI House</h1>
+              <p>A private place for people building what comes next.</p>
+              <div>
+                <a className="button button-primary" href="#hall">
+                  Enter the House <span aria-hidden="true">→</span>
+                </a>
+                <a className="quiet-link" href="#common">
+                  Explore the experience
+                </a>
+              </div>
             </div>
+            <a
+              className="arrival-enter-cue"
+              href="#hall"
+              aria-label="Enter the Hall"
+            >
+              <span>Enter the Hall</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="m7 9 5 5 5-5" />
+              </svg>
+            </a>
           </div>
-          <a className="arrival-enter-cue" href="#hall">
-            <span>Scroll to enter</span>
-            <i aria-hidden="true">⌄</i>
-          </a>
         </section>
 
         <section

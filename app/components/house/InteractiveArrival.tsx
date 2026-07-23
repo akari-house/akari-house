@@ -8,13 +8,16 @@ export function InteractiveArrival() {
     if (!scene) return;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const finePointer = window.matchMedia("(pointer: fine)");
-    let frame = 0;
+    const frame = scene.closest<HTMLElement>(".arrival-frame");
+    const section = scene.closest<HTMLElement>(".arrival");
+    let pointerFrame = 0;
+    let scrollFrame = 0;
     let visible = true;
 
     const updatePointer = (event: PointerEvent) => {
       if (reduceMotion.matches || !finePointer.matches || !visible) return;
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
+      window.cancelAnimationFrame(pointerFrame);
+      pointerFrame = window.requestAnimationFrame(() => {
         const bounds = scene.getBoundingClientRect();
         const x = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2;
         const y = ((event.clientY - bounds.top) / bounds.height - 0.5) * 2;
@@ -24,14 +27,14 @@ export function InteractiveArrival() {
     };
     const updateScroll = () => {
       if (reduceMotion.matches || !visible) return;
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(() => {
-        const bounds = scene.getBoundingClientRect();
-        const progress = Math.min(
-          1,
-          Math.max(0, -bounds.top / Math.max(1, bounds.height * 0.72)),
-        );
+      window.cancelAnimationFrame(scrollFrame);
+      scrollFrame = window.requestAnimationFrame(() => {
+        if (!section) return;
+        const bounds = section.getBoundingClientRect();
+        const travel = Math.max(1, section.offsetHeight - window.innerHeight);
+        const progress = Math.min(1, Math.max(0, -bounds.top / travel));
         scene.style.setProperty("--hero-scroll", progress.toFixed(3));
+        frame?.style.setProperty("--hero-progress", progress.toFixed(3));
       });
     };
     const reset = () => {
@@ -52,7 +55,8 @@ export function InteractiveArrival() {
     scene.dataset.interactive = "true";
     updateScroll();
     return () => {
-      window.cancelAnimationFrame(frame);
+      window.cancelAnimationFrame(pointerFrame);
+      window.cancelAnimationFrame(scrollFrame);
       window.removeEventListener("pointermove", updatePointer);
       scene.removeEventListener("pointerleave", reset);
       window.removeEventListener("scroll", updateScroll);

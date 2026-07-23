@@ -1,5 +1,24 @@
 import { expect, test } from "@playwright/test";
 
+test("hero performs a visible scroll-linked push-in", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "desktop-chromium",
+    "Desktop cinematic motion check",
+  );
+  await page.goto("/");
+  const hero = page.locator(".arrival-scene");
+  await page.waitForTimeout(2700);
+  const before = await hero.evaluate(
+    (element) => getComputedStyle(element).transform,
+  );
+  await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.55));
+  await expect
+    .poll(() => hero.evaluate((element) => getComputedStyle(element).transform))
+    .not.toBe(before);
+});
+
 test("desktop journey reaches the Hall, Common Table and Membership Desk", async ({
   page,
 }, testInfo) => {
@@ -70,7 +89,7 @@ test("mobile navigation traps focus and has no horizontal overflow", async ({
 test("reduced motion disables environmental animation", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await expect(page.locator(".arrival-enter-cue i")).toHaveCSS(
+  await expect(page.locator(".arrival-enter-cue svg")).toHaveCSS(
     "animation-name",
     "none",
   );
