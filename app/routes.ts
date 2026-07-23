@@ -34,4 +34,7 @@ export default [
   route("logout", "routes/logout.tsx"),
   route("app", "routes/dashboard.tsx"),
   route("profiles/:username", "routes/profile.tsx"),
+  route("privacy", "routes/legal.tsx"),
+  route("terms", "routes/terms.tsx"),
+  route("community-guidelines", "routes/community-guidelines.tsx"),
 ] satisfies RouteConfig;

@@ -10,9 +10,13 @@ import { SiteHeader } from "~/components/SiteHeader";
 
 afterEach(cleanup);
 
-function withRouter(element: React.ReactNode) {
+function withRouter(element: React.ReactNode, initialEntry = "/") {
   return render(
-    <RouterProvider router={createMemoryRouter([{ path: "*", element }])} />,
+    <RouterProvider
+      router={createMemoryRouter([{ path: "*", element }], {
+        initialEntries: [initialEntry],
+      })}
+    />,
   );
 }
 
@@ -70,5 +74,40 @@ describe("house interactions", () => {
     expect(
       screen.getByRole("button", { name: "Open navigation" }),
     ).toHaveFocus();
+  });
+
+  it("exposes authenticated destinations in mobile navigation", async () => {
+    const user = userEvent.setup();
+    withRouter(
+      <SiteHeader
+        user={{
+          id: "member-1",
+          email: "member@example.test",
+          username: "member",
+          displayName: "AKARI Member",
+          accessTier: "member",
+          roles: ["founder"],
+        }}
+      />,
+      "/connections",
+    );
+    const menu = screen.getByRole("button", { name: "Open navigation" });
+    await waitFor(() => expect(menu).toBeEnabled());
+    await user.click(menu);
+    expect(
+      screen.getByRole("navigation", { name: "Your AKARI account" }),
+    ).toBeVisible();
+    expect(screen.getByRole("link", { name: "My projects" })).toHaveAttribute(
+      "href",
+      "/projects/manage",
+    );
+    expect(screen.getByRole("link", { name: "Connections" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    expect(screen.getByRole("link", { name: "Telegram" })).toHaveAttribute(
+      "href",
+      "/settings/telegram",
+    );
   });
 });

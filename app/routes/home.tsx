@@ -1,7 +1,6 @@
-import { Link } from "react-router";
 import type { Route } from "./+types/home";
 import { FeaturedArchiveCarousel } from "~/components/archive/FeaturedArchiveCarousel";
-import { CommonTable } from "~/components/common-table/CommonTable";
+import { HouseInMotion } from "~/components/discovery/HouseInMotion";
 import { HouseHall } from "~/components/house/HouseHall";
 import { InteractiveArrival } from "~/components/house/InteractiveArrival";
 import { PetalField } from "~/components/house/PetalField";
@@ -9,6 +8,8 @@ import { StoryProgress } from "~/components/house/StoryProgress";
 import { BlossomJourney } from "~/components/house/BlossomJourney";
 import { MembershipDesk } from "~/components/membership/MembershipDesk";
 import { SiteHeader } from "~/components/SiteHeader";
+import { PublicFooter } from "~/components/PublicFooter";
+import { caseStudies } from "~/data/case-studies";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 
@@ -22,8 +23,62 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 export async function loader({ request, context }: Route.LoaderArgs) {
+  const db = context.get(cloudflareContext).env.DB;
+  const [user, project, event] = await Promise.all([
+    getOptionalUser(request, db),
+    db
+      .prepare(
+        `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
+                p.display_name AS founderName, u.username AS founderUsername,
+                COUNT(DISTINCT pf.user_id) AS followerCount
+         FROM projects pr
+         JOIN users u ON u.id = pr.founder_user_id
+         JOIN profiles p ON p.user_id = u.id
+         LEFT JOIN project_follows pf ON pf.project_id = pr.id
+         WHERE pr.status = 'published'
+         GROUP BY pr.id
+         ORDER BY pr.updated_at DESC LIMIT 1`,
+      )
+      .first<{
+        slug: string;
+        title: string;
+        summary: string;
+        stage: string;
+        seeking: string;
+        founderName: string;
+        founderUsername: string;
+        followerCount: number;
+      }>(),
+    db
+      .prepare(
+        `SELECT e.slug, e.title, e.summary, e.format, e.venue,
+                e.starts_at AS startsAt, e.timezone, e.capacity,
+                p.display_name AS hostName,
+                COUNT(CASE WHEN er.status = 'registered' THEN 1 END)
+                  AS registeredCount
+         FROM events e
+         JOIN profiles p ON p.user_id = e.host_user_id
+         LEFT JOIN event_registrations er ON er.event_id = e.id
+         WHERE e.status = 'published' AND e.ends_at >= datetime('now')
+         GROUP BY e.id ORDER BY e.starts_at LIMIT 1`,
+      )
+      .first<{
+        slug: string;
+        title: string;
+        summary: string;
+        format: string;
+        venue: string;
+        startsAt: string;
+        timezone: string;
+        capacity: number | null;
+        hostName: string;
+        registeredCount: number;
+      }>(),
+  ]);
   return {
-    user: await getOptionalUser(request, context.get(cloudflareContext).env.DB),
+    user,
+    project: project ?? null,
+    event: event ?? null,
   };
 }
 
@@ -113,7 +168,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               See how the House brings the right work into view.
             </p>
           </div>
-          <CommonTable />
+          <HouseInMotion
+            project={loaderData.project}
+            event={loaderData.event}
+            caseStudy={caseStudies[0]}
+          />
         </section>
 
         <section
@@ -157,6 +216,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             alt=""
             width={160}
             height={150}
+            loading="lazy"
           />
           <span className="chapter">Epilogue · The light stays on</span>
           <h2 id="final-title">
@@ -167,31 +227,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <p>When you are ready, the Membership Desk is waiting above.</p>
         </section>
       </main>
-      <footer className="site-footer">
-        <div>
-          <span className="footer-brand">
-            <img
-              src="/assets/optimized/akari-logo.webp"
-              alt="AKARI"
-              width={360}
-              height={117}
-            />
-            <span>House</span>
-          </span>
-          <p>
-            A private place for Founders, Creators and Investors to build what
-            comes next, together.
-          </p>
-        </div>
-        <nav aria-label="Footer">
-          <a href="#hall">The Hall</a>
-          <a href="#common">Common Table</a>
-          <Link to="/archive">Archive</Link>
-          <a href="#membership">Membership</a>
-          <a href="mailto:hello@akari.house">Contact</a>
-        </nav>
-        <small>© 2026 AKARI House</small>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

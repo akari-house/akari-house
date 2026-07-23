@@ -4,6 +4,7 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { canHostEvents } from "~/lib/events.server";
+import { EventTimeDisplay } from "~/components/EventTimeDisplay";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -12,7 +13,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     throw new Response("Event-host access required.", { status: 403 });
   const events = await db
     .prepare(
-      `SELECT slug, title, summary, status, starts_at AS startsAt
+      `SELECT slug, title, summary, status, starts_at AS startsAt, timezone
        FROM events WHERE host_user_id = ? ORDER BY starts_at DESC`,
     )
     .bind(user.id)
@@ -22,8 +23,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       summary: string;
       status: string;
       startsAt: string;
+      timezone: string;
     }>();
-  return { user, events: events.results };
+  return {
+    user,
+    events: events.results,
+    cancelled: new URL(request.url).searchParams.has("cancelled"),
+  };
 }
 
 export default function EventManage({ loaderData }: Route.ComponentProps) {
@@ -40,21 +46,40 @@ export default function EventManage({ loaderData }: Route.ComponentProps) {
             Propose event
           </Link>
         </header>
+        {loaderData.cancelled && (
+          <p className="notice success" role="status">
+            The event was cancelled and removed from the public calendar.
+          </p>
+        )}
         <div className="project-grid">
-          {loaderData.events.map((event) => (
-            <article className="project-card" key={event.slug}>
-              <span className="chapter">{event.status}</span>
-              <h2>{event.title}</h2>
-              <p>{event.summary}</p>
-              <time dateTime={event.startsAt}>
-                {new Date(event.startsAt).toLocaleString()}
-              </time>
-              <footer>
-                <Link to={`/events/${event.slug}`}>View</Link>
-                <Link to={`/events/${event.slug}/edit`}>Edit</Link>
-              </footer>
-            </article>
-          ))}
+          {loaderData.events.length ? (
+            loaderData.events.map((event) => (
+              <article className="project-card" key={event.slug}>
+                <span className="chapter">{event.status}</span>
+                <h2>{event.title}</h2>
+                <p>{event.summary}</p>
+                <EventTimeDisplay
+                  startsAt={event.startsAt}
+                  timezone={event.timezone}
+                />
+                <footer>
+                  <Link to={`/events/${event.slug}`}>View</Link>
+                  <Link to={`/events/${event.slug}/edit`}>Edit</Link>
+                </footer>
+              </article>
+            ))
+          ) : (
+            <div className="status-card">
+              <h2>No gatherings proposed yet.</h2>
+              <p>
+                Start with a clear date, timezone and purpose. AKARI reviews
+                every proposal before it enters the public calendar.
+              </p>
+              <Link className="button button-primary" to="/events/new">
+                Propose your first event
+              </Link>
+            </div>
+          )}
         </div>
       </main>
     </div>

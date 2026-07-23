@@ -1,18 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { Form, Link } from "react-router";
+import { Form, Link, useLocation } from "react-router";
 import type { SessionUser } from "~/lib/domain";
 
 const links = [
-  ["House", "/#arrival"],
-  ["The Hall", "/#hall"],
-  ["Common Table", "/#common"],
-  ["Archive", "/archive"],
+  ["The House", "/"],
   ["Projects", "/projects"],
   ["Events", "/events"],
+  ["Archive", "/archive"],
   ["Membership", "/#membership"],
 ];
 
 export function SiteHeader({ user }: { user: SessionUser | null }) {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [interactive, setInteractive] = useState(false);
   const menuRef = useRef<HTMLButtonElement>(null);
@@ -81,6 +80,56 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
     </>
   );
 
+  const isCurrent = (href: string) => {
+    if (href.startsWith("/#")) {
+      const hash = href.slice(1);
+      return (
+        location.pathname === "/" &&
+        (location.hash === hash ||
+          (hash === "#arrival" &&
+            (location.hash === "" || location.hash === "#arrival")))
+      );
+    }
+    const [path, hash = ""] = href.split("#");
+    if (path === "/") return location.pathname === "/";
+    return (
+      (location.pathname === path ||
+        location.pathname.startsWith(`${path}/`)) &&
+      (!hash || location.hash === `#${hash}`)
+    );
+  };
+
+  const memberLinks = user
+    ? [
+        ["Dashboard", "/app"],
+        ["Edit profile", "/app#profile-editor"],
+        ["Projects", "/projects"],
+        ...(user.accessTier === "member" && user.roles.includes("founder")
+          ? [["My projects", "/projects/manage"]]
+          : []),
+        ["Events", "/events"],
+        ["Connections", "/connections"],
+        ["Notifications", "/notifications"],
+        ["Telegram", "/settings/telegram"],
+      ]
+    : [];
+  const isCurrentMemberLink = (href: string) => {
+    const [path, hash = ""] = href.split("#");
+    return (
+      location.pathname === path && (!hash || location.hash === `#${hash}`)
+    );
+  };
+
+  const mobileActions = user ? (
+    <Form method="post" action="/logout">
+      <button className="button button-quiet" type="submit">
+        Log out
+      </button>
+    </Form>
+  ) : (
+    actions
+  );
+
   return (
     <>
       <a className="skip-link" href="#main-content">
@@ -99,7 +148,11 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
         </Link>
         <nav className="desktop-nav" aria-label="Primary navigation">
           {links.map(([label, href]) => (
-            <a href={href} key={label}>
+            <a
+              href={href}
+              key={label}
+              aria-current={isCurrent(href) ? "page" : undefined}
+            >
               {label}
             </a>
           ))}
@@ -137,12 +190,32 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
       >
         <nav aria-label="Mobile navigation">
           {links.map(([label, href]) => (
-            <a href={href} key={label} onClick={() => setOpen(false)}>
+            <a
+              href={href}
+              key={label}
+              aria-current={isCurrent(href) ? "page" : undefined}
+              onClick={() => setOpen(false)}
+            >
               {label}
             </a>
           ))}
         </nav>
-        <div className="mobile-actions">{actions}</div>
+        {user && (
+          <nav className="mobile-member-nav" aria-label="Your AKARI account">
+            <span>Your House</span>
+            {memberLinks.map(([label, href]) => (
+              <Link
+                to={href}
+                key={label}
+                aria-current={isCurrentMemberLink(href) ? "page" : undefined}
+                onClick={() => setOpen(false)}
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
+        )}
+        <div className="mobile-actions">{mobileActions}</div>
       </div>
     </>
   );

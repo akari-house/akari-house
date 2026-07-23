@@ -141,7 +141,11 @@ export default function AdminModeration({
             Review desk
           </Link>
         </header>
-        {actionData?.error && <p className="form-error">{actionData.error}</p>}
+        {actionData?.error && (
+          <p className="form-error" role="alert">
+            {actionData.error}
+          </p>
+        )}
         {actionData?.saved && <p className="notice success">Report updated.</p>}
         <div className="application-list">
           {loaderData.reports.map((report) => (

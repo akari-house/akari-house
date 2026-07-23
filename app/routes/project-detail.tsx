@@ -326,7 +326,9 @@ export default function ProjectDetail({
           <section className="project-action-panel">
             <h2>Express investment interest</h2>
             {actionData?.error && (
-              <p className="form-error">{actionData.error}</p>
+              <p className="form-error" role="alert">
+                {actionData.error}
+              </p>
             )}
             <Form method="post" className="form-stack">
               <label>

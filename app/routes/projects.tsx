@@ -1,8 +1,19 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/projects";
 import { SiteHeader } from "~/components/SiteHeader";
+import { PublicFooter } from "~/components/PublicFooter";
+import { ProjectLanternCard } from "~/components/discovery/ProjectLanternCard";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+
+export const meta: Route.MetaFunction = () => [
+  { title: "Project Lanterns | AKARI House" },
+  {
+    name: "description",
+    content:
+      "Explore approved Founder projects seeking thoughtful collaborators and considered investment inside AKARI House.",
+  },
+];
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -54,36 +65,39 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
               </Link>
             )}
         </header>
-        <div className="project-grid">
+        <section className="project-lantern-gallery" aria-label="Projects">
           {loaderData.projects.length ? (
             loaderData.projects.map((project) => (
-              <article className="project-card" key={project.slug}>
-                <span className="chapter">{project.stage.replace("_", " ")}</span>
-                <h2>
-                  <Link to={`/projects/${project.slug}`}>{project.title}</Link>
-                </h2>
-                <p>{project.summary}</p>
-                {project.seeking && (
-                  <p className="project-seeking">
-                    <strong>Seeking:</strong> {project.seeking}
-                  </p>
-                )}
-                <footer>
-                  <Link to={`/profiles/${project.founderUsername}`}>
-                    {project.founderName}
-                  </Link>
-                  <span>{project.followerCount} following</span>
-                </footer>
-              </article>
+              <ProjectLanternCard project={project} key={project.slug} />
             ))
           ) : (
-            <div className="status-card">
-              <h2>The first lanterns are being prepared.</h2>
-              <p>Approved projects will appear here after review.</p>
+            <div className="directory-empty is-project">
+              <div className="empty-lantern" aria-hidden="true">
+                <span />
+              </div>
+              <div>
+                <span className="eyebrow">The gallery before first light</span>
+                <h2>The first project lanterns are being prepared.</h2>
+                <p>
+                  Approved Founder projects will gather here with their story,
+                  stage and the support they are seeking.
+                </p>
+                {loaderData.user?.roles.includes("founder") &&
+                loaderData.user.accessTier === "member" ? (
+                  <Link className="button button-primary" to="/projects/new">
+                    Light a project lantern
+                  </Link>
+                ) : (
+                  <Link className="button button-quiet" to="/#membership">
+                    Understand membership
+                  </Link>
+                )}
+              </div>
             </div>
           )}
-        </div>
+        </section>
       </main>
+      <PublicFooter />
     </div>
   );
 }

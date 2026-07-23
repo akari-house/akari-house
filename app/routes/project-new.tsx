@@ -85,7 +85,11 @@ export default function ProjectNew({
           Projects enter review before becoming discoverable across the House.
         </p>
         <Form method="post" className="profile-form">
-          {actionData?.error && <p className="form-error">{actionData.error}</p>}
+          {actionData?.error && (
+            <p className="form-error" role="alert">
+              {actionData.error}
+            </p>
+          )}
           <label>
             Project name
             <input name="title" minLength={3} maxLength={100} required />

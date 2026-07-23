@@ -114,7 +114,11 @@ export default function TelegramSettings({
             </Form>
           </div>
         )}
-        {actionData?.error && <p className="form-error">{actionData.error}</p>}
+        {actionData?.error && (
+          <p className="form-error" role="alert">
+            {actionData.error}
+          </p>
+        )}
         {actionData?.deepLink && (
           <div className="status-card success">
             <h2>Your secure link is ready for 15 minutes</h2>

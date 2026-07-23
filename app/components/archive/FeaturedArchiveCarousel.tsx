@@ -88,7 +88,7 @@ export function FeaturedArchiveCarousel() {
               alt=""
               width={720}
               height={450}
-              loading={index === 0 ? "eager" : "lazy"}
+              loading="lazy"
             />
             <div className="archive-slide-shade" />
             <div className="archive-slide-content">

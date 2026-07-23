@@ -5,6 +5,7 @@ import { cloudflareContext } from "~/lib/cloudflare-context";
 import { requireAdmin } from "~/lib/membership.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
+import { EventTimeDisplay } from "~/components/EventTimeDisplay";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -108,7 +109,9 @@ export async function action({ request, context }: Route.ActionArgs) {
         .bind(
           crypto.randomUUID(),
           project.founderUserId,
-          decision === "approve" ? "Project published" : "Project needs revision",
+          decision === "approve"
+            ? "Project published"
+            : "Project needs revision",
           `${project.title} was ${status}.`,
           `/projects/${project.slug}`,
         ),
@@ -196,9 +199,7 @@ export default function AdminInterests({
             Membership applications
           </Link>
         </header>
-        {actionData?.saved && (
-          <p className="notice success">Decision saved.</p>
-        )}
+        {actionData?.saved && <p className="notice success">Decision saved.</p>}
         <section>
           <h2>Projects awaiting publication</h2>
           <div className="application-list">
@@ -245,11 +246,11 @@ export default function AdminInterests({
                   </span>
                   <h3>{event.title}</h3>
                   <p>{event.summary}</p>
-                  <small>
-                    Hosted by {event.hostName} ·{" "}
-                    {new Date(event.startsAt).toLocaleString()} ·{" "}
-                    {event.timezone}
-                  </small>
+                  <small>Hosted by {event.hostName}</small>
+                  <EventTimeDisplay
+                    startsAt={event.startsAt}
+                    timezone={event.timezone}
+                  />
                 </div>
                 <Form method="post" className="application-actions">
                   <input type="hidden" name="subjectType" value="event" />

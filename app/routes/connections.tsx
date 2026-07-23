@@ -1,4 +1,4 @@
-import { Form, Link } from "react-router";
+import { Form, Link, useNavigation } from "react-router";
 import type { Route } from "./+types/connections";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireUser } from "~/lib/auth.server";
@@ -89,6 +89,8 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function Connections({ loaderData }: Route.ComponentProps) {
+  const navigation = useNavigation();
+  const pending = navigation.state !== "idle";
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -103,7 +105,16 @@ export default function Connections({ loaderData }: Route.ComponentProps) {
             </p>
           </div>
         </header>
-        <div className="notification-list">
+        <div className="notification-list" aria-busy={pending}>
+          {loaderData.connections.length === 0 && (
+            <div className="status-card">
+              <h2>No connections yet.</h2>
+              <p>
+                Visit a member profile to send a request. Incoming and accepted
+                connections will appear here.
+              </p>
+            </div>
+          )}
           {loaderData.connections.map((connection) => {
             const incoming =
               connection.status === "pending" &&
@@ -139,6 +150,7 @@ export default function Connections({ loaderData }: Route.ComponentProps) {
                         className="button button-primary"
                         name="intent"
                         value="accept"
+                        disabled={pending}
                       >
                         Accept
                       </button>
@@ -146,6 +158,7 @@ export default function Connections({ loaderData }: Route.ComponentProps) {
                         className="button button-quiet"
                         name="intent"
                         value="decline"
+                        disabled={pending}
                       >
                         Decline
                       </button>
@@ -156,6 +169,7 @@ export default function Connections({ loaderData }: Route.ComponentProps) {
                       className="button button-quiet"
                       name="intent"
                       value="cancel"
+                      disabled={pending}
                     >
                       Cancel request
                     </button>
@@ -165,6 +179,7 @@ export default function Connections({ loaderData }: Route.ComponentProps) {
                       className="button button-quiet"
                       name="intent"
                       value="disconnect"
+                      disabled={pending}
                     >
                       Disconnect
                     </button>

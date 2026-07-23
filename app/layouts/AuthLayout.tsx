@@ -12,7 +12,12 @@ export function AuthLayout({
   return (
     <main id="main-content" className="auth-layout">
       <Link className="auth-brand" to="/">
-        <img src="/assets/brand/akari-logo.png" alt="AKARI" />
+        <img
+          src="/assets/optimized/akari-logo.webp"
+          alt="AKARI"
+          width={360}
+          height={117}
+        />
         <span>House</span>
       </Link>
       <section className="auth-panel">

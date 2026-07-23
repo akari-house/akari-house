@@ -1,10 +1,11 @@
-import { Form, Link, redirect } from "react-router";
+import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/event-detail";
 import { SiteHeader } from "~/components/SiteHeader";
 import { getOptionalUser, requireUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
+import { EventTimeDisplay } from "~/components/EventTimeDisplay";
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -43,10 +44,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       hostUsername: string;
       registeredCount: number;
     }>();
-  if (
-    !event ||
-    (event.status !== "published" && user?.id !== event.hostUserId)
-  )
+  if (!event || (event.status !== "published" && user?.id !== event.hostUserId))
     throw new Response("Event not found.", { status: 404 });
   const registration = user
     ? await db
@@ -80,14 +78,15 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     event: {
       ...event,
       meetingUrl:
-        user?.id === event.hostUserId ||
-        registration?.status === "registered"
+        user?.id === event.hostUserId || registration?.status === "registered"
           ? event.meetingUrl
           : "",
     },
     registration,
     attendees: attendees?.results ?? [],
     submitted: new URL(request.url).searchParams.has("submitted"),
+    registrationFeedback:
+      new URL(request.url).searchParams.get("registration") ?? "",
   };
 }
 
@@ -149,6 +148,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         `/events/${params.slug}`,
       )
       .run();
+    throw redirect(
+      `/events/${params.slug}?registration=${saved?.status === "waitlisted" ? "waitlisted" : "registered"}`,
+    );
   } else if (intent === "cancel") {
     await db
       .prepare(
@@ -157,8 +159,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       )
       .bind(event.id, user.id)
       .run();
+    throw redirect(`/events/${params.slug}?registration=cancelled`);
   } else throw new Response("Unsupported action.", { status: 400 });
-  throw redirect(`/events/${params.slug}`);
 }
 
 export default function EventDetail({
@@ -169,6 +171,8 @@ export default function EventDetail({
   const registered = loaderData.registration?.status === "registered";
   const waitlisted = loaderData.registration?.status === "waitlisted";
   const isHost = user?.id === event.hostUserId;
+  const navigation = useNavigation();
+  const pending = navigation.state !== "idle";
   return (
     <div className="site-shell">
       <SiteHeader user={user} />
@@ -178,6 +182,23 @@ export default function EventDetail({
             Event submitted. It remains private until review.
           </p>
         )}
+        {loaderData.registrationFeedback === "registered" && (
+          <p className="notice success" role="status">
+            You are registered. The time below includes the event timezone and,
+            when different, your local timezone.
+          </p>
+        )}
+        {loaderData.registrationFeedback === "waitlisted" && (
+          <p className="notice" role="status">
+            The event is currently full, so you joined the waitlist. AKARI will
+            notify you if your registration status changes.
+          </p>
+        )}
+        {loaderData.registrationFeedback === "cancelled" && (
+          <p className="notice success" role="status">
+            Your registration or waitlist place was cancelled.
+          </p>
+        )}
         <span className="chapter">
           {event.format.replace("_", " ")} · {event.status}
         </span>
@@ -185,10 +206,16 @@ export default function EventDetail({
         <p className="project-lede">{event.summary}</p>
         <p className="project-story">{event.description}</p>
         <section className="project-seeking-panel">
-          <time dateTime={event.startsAt}>
-            {new Date(event.startsAt).toLocaleString()} to{" "}
-            {new Date(event.endsAt).toLocaleString()} · {event.timezone}
-          </time>
+          <EventTimeDisplay
+            startsAt={event.startsAt}
+            timezone={event.timezone}
+          />
+          <span aria-hidden="true"> to </span>
+          <EventTimeDisplay
+            startsAt={event.endsAt}
+            timezone={event.timezone}
+            showViewerTime={false}
+          />
           {event.venue && <p>Venue: {event.venue}</p>}
           <p>
             {event.registeredCount}
@@ -204,7 +231,11 @@ export default function EventDetail({
           Hosted by{" "}
           <Link to={`/profiles/${event.hostUsername}`}>{event.hostName}</Link>
         </p>
-        {actionData?.error && <p className="form-error">{actionData.error}</p>}
+        {actionData?.error && (
+          <p className="form-error" role="alert">
+            {actionData.error}
+          </p>
+        )}
         {user && !isHost && event.status === "published" && (
           <Form method="post">
             <button
@@ -215,12 +246,26 @@ export default function EventDetail({
               }
               name="intent"
               value={registered || waitlisted ? "cancel" : "register"}
+              disabled={pending}
+              onClick={(clickEvent) => {
+                if (
+                  (registered || waitlisted) &&
+                  !window.confirm(
+                    waitlisted
+                      ? "Leave this event waitlist?"
+                      : "Cancel your event registration?",
+                  )
+                )
+                  clickEvent.preventDefault();
+              }}
             >
-              {registered
-                ? "Cancel registration"
-                : waitlisted
-                  ? "Leave waitlist"
-                  : "Register"}
+              {pending
+                ? "Saving..."
+                : registered
+                  ? "Cancel registration"
+                  : waitlisted
+                    ? "Leave waitlist"
+                    : "Register"}
             </button>
           </Form>
         )}
@@ -235,14 +280,21 @@ export default function EventDetail({
         {isHost && (
           <section className="project-interest-list">
             <h2>Registrations</h2>
-            {loaderData.attendees.map((attendee) => (
-              <article key={attendee.username}>
-                <Link to={`/profiles/${attendee.username}`}>
-                  {attendee.displayName}
-                </Link>
-                <span className="status-pill">{attendee.status}</span>
-              </article>
-            ))}
+            {loaderData.attendees.length ? (
+              loaderData.attendees.map((attendee) => (
+                <article key={attendee.username}>
+                  <Link to={`/profiles/${attendee.username}`}>
+                    {attendee.displayName}
+                  </Link>
+                  <span className="status-pill">{attendee.status}</span>
+                </article>
+              ))
+            ) : (
+              <div className="status-card">
+                <h3>No registrations yet.</h3>
+                <p>Registered and waitlisted members will appear here.</p>
+              </div>
+            )}
           </section>
         )}
         {user && !isHost && (

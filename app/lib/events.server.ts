@@ -27,14 +27,3 @@ export async function uniqueEventSlug(db: D1Database, title: string) {
   }
   return `${base}-${crypto.randomUUID().slice(0, 8)}`;
 }
-
-export function validEventTimes(startsAt: string, endsAt: string) {
-  const start = Date.parse(startsAt);
-  const end = Date.parse(endsAt);
-  return (
-    Number.isFinite(start) &&
-    Number.isFinite(end) &&
-    end > start &&
-    start > Date.now() - 5 * 60_000
-  );
-}

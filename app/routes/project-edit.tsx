@@ -94,7 +94,11 @@ export default function ProjectEdit({
         <span className="eyebrow">Project editor · {project.status}</span>
         <h1>Refine the project story.</h1>
         <Form method="post" className="profile-form">
-          {actionData?.error && <p className="form-error">{actionData.error}</p>}
+          {actionData?.error && (
+            <p className="form-error" role="alert">
+              {actionData.error}
+            </p>
+          )}
           <label>
             Project name
             <input

@@ -1,4 +1,4 @@
-import { Form, Link } from "react-router";
+import { Form, Link, useNavigation } from "react-router";
 import type { Route } from "./+types/notifications";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireUser } from "~/lib/auth.server";
@@ -55,6 +55,8 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 export default function Notifications({ loaderData }: Route.ComponentProps) {
+  const navigation = useNavigation();
+  const pending = navigation.state !== "idle";
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -65,10 +67,12 @@ export default function Notifications({ loaderData }: Route.ComponentProps) {
             <h1>What changed around you.</h1>
           </div>
           <Form method="post">
-            <button className="button button-quiet">Mark all as read</button>
+            <button className="button button-quiet" disabled={pending}>
+              {pending ? "Updating..." : "Mark all as read"}
+            </button>
           </Form>
         </header>
-        <div className="notification-list">
+        <div className="notification-list" aria-busy={pending}>
           {loaderData.notifications.length ? (
             loaderData.notifications.map((notification) => (
               <article
@@ -101,7 +105,9 @@ export default function Notifications({ loaderData }: Route.ComponentProps) {
                         name="notificationId"
                         value={notification.id}
                       />
-                      <button className="text-button">Mark read</button>
+                      <button className="text-button" disabled={pending}>
+                        Mark read
+                      </button>
                     </Form>
                   )}
                 </div>

@@ -41,7 +41,7 @@ test("hero performs a visible scroll-linked push-in", async ({
     .toBe("running");
 });
 
-test("desktop journey reaches the Hall, Common Table and Membership Desk", async ({
+test("desktop journey reaches the Hall, active House and Membership Desk", async ({
   page,
 }, testInfo) => {
   await page.goto("/");
@@ -76,8 +76,15 @@ test("desktop journey reaches the Hall, Common Table and Membership Desk", async
   await page.getByRole("link", { name: "Return to the Hall" }).click();
   await expect(page).toHaveURL(/\/hall$/);
   await page.goto("/#common");
-  await page.getByRole("tab", { name: "Investor Workspace" }).click();
-  await expect(page.getByText("Kitsune Labs")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Take your seat at the shared table." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Explore projects" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Open the calendar" }),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: "Which rooms should light for you?" }),
   ).toBeVisible();
@@ -178,5 +185,5 @@ test("membership request remains gated before human approval", async ({
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Log in" }).click();
   await expect(page).toHaveURL(/\/login/);
-  await expect(page.getByText("does not have member access yet")).toBeVisible();
+  await expect(page.getByText("Confirm your email before signing in.")).toBeVisible();
 });

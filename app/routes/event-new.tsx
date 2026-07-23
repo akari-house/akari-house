@@ -3,11 +3,13 @@ import type { Route } from "./+types/event-new";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import { canHostEvents, uniqueEventSlug } from "~/lib/events.server";
 import {
-  canHostEvents,
-  uniqueEventSlug,
+  isValidTimezone,
+  localEventTimeToUtc,
   validEventTimes,
-} from "~/lib/events.server";
+} from "~/lib/events";
+import { EventTimezoneField } from "~/components/EventTimeDisplay";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText, normalizeWebsite } from "~/lib/validation";
 
@@ -36,9 +38,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   const format = formText(form.get("format"));
   const venue = formText(form.get("venue")).trim();
   const meetingUrl = normalizeWebsite(form.get("meetingUrl"));
-  const startsAt = formText(form.get("startsAt"));
-  const endsAt = formText(form.get("endsAt"));
-  const timezone = "UTC";
+  const startsAtLocal = formText(form.get("startsAt"));
+  const endsAtLocal = formText(form.get("endsAt"));
+  const timezone = formText(form.get("timezone")).trim();
+  const startsAt = localEventTimeToUtc(startsAtLocal, timezone);
+  const endsAt = localEventTimeToUtc(endsAtLocal, timezone);
   const capacityText = formText(form.get("capacity")).trim();
   const capacity = capacityText ? Number(capacityText) : null;
   if (
@@ -50,11 +54,17 @@ export async function action({ request, context }: Route.ActionArgs) {
     !["online", "in_person", "hybrid"].includes(format) ||
     venue.length > 240 ||
     meetingUrl === null ||
+    !isValidTimezone(timezone) ||
+    startsAt === null ||
+    endsAt === null ||
     !validEventTimes(startsAt, endsAt) ||
     (capacity !== null &&
       (!Number.isSafeInteger(capacity) || capacity < 1 || capacity > 10000))
   )
-    return { error: "Check the event details and time range." };
+    return {
+      error:
+        "Check the event details, timezone and time range. Times skipped by a daylight-saving change are not valid.",
+    };
   if (format !== "in_person" && !meetingUrl)
     return { error: "Online and hybrid events require an HTTPS meeting URL." };
   if (format !== "online" && !venue)
@@ -108,7 +118,11 @@ export default function EventNew({
         <h1>Propose a gathering.</h1>
         <p>Every event is reviewed before appearing in the AKARI calendar.</p>
         <Form method="post" className="profile-form">
-          {actionData?.error && <p className="form-error">{actionData.error}</p>}
+          {actionData?.error && (
+            <p className="form-error" role="alert">
+              {actionData.error}
+            </p>
+          )}
           <label>
             Event title
             <input name="title" minLength={3} maxLength={120} required />
@@ -143,14 +157,15 @@ export default function EventNew({
           </div>
           <div className="form-row">
             <label>
-              Starts (UTC)
+              Starts in the event timezone
               <input name="startsAt" type="datetime-local" required />
             </label>
             <label>
-              Ends (UTC)
+              Ends in the event timezone
               <input name="endsAt" type="datetime-local" required />
             </label>
           </div>
+          <EventTimezoneField />
           <label>
             Venue
             <input name="venue" maxLength={240} />
@@ -163,7 +178,9 @@ export default function EventNew({
             className="button button-primary"
             disabled={navigation.state !== "idle"}
           >
-            Submit for review
+            {navigation.state === "idle"
+              ? "Submit for review"
+              : "Submitting event..."}
           </button>
         </Form>
       </main>

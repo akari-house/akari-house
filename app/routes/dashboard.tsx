@@ -65,7 +65,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       visibility: string;
     }>();
   if (!profile) throw new Response("Profile missing", { status: 500 });
-  const [membership, socialAccounts, interests, contacts] = await Promise.all([
+  const [membership, socialAccounts, interests, contacts, activity] =
+    await Promise.all([
     membershipStatusForUser(db, user.id),
     loadSocialAccounts(db, user.id),
     db
@@ -86,6 +87,27 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         contactValue: string;
         visibility: string;
       }>(),
+    db
+      .prepare(
+        `SELECT
+          (SELECT COUNT(*) FROM notifications
+            WHERE user_id = ? AND read_at IS NULL) AS unreadNotifications,
+          (SELECT COUNT(*) FROM connections
+            WHERE (requester_id = ? OR recipient_id = ?)
+              AND status = 'accepted') AS connections,
+          (SELECT COUNT(*) FROM project_follows
+            WHERE user_id = ?) AS followedProjects,
+          (SELECT COUNT(*) FROM event_registrations
+            WHERE user_id = ? AND status IN ('registered', 'waitlisted'))
+            AS upcomingEvents`,
+      )
+      .bind(user.id, user.id, user.id, user.id, user.id)
+      .first<{
+        unreadNotifications: number;
+        connections: number;
+        followedProjects: number;
+        upcomingEvents: number;
+      }>(),
   ]);
   return {
     user,
@@ -94,6 +116,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     socialAccounts,
     interests: interests.results,
     contacts: contacts.results,
+    activity: activity ?? {
+      unreadNotifications: 0,
+      connections: 0,
+      followedProjects: 0,
+      upcomingEvents: 0,
+    },
     saved: new URL(request.url).searchParams.has("saved"),
     welcome: new URL(request.url).searchParams.has("welcome"),
   };
@@ -318,6 +346,15 @@ export default function Dashboard({
   );
   const savedContactVisibility =
     loaderData.contacts[0]?.visibility ?? "connections";
+  const membershipLabel =
+    {
+      pending_email: "Email confirmation needed",
+      pending_review: "Application under review",
+      approved: "Approved member",
+      declined: "Application reviewed",
+      waitlisted: "Membership waitlist",
+    }[loaderData.membership?.status ?? "pending_review"] ??
+    "Application under review";
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -352,7 +389,9 @@ export default function Dashboard({
             </div>
           )}
           {loaderData.saved && (
-            <div className="notice success">Profile saved.</div>
+            <div className="notice success" role="status">
+              Profile saved.
+            </div>
           )}
           {!isMember && (
             <div className="notice applicant-notice">
@@ -381,6 +420,49 @@ export default function Dashboard({
               </span>
             )}
           </div>
+          <section className="member-home" aria-labelledby="member-home-title">
+            <div className="member-home-intro">
+              <span className="chapter">Your place in the House</span>
+              <h2 id="member-home-title">{membershipLabel}</h2>
+              <p>
+                {isMember
+                  ? "Your member spaces are open. Continue a conversation, follow an opportunity or keep your profile current."
+                  : "You can keep your lightweight profile and interests current while the Membership Desk completes its review."}
+              </p>
+              <span className={`membership-seal status-${loaderData.membership?.status ?? "pending_review"}`}>
+                {membershipLabel}
+              </span>
+            </div>
+            <div className="member-home-stats" aria-label="Account activity">
+              <Link to="/notifications">
+                <strong>{loaderData.activity.unreadNotifications}</strong>
+                <span>Unread updates</span>
+              </Link>
+              <Link to="/connections">
+                <strong>{loaderData.activity.connections}</strong>
+                <span>Connections</span>
+              </Link>
+              <Link to="/projects">
+                <strong>{loaderData.activity.followedProjects}</strong>
+                <span>Followed projects</span>
+              </Link>
+              <Link to="/events">
+                <strong>{loaderData.activity.upcomingEvents}</strong>
+                <span>Event places</span>
+              </Link>
+            </div>
+            <nav className="member-next-actions" aria-label="Recommended next steps">
+              <Link className="button button-primary" to="/projects">
+                Discover projects
+              </Link>
+              <Link className="button button-quiet" to="/events">
+                Explore events
+              </Link>
+              <a className="quiet-link" href="#profile-editor">
+                Continue your profile
+              </a>
+            </nav>
+          </section>
           <section
             id="role-workspaces"
             className="profile-completion"
@@ -418,7 +500,9 @@ export default function Dashboard({
           </section>
           <Form method="post" className="profile-form" id="profile-editor">
             {actionData?.error && (
-              <p className="form-error">{actionData.error}</p>
+              <p className="form-error" role="alert">
+                {actionData.error}
+              </p>
             )}
             <div className="form-row">
               <label>
@@ -640,7 +724,9 @@ export default function Dashboard({
               disabled={navigation.state !== "idle"}
               type="submit"
             >
-              Save profile
+              {navigation.state === "submitting"
+                ? "Saving profile…"
+                : "Save profile"}
             </button>
           </Form>
         </section>

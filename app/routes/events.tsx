@@ -1,9 +1,20 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/events";
 import { SiteHeader } from "~/components/SiteHeader";
+import { PublicFooter } from "~/components/PublicFooter";
+import { EventInvitationCard } from "~/components/discovery/EventInvitationCard";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { canHostEvents } from "~/lib/events.server";
+
+export const meta: Route.MetaFunction = () => [
+  { title: "Gatherings | AKARI House" },
+  {
+    name: "description",
+    content:
+      "Discover curated online and in-person gatherings hosted by approved AKARI House members.",
+  },
+];
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -60,35 +71,41 @@ export default function Events({ loaderData }: Route.ComponentProps) {
             </Link>
           )}
         </header>
-        <div className="project-grid">
+        <section className="event-invitation-list" aria-label="Events">
           {loaderData.events.length ? (
             loaderData.events.map((event) => (
-              <article className="project-card event-card" key={event.slug}>
-                <span className="chapter">{event.format.replace("_", " ")}</span>
-                <h2>
-                  <Link to={`/events/${event.slug}`}>{event.title}</Link>
-                </h2>
-                <p>{event.summary}</p>
-                <time dateTime={event.startsAt}>
-                  {new Date(event.startsAt).toLocaleString()} · {event.timezone}
-                </time>
-                <footer>
-                  <span>Hosted by {event.hostName}</span>
-                  <span>
-                    {event.registeredCount}
-                    {event.capacity ? ` / ${event.capacity}` : ""} registered
-                  </span>
-                </footer>
-              </article>
+              <EventInvitationCard event={event} key={event.slug} />
             ))
           ) : (
-            <div className="status-card">
-              <h2>The calendar is being prepared.</h2>
-              <p>Approved gatherings will appear here.</p>
+            <div className="directory-empty is-event">
+              <div className="empty-calendar" aria-hidden="true">
+                <span />
+                <i />
+                <i />
+                <i />
+              </div>
+              <div>
+                <span className="eyebrow">A quiet engawa</span>
+                <h2>The next gathering is taking shape.</h2>
+                <p>
+                  Approved online and in-person gatherings will appear here with
+                  clear access, capacity and host information.
+                </p>
+                {loaderData.canHost ? (
+                  <Link className="button button-primary" to="/events/new">
+                    Propose a gathering
+                  </Link>
+                ) : (
+                  <Link className="button button-quiet" to="/#membership">
+                    Learn how the House gathers
+                  </Link>
+                )}
+              </div>
             </div>
           )}
-        </div>
+        </section>
       </main>
+      <PublicFooter />
     </div>
   );
 }

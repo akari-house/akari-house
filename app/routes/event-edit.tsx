@@ -1,9 +1,15 @@
-import { Form, redirect } from "react-router";
+import { Form, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/event-edit";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import { validEventTimes } from "~/lib/events.server";
+import {
+  eventTimeToLocalInput,
+  isValidTimezone,
+  localEventTimeToUtc,
+  validEventTimes,
+} from "~/lib/events";
+import { EventTimezoneField } from "~/components/EventTimeDisplay";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText, normalizeWebsite } from "~/lib/validation";
 
@@ -14,7 +20,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     .prepare(
       `SELECT slug, title, summary, description, format, venue,
               meeting_url AS meetingUrl, starts_at AS startsAt,
-              ends_at AS endsAt, capacity, status
+              ends_at AS endsAt, timezone, capacity, status
        FROM events WHERE slug = ? AND host_user_id = ?`,
     )
     .bind(params.slug, user.id)
@@ -28,6 +34,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       meetingUrl: string;
       startsAt: string;
       endsAt: string;
+      timezone: string;
       capacity: number | null;
       status: string;
     }>();
@@ -56,7 +63,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       )
       .bind(existing.id)
       .run();
-    throw redirect("/events/manage");
+    throw redirect("/events/manage?cancelled=1");
   }
   const title = formText(form.get("title")).trim();
   const summary = formText(form.get("summary")).trim();
@@ -64,8 +71,11 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const format = formText(form.get("format"));
   const venue = formText(form.get("venue")).trim();
   const meetingUrl = normalizeWebsite(form.get("meetingUrl"));
-  const startsAt = formText(form.get("startsAt"));
-  const endsAt = formText(form.get("endsAt"));
+  const startsAtLocal = formText(form.get("startsAt"));
+  const endsAtLocal = formText(form.get("endsAt"));
+  const timezone = formText(form.get("timezone")).trim();
+  const startsAt = localEventTimeToUtc(startsAtLocal, timezone);
+  const endsAt = localEventTimeToUtc(endsAtLocal, timezone);
   const capacityText = formText(form.get("capacity")).trim();
   const capacity = capacityText ? Number(capacityText) : null;
   if (
@@ -77,11 +87,17 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     !["online", "in_person", "hybrid"].includes(format) ||
     venue.length > 240 ||
     meetingUrl === null ||
+    !isValidTimezone(timezone) ||
+    startsAt === null ||
+    endsAt === null ||
     !validEventTimes(startsAt, endsAt) ||
     (capacity !== null &&
       (!Number.isSafeInteger(capacity) || capacity < 1 || capacity > 10000))
   )
-    return { error: "Check the event fields and time range." };
+    return {
+      error:
+        "Check the event fields, timezone and time range. Times skipped by a daylight-saving change are not valid.",
+    };
   if (format !== "in_person" && !meetingUrl)
     return { error: "Online and hybrid events require a meeting URL." };
   if (format !== "online" && !venue)
@@ -90,7 +106,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     .prepare(
       `UPDATE events SET title = ?, summary = ?, description = ?,
        format = ?, venue = ?, meeting_url = ?, starts_at = ?, ends_at = ?,
-       capacity = ?, status = 'submitted', updated_at = datetime('now')
+       timezone = ?, capacity = ?, status = 'submitted',
+       updated_at = datetime('now')
        WHERE id = ?`,
     )
     .bind(
@@ -102,11 +119,12 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       meetingUrl ?? "",
       startsAt,
       endsAt,
+      timezone,
       capacity,
       existing.id,
     )
     .run();
-  throw redirect(`/events/${params.slug}`);
+  throw redirect(`/events/${params.slug}?submitted=1`);
 }
 
 export default function EventEdit({
@@ -114,6 +132,7 @@ export default function EventEdit({
   actionData,
 }: Route.ComponentProps) {
   const event = loaderData.event;
+  const navigation = useNavigation();
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -121,7 +140,11 @@ export default function EventEdit({
         <span className="eyebrow">Event editor · {event.status}</span>
         <h1>Refine the gathering.</h1>
         <Form method="post" className="profile-form">
-          {actionData?.error && <p className="form-error">{actionData.error}</p>}
+          {actionData?.error && (
+            <p className="form-error" role="alert">
+              {actionData.error}
+            </p>
+          )}
           <label>
             Title
             <input name="title" defaultValue={event.title} maxLength={120} />
@@ -167,22 +190,37 @@ export default function EventEdit({
           </div>
           <div className="form-row">
             <label>
-              Starts (UTC)
+              Starts in the event timezone
               <input
                 name="startsAt"
                 type="datetime-local"
-                defaultValue={event.startsAt.slice(0, 16)}
+                defaultValue={eventTimeToLocalInput(
+                  event.startsAt,
+                  event.timezone,
+                )}
+                required
               />
             </label>
             <label>
-              Ends (UTC)
+              Ends in the event timezone
               <input
                 name="endsAt"
                 type="datetime-local"
-                defaultValue={event.endsAt.slice(0, 16)}
+                defaultValue={eventTimeToLocalInput(
+                  event.endsAt,
+                  event.timezone,
+                )}
+                required
               />
             </label>
           </div>
+          <EventTimezoneField defaultValue={event.timezone} />
+          {event.status === "published" && (
+            <p className="notice">
+              Saving changes sends this event back for review and temporarily
+              removes it from the public calendar.
+            </p>
+          )}
           <label>
             Venue
             <input name="venue" defaultValue={event.venue} maxLength={240} />
@@ -199,8 +237,11 @@ export default function EventEdit({
             className="button button-primary"
             name="intent"
             value="submit"
+            disabled={navigation.state !== "idle"}
           >
-            Save and submit for review
+            {navigation.state === "idle"
+              ? "Save and submit for review"
+              : "Submitting changes..."}
           </button>
           {event.status !== "cancelled" && (
             <button
@@ -208,6 +249,15 @@ export default function EventEdit({
               name="intent"
               value="cancel"
               formNoValidate
+              disabled={navigation.state !== "idle"}
+              onClick={(event) => {
+                if (
+                  !window.confirm(
+                    "Cancel this event? It will leave the public calendar and registrations will no longer be active.",
+                  )
+                )
+                  event.preventDefault();
+              }}
             >
               Cancel event
             </button>

@@ -62,6 +62,7 @@ export function CommonTable({ compact = false }: { compact?: boolean }) {
             alt=""
             width={160}
             height={150}
+            loading="lazy"
           />{" "}
           AKARI
         </span>

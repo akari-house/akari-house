@@ -178,7 +178,9 @@ export default function Register({
       </p>
       <Form method="post" className="form-stack">
         {actionData?.errors.form && (
-          <p className="form-error">{actionData.errors.form}</p>
+          <p className="form-error" role="alert">
+            {actionData.errors.form}
+          </p>
         )}
         <label>
           Display name
