@@ -280,60 +280,57 @@ img {
   --hero-scroll: 0;
   overflow: hidden;
 }
-.arrival-scene-base,
-.arrival-scene-sanctuary,
-.arrival-scene-foreground {
+.arrival-scene {
   position: absolute;
-  inset: -3%;
-  background: url("/assets/house/arrival-v2.webp") center 46% / cover no-repeat;
-  transform-origin: 52% 46%;
+  inset: -2.5%;
+  width: 105%;
+  height: 105%;
+  object-fit: cover;
+  object-position: 50% 50%;
+  transform-origin: 57% 38%;
   will-change: transform;
-}
-.arrival-scene-base {
   transform: translate3d(
-      calc(var(--hero-x) * -8px),
-      calc(var(--hero-y) * -5px),
+      calc(var(--hero-x) * -10px),
+      calc(var(--hero-y) * -7px),
       0
     )
-    scale(calc(1.035 + var(--hero-scroll) * 0.1));
-  transition: transform 180ms ease-out;
+    scale(calc(1.02 + var(--hero-scroll) * 0.08));
+  transition: transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-.arrival-scene-sanctuary {
-  clip-path: circle(29% at 53% 43%);
-  filter: brightness(1.08) saturate(1.08);
-  transform: translate3d(
-      calc(var(--hero-x) * -15px),
-      calc(var(--hero-y) * -10px),
-      0
-    )
-    scale(calc(1.05 + var(--hero-scroll) * 0.13));
-  transition: transform 220ms ease-out;
+.arrival-sanctuary-light {
+  position: absolute;
+  z-index: 1;
+  left: 58%;
+  top: 39%;
+  width: min(48vw, 720px);
+  aspect-ratio: 1.8;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse,
+    #ffcf6e40 0%,
+    #ff8a5930 28%,
+    transparent 70%
+  );
+  mix-blend-mode: screen;
+  filter: blur(18px);
   animation: sanctuary-light 5.5s ease-in-out infinite alternate;
-}
-.arrival-scene-foreground {
-  clip-path: polygon(0 39%, 29% 38%, 43% 52%, 58% 100%, 0 100%);
-  transform: translate3d(
-      calc(var(--hero-x) * 18px),
-      calc(var(--hero-y) * 10px),
-      0
-    )
-    scale(calc(1.075 + var(--hero-scroll) * 0.16));
-  transition: transform 150ms ease-out;
-  filter: contrast(1.04);
 }
 @keyframes sanctuary-light {
   from {
-    filter: brightness(1.01) saturate(1.02);
+    opacity: 0.55;
+    scale: 0.94;
   }
   to {
-    filter: brightness(1.17) saturate(1.12);
+    opacity: 0.95;
+    scale: 1.08;
   }
 }
 .arrival-lantern-path {
   position: absolute;
   z-index: 2;
-  left: 52.5%;
-  top: 47%;
+  left: 57.5%;
+  top: 42%;
   width: 2px;
   height: 32%;
   transform: perspective(500px) rotateX(13deg);
@@ -382,8 +379,8 @@ img {
 .arrival-crest-hotspot {
   position: absolute;
   z-index: 3;
-  left: 52.8%;
-  top: 42%;
+  left: 58%;
+  top: 35%;
   width: clamp(90px, 11vw, 170px);
   aspect-ratio: 1;
   translate: -50% -50%;
@@ -421,11 +418,10 @@ img {
 .arrival-copy {
   position: absolute;
   z-index: 4;
-  left: 50%;
-  bottom: 6vh;
-  transform: translateX(-50%);
-  width: min(620px, calc(100% - 2rem));
-  text-align: center;
+  left: clamp(1.5rem, 7vw, 8rem);
+  bottom: clamp(3.5rem, 10vh, 7rem);
+  width: min(560px, calc(100% - 3rem));
+  text-align: left;
   padding: 1rem 1.25rem 2rem;
   text-shadow:
     0 3px 22px #05070d,
@@ -1576,6 +1572,48 @@ textarea:focus {
   color: #ff9fbe;
   margin-top: -0.6rem;
 }
+.form-stack .consent-row {
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  line-height: 1.55;
+  padding: 0.7rem 0;
+}
+.consent-row input {
+  width: 1rem;
+  height: 1rem;
+  margin-top: 0.15rem;
+  accent-color: var(--pink);
+}
+.status-card {
+  margin: 2rem 0;
+  padding: clamp(1.4rem, 4vw, 2.2rem);
+  border: 1px solid var(--hair);
+  border-radius: 1rem;
+  background:
+    radial-gradient(circle at 90% 10%, #ffd83d18, transparent 30%), #ffffff08;
+}
+.status-card.success {
+  border-color: #ffd83d50;
+}
+.status-card h2 {
+  margin: 0.8rem 0;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+}
+.status-card p {
+  color: var(--muted);
+  line-height: 1.7;
+}
+.status-mark {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  color: var(--yellow);
+  background: #ffd83d10;
+  border: 1px solid #ffd83d35;
+  box-shadow: 0 0 32px #ffd83d18;
+}
 .form-footer {
   text-align: center;
   color: var(--muted);
@@ -1583,6 +1621,67 @@ textarea:focus {
 }
 .form-footer a {
   color: var(--pink);
+}
+.admin-main {
+  width: min(1120px, calc(100% - 3rem));
+  margin: 78px auto 0;
+  padding: 5rem 0;
+}
+.admin-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+.admin-heading h1 {
+  margin: 0.7rem 0 0;
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+}
+.application-list {
+  display: grid;
+  gap: 1rem;
+}
+.application-card {
+  display: grid;
+  grid-template-columns: minmax(210px, 0.7fr) minmax(280px, 1.3fr);
+  gap: 1.5rem 2rem;
+  padding: clamp(1.3rem, 3vw, 2rem);
+  border: 1px solid var(--hair);
+  border-radius: 1rem;
+  background: #ffffff07;
+}
+.application-card h2 {
+  margin: 0.6rem 0;
+}
+.application-card p,
+.application-card blockquote {
+  color: var(--muted);
+  line-height: 1.65;
+}
+.application-card blockquote {
+  margin: 0;
+  padding-left: 1.2rem;
+  border-left: 2px solid var(--pink);
+}
+.application-meta,
+.application-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+}
+.application-meta {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+.application-meta time {
+  margin-left: auto;
+}
+.application-actions {
+  justify-content: flex-end;
 }
 .dashboard-shell {
   min-height: 100vh;
@@ -1989,6 +2088,17 @@ textarea:focus {
   }
 }
 @media (max-width: 700px) {
+  .admin-heading,
+  .application-card {
+    grid-template-columns: 1fr;
+  }
+  .admin-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .application-actions {
+    justify-content: flex-start;
+  }
   .chapter-section {
     padding: 6rem 1rem;
   }
@@ -2008,20 +2118,19 @@ textarea:focus {
   .arrival-media {
     inset: 0;
   }
-  .arrival-scene-base,
-  .arrival-scene-sanctuary,
-  .arrival-scene-foreground {
-    background-position: 52% 34%;
-  }
-  .arrival-scene-foreground {
-    clip-path: polygon(0 43%, 35% 41%, 55% 100%, 0 100%);
+  .arrival-scene {
+    object-position: 58% 50%;
+    transform-origin: 60% 36%;
   }
   .arrival-lantern-path {
-    left: 54%;
-    top: 45%;
+    left: 60%;
+    top: 42%;
   }
   .arrival-copy {
-    bottom: 5vh;
+    left: 50%;
+    bottom: 4vh;
+    transform: translateX(-50%);
+    text-align: center;
   }
   .arrival-note {
     display: none;
@@ -2419,7 +2528,7 @@ textarea:focus {
     scroll-behavior: auto;
   }
   .arrival-media,
-  .arrival-scene-sanctuary,
+  .arrival-sanctuary-light,
   .arrival-lantern-path span,
   .hall-heart,
   .room-hero-art,

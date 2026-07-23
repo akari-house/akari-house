@@ -2,8 +2,13 @@ import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/register";
 import { AuthLayout } from "~/layouts/AuthLayout";
 import { RoleSelector } from "~/components/RoleSelector";
-import { createSession, getOptionalUser } from "~/lib/auth.server";
+import { getOptionalUser } from "~/lib/auth.server";
 import { hashPassword, assertSameOrigin } from "~/lib/security.server";
+import { issueAccountToken } from "~/lib/account-tokens.server";
+import {
+  sendVerificationEmail,
+  type MembershipEmailEnvironment,
+} from "~/lib/email.server";
 import {
   formText,
   normalizeEmail,
@@ -33,6 +38,8 @@ export async function action({ request, context }: Route.ActionArgs) {
   const username = normalizeUsername(formData.get("username"));
   const displayName = formText(formData.get("displayName")).trim();
   const password = formText(formData.get("password"));
+  const applicantNote = formText(formData.get("applicantNote")).trim();
+  const membershipTerms = formData.get("membershipTerms") === "on";
   const selected = selectedRoles(formData);
   const errors: Record<string, string> = {};
   if (!validateEmail(email)) errors.email = "Enter a valid email address.";
@@ -41,9 +48,18 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (displayName.length < 2 || displayName.length > 80)
     errors.displayName = "Enter a display name between 2 and 80 characters.";
   if (password.length < 12) errors.password = "Use at least 12 characters.";
+  if (applicantNote.length < 30 || applicantNote.length > 600)
+    errors.applicantNote =
+      "Tell us what brings you to AKARI in 30 to 600 characters.";
+  if (!membershipTerms)
+    errors.membershipTerms = "Confirm that you understand the review process.";
   if (selected.length === 0) errors.roles = "Select at least one role.";
   if (Object.keys(errors).length)
-    return { errors, values: { email, username, displayName }, selected };
+    return {
+      errors,
+      values: { email, username, displayName, applicantNote },
+      selected,
+    };
 
   const db = context.get(cloudflareContext).env.DB;
   const existing = await db
@@ -52,8 +68,10 @@ export async function action({ request, context }: Route.ActionArgs) {
     .first();
   if (existing)
     return {
-      errors: { form: "That email or username is already registered." },
-      values: { email, username, displayName },
+      errors: {
+        form: "If these details can continue, we will send the next step.",
+      },
+      values: { email, username, displayName, applicantNote },
       selected,
     };
 
@@ -62,7 +80,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   await db.batch([
     db
       .prepare(
-        "INSERT INTO users (id, email, username, password_hash) VALUES (?, ?, ?, ?)",
+        "INSERT INTO users (id, email, username, password_hash, status) VALUES (?, ?, ?, ?, 'restricted')",
       )
       .bind(userId, email, username, passwordHash),
     db
@@ -85,9 +103,31 @@ export async function action({ request, context }: Route.ActionArgs) {
         "INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id) VALUES (?, ?, 'account.registered', 'user', ?)",
       )
       .bind(crypto.randomUUID(), userId, userId),
+    db
+      .prepare(
+        "INSERT INTO membership_applications (id, user_id, status, applicant_note) VALUES (?, ?, 'pending_email', ?)",
+      )
+      .bind(crypto.randomUUID(), userId, applicantNote),
   ]);
-  const cookie = await createSession(db, userId, request);
-  return redirect("/app?welcome=1", { headers: { "Set-Cookie": cookie } });
+  const token = await issueAccountToken(db, userId, "email_verification");
+  const env = context.get(cloudflareContext).env as CloudflareEnvironment &
+    MembershipEmailEnvironment;
+  const delivery = await sendVerificationEmail(env, email, token);
+  await db
+    .prepare(
+      "INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id, metadata_json) VALUES (?, ?, ?, 'membership_application', ?, ?)",
+    )
+    .bind(
+      crypto.randomUUID(),
+      userId,
+      delivery.sent
+        ? "membership.verification_sent"
+        : "membership.verification_pending",
+      userId,
+      JSON.stringify({ delivery: delivery.sent ? "sent" : delivery.reason }),
+    )
+    .run();
+  return redirect("/membership/check-email");
 }
 
 export default function Register({
@@ -97,9 +137,10 @@ export default function Register({
   const navigation = useNavigation();
   const pending = navigation.state !== "idle";
   return (
-    <AuthLayout eyebrow="Membership desk" title="Create your AKARI identity">
+    <AuthLayout eyebrow="Membership desk" title="Request a place in the House">
       <p className="form-intro">
-        One account, every role you hold. Your profile begins private.
+        Every request is reviewed by a person. Applying does not create member
+        access immediately, and your profile begins private.
       </p>
       <Form method="post" className="form-stack">
         {actionData?.errors.form && (
@@ -160,12 +201,41 @@ export default function Register({
         {actionData?.errors.roles && (
           <small className="field-error">{actionData.errors.roles}</small>
         )}
+        <label>
+          What brings you to AKARI?
+          <textarea
+            name="applicantNote"
+            rows={5}
+            minLength={30}
+            maxLength={600}
+            defaultValue={actionData?.values.applicantNote}
+            placeholder="Share what you are building, creating or investing in, and how you hope to participate."
+            required
+          />
+        </label>
+        {actionData?.errors.applicantNote && (
+          <small className="field-error">
+            {actionData.errors.applicantNote}
+          </small>
+        )}
+        <label className="consent-row">
+          <input name="membershipTerms" type="checkbox" required />
+          <span>
+            I understand that AKARI reviews every request and that submitting
+            this form does not guarantee membership.
+          </span>
+        </label>
+        {actionData?.errors.membershipTerms && (
+          <small className="field-error">
+            {actionData.errors.membershipTerms}
+          </small>
+        )}
         <button
           className="button button-primary button-wide"
           disabled={pending}
           type="submit"
         >
-          {pending ? "Opening the door…" : "Create account"}
+          {pending ? "Sending request..." : "Send membership request"}
         </button>
       </Form>
       <p className="form-footer">

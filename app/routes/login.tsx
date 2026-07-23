@@ -20,12 +20,20 @@ export async function action({ request, context }: Route.ActionArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const row = await db
     .prepare(
-      "SELECT id, password_hash AS passwordHash FROM users WHERE email = ? AND status = 'active'",
+      "SELECT id, password_hash AS passwordHash, status FROM users WHERE email = ?",
     )
     .bind(email)
-    .first<{ id: string; passwordHash: string }>();
+    .first<{ id: string; passwordHash: string; status: string }>();
   if (!row || !(await verifyPassword(password, row.passwordHash))) {
     return { error: "The email or password was not recognized.", email };
+  }
+  if (row.status !== "active") {
+    return {
+      error:
+        "Your membership request does not have member access yet. Check the latest message from the Membership Desk.",
+      email,
+      membershipPending: true,
+    };
   }
   const cookie = await createSession(db, row.id, request);
   const returnTo = new URL(request.url).searchParams.get("returnTo");
@@ -73,6 +81,12 @@ export default function Login({ actionData }: Route.ComponentProps) {
       <p className="form-footer">
         New to AKARI? <Link to="/register">Request membership</Link>
       </p>
+      {actionData?.membershipPending && (
+        <p className="form-footer">
+          Need help?{" "}
+          <Link to="/membership/check-email">View the application guide</Link>
+        </p>
+      )}
     </AuthLayout>
   );
 }

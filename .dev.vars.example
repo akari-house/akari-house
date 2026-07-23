@@ -1,6 +1,8 @@
 # Copy this file to .dev.vars for local-only secrets.
-# The foundation does not require third-party secrets yet.
 APP_ENV=development
+APP_URL=http://127.0.0.1:5173
 
-# Optional when Turnstile is enabled during the provisioning phase.
+# Configure these only in .dev.vars locally and as Cloudflare secrets in production.
+# RESEND_API_KEY=
+# MEMBERSHIP_FROM_EMAIL=AKARI House <membership@example.com>
 # TURNSTILE_SECRET_KEY=replace-with-a-local-test-key

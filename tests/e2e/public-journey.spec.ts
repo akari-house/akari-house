@@ -7,7 +7,7 @@ test("desktop journey reaches the Hall, Common Table and Membership Desk", async
   await expect(
     page.getByRole("heading", { name: "Welcome to AKARI House" }),
   ).toBeVisible();
-  const heroLayer = page.locator(".arrival-scene-base");
+  const heroLayer = page.locator(".arrival-scene");
   await expect(page.locator(".arrival-media")).toHaveAttribute(
     "data-interactive",
     "true",
@@ -64,7 +64,7 @@ test("mobile navigation traps focus and has no horizontal overflow", async ({
 test("reduced motion disables environmental animation", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await expect(page.locator(".arrival-scene-sanctuary")).toHaveCSS(
+  await expect(page.locator(".arrival-sanctuary-light")).toHaveCSS(
     "animation-name",
     "none",
   );
@@ -77,7 +77,8 @@ test("mobile Archive responds to native horizontal swiping", async ({
   await page.goto("/#archive");
   const track = page.locator(".archive-carousel-track");
   await track.evaluate((element) => {
-    element.scrollLeft = element.clientWidth;
+    const secondSlide = element.children.item(1) as HTMLElement | null;
+    element.scrollLeft = secondSlide?.offsetLeft ?? element.clientWidth;
     element.dispatchEvent(new Event("scroll"));
   });
   await expect(
@@ -85,7 +86,7 @@ test("mobile Archive responds to native horizontal swiping", async ({
   ).toHaveAttribute("aria-pressed", "true");
 });
 
-test("account, multi-role profile and server privacy journey", async ({
+test("membership request remains gated before human approval", async ({
   page,
 }, testInfo) => {
   test.skip(
@@ -97,8 +98,6 @@ test("account, multi-role profile and server privacy journey", async ({
   const username = `journey-${suffix}`;
   const email = `${username}@example.test`;
   const password = `Akari-test-${suffix}-safe`;
-  const profilePath = `/profiles/${username}`;
-
   await page.goto("/register");
   await page.getByLabel("Display name").fill("Journey Member");
   await page.getByLabel("Username").fill(username);
@@ -106,63 +105,25 @@ test("account, multi-role profile and server privacy journey", async ({
   await page.getByLabel("Password").fill(password);
   await page.getByLabel(/Founder/).check();
   await page.getByLabel(/Creator/).check();
-  await page.getByRole("button", { name: "Create account" }).click();
-
-  await expect(page).toHaveURL(/\/app\?welcome=1$/);
-  await expect(page.getByText("Your profile starts private")).toBeVisible();
-  await expect(
-    page.getByRole("checkbox", { name: /Founder Build projects/ }),
-  ).toBeChecked();
-  await expect(
-    page.getByRole("checkbox", { name: /Creator Share expertise/ }),
-  ).toBeChecked();
-
   await page
-    .getByLabel("Professional headline")
-    .fill("Founder connecting thoughtful communities");
-  await page.getByLabel("Location").fill("Berlin, Germany");
+    .getByLabel("What brings you to AKARI?")
+    .fill(
+      "I am building a trusted community product and want to contribute thoughtful partnerships.",
+    );
   await page
-    .getByLabel("Biography")
-    .fill("Building durable relationships between founders and creators.");
-  await page
-    .getByRole("textbox", { name: "Expertise", exact: true })
-    .fill("Community strategy and partnerships");
-  await page.getByLabel("Open to").fill("Collaborations and introductions");
-  await page.getByLabel("Website").fill("https://akari.club");
-  await page.getByLabel("Public").check();
-  await page.getByRole("button", { name: "Save profile" }).click();
+    .getByLabel(/I understand that AKARI reviews every request/)
+    .check();
+  await page.getByRole("button", { name: "Send membership request" }).click();
 
-  await expect(page).toHaveURL(/\/app\?saved=1$/);
-  await expect(page.getByText("Profile saved.")).toBeVisible();
-  await expect(page.getByRole("progressbar")).toHaveAttribute(
-    "aria-valuenow",
-    "100",
-  );
-
-  await page.getByRole("button", { name: "Log out" }).click();
-  await expect(page).toHaveURL(/\/$/);
-  await page.goto(profilePath);
+  await expect(page).toHaveURL(/\/membership\/check-email$/);
   await expect(
-    page.getByRole("heading", { name: "Journey Member" }),
+    page.getByRole("heading", { name: "Confirm where we can reach you" }),
   ).toBeVisible();
-  await expect(
-    page.getByText("Community strategy and partnerships"),
-  ).toBeVisible();
-
-  await page.goto("/login");
+  await page.goto("/app");
+  await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp$/);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Log in" }).click();
-  await expect(page).toHaveURL(/\/app$/);
-  await page.getByLabel("Private").check();
-  await page.getByRole("button", { name: "Save profile" }).click();
-  await expect(page).toHaveURL(/\/app\?saved=1$/);
-  await page.getByRole("button", { name: "Log out" }).click();
-  await expect(page).toHaveURL(/\/$/);
-
-  await page.goto(profilePath);
-  await expect(
-    page.getByRole("heading", { name: "This room is private." }),
-  ).toBeVisible();
-  await expect(page.locator("body")).not.toContainText("Community strategy");
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page.getByText("does not have member access yet")).toBeVisible();
 });
