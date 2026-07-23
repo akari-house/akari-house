@@ -367,6 +367,7 @@ export default function Dashboard({
               interest.status === "approved",
           ) && <Link to="/events/manage">My events</Link>}
           <Link to="/connections">Connections</Link>
+          <Link to="/members">Discover members</Link>
           <Link to="/notifications">Notifications</Link>
           <Link to="/settings/telegram">Telegram</Link>
         </nav>

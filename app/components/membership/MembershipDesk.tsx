@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
+import { Icon } from "~/components/Icon";
 import type { Role } from "~/lib/domain";
 
 const roleCopy: Record<Role, string> = {
@@ -106,7 +107,7 @@ export function MembershipDesk() {
           <div className="membership-action-primary">
             {selected.length ? (
               <Link className="button button-primary" to={destination}>
-                Continue to membership <span aria-hidden="true">→</span>
+                Continue to membership <Icon name="arrow-right" />
               </Link>
             ) : (
               <button className="button button-primary" type="button" disabled>
@@ -120,7 +121,7 @@ export function MembershipDesk() {
             </small>
           </div>
           <p className="membership-review-note">
-            <span aria-hidden="true">✦</span>
+            <Icon name="sparkle" />
             Every application is reviewed by a person. No follower threshold and
             no public directory by default.
           </p>

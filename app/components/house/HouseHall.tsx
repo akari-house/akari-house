@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
+import { Icon } from "~/components/Icon";
 import { rooms } from "~/data/house";
 
 export function HouseHall() {
@@ -84,7 +85,7 @@ export function HouseHall() {
             <p>{room.summary}</p>
           </div>
           <Link to={`/rooms/${room.slug}`}>
-            Enter room <span aria-hidden="true">→</span>
+            Enter room <Icon name="arrow-right" />
           </Link>
         </div>
       </div>

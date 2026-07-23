@@ -8,6 +8,7 @@ import { HouseInMotion } from "~/components/discovery/HouseInMotion";
 import { ProjectLanternCard } from "~/components/discovery/ProjectLanternCard";
 import { PublicFooter } from "~/components/PublicFooter";
 import { caseStudies } from "~/data/case-studies";
+import { AkariMotif } from "~/components/AkariMotif";
 
 afterEach(cleanup);
 
@@ -57,7 +58,9 @@ describe("public discovery surfaces", () => {
   });
 
   it("makes date and capacity the event invitation hierarchy", () => {
-    renderWithRouter(<EventInvitationCard event={event} />);
+    const { container } = renderWithRouter(
+      <EventInvitationCard event={event} />,
+    );
     expect(
       screen.getByRole("link", { name: "Summer Common Table" }),
     ).toHaveAttribute("href", "/events/summer-table");
@@ -66,6 +69,18 @@ describe("public discovery surfaces", () => {
       "8",
     );
     expect(screen.getByText("Aug")).toBeVisible();
+    expect(container.querySelector(".event-invitation-mark")).toBeTruthy();
+    expect(container.querySelector(".event-host-nameplate svg")).toBeTruthy();
+  });
+
+  it("keeps decorative motifs hidden and named motifs semantic", () => {
+    const { rerender } = render(<AkariMotif motif="blossom" />);
+    expect(document.querySelector("svg")).toHaveAttribute(
+      "aria-hidden",
+      "true",
+    );
+    rerender(<AkariMotif motif="invitation" label="Event invitation" />);
+    expect(screen.getByRole("img", { name: "Event invitation" })).toBeVisible();
   });
 
   it("bridges live work and evidence from the homepage", () => {

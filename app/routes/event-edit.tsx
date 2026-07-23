@@ -12,6 +12,7 @@ import {
 import { EventTimezoneField } from "~/components/EventTimeDisplay";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText, normalizeWebsite } from "~/lib/validation";
+import { AkariMotif } from "~/components/AkariMotif";
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -136,10 +137,16 @@ export default function EventEdit({
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
-      <main id="main-content" className="editor-main">
-        <span className="eyebrow">Event editor · {event.status}</span>
-        <h1>Refine the gathering.</h1>
-        <Form method="post" className="profile-form">
+      <main id="main-content" className="editor-main event-editor-main">
+        <header className="event-editor-intro">
+          <AkariMotif motif="invitation" />
+          <div>
+            <span className="eyebrow">Event editor · {event.status}</span>
+            <h1>Refine the gathering.</h1>
+            <p>Shape the invitation, timing and welcome before review.</p>
+          </div>
+        </header>
+        <Form method="post" className="profile-form event-form">
           {actionData?.error && (
             <p className="form-error" role="alert">
               {actionData.error}

@@ -6,6 +6,7 @@ import { EventInvitationCard } from "~/components/discovery/EventInvitationCard"
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { canHostEvents } from "~/lib/events.server";
+import { AkariMotif } from "~/components/AkariMotif";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Gatherings | AKARI House" },
@@ -56,7 +57,7 @@ export default function Events({ loaderData }: Route.ComponentProps) {
     <div className="site-shell">
       <SiteHeader user={loaderData.user} />
       <main id="main-content" className="directory-main">
-        <header className="directory-heading">
+        <header className="directory-heading event-directory-heading">
           <div>
             <span className="eyebrow">AKARI gatherings</span>
             <h1>Meet where the story moves forward.</h1>
@@ -79,10 +80,7 @@ export default function Events({ loaderData }: Route.ComponentProps) {
           ) : (
             <div className="directory-empty is-event">
               <div className="empty-calendar" aria-hidden="true">
-                <span />
-                <i />
-                <i />
-                <i />
+                <AkariMotif motif="invitation" />
               </div>
               <div>
                 <span className="eyebrow">A quiet engawa</span>

@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { AkariMotif } from "~/components/AkariMotif";
 
 export type EventInvitation = {
   slug: string;
@@ -70,14 +71,17 @@ export function EventInvitationCard({
 
   return (
     <article className={`event-invitation-card${compact ? " is-compact" : ""}`}>
-      <time
-        className="event-date-seal"
-        dateTime={normalizeEventTime(event.startsAt)}
-      >
-        <span>{date.month}</span>
-        <strong>{date.day}</strong>
-        <small>{date.time}</small>
-      </time>
+      <div className="event-invitation-date">
+        <AkariMotif motif="invitation" className="event-invitation-mark" />
+        <time
+          className="event-date-seal"
+          dateTime={normalizeEventTime(event.startsAt)}
+        >
+          <span>{date.month}</span>
+          <strong>{date.day}</strong>
+          <small>{date.time}</small>
+        </time>
+      </div>
       <div className="event-invitation-body">
         <div className="discovery-card-meta">
           <span>{event.format.replaceAll("_", " ")}</span>
@@ -89,7 +93,10 @@ export function EventInvitationCard({
         </h3>
         <p>{event.summary}</p>
         <footer>
-          <span>Hosted by {event.hostName}</span>
+          <span className="event-host-nameplate">
+            <AkariMotif motif="nameplate" />
+            Hosted by {event.hostName}
+          </span>
           <span>
             {event.registeredCount}
             {event.capacity ? ` / ${event.capacity}` : ""} registered

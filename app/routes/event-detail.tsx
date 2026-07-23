@@ -6,6 +6,7 @@ import { cloudflareContext } from "~/lib/cloudflare-context";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 import { EventTimeDisplay } from "~/components/EventTimeDisplay";
+import { AkariMotif } from "~/components/AkariMotif";
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -176,7 +177,7 @@ export default function EventDetail({
   return (
     <div className="site-shell">
       <SiteHeader user={user} />
-      <main id="main-content" className="project-detail-main">
+      <main id="main-content" className="project-detail-main event-detail-main">
         {loaderData.submitted && (
           <p className="notice success">
             Event submitted. It remains private until review.
@@ -199,38 +200,71 @@ export default function EventDetail({
             Your registration or waitlist place was cancelled.
           </p>
         )}
-        <span className="chapter">
-          {event.format.replace("_", " ")} · {event.status}
-        </span>
-        <h1>{event.title}</h1>
-        <p className="project-lede">{event.summary}</p>
-        <p className="project-story">{event.description}</p>
-        <section className="project-seeking-panel">
-          <EventTimeDisplay
-            startsAt={event.startsAt}
-            timezone={event.timezone}
-          />
-          <span aria-hidden="true"> to </span>
-          <EventTimeDisplay
-            startsAt={event.endsAt}
-            timezone={event.timezone}
-            showViewerTime={false}
-          />
-          {event.venue && <p>Venue: {event.venue}</p>}
-          <p>
-            {event.registeredCount}
-            {event.capacity ? ` / ${event.capacity}` : ""} registered
-          </p>
-          {event.meetingUrl && (
-            <a href={event.meetingUrl} rel="noreferrer" target="_blank">
-              Open meeting link
-            </a>
-          )}
-        </section>
-        <p>
-          Hosted by{" "}
-          <Link to={`/profiles/${event.hostUsername}`}>{event.hostName}</Link>
-        </p>
+        <header className="event-detail-intro">
+          <div className="event-detail-kamon" aria-hidden="true">
+            <AkariMotif motif="blossom" />
+            <AkariMotif motif="thread" className="event-detail-thread" />
+          </div>
+          <div>
+            <span className="chapter">
+              {event.format.replace("_", " ")} · {event.status}
+            </span>
+            <h1>{event.title}</h1>
+            <p className="project-lede">{event.summary}</p>
+          </div>
+        </header>
+        <div className="event-detail-layout">
+          <div className="event-detail-story">
+            <span className="eyebrow">The invitation</span>
+            <p className="project-story">{event.description}</p>
+            <p className="event-detail-host">
+              <AkariMotif motif="nameplate" />
+              <span>
+                Hosted by{" "}
+                <Link to={`/profiles/${event.hostUsername}`}>
+                  {event.hostName}
+                </Link>
+              </span>
+            </p>
+          </div>
+          <section
+            className="project-seeking-panel event-invitation-panel"
+            aria-label="Event invitation details"
+          >
+            <AkariMotif motif="invitation" className="event-panel-mark" />
+            <div className="event-detail-time">
+              <span>Begins</span>
+              <EventTimeDisplay
+                startsAt={event.startsAt}
+                timezone={event.timezone}
+              />
+            </div>
+            <div className="event-detail-time">
+              <span>Closes</span>
+              <EventTimeDisplay
+                startsAt={event.endsAt}
+                timezone={event.timezone}
+                showViewerTime={false}
+              />
+            </div>
+            {event.venue && (
+              <p>
+                <strong>Place</strong>
+                {event.venue}
+              </p>
+            )}
+            <p>
+              <strong>Guest list</strong>
+              {event.registeredCount}
+              {event.capacity ? ` / ${event.capacity}` : ""} registered
+            </p>
+            {event.meetingUrl && (
+              <a href={event.meetingUrl} rel="noreferrer" target="_blank">
+                Open meeting room
+              </a>
+            )}
+          </section>
+        </div>
         {actionData?.error && (
           <p className="form-error" role="alert">
             {actionData.error}

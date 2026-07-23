@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Form, Link, useLocation } from "react-router";
+import { Icon } from "~/components/Icon";
 import type { SessionUser } from "~/lib/domain";
 
 const links = [
@@ -109,6 +110,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
           : []),
         ["Events", "/events"],
         ["Connections", "/connections"],
+        ["Discover members", "/members"],
         ["Notifications", "/notifications"],
         ["Telegram", "/settings/telegram"],
       ]
@@ -169,11 +171,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
             disabled={!interactive}
             onClick={() => setOpen((value) => !value)}
           >
-            <span className="menu-glyph" aria-hidden="true">
-              <i />
-              <i />
-              <i />
-            </span>
+            <Icon name={open ? "close" : "menu"} />
           </button>
         </div>
       </header>

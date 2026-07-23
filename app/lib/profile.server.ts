@@ -24,6 +24,18 @@ export async function getVisibleProfile(
   if (!profile) return null;
 
   let isConnected = false;
+  const viewerIsMember =
+    viewerId === profile.userId ||
+    Boolean(
+      viewerId &&
+        (await db
+          .prepare(
+            `SELECT 1 FROM membership_applications
+             WHERE user_id = ? AND status = 'approved'`,
+          )
+          .bind(viewerId)
+          .first()),
+    );
   if (
     viewerId &&
     viewerId !== profile.userId &&
@@ -44,6 +56,7 @@ export async function getVisibleProfile(
     !canViewProfile(profile.visibility, {
       ownerId: profile.userId,
       viewerId,
+      viewerIsMember,
       isConnected,
     })
   ) {

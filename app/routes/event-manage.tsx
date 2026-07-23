@@ -5,6 +5,7 @@ import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { canHostEvents } from "~/lib/events.server";
 import { EventTimeDisplay } from "~/components/EventTimeDisplay";
+import { AkariMotif } from "~/components/AkariMotif";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -37,7 +38,7 @@ export default function EventManage({ loaderData }: Route.ComponentProps) {
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
       <main id="main-content" className="directory-main">
-        <header className="directory-heading">
+        <header className="directory-heading event-directory-heading">
           <div>
             <span className="eyebrow">Event host desk</span>
             <h1>Manage your gatherings.</h1>
@@ -51,25 +52,29 @@ export default function EventManage({ loaderData }: Route.ComponentProps) {
             The event was cancelled and removed from the public calendar.
           </p>
         )}
-        <div className="project-grid">
+        <div className="event-host-grid">
           {loaderData.events.length ? (
             loaderData.events.map((event) => (
-              <article className="project-card" key={event.slug}>
-                <span className="chapter">{event.status}</span>
-                <h2>{event.title}</h2>
-                <p>{event.summary}</p>
-                <EventTimeDisplay
-                  startsAt={event.startsAt}
-                  timezone={event.timezone}
-                />
+              <article className="event-host-card" key={event.slug}>
+                <AkariMotif motif="invitation" />
+                <div>
+                  <span className="chapter">{event.status}</span>
+                  <h2>{event.title}</h2>
+                  <p>{event.summary}</p>
+                  <EventTimeDisplay
+                    startsAt={event.startsAt}
+                    timezone={event.timezone}
+                  />
+                </div>
                 <footer>
-                  <Link to={`/events/${event.slug}`}>View</Link>
-                  <Link to={`/events/${event.slug}/edit`}>Edit</Link>
+                  <Link to={`/events/${event.slug}`}>Open invitation</Link>
+                  <Link to={`/events/${event.slug}/edit`}>Refine</Link>
                 </footer>
               </article>
             ))
           ) : (
-            <div className="status-card">
+            <div className="status-card event-host-empty">
+              <AkariMotif motif="lantern" />
               <h2>No gatherings proposed yet.</h2>
               <p>
                 Start with a clear date, timezone and purpose. AKARI reviews

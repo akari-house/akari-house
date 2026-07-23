@@ -3,6 +3,7 @@ import type { Visibility } from "./domain";
 export interface VisibilityContext {
   ownerId: string;
   viewerId: string | null;
+  viewerIsMember: boolean;
   isConnected: boolean;
 }
 
@@ -12,7 +13,7 @@ export function canViewProfile(
 ) {
   if (context.viewerId === context.ownerId) return true;
   if (visibility === "public") return true;
-  if (visibility === "members") return context.viewerId !== null;
+  if (visibility === "members") return context.viewerIsMember;
   if (visibility === "connections")
     return context.viewerId !== null && context.isConnected;
   return false;

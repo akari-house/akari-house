@@ -28,6 +28,7 @@ export default [
   route("admin/moderation", "routes/admin-moderation.tsx"),
   route("notifications", "routes/notifications.tsx"),
   route("connections", "routes/connections.tsx"),
+  route("members", "routes/members.tsx"),
   route("settings/telegram", "routes/telegram-settings.tsx"),
   route("integrations/telegram/webhook", "routes/telegram-webhook.ts"),
   route("report", "routes/report.tsx"),
