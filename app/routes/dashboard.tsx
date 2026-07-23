@@ -331,7 +331,19 @@ export default function Dashboard({
           <a href="#role-workspaces">Membership</a>
           <a href="#privacy-controls">Privacy and security</a>
           <Link to="/projects">Projects</Link>
+          {loaderData.user.roles.includes("founder") &&
+            loaderData.user.accessTier === "member" && (
+              <Link to="/projects/manage">My projects</Link>
+            )}
+          <Link to="/events">Events</Link>
+          {loaderData.interests.some(
+            (interest) =>
+              interest.interestType === "event_host" &&
+              interest.status === "approved",
+          ) && <Link to="/events/manage">My events</Link>}
+          <Link to="/connections">Connections</Link>
           <Link to="/notifications">Notifications</Link>
+          <Link to="/settings/telegram">Telegram</Link>
         </aside>
         <section className="dashboard-content">
           {loaderData.welcome && (

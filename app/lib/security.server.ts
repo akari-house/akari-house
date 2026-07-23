@@ -71,3 +71,12 @@ export function assertSameOrigin(request: Request) {
   if (!origin || origin !== new URL(request.url).origin)
     throw new Response("Invalid request origin", { status: 403 });
 }
+
+export function safeEqualText(left: string, right: string) {
+  const leftBytes = new TextEncoder().encode(left);
+  const rightBytes = new TextEncoder().encode(right);
+  return (
+    leftBytes.length === rightBytes.length &&
+    timingSafeEqual(leftBytes, rightBytes)
+  );
+}

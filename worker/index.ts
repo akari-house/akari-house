@@ -2,6 +2,7 @@ import { createRequestHandler, RouterContextProvider } from "react-router";
 import { cloudflareContext } from "../app/lib/cloudflare-context";
 import { withSecurityHeaders } from "../app/lib/response-security";
 import { syncDailySocialMetrics } from "../app/lib/social.server";
+import { deliverTelegramNotifications } from "../app/lib/telegram.server";
 
 declare global {
   interface CloudflareEnvironment extends Env {}
@@ -20,6 +21,11 @@ export default {
     return withSecurityHeaders(request, response);
   },
   scheduled(_controller, env, ctx) {
-    ctx.waitUntil(syncDailySocialMetrics(env));
+    ctx.waitUntil(
+      Promise.all([
+        syncDailySocialMetrics(env),
+        deliverTelegramNotifications(env),
+      ]).then(() => undefined),
+    );
   },
 } satisfies ExportedHandler<CloudflareEnvironment>;

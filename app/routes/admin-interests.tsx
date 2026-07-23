@@ -9,7 +9,7 @@ import { formText } from "~/lib/validation";
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const user = await requireAdmin(request, db);
-  const [projects, interests] = await Promise.all([
+  const [projects, interests, events] = await Promise.all([
     db
       .prepare(
         `SELECT pr.id, pr.slug, pr.title, pr.summary, pr.stage,
@@ -44,8 +44,31 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         displayName: string;
         username: string;
       }>(),
+    db
+      .prepare(
+        `SELECT e.id, e.slug, e.title, e.summary, e.format,
+                e.starts_at AS startsAt, e.timezone,
+                p.display_name AS hostName
+         FROM events e JOIN profiles p ON p.user_id = e.host_user_id
+         WHERE e.status = 'submitted' ORDER BY e.created_at`,
+      )
+      .all<{
+        id: string;
+        slug: string;
+        title: string;
+        summary: string;
+        format: string;
+        startsAt: string;
+        timezone: string;
+        hostName: string;
+      }>(),
   ]);
-  return { user, projects: projects.results, interests: interests.results };
+  return {
+    user,
+    projects: projects.results,
+    interests: interests.results,
+    events: events.results,
+  };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -88,6 +111,38 @@ export async function action({ request, context }: Route.ActionArgs) {
           decision === "approve" ? "Project published" : "Project needs revision",
           `${project.title} was ${status}.`,
           `/projects/${project.slug}`,
+        ),
+    ]);
+  } else if (subjectType === "event") {
+    const event = await db
+      .prepare(
+        `SELECT host_user_id AS hostUserId, slug, title
+         FROM events WHERE id = ? AND status = 'submitted'`,
+      )
+      .bind(subjectId)
+      .first<{ hostUserId: string; slug: string; title: string }>();
+    if (!event) throw new Response("Event not found.", { status: 404 });
+    const status = decision === "approve" ? "published" : "declined";
+    await db.batch([
+      db
+        .prepare(
+          `UPDATE events SET status = ?, reviewed_by = ?,
+           reviewed_at = datetime('now'), updated_at = datetime('now')
+           WHERE id = ?`,
+        )
+        .bind(status, admin.id, subjectId),
+      db
+        .prepare(
+          `INSERT INTO notifications
+           (id, user_id, kind, title, body, action_url)
+           VALUES (?, ?, 'event.reviewed', ?, ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          event.hostUserId,
+          decision === "approve" ? "Event published" : "Event needs revision",
+          `${event.title} was ${status}.`,
+          `/events/${event.slug}`,
         ),
     ]);
   } else if (subjectType === "interest") {
@@ -171,6 +226,45 @@ export default function AdminInterests({
                     name="decision"
                     value="decline"
                     disabled={navigation.state !== "idle"}
+                  >
+                    Decline
+                  </button>
+                </Form>
+              </article>
+            ))}
+          </div>
+        </section>
+        <section>
+          <h2>Events awaiting publication</h2>
+          <div className="application-list">
+            {loaderData.events.map((event) => (
+              <article className="application-card" key={event.id}>
+                <div>
+                  <span className="chapter">
+                    {event.format.replace("_", " ")}
+                  </span>
+                  <h3>{event.title}</h3>
+                  <p>{event.summary}</p>
+                  <small>
+                    Hosted by {event.hostName} ·{" "}
+                    {new Date(event.startsAt).toLocaleString()} ·{" "}
+                    {event.timezone}
+                  </small>
+                </div>
+                <Form method="post" className="application-actions">
+                  <input type="hidden" name="subjectType" value="event" />
+                  <input type="hidden" name="subjectId" value={event.id} />
+                  <button
+                    className="button button-primary"
+                    name="decision"
+                    value="approve"
+                  >
+                    Publish
+                  </button>
+                  <button
+                    className="button button-quiet"
+                    name="decision"
+                    value="decline"
                   >
                     Decline
                   </button>

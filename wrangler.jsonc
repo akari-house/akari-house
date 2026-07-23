@@ -10,7 +10,7 @@
   },
   "upload_source_maps": true,
   "triggers": {
-    "crons": ["0 3 * * *"],
+    "crons": ["0 3 * * *", "*/5 * * * *"],
   },
   "vars": {
     "APP_ENV": "production",

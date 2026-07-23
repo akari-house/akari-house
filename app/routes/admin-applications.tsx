@@ -133,6 +133,9 @@ export default function AdminApplications({
           <Link className="button button-quiet" to="/admin/interests">
             Projects and interests
           </Link>
+          <Link className="button button-quiet" to="/admin/moderation">
+            Moderation
+          </Link>
         </header>
         {actionData?.error && (
           <p className="form-error" role="alert">

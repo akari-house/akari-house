@@ -156,6 +156,14 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             ))}
           </dl>
         )}
+        {user && user.id !== profile.userId && (
+          <Link
+            className="quiet-link"
+            to={`/report?subjectType=profile&subjectId=${encodeURIComponent(profile.userId)}&returnTo=${encodeURIComponent(`/profiles/${profile.username}`)}`}
+          >
+            Report profile
+          </Link>
+        )}
         {user?.id === profile.userId && (
           <Link className="button button-primary" to="/app">
             Edit profile

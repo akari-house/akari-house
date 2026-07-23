@@ -8,6 +8,7 @@ const links = [
   ["Common Table", "/#common"],
   ["Archive", "/archive"],
   ["Projects", "/projects"],
+  ["Events", "/events"],
   ["Membership", "/#membership"],
 ];
 

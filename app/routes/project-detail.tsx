@@ -8,6 +8,7 @@ import { formText } from "~/lib/validation";
 
 type ProjectRow = {
   id: string;
+  slug: string;
   founderUserId: string;
   founderName: string;
   founderUsername: string;
@@ -24,7 +25,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const user = await getOptionalUser(request, db);
   const project = await db
     .prepare(
-      `SELECT pr.id, pr.founder_user_id AS founderUserId, pr.title,
+      `SELECT pr.id, pr.slug, pr.founder_user_id AS founderUserId, pr.title,
               pr.summary, pr.description, pr.stage, pr.seeking, pr.status,
               p.display_name AS founderName, u.username AS founderUsername
        FROM projects pr
@@ -430,6 +431,14 @@ export default function ProjectDetail({
               <p>No investor interest yet.</p>
             )}
           </section>
+        )}
+        {user && !isFounder && (
+          <Link
+            className="quiet-link"
+            to={`/report?subjectType=project&subjectId=${encodeURIComponent(project.id)}&returnTo=${encodeURIComponent(`/projects/${project.slug}`)}`}
+          >
+            Report project
+          </Link>
         )}
       </main>
     </div>

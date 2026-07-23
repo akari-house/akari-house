@@ -1,0 +1,259 @@
+import { Form, Link, redirect } from "react-router";
+import type { Route } from "./+types/event-detail";
+import { SiteHeader } from "~/components/SiteHeader";
+import { getOptionalUser, requireUser } from "~/lib/auth.server";
+import { cloudflareContext } from "~/lib/cloudflare-context";
+import { assertSameOrigin } from "~/lib/security.server";
+import { formText } from "~/lib/validation";
+
+export async function loader({ request, context, params }: Route.LoaderArgs) {
+  const db = context.get(cloudflareContext).env.DB;
+  const user = await getOptionalUser(request, db);
+  const event = await db
+    .prepare(
+      `SELECT e.id, e.slug, e.host_user_id AS hostUserId, e.title, e.summary,
+              e.description, e.format, e.venue,
+              e.meeting_url AS meetingUrl, e.starts_at AS startsAt,
+              e.ends_at AS endsAt, e.timezone, e.capacity, e.status,
+              p.display_name AS hostName, u.username AS hostUsername,
+              COUNT(CASE WHEN er.status = 'registered' THEN 1 END) AS registeredCount
+       FROM events e
+       JOIN users u ON u.id = e.host_user_id
+       JOIN profiles p ON p.user_id = u.id
+       LEFT JOIN event_registrations er ON er.event_id = e.id
+       WHERE e.slug = ? GROUP BY e.id`,
+    )
+    .bind(params.slug)
+    .first<{
+      id: string;
+      slug: string;
+      hostUserId: string;
+      title: string;
+      summary: string;
+      description: string;
+      format: string;
+      venue: string;
+      meetingUrl: string;
+      startsAt: string;
+      endsAt: string;
+      timezone: string;
+      capacity: number | null;
+      status: string;
+      hostName: string;
+      hostUsername: string;
+      registeredCount: number;
+    }>();
+  if (
+    !event ||
+    (event.status !== "published" && user?.id !== event.hostUserId)
+  )
+    throw new Response("Event not found.", { status: 404 });
+  const registration = user
+    ? await db
+        .prepare(
+          `SELECT status FROM event_registrations
+           WHERE event_id = ? AND user_id = ?`,
+        )
+        .bind(event.id, user.id)
+        .first<{ status: string }>()
+    : null;
+  const attendees =
+    user?.id === event.hostUserId
+      ? await db
+          .prepare(
+            `SELECT er.status, p.display_name AS displayName, u.username
+             FROM event_registrations er
+             JOIN users u ON u.id = er.user_id
+             JOIN profiles p ON p.user_id = u.id
+             WHERE er.event_id = ? AND er.status <> 'cancelled'
+             ORDER BY er.created_at`,
+          )
+          .bind(event.id)
+          .all<{
+            status: string;
+            displayName: string;
+            username: string;
+          }>()
+      : null;
+  return {
+    user,
+    event: {
+      ...event,
+      meetingUrl:
+        user?.id === event.hostUserId ||
+        registration?.status === "registered"
+          ? event.meetingUrl
+          : "",
+    },
+    registration,
+    attendees: attendees?.results ?? [],
+    submitted: new URL(request.url).searchParams.has("submitted"),
+  };
+}
+
+export async function action({ request, context, params }: Route.ActionArgs) {
+  assertSameOrigin(request);
+  const db = context.get(cloudflareContext).env.DB;
+  const user = await requireUser(request, db);
+  const event = await db
+    .prepare(
+      `SELECT id, host_user_id AS hostUserId, title, capacity, status
+       FROM events WHERE slug = ?`,
+    )
+    .bind(params.slug)
+    .first<{
+      id: string;
+      hostUserId: string;
+      title: string;
+      capacity: number | null;
+      status: string;
+    }>();
+  if (!event || event.status !== "published")
+    throw new Response("Event not available.", { status: 404 });
+  const form = await request.formData();
+  const intent = formText(form.get("intent"));
+  if (intent === "register") {
+    const result = await db
+      .prepare(
+        `INSERT INTO event_registrations
+         (event_id, user_id, status, updated_at)
+         VALUES (?, ?, CASE
+           WHEN ? IS NULL OR (
+             SELECT COUNT(*) FROM event_registrations
+             WHERE event_id = ? AND status = 'registered'
+           ) < ? THEN 'registered' ELSE 'waitlisted' END, datetime('now'))
+         ON CONFLICT(event_id, user_id) DO UPDATE SET
+           status = excluded.status, updated_at = excluded.updated_at`,
+      )
+      .bind(event.id, user.id, event.capacity, event.id, event.capacity)
+      .run();
+    if ((result.meta.changes ?? 0) !== 1)
+      return { error: "Registration could not be saved." };
+    const saved = await db
+      .prepare(
+        `SELECT status FROM event_registrations
+         WHERE event_id = ? AND user_id = ?`,
+      )
+      .bind(event.id, user.id)
+      .first<{ status: string }>();
+    await db
+      .prepare(
+        `INSERT INTO notifications
+         (id, user_id, kind, title, body, action_url)
+         VALUES (?, ?, 'event.registration', 'New event registration', ?, ?)`,
+      )
+      .bind(
+        crypto.randomUUID(),
+        event.hostUserId,
+        `${user.displayName} ${saved?.status === "waitlisted" ? "joined the waitlist for" : "registered for"} ${event.title}.`,
+        `/events/${params.slug}`,
+      )
+      .run();
+  } else if (intent === "cancel") {
+    await db
+      .prepare(
+        `UPDATE event_registrations SET status = 'cancelled',
+         updated_at = datetime('now') WHERE event_id = ? AND user_id = ?`,
+      )
+      .bind(event.id, user.id)
+      .run();
+  } else throw new Response("Unsupported action.", { status: 400 });
+  throw redirect(`/events/${params.slug}`);
+}
+
+export default function EventDetail({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
+  const { event, user } = loaderData;
+  const registered = loaderData.registration?.status === "registered";
+  const waitlisted = loaderData.registration?.status === "waitlisted";
+  const isHost = user?.id === event.hostUserId;
+  return (
+    <div className="site-shell">
+      <SiteHeader user={user} />
+      <main id="main-content" className="project-detail-main">
+        {loaderData.submitted && (
+          <p className="notice success">
+            Event submitted. It remains private until review.
+          </p>
+        )}
+        <span className="chapter">
+          {event.format.replace("_", " ")} · {event.status}
+        </span>
+        <h1>{event.title}</h1>
+        <p className="project-lede">{event.summary}</p>
+        <p className="project-story">{event.description}</p>
+        <section className="project-seeking-panel">
+          <time dateTime={event.startsAt}>
+            {new Date(event.startsAt).toLocaleString()} to{" "}
+            {new Date(event.endsAt).toLocaleString()} · {event.timezone}
+          </time>
+          {event.venue && <p>Venue: {event.venue}</p>}
+          <p>
+            {event.registeredCount}
+            {event.capacity ? ` / ${event.capacity}` : ""} registered
+          </p>
+          {event.meetingUrl && (
+            <a href={event.meetingUrl} rel="noreferrer" target="_blank">
+              Open meeting link
+            </a>
+          )}
+        </section>
+        <p>
+          Hosted by{" "}
+          <Link to={`/profiles/${event.hostUsername}`}>{event.hostName}</Link>
+        </p>
+        {actionData?.error && <p className="form-error">{actionData.error}</p>}
+        {user && !isHost && event.status === "published" && (
+          <Form method="post">
+            <button
+              className={
+                registered || waitlisted
+                  ? "button button-quiet"
+                  : "button button-primary"
+              }
+              name="intent"
+              value={registered || waitlisted ? "cancel" : "register"}
+            >
+              {registered
+                ? "Cancel registration"
+                : waitlisted
+                  ? "Leave waitlist"
+                  : "Register"}
+            </button>
+          </Form>
+        )}
+        {!user && event.status === "published" && (
+          <Link
+            className="button button-primary"
+            to={`/login?returnTo=/events/${event.slug}`}
+          >
+            Log in to register
+          </Link>
+        )}
+        {isHost && (
+          <section className="project-interest-list">
+            <h2>Registrations</h2>
+            {loaderData.attendees.map((attendee) => (
+              <article key={attendee.username}>
+                <Link to={`/profiles/${attendee.username}`}>
+                  {attendee.displayName}
+                </Link>
+                <span className="status-pill">{attendee.status}</span>
+              </article>
+            ))}
+          </section>
+        )}
+        {user && !isHost && (
+          <Link
+            className="quiet-link"
+            to={`/report?subjectType=event&subjectId=${encodeURIComponent(event.id)}&returnTo=${encodeURIComponent(`/events/${event.slug}`)}`}
+          >
+            Report event
+          </Link>
+        )}
+      </main>
+    </div>
+  );
+}

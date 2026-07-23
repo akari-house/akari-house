@@ -1,0 +1,180 @@
+import { Form, Link } from "react-router";
+import type { Route } from "./+types/connections";
+import { SiteHeader } from "~/components/SiteHeader";
+import { requireUser } from "~/lib/auth.server";
+import { cloudflareContext } from "~/lib/cloudflare-context";
+import { acceptConnectionRequest } from "~/lib/network.server";
+import { assertSameOrigin } from "~/lib/security.server";
+import { formText } from "~/lib/validation";
+
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const db = context.get(cloudflareContext).env.DB;
+  const user = await requireUser(request, db);
+  const rows = await db
+    .prepare(
+      `SELECT c.id, c.requester_id AS requesterId,
+              c.recipient_id AS recipientId, c.status,
+              CASE WHEN c.requester_id = ? THEN ru.username ELSE qu.username END AS username,
+              CASE WHEN c.requester_id = ? THEN rp.display_name ELSE qp.display_name END AS displayName
+       FROM connections c
+       JOIN users qu ON qu.id = c.requester_id
+       JOIN profiles qp ON qp.user_id = qu.id
+       JOIN users ru ON ru.id = c.recipient_id
+       JOIN profiles rp ON rp.user_id = ru.id
+       WHERE (c.requester_id = ? OR c.recipient_id = ?)
+         AND c.status IN ('pending', 'accepted')
+       ORDER BY c.updated_at DESC`,
+    )
+    .bind(user.id, user.id, user.id, user.id)
+    .all<{
+      id: string;
+      requesterId: string;
+      recipientId: string;
+      status: string;
+      username: string;
+      displayName: string;
+    }>();
+  return { user, connections: rows.results };
+}
+
+export async function action({ request, context }: Route.ActionArgs) {
+  assertSameOrigin(request);
+  const db = context.get(cloudflareContext).env.DB;
+  const user = await requireUser(request, db);
+  const form = await request.formData();
+  const connectionId = formText(form.get("connectionId"));
+  const intent = formText(form.get("intent"));
+  const connection = await db
+    .prepare(
+      `SELECT requester_id AS requesterId, recipient_id AS recipientId, status
+       FROM connections WHERE id = ?
+         AND (requester_id = ? OR recipient_id = ?)`,
+    )
+    .bind(connectionId, user.id, user.id)
+    .first<{
+      requesterId: string;
+      recipientId: string;
+      status: string;
+    }>();
+  if (!connection) throw new Response("Connection not found.", { status: 404 });
+  if (
+    intent === "accept" &&
+    connection.status === "pending" &&
+    connection.recipientId === user.id
+  )
+    await acceptConnectionRequest(db, user, connection.requesterId);
+  else if (intent === "decline" && connection.recipientId === user.id)
+    await db
+      .prepare(
+        `UPDATE connections SET status = 'declined',
+         updated_at = datetime('now') WHERE id = ?`,
+      )
+      .bind(connectionId)
+      .run();
+  else if (intent === "cancel" && connection.requesterId === user.id)
+    await db
+      .prepare("DELETE FROM connections WHERE id = ? AND status = 'pending'")
+      .bind(connectionId)
+      .run();
+  else if (intent === "disconnect" && connection.status === "accepted")
+    await db
+      .prepare(
+        `UPDATE connections SET status = 'declined',
+         updated_at = datetime('now') WHERE id = ?`,
+      )
+      .bind(connectionId)
+      .run();
+  else throw new Response("Action not allowed.", { status: 403 });
+  return { saved: true };
+}
+
+export default function Connections({ loaderData }: Route.ComponentProps) {
+  return (
+    <div className="dashboard-shell">
+      <SiteHeader user={loaderData.user} />
+      <main id="main-content" className="directory-main">
+        <header className="directory-heading">
+          <div>
+            <span className="eyebrow">Connection garden</span>
+            <h1>Requests become mutual by acceptance.</h1>
+            <p>
+              Pending requests never unlock private contact details or count as
+              connections.
+            </p>
+          </div>
+        </header>
+        <div className="notification-list">
+          {loaderData.connections.map((connection) => {
+            const incoming =
+              connection.status === "pending" &&
+              connection.recipientId === loaderData.user.id;
+            const outgoing =
+              connection.status === "pending" &&
+              connection.requesterId === loaderData.user.id;
+            return (
+              <article key={connection.id}>
+                <div>
+                  <span className="chapter">
+                    {connection.status === "accepted"
+                      ? "mutual connection"
+                      : incoming
+                        ? "incoming request"
+                        : "outgoing request"}
+                  </span>
+                  <h2>
+                    <Link to={`/profiles/${connection.username}`}>
+                      {connection.displayName}
+                    </Link>
+                  </h2>
+                </div>
+                <Form method="post" className="application-actions">
+                  <input
+                    type="hidden"
+                    name="connectionId"
+                    value={connection.id}
+                  />
+                  {incoming && (
+                    <>
+                      <button
+                        className="button button-primary"
+                        name="intent"
+                        value="accept"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        className="button button-quiet"
+                        name="intent"
+                        value="decline"
+                      >
+                        Decline
+                      </button>
+                    </>
+                  )}
+                  {outgoing && (
+                    <button
+                      className="button button-quiet"
+                      name="intent"
+                      value="cancel"
+                    >
+                      Cancel request
+                    </button>
+                  )}
+                  {connection.status === "accepted" && (
+                    <button
+                      className="button button-quiet"
+                      name="intent"
+                      value="disconnect"
+                    >
+                      Disconnect
+                    </button>
+                  )}
+                </Form>
+              </article>
+            );
+          })}
+        </div>
+      </main>
+    </div>
+  );
+}
