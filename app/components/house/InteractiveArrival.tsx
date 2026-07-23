@@ -65,10 +65,12 @@ export function InteractiveArrival() {
     <div className="arrival-media" ref={sceneRef}>
       <img
         className="arrival-scene"
-        src="/assets/house/arrival-v3.webp"
+        src="/assets/optimized/arrival.webp"
         alt=""
         aria-hidden="true"
         fetchPriority="high"
+        width={1672}
+        height={941}
       />
       <div className="arrival-sanctuary-light" aria-hidden="true" />
       <div className="arrival-lantern-path" aria-hidden="true">

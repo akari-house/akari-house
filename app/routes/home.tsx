@@ -5,7 +5,6 @@ import { CommonTable } from "~/components/common-table/CommonTable";
 import { HouseHall } from "~/components/house/HouseHall";
 import { InteractiveArrival } from "~/components/house/InteractiveArrival";
 import { PetalField } from "~/components/house/PetalField";
-import { SceneMotion } from "~/components/house/SceneMotion";
 import { StoryProgress } from "~/components/house/StoryProgress";
 import { BlossomJourney } from "~/components/house/BlossomJourney";
 import { MembershipDesk } from "~/components/membership/MembershipDesk";
@@ -33,7 +32,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
     <div className="site-shell">
       <SiteHeader user={loaderData.user} />
       <PetalField />
-      <SceneMotion />
       <StoryProgress />
       <main id="main-content">
         <section
@@ -60,6 +58,30 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <span>Scroll to enter</span>
             <i aria-hidden="true" />
           </a>
+        </section>
+
+        <section
+          className="role-orientation"
+          aria-label="What AKARI makes possible"
+        >
+          <p>
+            Three paths enter the same trusted House. Choose the work that
+            matters to you.
+          </p>
+          <div>
+            <a href="#hall">
+              <span>Founder</span>
+              <strong>Find relevant support</strong>
+            </a>
+            <a href="#hall">
+              <span>Creator</span>
+              <strong>Present work with context</strong>
+            </a>
+            <a href="#hall">
+              <span>Investor</span>
+              <strong>Review considered opportunities</strong>
+            </a>
+          </div>
         </section>
 
         <HouseHall />
@@ -118,7 +140,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <MembershipDesk />
 
         <section className="final-welcome" aria-labelledby="final-title">
-          <img src="/assets/brand/akari-mark.png" alt="" />
+          <img
+            src="/assets/optimized/akari-mark.webp"
+            alt=""
+            width={160}
+            height={150}
+          />
           <span className="chapter">Epilogue · The light stays on</span>
           <h2 id="final-title">
             Your role. Your network.
@@ -131,7 +158,12 @@ export default function Home({ loaderData }: Route.ComponentProps) {
       <footer className="site-footer">
         <div>
           <span className="footer-brand">
-            <img src="/assets/brand/akari-logo.png" alt="AKARI" />
+            <img
+              src="/assets/optimized/akari-logo.webp"
+              alt="AKARI"
+              width={360}
+              height={117}
+            />
             <span>House</span>
           </span>
           <p>

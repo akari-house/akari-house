@@ -8,7 +8,7 @@ describe("arrival hero architecture", () => {
       "utf8",
     );
     expect(source.match(/className="arrival-scene"/g)).toHaveLength(1);
-    expect(source).toContain("/assets/house/arrival-v3.webp");
+    expect(source).toContain("/assets/optimized/arrival.webp");
     expect(source).not.toContain("arrival-scene-base");
     expect(source).not.toContain("arrival-scene-foreground");
     expect(source).not.toContain("arrival-scene-sanctuary");

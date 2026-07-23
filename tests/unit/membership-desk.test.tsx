@@ -22,15 +22,18 @@ describe("MembershipDesk", () => {
     const user = userEvent.setup();
     const founder = screen.getByRole("checkbox", { name: /Founder/ });
     const creator = screen.getByRole("checkbox", { name: /Creator/ });
-    const continueLink = screen.getByRole("link", {
+    const continueButton = screen.getByRole("button", {
       name: /Continue to membership/,
     });
     expect(founder).not.toBeChecked();
     expect(creator).not.toBeChecked();
-    expect(continueLink).toHaveAttribute("aria-disabled", "true");
+    expect(continueButton).toBeDisabled();
     await user.click(founder);
     await user.click(creator);
     expect(screen.getByText("2 roles selected")).toBeVisible();
+    const continueLink = screen.getByRole("link", {
+      name: /Continue to membership/,
+    });
     expect(continueLink).toHaveAttribute(
       "href",
       "/register?role=founder&role=creator",

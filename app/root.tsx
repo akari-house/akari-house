@@ -33,7 +33,7 @@ export const links: Route.LinksFunction = () => [
   },
   {
     rel: "preload",
-    href: "/assets/house/arrival-v3.webp",
+    href: "/assets/optimized/arrival.webp",
     as: "image",
     type: "image/webp",
   },

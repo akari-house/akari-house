@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { KeyboardEvent } from "react";
 import type { Role } from "~/lib/domain";
 import { workspaceData } from "~/data/house";
 
@@ -25,6 +26,23 @@ export function CommonTable({ compact = false }: { compact?: boolean }) {
     document.getElementById(`workspace-${next}`)?.focus();
   }
 
+  function handleTabKey(event: KeyboardEvent, item: Role) {
+    if (!["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    if (event.key === "Home") {
+      setRole(roles[0]);
+      document.getElementById(`workspace-${roles[0]}`)?.focus();
+      return;
+    }
+    if (event.key === "End") {
+      const last = roles[roles.length - 1];
+      setRole(last);
+      document.getElementById(`workspace-${last}`)?.focus();
+      return;
+    }
+    selectAdjacent(item, event.key === "ArrowRight" ? 1 : -1);
+  }
+
   return (
     <div className={`product-demo${compact ? " product-demo-compact" : ""}`}>
       {!compact && (
@@ -39,7 +57,13 @@ export function CommonTable({ compact = false }: { compact?: boolean }) {
       )}
       <div className="product-bar">
         <span className="product-brand">
-          <img src="/assets/brand/akari-mark.png" alt="" /> AKARI
+          <img
+            src="/assets/optimized/akari-mark.webp"
+            alt=""
+            width={160}
+            height={150}
+          />{" "}
+          AKARI
         </span>
         <span className="product-person">{data.person}</span>
       </div>
@@ -57,10 +81,7 @@ export function CommonTable({ compact = false }: { compact?: boolean }) {
             aria-controls={`workspace-panel-${item}`}
             tabIndex={role === item ? 0 : -1}
             onClick={() => setRole(item)}
-            onKeyDown={(event) => {
-              if (event.key === "ArrowRight") selectAdjacent(item, 1);
-              if (event.key === "ArrowLeft") selectAdjacent(item, -1);
-            }}
+            onKeyDown={(event) => handleTabKey(event, item)}
           >
             {workspaceData[item].label}
           </button>
@@ -74,45 +95,50 @@ export function CommonTable({ compact = false }: { compact?: boolean }) {
             </span>
           ))}
         </nav>
-        <section
-          id={`workspace-panel-${role}`}
-          role="tabpanel"
-          aria-labelledby={`workspace-${role}`}
-        >
-          <span className="status-pill">Foundation preview · Sample data</span>
-          <h3>{data.heading}</h3>
-          <div className="workspace-stats">
-            {data.stats.map(([label, value]) => (
-              <div key={label}>
-                <small>{label}</small>
-                <strong>{value}</strong>
+        {roles.map((panelRole) => {
+          const panel = workspaceData[panelRole];
+          return (
+            <section
+              id={`workspace-panel-${panelRole}`}
+              role="tabpanel"
+              aria-labelledby={`workspace-${panelRole}`}
+              hidden={role !== panelRole}
+              key={panelRole}
+            >
+              <span className="status-pill">
+                Foundation preview · Sample data
+              </span>
+              <p className="workspace-role-change" aria-live="polite">
+                Your {panelRole} seat brings different work into focus while
+                keeping the same AKARI identity.
+              </p>
+              <h3>{panel.heading}</h3>
+              <div className="workspace-stats">
+                {panel.stats.map(([label, value]) => (
+                  <div key={label}>
+                    <small>{label}</small>
+                    <strong>{value}</strong>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div
-            className="opportunity-table"
-            role="table"
-            aria-label={`${data.label} opportunity`}
-          >
-            {columns.map((column, index) => (
-              <div role="row" key={column}>
-                <span role="columnheader">{column}</span>
-                <strong role="cell">{data.opportunity[index]}</strong>
+              <div
+                className="opportunity-table"
+                role="table"
+                aria-label={`${panel.label} opportunity`}
+              >
+                {columns.map((column, index) => (
+                  <div role="row" key={column}>
+                    <span role="columnheader">{column}</span>
+                    <strong role="cell">{panel.opportunity[index]}</strong>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <button
-            className="button button-quiet"
-            type="button"
-            disabled
-            aria-describedby="demo-note"
-          >
-            Open workspace
-          </button>
-          <small id="demo-note" className="demo-note">
-            Available after membership approval.
-          </small>
-        </section>
+              <a className="button button-quiet" href="#membership">
+                See what membership unlocks
+              </a>
+            </section>
+          );
+        })}
       </div>
     </div>
   );

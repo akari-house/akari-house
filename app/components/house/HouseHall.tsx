@@ -34,17 +34,23 @@ export function HouseHall() {
           aria-label="Choose a room in AKARI House"
         >
           {rooms.map((room) => (
-            <Link
+            <button
+              type="button"
               id={`hall-room-${room.role}`}
               className={`hall-room hall-room-${room.role}${activeRoom === room.role ? " is-active" : ""}`}
               key={room.role}
-              to={`/rooms/${room.slug}`}
+              aria-pressed={activeRoom === room.role}
+              aria-label={`Preview ${room.title}`}
+              onClick={() => setActiveRoom(room.role)}
               onPointerEnter={() => setActiveRoom(room.role)}
               onFocus={() => setActiveRoom(room.role)}
             >
-              <span className="hall-room-kicker">{room.number}</span>
-              <span className="hall-room-name">{room.title}</span>
-            </Link>
+              <span className="hall-room-lantern" aria-hidden="true" />
+              <span className="hall-room-label">
+                <span className="hall-room-kicker">{room.number}</span>
+                <span className="hall-room-name">{room.title}</span>
+              </span>
+            </button>
           ))}
         </div>
         <div className="hall-detail" aria-live="polite">
@@ -69,7 +75,11 @@ export function HouseHall() {
                 document
                   .getElementById(`hall-room-${room.role}`)
                   ?.scrollIntoView({
-                    behavior: "smooth",
+                    behavior: window.matchMedia(
+                      "(prefers-reduced-motion: reduce)",
+                    ).matches
+                      ? "auto"
+                      : "smooth",
                     inline: "center",
                     block: "nearest",
                   });

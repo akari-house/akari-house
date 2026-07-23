@@ -7,6 +7,11 @@ const roleCopy: Record<Role, string> = {
   creator: "Present expertise and find considered collaborations.",
   investor: "Review relevant opportunities with privacy by default.",
 };
+const roleMark: Record<Role, string> = {
+  founder: "◇",
+  creator: "✦",
+  investor: "◉",
+};
 
 export function MembershipDesk() {
   const [selected, setSelected] = useState<Role[]>([]);
@@ -52,7 +57,7 @@ export function MembershipDesk() {
                 onChange={() => toggle(role)}
               />
               <span>
-                <i aria-hidden="true">{role.slice(0, 1).toUpperCase()}</i>
+                <i aria-hidden="true">{roleMark[role]}</i>
                 <strong>{role[0].toUpperCase() + role.slice(1)}</strong>
                 <small>{roleCopy[role]}</small>
               </span>
@@ -60,14 +65,15 @@ export function MembershipDesk() {
           ))}
         </fieldset>
         <div className="membership-action">
-          <Link
-            className={`button button-primary${selected.length ? "" : " is-disabled"}`}
-            aria-disabled={!selected.length}
-            tabIndex={selected.length ? 0 : -1}
-            to={destination}
-          >
-            Continue to membership <span aria-hidden="true">→</span>
-          </Link>
+          {selected.length ? (
+            <Link className="button button-primary" to={destination}>
+              Continue to membership <span aria-hidden="true">→</span>
+            </Link>
+          ) : (
+            <button className="button button-primary" type="button" disabled>
+              Continue to membership
+            </button>
+          )}
           <small aria-live="polite">
             {selected.length
               ? `${selected.length} role${selected.length > 1 ? "s" : ""} selected`

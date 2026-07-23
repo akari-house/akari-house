@@ -22,9 +22,16 @@ export default function Archive({ loaderData }: Route.ComponentProps) {
         <h1>Work that left evidence.</h1>
         <p>Authorized outcomes, connected to the proof behind each claim.</p>
         <div className="case-grid">
-          {caseStudies.map((c) => (
+          {caseStudies.map((c, index) => (
             <Link className="case-card" to={`/archive/${c.slug}`} key={c.slug}>
-              <img src={`/assets/case-studies/${c.images[0]}`} alt="" />
+              <img
+                src={`/assets/case-studies/thumbs/${c.slug}.webp`}
+                alt=""
+                width={720}
+                height={450}
+                loading={index === 0 ? "eager" : "lazy"}
+                fetchPriority={index === 0 ? "high" : "auto"}
+              />
               <span>{c.category}</span>
               <h2>{c.title}</h2>
               <p>{c.summary}</p>

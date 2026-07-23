@@ -72,6 +72,8 @@ export default function CaseStudy({ loaderData }: Route.ComponentProps) {
                 src={`/assets/case-studies/${img}`}
                 alt={`${c.title} evidence ${i + 1}`}
                 loading="lazy"
+                width={1200}
+                height={750}
               />
             </a>
           ))}

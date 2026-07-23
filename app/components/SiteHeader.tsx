@@ -4,7 +4,7 @@ import type { SessionUser } from "~/lib/domain";
 
 const links = [
   ["House", "/#arrival"],
-  ["The Hall", "/hall"],
+  ["The Hall", "/#hall"],
   ["Common Table", "/#common"],
   ["Archive", "/archive"],
   ["Membership", "/#membership"],
@@ -85,8 +85,10 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
         <Link to="/" className="wordmark" aria-label="AKARI House home">
           <img
             className="wordmark-image"
-            src="/assets/brand/akari-logo.png"
+            src="/assets/optimized/akari-logo.webp"
             alt="AKARI"
+            width={360}
+            height={117}
           />
           <span>House</span>
         </Link>
@@ -109,7 +111,11 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
             disabled={!interactive}
             onClick={() => setOpen((value) => !value)}
           >
-            {open ? "×" : "☰"}
+            <span className="menu-glyph" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
           </button>
         </div>
       </header>

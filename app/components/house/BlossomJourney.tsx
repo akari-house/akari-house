@@ -1,51 +1,95 @@
-import { useEffect, useRef, useState } from "react";
-import type { CSSProperties } from "react";
+import { useState } from "react";
 
 const steps = [
-  ["Entrance", "Create one trusted identity"],
-  ["Strategy Room", "Name the support you need"],
-  ["Network Terrace", "Discover relevant people"],
-  ["Common Table", "Collaborate with context"],
-  ["Launch Deck", "Turn relationships into evidence"],
+  {
+    title: "Entrance",
+    verb: "Be known",
+    copy: "Create one trusted identity and choose exactly who can see it.",
+    outcome: "A profile that carries context without making everything public.",
+  },
+  {
+    title: "Strategy Room",
+    verb: "Name the need",
+    copy: "Turn a broad ambition into a clear request for support.",
+    outcome: "Relevant goals that the House can use to guide introductions.",
+  },
+  {
+    title: "Network Terrace",
+    verb: "Find relevance",
+    copy: "Discover people through shared intent rather than follower counts.",
+    outcome: "A smaller, more useful set of relationships to consider.",
+  },
+  {
+    title: "Common Table",
+    verb: "Work together",
+    copy: "Bring the right context into a private collaboration space.",
+    outcome: "One identity, with the correct workspace for each role.",
+  },
+  {
+    title: "Launch Deck",
+    verb: "Leave evidence",
+    copy: "Document what changed, what AKARI did and what can be verified.",
+    outcome: "Proof that future members can inspect instead of vague claims.",
+  },
 ] as const;
 
 export function BlossomJourney() {
-  const listRef = useRef<HTMLOListElement>(null);
   const [active, setActive] = useState(0);
 
-  useEffect(() => {
-    const items = Array.from(listRef.current?.children ?? []);
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const current = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (current) setActive(items.indexOf(current.target));
-      },
-      { rootMargin: "-38% 0px -38% 0px", threshold: [0.2, 0.6] },
-    );
-    items.forEach((item) => observer.observe(item));
-    return () => observer.disconnect();
-  }, []);
+  function move(next: number) {
+    const index = (next + steps.length) % steps.length;
+    setActive(index);
+    document.getElementById(`journey-step-${index}`)?.focus();
+  }
 
   return (
-    <ol
-      className="blossom-trail"
-      ref={listRef}
-      style={{ "--journey-step": active } as CSSProperties}
-    >
-      {steps.map(([title, copy], index) => (
-        <li
-          key={title}
-          className={`${index === active ? "is-active " : ""}${index < active ? "is-complete" : ""}`}
+    <div className="blossom-experience">
+      <div className="blossom-branch" role="tablist" aria-label="AKARI journey">
+        {steps.map((item, index) => (
+          <button
+            id={`journey-step-${index}`}
+            type="button"
+            role="tab"
+            aria-selected={index === active}
+            aria-controls={`journey-panel-${index}`}
+            tabIndex={index === active ? 0 : -1}
+            className={index <= active ? "is-lit" : ""}
+            key={item.title}
+            onClick={() => setActive(index)}
+            onKeyDown={(event) => {
+              if (
+                !["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)
+              )
+                return;
+              event.preventDefault();
+              if (event.key === "Home") move(0);
+              else if (event.key === "End") move(steps.length - 1);
+              else move(active + (event.key === "ArrowRight" ? 1 : -1));
+            }}
+          >
+            <span aria-hidden="true">{index + 1}</span>
+            <strong>{item.title}</strong>
+          </button>
+        ))}
+      </div>
+      {steps.map((item, index) => (
+        <section
+          id={`journey-panel-${index}`}
+          role="tabpanel"
+          aria-labelledby={`journey-step-${index}`}
+          className="journey-outcome"
+          hidden={index !== active}
+          key={item.title}
         >
-          <span aria-hidden="true">{index + 1}</span>
-          <div>
-            <strong>{title}</strong>
-            <small>{copy}</small>
-          </div>
-        </li>
+          <span>{item.verb}</span>
+          <h3>{item.copy}</h3>
+          <p>{item.outcome}</p>
+          <small>
+            Step {String(index + 1).padStart(2, "0")} of{" "}
+            {String(steps.length).padStart(2, "0")}
+          </small>
+        </section>
       ))}
-    </ol>
+    </div>
   );
 }

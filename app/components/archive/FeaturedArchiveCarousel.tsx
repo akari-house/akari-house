@@ -2,14 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { caseStudies } from "~/data/case-studies";
 
-const keeperArt: Record<string, string> = {
-  "gameon-forge": "/assets/archive-keepers/keeper-gameon.webp",
-  "alphablockz-ecosystem": "/assets/archive-keepers/keeper-ecosystem.webp",
-  "performance-acquisition": "/assets/archive-keepers/keeper-growth.webp",
-  "coralapp-community-growth": "/assets/archive-keepers/keeper-growth.webp",
-  "coralapp-ct-mindshare": "/assets/archive-keepers/keeper-ecosystem.webp",
-};
-
 export function FeaturedArchiveCarousel() {
   const trackRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<Array<HTMLElement | null>>([]);
@@ -71,7 +63,7 @@ export function FeaturedArchiveCarousel() {
     >
       <div className="archive-shelf-heading">
         <div>
-          <span>AKARI field notes</span>
+          <span>The Archive Keeper · Authorized field notes</span>
           <strong>Choose a record</strong>
         </div>
         <p aria-live="polite">
@@ -92,13 +84,19 @@ export function FeaturedArchiveCarousel() {
             aria-label={`${index + 1} of ${caseStudies.length}: ${study.title}`}
           >
             <img
-              src={keeperArt[study.slug]}
+              src={`/assets/case-studies/thumbs/${study.slug}.webp`}
               alt=""
+              width={720}
+              height={450}
               loading={index === 0 ? "eager" : "lazy"}
             />
             <div className="archive-slide-shade" />
             <div className="archive-slide-content">
               <span className="archive-category">{study.category}</span>
+              <span className="evidence-seal">
+                Evidence dossier · {study.images.length} record
+                {study.images.length === 1 ? "" : "s"}
+              </span>
               <h3>{study.title}</h3>
               <p>{study.summary}</p>
               <dl>

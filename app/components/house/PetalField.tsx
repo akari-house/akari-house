@@ -10,16 +10,23 @@ export function PetalField() {
   const [density, setDensity] = useState(petals.length);
 
   useEffect(() => {
-    const update = () => setPaused(document.hidden);
+    const update = () =>
+      setPaused(
+        document.hidden ||
+          window.scrollY > Math.max(window.innerHeight * 1.75, 1200),
+      );
     const densityTimer = window.setTimeout(() => {
       if (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) {
         setDensity(10);
       }
     }, 0);
     document.addEventListener("visibilitychange", update);
+    window.addEventListener("scroll", update, { passive: true });
+    update();
     return () => {
       window.clearTimeout(densityTimer);
       document.removeEventListener("visibilitychange", update);
+      window.removeEventListener("scroll", update);
     };
   }, []);
 

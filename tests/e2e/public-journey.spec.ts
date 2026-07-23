@@ -27,7 +27,8 @@ test("desktop journey reaches the Hall, Common Table and Membership Desk", async
   await expect(
     page.getByRole("heading", { name: "Your paths. One House." }),
   ).toBeVisible();
-  await page.getByRole("link", { name: /Strategy Room/ }).click();
+  await page.getByRole("button", { name: "Preview Strategy Room" }).click();
+  await page.getByRole("link", { name: /Cross the threshold/ }).click();
   await expect(
     page.getByRole("heading", { name: "Strategy Room", level: 1 }),
   ).toBeVisible();
@@ -44,7 +45,12 @@ test("desktop journey reaches the Hall, Common Table and Membership Desk", async
 test("mobile navigation traps focus and has no horizontal overflow", async ({
   page,
 }, testInfo) => {
-  test.skip(testInfo.project.name !== "mobile-chromium", "Mobile-only journey");
+  test.skip(
+    !["mobile-chromium", "short-phone-chromium", "tablet-chromium"].includes(
+      testInfo.project.name,
+    ),
+    "Mobile-only journey",
+  );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   const menu = page.locator('button[aria-controls="mobile-menu"]');
@@ -73,7 +79,12 @@ test("reduced motion disables environmental animation", async ({ page }) => {
 test("mobile Archive responds to native horizontal swiping", async ({
   page,
 }, testInfo) => {
-  test.skip(testInfo.project.name !== "mobile-chromium", "Mobile-only journey");
+  test.skip(
+    !["mobile-chromium", "short-phone-chromium", "tablet-chromium"].includes(
+      testInfo.project.name,
+    ),
+    "Mobile-only journey",
+  );
   await page.goto("/#archive");
   const track = page.locator(".archive-carousel-track");
   await track.evaluate((element) => {

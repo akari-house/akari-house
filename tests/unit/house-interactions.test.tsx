@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
 import { HouseHall } from "~/components/house/HouseHall";
+import { BlossomJourney } from "~/components/house/BlossomJourney";
 import { SiteHeader } from "~/components/SiteHeader";
 
 afterEach(cleanup);
@@ -16,24 +17,39 @@ function withRouter(element: React.ReactNode) {
 }
 
 describe("house interactions", () => {
-  it("links each destination to a dedicated room route", () => {
+  it("moves the Blossom Journey through accessible outcomes", async () => {
+    const user = userEvent.setup();
+    withRouter(<BlossomJourney />);
+    const entrance = screen.getByRole("tab", { name: /Entrance/ });
+    entrance.focus();
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("tab", { name: /Strategy Room/ })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByText(/Turn a broad ambition/)).toBeVisible();
+  });
+
+  it("previews rooms before exposing one dedicated entry link", async () => {
+    const user = userEvent.setup();
     withRouter(<HouseHall />);
-    expect(screen.getByRole("link", { name: /Strategy Room/ })).toHaveAttribute(
-      "href",
-      "/rooms/strategy",
+    expect(
+      screen.getByRole("link", { name: /Cross the threshold/ }),
+    ).toHaveAttribute("href", "/rooms/strategy");
+    await user.click(
+      screen.getByRole("button", { name: "Preview Creator Studio" }),
     );
     expect(
-      screen.getByRole("link", { name: /Creator Studio/ }),
+      screen.getByRole("link", { name: /Cross the threshold/ }),
     ).toHaveAttribute("href", "/rooms/creator");
-    expect(
-      screen.getByRole("link", { name: /Investor Lounge/ }),
-    ).toHaveAttribute("href", "/rooms/investor");
   });
 
   it("moves the Hall focus toward the room being explored", async () => {
     const user = userEvent.setup();
     const { container } = withRouter(<HouseHall />);
-    await user.hover(screen.getByRole("link", { name: /Creator Studio/ }));
+    await user.hover(
+      screen.getByRole("button", { name: "Preview Creator Studio" }),
+    );
     expect(container.querySelector(".hall-stage")).toHaveAttribute(
       "data-active-room",
       "creator",
