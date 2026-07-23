@@ -1920,6 +1920,136 @@ textarea:focus {
 .dashboard-workspace .product-demo {
   width: 100%;
 }
+.archive-main,
+.case-page main {
+  padding: 9rem max(1rem, calc((100vw - 1280px) / 2)) 6rem;
+}
+.archive-main > h1,
+.case-page header h1 {
+  font-size: clamp(3.5rem, 8vw, 7rem);
+  line-height: 0.9;
+  margin: 1rem 0;
+}
+.archive-main > p,
+.case-page header > p {
+  color: var(--muted);
+  max-width: 650px;
+  line-height: 1.7;
+}
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.4rem;
+  margin-top: 4rem;
+}
+.case-card {
+  border: 1px solid var(--hair);
+  border-radius: 1.3rem;
+  overflow: hidden;
+  background: var(--surface);
+  padding: 1.2rem;
+}
+.case-card > img {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  border-radius: 0.8rem;
+  margin-bottom: 1rem;
+}
+.case-card > span {
+  color: var(--yellow);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.case-card h2 {
+  font-size: 2rem;
+  margin: 0.5rem 0;
+}
+.case-card > p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.case-card > div,
+.case-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+}
+.case-card small,
+.case-metrics > div {
+  display: grid;
+  padding: 0.8rem;
+  border: 1px solid var(--hair);
+}
+.case-card small b,
+.case-metrics strong {
+  font-size: 1.25rem;
+  color: #fff;
+}
+.case-metrics {
+  margin-top: 3rem;
+}
+.case-metrics span,
+.case-card small {
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+.case-story {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 5rem 0;
+}
+.case-story article {
+  padding: 1.5rem;
+  border: 1px solid var(--hair);
+  background: var(--surface);
+  border-radius: 1rem;
+}
+.case-story p,
+.case-story li {
+  color: var(--muted);
+  line-height: 1.7;
+}
+.evidence-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+.evidence-gallery > div {
+  grid-column: 1/-1;
+}
+.evidence-gallery h2 {
+  font-size: 3rem;
+  margin: 0.5rem 0;
+}
+.evidence-gallery a {
+  border: 1px solid var(--hair);
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #fff;
+}
+.evidence-gallery img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+@media (max-width: 700px) {
+  .case-grid,
+  .case-story,
+  .evidence-gallery {
+    grid-template-columns: 1fr;
+  }
+  .case-card > div,
+  .case-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .case-card > img {
+    height: 200px;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

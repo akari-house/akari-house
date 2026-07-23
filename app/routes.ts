@@ -4,6 +4,8 @@ export default [
   index("routes/home.tsx"),
   route("hall", "routes/hall.tsx"),
   route("rooms/:room", "routes/room.tsx"),
+  route("archive", "routes/archive.tsx"),
+  route("archive/:slug", "routes/case-study.tsx"),
   route("login", "routes/login.tsx"),
   route("register", "routes/register.tsx"),
   route("logout", "routes/logout.tsx"),
