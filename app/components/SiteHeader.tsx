@@ -6,7 +6,7 @@ const links = [
   ["House", "/#arrival"],
   ["The Hall", "/hall"],
   ["Common Table", "/#common"],
-  ["Archive", "/#archive"],
+  ["Archive", "/archive"],
   ["Membership", "/#membership"],
 ];
 

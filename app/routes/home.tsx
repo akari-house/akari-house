@@ -126,8 +126,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <h2 id="archive-title">Proof that can be inspected.</h2>
             <p>
               The Archive will document AKARI’s role, timeframe, evidence and
-              permission status. Until verified member outcomes are available,
-              this structure is clearly marked as a placeholder.
+              permission status. Explore authorized outcomes with the proof
+              behind every published claim.
             </p>
           </div>
           <article className="archive-record">
@@ -138,27 +138,30 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             />
             <div>
               <span className="status-pill">
-                Structure preview · Not a published case study
+                Featured · Document-supported evidence
               </span>
-              <h3>From context to an attributable outcome.</h3>
+              <h3>GameOn Forge</h3>
               <dl>
                 <div>
                   <dt>Relationship</dt>
-                  <dd>Founder × strategic partner</dd>
+                  <dd>Community-driven gaming platform growth</dd>
                 </div>
                 <div>
                   <dt>AKARI contribution</dt>
-                  <dd>Curated introduction and working context</dd>
+                  <dd>Campaigns, community strategy and live programming</dd>
                 </div>
                 <div>
                   <dt>Outcome</dt>
-                  <dd>Awaiting verified member evidence</dd>
+                  <dd>26.3K community · 21,191 participants</dd>
                 </div>
                 <div>
                   <dt>Permission</dt>
-                  <dd>Publication approval required</dd>
+                  <dd>Authorized</dd>
                 </div>
               </dl>
+              <Link className="quiet-link" to="/archive/gameon-forge">
+                Inspect the evidence →
+              </Link>
             </div>
           </article>
         </section>
@@ -192,7 +195,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <nav aria-label="Footer">
           <a href="#hall">The Hall</a>
           <a href="#common">Common Table</a>
-          <a href="#archive">Archive</a>
+          <Link to="/archive">Archive</Link>
           <a href="#membership">Membership</a>
         </nav>
         <small>© 2026 AKARI House</small>
