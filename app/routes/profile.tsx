@@ -21,8 +21,8 @@ export function meta({ loaderData }: Route.MetaArgs) {
   return [
     {
       title: loaderData
-        ? `${loaderData.profile.displayName} — AKARI House`
-        : "Profile — AKARI House",
+        ? `${loaderData.profile.displayName} | AKARI House`
+        : "Profile | AKARI House",
     },
   ];
 }

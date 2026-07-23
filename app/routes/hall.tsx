@@ -6,7 +6,7 @@ import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 
 export const meta: Route.MetaFunction = () => [
-  { title: "The Hall — AKARI House" },
+  { title: "The Hall | AKARI House" },
   {
     name: "description",
     content:

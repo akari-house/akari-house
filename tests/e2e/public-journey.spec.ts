@@ -2,16 +2,28 @@ import { expect, test } from "@playwright/test";
 
 test("desktop journey reaches the Hall, Common Table and Membership Desk", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto("/");
   await expect(
     page.getByRole("heading", { name: "Welcome to AKARI House" }),
   ).toBeVisible();
-  await expect(page.locator(".arrival-media")).toHaveCSS(
-    "animation-name",
-    "arrival-breathe",
+  const heroLayer = page.locator(".arrival-scene-base");
+  await expect(page.locator(".arrival-media")).toHaveAttribute(
+    "data-interactive",
+    "true",
   );
-  await page.getByRole("link", { name: /Follow the lanterns/ }).click();
+  const initialTransform = await heroLayer.evaluate(
+    (element) => getComputedStyle(element).transform,
+  );
+  if (testInfo.project.name === "desktop-chromium") {
+    await page.mouse.move(80, 140);
+    await expect
+      .poll(() =>
+        heroLayer.evaluate((element) => getComputedStyle(element).transform),
+      )
+      .not.toBe(initialTransform);
+  }
+  await page.getByRole("link", { name: /Enter the House/ }).click();
   await expect(
     page.getByRole("heading", { name: "Your paths. One House." }),
   ).toBeVisible();
@@ -52,10 +64,25 @@ test("mobile navigation traps focus and has no horizontal overflow", async ({
 test("reduced motion disables environmental animation", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await expect(page.locator(".arrival-media")).toHaveCSS(
+  await expect(page.locator(".arrival-scene-sanctuary")).toHaveCSS(
     "animation-name",
     "none",
   );
+});
+
+test("mobile Archive responds to native horizontal swiping", async ({
+  page,
+}, testInfo) => {
+  test.skip(testInfo.project.name !== "mobile-chromium", "Mobile-only journey");
+  await page.goto("/#archive");
+  const track = page.locator(".archive-carousel-track");
+  await track.evaluate((element) => {
+    element.scrollLeft = element.clientWidth;
+    element.dispatchEvent(new Event("scroll"));
+  });
+  await expect(
+    page.getByRole("button", { name: "Show AlphaBlockZ Ecosystem" }),
+  ).toHaveAttribute("aria-pressed", "true");
 });
 
 test("account, multi-role profile and server privacy journey", async ({

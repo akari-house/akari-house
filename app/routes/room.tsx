@@ -12,7 +12,7 @@ export function meta({ loaderData }: Route.MetaArgs) {
   return [
     {
       title: loaderData
-        ? `${loaderData.room.title} — AKARI House`
+        ? `${loaderData.room.title} | AKARI House`
         : "Room not found",
     },
     {

@@ -1,7 +1,9 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/home";
+import { FeaturedArchiveCarousel } from "~/components/archive/FeaturedArchiveCarousel";
 import { CommonTable } from "~/components/common-table/CommonTable";
 import { HouseHall } from "~/components/house/HouseHall";
+import { InteractiveArrival } from "~/components/house/InteractiveArrival";
 import { PetalField } from "~/components/house/PetalField";
 import { SceneMotion } from "~/components/house/SceneMotion";
 import { MembershipDesk } from "~/components/membership/MembershipDesk";
@@ -10,7 +12,7 @@ import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 
 export const meta: Route.MetaFunction = () => [
-  { title: "AKARI House — A private Web3 professional network" },
+  { title: "AKARI House | A private Web3 professional network" },
   {
     name: "description",
     content:
@@ -44,24 +46,15 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           id="arrival"
           aria-labelledby="arrival-title"
         >
-          <div
-            className="arrival-media"
-            role="img"
-            aria-label="Founders, creators and investors arriving at a lantern-lit Inari sanctuary."
-          />
+          <InteractiveArrival />
           <div className="arrival-shade" />
-          <div className="arrival-orbit" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
           <div className="arrival-copy">
             <span className="chapter">Chapter 01 · The invitation</span>
             <h1 id="arrival-title">Welcome to AKARI House</h1>
             <p>A private place for people building what comes next.</p>
             <div>
               <a className="button button-primary" href="#hall">
-                Follow the lanterns <span aria-hidden="true">→</span>
+                Enter the House <span aria-hidden="true">→</span>
               </a>
               <a className="quiet-link" href="#common">
                 Explore the experience
@@ -100,7 +93,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <h2 id="journey-title">A path through the House.</h2>
             <p>
               Trust grows through identity, intent, discovery, private
-              collaboration and evidence—not through follower counts.
+              collaboration and evidence. Follower counts are not the measure.
             </p>
           </div>
           <ol className="blossom-trail">
@@ -130,40 +123,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               behind every published claim.
             </p>
           </div>
-          <article className="archive-record">
-            <div
-              className="archive-image"
-              role="img"
-              aria-label="A quiet discussion in an AKARI room"
-            />
-            <div>
-              <span className="status-pill">
-                Featured · Document-supported evidence
-              </span>
-              <h3>GameOn Forge</h3>
-              <dl>
-                <div>
-                  <dt>Relationship</dt>
-                  <dd>Community-driven gaming platform growth</dd>
-                </div>
-                <div>
-                  <dt>AKARI contribution</dt>
-                  <dd>Campaigns, community strategy and live programming</dd>
-                </div>
-                <div>
-                  <dt>Outcome</dt>
-                  <dd>26.3K community · 21,191 participants</dd>
-                </div>
-                <div>
-                  <dt>Permission</dt>
-                  <dd>Authorized</dd>
-                </div>
-              </dl>
-              <Link className="quiet-link" to="/archive/gameon-forge">
-                Inspect the evidence →
-              </Link>
-            </div>
-          </article>
+          <FeaturedArchiveCarousel />
         </section>
 
         <MembershipDesk />
@@ -189,7 +149,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </span>
           <p>
             A private place for Founders, Creators and Investors to build what
-            comes next—together.
+            comes next, together.
           </p>
         </div>
         <nav aria-label="Footer">

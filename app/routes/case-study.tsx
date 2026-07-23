@@ -13,7 +13,7 @@ export async function loader({ params, request, context }: Route.LoaderArgs) {
 }
 export function meta({ loaderData }: Route.MetaArgs) {
   return [
-    { title: `${loaderData?.study.title ?? "Case study"} — AKARI House` },
+    { title: `${loaderData?.study.title ?? "Case study"} | AKARI House` },
   ];
 }
 export default function CaseStudy({ loaderData }: Route.ComponentProps) {

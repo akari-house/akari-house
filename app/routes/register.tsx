@@ -37,7 +37,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const errors: Record<string, string> = {};
   if (!validateEmail(email)) errors.email = "Enter a valid email address.";
   if (!validateUsername(username))
-    errors.username = "Use 3–30 lowercase letters, numbers or hyphens.";
+    errors.username = "Use 3 to 30 lowercase letters, numbers or hyphens.";
   if (displayName.length < 2 || displayName.length > 80)
     errors.displayName = "Enter a display name between 2 and 80 characters.";
   if (password.length < 12) errors.password = "Use at least 12 characters.";

@@ -5,7 +5,7 @@ import type { Route } from "./+types/archive";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 export const meta = () => [
-  { title: "The Archive — AKARI House" },
+  { title: "The Archive | AKARI House" },
   { name: "description", content: "Evidence-backed AKARI case studies." },
 ];
 export async function loader({ request, context }: Route.LoaderArgs) {
