@@ -14,8 +14,28 @@ export interface SessionUser {
   email: string;
   username: string;
   displayName: string;
+  accessTier: "applicant" | "member";
   roles: Role[];
 }
+
+export const socialPlatforms = [
+  "x",
+  "linkedin",
+  "tiktok",
+  "instagram",
+  "facebook",
+  "youtube",
+] as const;
+export type SocialPlatform = (typeof socialPlatforms)[number];
+
+export const interestTypes = [
+  "ambassador",
+  "founder_projects",
+  "creator_projects",
+  "investor_projects",
+  "event_host",
+] as const;
+export type InterestType = (typeof interestTypes)[number];
 
 export interface ProfileRecord {
   userId: string;

@@ -9,6 +9,9 @@
     "head_sampling_rate": 1,
   },
   "upload_source_maps": true,
+  "triggers": {
+    "crons": ["0 3 * * *"],
+  },
   "vars": {
     "APP_ENV": "production",
     "APP_URL": "https://akari-house.spacematesxyz.workers.dev",

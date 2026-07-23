@@ -38,26 +38,31 @@ export async function action({ request, context }: Route.ActionArgs) {
     };
   const row = await db
     .prepare(
-      "SELECT id, password_hash AS passwordHash, status, onboarding_started_at AS onboardingStartedAt FROM users WHERE email = ?",
+      "SELECT id, password_hash AS passwordHash, status, email_verified_at AS emailVerifiedAt, onboarding_started_at AS onboardingStartedAt FROM users WHERE email = ?",
     )
     .bind(email)
     .first<{
       id: string;
       passwordHash: string;
       status: string;
+      emailVerifiedAt: string | null;
       onboardingStartedAt: string | null;
     }>();
   if (!row || !(await verifyPassword(password, row.passwordHash))) {
     return { error: "The email or password was not recognized.", email };
   }
-  if (row.status !== "active") {
+  if (row.status === "suspended") {
     return {
-      error:
-        "Your membership request does not have member access yet. Check the latest message from the Membership Desk.",
+      error: "This account is not available. Contact the Membership Desk.",
+      email,
+    };
+  }
+  if (!row.emailVerifiedAt)
+    return {
+      error: "Confirm your email before signing in.",
       email,
       membershipPending: true,
     };
-  }
   const firstEntry = !row.onboardingStartedAt;
   if (firstEntry)
     await db

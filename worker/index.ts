@@ -1,6 +1,7 @@
 import { createRequestHandler, RouterContextProvider } from "react-router";
 import { cloudflareContext } from "../app/lib/cloudflare-context";
 import { withSecurityHeaders } from "../app/lib/response-security";
+import { syncDailySocialMetrics } from "../app/lib/social.server";
 
 declare global {
   interface CloudflareEnvironment extends Env {}
@@ -17,5 +18,8 @@ export default {
     context.set(cloudflareContext, { env, ctx });
     const response = await requestHandler(request, context);
     return withSecurityHeaders(request, response);
+  },
+  scheduled(_controller, env, ctx) {
+    ctx.waitUntil(syncDailySocialMetrics(env));
   },
 } satisfies ExportedHandler<CloudflareEnvironment>;

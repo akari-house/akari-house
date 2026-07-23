@@ -3617,6 +3617,79 @@ textarea:focus {
   }
 }
 
+.applicant-notice {
+  display: grid;
+  gap: 0.35rem;
+  line-height: 1.55;
+}
+
+.profile-panel {
+  margin: 0;
+  padding: 1.25rem;
+  border: 1px solid var(--hair);
+  border-radius: 1rem;
+  background: #ffffff05;
+}
+
+.profile-panel legend {
+  padding: 0 0.5rem;
+  font-weight: 700;
+}
+
+.field-help {
+  margin: 0 0 1rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.social-profile-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.social-profile-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 0.25fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.social-profile-row small {
+  padding-bottom: 0.8rem;
+  color: #8f96a3;
+  white-space: nowrap;
+}
+
+.interest-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+}
+
+.interest-grid label {
+  min-height: 50px;
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid var(--hair);
+  border-radius: 0.75rem;
+  background: #090b1488;
+}
+
+@media (max-width: 700px) {
+  .social-profile-row,
+  .interest-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .social-profile-row small {
+    padding: 0;
+  }
+}
+
 /* Refined arrival and Hall direction */
 .arrival-scene {
   inset: -4%;
