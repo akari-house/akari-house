@@ -31,7 +31,12 @@ export function InteractiveArrival() {
       scrollFrame = window.requestAnimationFrame(() => {
         if (!section) return;
         const bounds = section.getBoundingClientRect();
-        const travel = Math.max(1, section.offsetHeight - window.innerHeight);
+        const travel = section.offsetHeight - window.innerHeight;
+        if (travel <= 4) {
+          scene.style.setProperty("--hero-scroll", "0");
+          frame?.style.setProperty("--hero-progress", "0");
+          return;
+        }
         const progress = Math.min(1, Math.max(0, -bounds.top / travel));
         scene.style.setProperty("--hero-scroll", progress.toFixed(3));
         frame?.style.setProperty("--hero-progress", progress.toFixed(3));

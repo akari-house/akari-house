@@ -9,14 +9,25 @@ test("hero performs a visible scroll-linked push-in", async ({
   );
   await page.goto("/");
   const hero = page.locator(".arrival-scene");
+  await expect(page.locator(".petal")).toHaveCount(30);
   await page.waitForTimeout(2700);
-  const before = await hero.evaluate(
-    (element) => getComputedStyle(element).transform,
-  );
+  const before = await hero.evaluate((element) => {
+    const matrix = new DOMMatrixReadOnly(getComputedStyle(element).transform);
+    return matrix.a;
+  });
+  expect(before).toBeGreaterThanOrEqual(0.99);
+  expect(before).toBeLessThan(1.05);
   await page.evaluate(() => window.scrollTo(0, window.innerHeight * 0.55));
   await expect
-    .poll(() => hero.evaluate((element) => getComputedStyle(element).transform))
-    .not.toBe(before);
+    .poll(() =>
+      hero.evaluate((element) => {
+        const matrix = new DOMMatrixReadOnly(
+          getComputedStyle(element).transform,
+        );
+        return matrix.a;
+      }),
+    )
+    .toBeGreaterThan(1.16);
 });
 
 test("desktop journey reaches the Hall, Common Table and Membership Desk", async ({

@@ -55,6 +55,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
                 </a>
               </div>
             </div>
+            <div className="arrival-threshold" aria-hidden="true">
+              <span>The threshold</span>
+              <strong>Three paths. One House.</strong>
+            </div>
             <a
               className="arrival-enter-cue"
               href="#hall"
