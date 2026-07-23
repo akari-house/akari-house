@@ -202,110 +202,147 @@ export default function AdminInterests({
         {actionData?.saved && <p className="notice success">Decision saved.</p>}
         <section>
           <h2>Projects awaiting publication</h2>
-          <div className="application-list">
-            {loaderData.projects.map((project) => (
-              <article className="application-card" key={project.id}>
-                <div>
-                  <span className="chapter">{project.stage}</span>
-                  <h3>{project.title}</h3>
-                  <p>{project.summary}</p>
-                  <small>Founder: {project.founderName}</small>
-                </div>
-                <Form method="post" className="application-actions">
-                  <input type="hidden" name="subjectType" value="project" />
-                  <input type="hidden" name="subjectId" value={project.id} />
-                  <button
-                    className="button button-primary"
-                    name="decision"
-                    value="approve"
-                    disabled={navigation.state !== "idle"}
-                  >
-                    Publish
-                  </button>
-                  <button
-                    className="button button-quiet"
-                    name="decision"
-                    value="decline"
-                    disabled={navigation.state !== "idle"}
-                  >
-                    Decline
-                  </button>
-                </Form>
-              </article>
-            ))}
+          <div
+            className="application-list"
+            aria-busy={navigation.state !== "idle"}
+          >
+            {loaderData.projects.length ? (
+              loaderData.projects.map((project) => (
+                <article className="application-card" key={project.id}>
+                  <div>
+                    <span className="chapter">{project.stage}</span>
+                    <h3>{project.title}</h3>
+                    <p>{project.summary}</p>
+                    <small>Founder: {project.founderName}</small>
+                  </div>
+                  <Form method="post" className="application-actions">
+                    <input type="hidden" name="subjectType" value="project" />
+                    <input type="hidden" name="subjectId" value={project.id} />
+                    <button
+                      className="button button-primary"
+                      name="decision"
+                      value="approve"
+                      disabled={navigation.state !== "idle"}
+                    >
+                      Publish
+                    </button>
+                    <button
+                      className="button button-quiet"
+                      name="decision"
+                      value="decline"
+                      disabled={navigation.state !== "idle"}
+                    >
+                      Decline
+                    </button>
+                  </Form>
+                </article>
+              ))
+            ) : (
+              <div className="status-card">
+                <h3>No projects awaiting review.</h3>
+                <p>New founder submissions will appear in this queue.</p>
+              </div>
+            )}
           </div>
         </section>
         <section>
           <h2>Events awaiting publication</h2>
-          <div className="application-list">
-            {loaderData.events.map((event) => (
-              <article className="application-card" key={event.id}>
-                <div>
-                  <span className="chapter">
-                    {event.format.replace("_", " ")}
-                  </span>
-                  <h3>{event.title}</h3>
-                  <p>{event.summary}</p>
-                  <small>Hosted by {event.hostName}</small>
-                  <EventTimeDisplay
-                    startsAt={event.startsAt}
-                    timezone={event.timezone}
-                  />
-                </div>
-                <Form method="post" className="application-actions">
-                  <input type="hidden" name="subjectType" value="event" />
-                  <input type="hidden" name="subjectId" value={event.id} />
-                  <button
-                    className="button button-primary"
-                    name="decision"
-                    value="approve"
-                  >
-                    Publish
-                  </button>
-                  <button
-                    className="button button-quiet"
-                    name="decision"
-                    value="decline"
-                  >
-                    Decline
-                  </button>
-                </Form>
-              </article>
-            ))}
+          <div
+            className="application-list"
+            aria-busy={navigation.state !== "idle"}
+          >
+            {loaderData.events.length ? (
+              loaderData.events.map((event) => (
+                <article className="application-card" key={event.id}>
+                  <div>
+                    <span className="chapter">
+                      {event.format.replace("_", " ")}
+                    </span>
+                    <h3>{event.title}</h3>
+                    <p>{event.summary}</p>
+                    <small>Hosted by {event.hostName}</small>
+                    <EventTimeDisplay
+                      startsAt={event.startsAt}
+                      timezone={event.timezone}
+                    />
+                  </div>
+                  <Form method="post" className="application-actions">
+                    <input type="hidden" name="subjectType" value="event" />
+                    <input type="hidden" name="subjectId" value={event.id} />
+                    <button
+                      className="button button-primary"
+                      name="decision"
+                      value="approve"
+                      disabled={navigation.state !== "idle"}
+                    >
+                      Publish
+                    </button>
+                    <button
+                      className="button button-quiet"
+                      name="decision"
+                      value="decline"
+                      disabled={navigation.state !== "idle"}
+                    >
+                      Decline
+                    </button>
+                  </Form>
+                </article>
+              ))
+            ) : (
+              <div className="status-card">
+                <h3>No events awaiting review.</h3>
+                <p>New host proposals will appear in this queue.</p>
+              </div>
+            )}
           </div>
         </section>
         <section>
           <h2>Member interest requests</h2>
-          <div className="application-list">
-            {loaderData.interests.map((interest) => (
-              <article className="application-card" key={interest.id}>
-                <div>
-                  <span className="chapter">
-                    {interest.interestType.replaceAll("_", " ")}
-                  </span>
-                  <h3>{interest.displayName}</h3>
-                  <p>{interest.note || "No additional note."}</p>
-                </div>
-                <Form method="post" className="application-actions">
-                  <input type="hidden" name="subjectType" value="interest" />
-                  <input type="hidden" name="subjectId" value={interest.id} />
-                  <button
-                    className="button button-primary"
-                    name="decision"
-                    value="approve"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    className="button button-quiet"
-                    name="decision"
-                    value="decline"
-                  >
-                    Decline
-                  </button>
-                </Form>
-              </article>
-            ))}
+          <div
+            className="application-list"
+            aria-busy={navigation.state !== "idle"}
+          >
+            {loaderData.interests.length ? (
+              loaderData.interests.map((interest) => (
+                <article className="application-card" key={interest.id}>
+                  <div>
+                    <span className="chapter">
+                      {interest.interestType.replaceAll("_", " ")}
+                    </span>
+                    <h3>{interest.displayName}</h3>
+                    <p>{interest.note || "No additional note."}</p>
+                  </div>
+                  <Form method="post" className="application-actions">
+                    <input type="hidden" name="subjectType" value="interest" />
+                    <input type="hidden" name="subjectId" value={interest.id} />
+                    <button
+                      className="button button-primary"
+                      name="decision"
+                      value="approve"
+                      disabled={navigation.state !== "idle"}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      className="button button-quiet"
+                      name="decision"
+                      value="decline"
+                      disabled={navigation.state !== "idle"}
+                    >
+                      Decline
+                    </button>
+                  </Form>
+                </article>
+              ))
+            ) : (
+              <div className="status-card">
+                <h3>No access requests awaiting review.</h3>
+                <p>
+                  Member ambassador, project and event-host requests appear
+                  here.
+                </p>
+              </div>
+            )}
           </div>
         </section>
       </main>

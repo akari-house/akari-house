@@ -49,16 +49,7 @@ export async function action({ request, context }: Route.ActionArgs) {
           seeking, status)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'submitted')`,
       )
-      .bind(
-        id,
-        user.id,
-        slug,
-        title,
-        summary,
-        description,
-        stage,
-        seeking,
-      ),
+      .bind(id, user.id, slug, title, summary, description, stage, seeking),
     db
       .prepare(
         `INSERT INTO audit_logs
@@ -127,7 +118,9 @@ export default function ProjectNew({
             className="button button-primary"
             disabled={navigation.state !== "idle"}
           >
-            Submit for review
+            {navigation.state === "idle"
+              ? "Submit for review"
+              : "Submitting project..."}
           </button>
         </Form>
       </main>

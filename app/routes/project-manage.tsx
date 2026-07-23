@@ -41,19 +41,32 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
           </Link>
         </header>
         <div className="project-grid">
-          {loaderData.projects.map((project) => (
-            <article className="project-card" key={project.slug}>
-              <span className="chapter">
-                {project.stage} · {project.status}
-              </span>
-              <h2>{project.title}</h2>
-              <p>{project.summary}</p>
-              <footer>
-                <Link to={`/projects/${project.slug}`}>View</Link>
-                <Link to={`/projects/${project.slug}/edit`}>Edit</Link>
-              </footer>
-            </article>
-          ))}
+          {loaderData.projects.length ? (
+            loaderData.projects.map((project) => (
+              <article className="project-card" key={project.slug}>
+                <span className="chapter">
+                  {project.stage} · {project.status}
+                </span>
+                <h2>{project.title}</h2>
+                <p>{project.summary}</p>
+                <footer>
+                  <Link to={`/projects/${project.slug}`}>View</Link>
+                  <Link to={`/projects/${project.slug}/edit`}>Edit</Link>
+                </footer>
+              </article>
+            ))
+          ) : (
+            <div className="status-card">
+              <h2>No project lanterns yet.</h2>
+              <p>
+                Create a project when you are ready to explain what you are
+                building, what stage it is in and who you hope to meet.
+              </p>
+              <Link className="button button-primary" to="/projects/new">
+                Create your first project
+              </Link>
+            </div>
+          )}
         </div>
       </main>
     </div>

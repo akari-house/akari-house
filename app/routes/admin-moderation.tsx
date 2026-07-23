@@ -1,4 +1,4 @@
-import { Form, Link } from "react-router";
+import { Form, Link, useNavigation } from "react-router";
 import type { Route } from "./+types/admin-moderation";
 import { SiteHeader } from "~/components/SiteHeader";
 import { cloudflareContext } from "~/lib/cloudflare-context";
@@ -63,10 +63,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     .bind(reportId)
     .first<{ subjectType: string; subjectId: string }>();
   if (!report) throw new Response("Report not found.", { status: 404 });
-  if (
-    enforcement === "suspend_account" &&
-    report.subjectType !== "profile"
-  )
+  if (enforcement === "suspend_account" && report.subjectType !== "profile")
     return { error: "Account suspension applies only to profile reports." };
   if (
     enforcement === "hide_content" &&
@@ -81,8 +78,8 @@ export async function action({ request, context }: Route.ActionArgs) {
        resolution_note = ?, updated_at = datetime('now')
        WHERE id = ?`,
     )
-      .bind(status, admin.id, status, note, reportId)
-      .run();
+    .bind(status, admin.id, status, note, reportId)
+    .run();
   if (enforcement === "suspend_account")
     await db
       .prepare(
@@ -128,6 +125,8 @@ export default function AdminModeration({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
+  const navigation = useNavigation();
+  const pending = navigation.state !== "idle";
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -147,63 +146,82 @@ export default function AdminModeration({
           </p>
         )}
         {actionData?.saved && <p className="notice success">Report updated.</p>}
-        <div className="application-list">
-          {loaderData.reports.map((report) => (
-            <article className="application-card" key={report.id}>
-              <div>
-                <span className="chapter">
-                  {report.subjectType} · {report.reason}
-                </span>
-                <h2>{report.status}</h2>
-                <p>{report.details || "No additional details."}</p>
-                <small>Reported by {report.reporterName}</small>
-              </div>
-              <Form method="post" className="application-actions">
-                <input type="hidden" name="reportId" value={report.id} />
-                <label className="application-decision-note">
-                  Internal resolution note
-                  <textarea
-                    name="resolutionNote"
-                    rows={3}
-                    maxLength={1000}
-                  />
-                </label>
-                <label className="application-decision-note">
-                  Enforcement
-                  <select name="enforcement" defaultValue="none">
-                    <option value="none">No enforcement</option>
-                    <option value="hide_content">
-                      Hide project or cancel event
-                    </option>
-                    <option value="suspend_account">
-                      Suspend reported profile account
-                    </option>
-                  </select>
-                </label>
-                <button
-                  className="button button-quiet"
-                  name="intent"
-                  value="review"
-                >
-                  Mark reviewing
-                </button>
-                <button
-                  className="button button-primary"
-                  name="intent"
-                  value="resolve"
-                >
-                  Resolve
-                </button>
-                <button
-                  className="button button-quiet"
-                  name="intent"
-                  value="dismiss"
-                >
-                  Dismiss
-                </button>
-              </Form>
-            </article>
-          ))}
+        <div className="application-list" aria-busy={pending}>
+          {loaderData.reports.length ? (
+            loaderData.reports.map((report) => (
+              <article className="application-card" key={report.id}>
+                <div>
+                  <span className="chapter">
+                    {report.subjectType} · {report.reason}
+                  </span>
+                  <h2>{report.status}</h2>
+                  <p>{report.details || "No additional details."}</p>
+                  <small>Reported by {report.reporterName}</small>
+                </div>
+                <Form method="post" className="application-actions">
+                  <input type="hidden" name="reportId" value={report.id} />
+                  <label className="application-decision-note">
+                    Internal resolution note
+                    <textarea name="resolutionNote" rows={3} maxLength={1000} />
+                  </label>
+                  <label className="application-decision-note">
+                    Enforcement
+                    <select name="enforcement" defaultValue="none">
+                      <option value="none">No enforcement</option>
+                      <option value="hide_content">
+                        Hide project or cancel event
+                      </option>
+                      <option value="suspend_account">
+                        Suspend reported profile account
+                      </option>
+                    </select>
+                  </label>
+                  <button
+                    className="button button-quiet"
+                    name="intent"
+                    value="review"
+                    disabled={pending}
+                  >
+                    Mark reviewing
+                  </button>
+                  <button
+                    className="button button-primary"
+                    name="intent"
+                    value="resolve"
+                    disabled={pending}
+                    onClick={(event) => {
+                      const form = event.currentTarget.form;
+                      const enforcement = form?.elements.namedItem(
+                        "enforcement",
+                      ) as HTMLSelectElement | null;
+                      if (
+                        enforcement?.value !== "none" &&
+                        !window.confirm(
+                          "Apply this enforcement and resolve the report? This can immediately hide content or suspend an account.",
+                        )
+                      )
+                        event.preventDefault();
+                    }}
+                  >
+                    Resolve
+                  </button>
+                  <button
+                    className="button button-quiet"
+                    name="intent"
+                    value="dismiss"
+                    disabled={pending}
+                  >
+                    Dismiss
+                  </button>
+                </Form>
+              </article>
+            ))
+          ) : (
+            <div className="status-card">
+              <h2>No open moderation reports.</h2>
+              <p>New member reports will appear here for review.</p>
+            </div>
+          )}
         </div>
       </main>
     </div>

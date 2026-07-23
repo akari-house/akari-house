@@ -55,20 +55,25 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
     };
   }, [open]);
 
+  const memberInitial =
+    user?.displayName?.trim().charAt(0).toUpperCase() || "A";
   const actions = user ? (
-    <>
-      <Link className="text-link" to="/app">
-        Dashboard
+    <div className="header-member-actions">
+      <Link className="header-account-link" to="/app">
+        <span className="header-account-mark" aria-hidden="true">
+          {memberInitial}
+        </span>
+        <span>My House</span>
       </Link>
-      <Link className="text-link" to="/notifications">
+      <Link className="header-update-link" to="/notifications">
         Updates
       </Link>
       <Form method="post" action="/logout">
-        <button className="button button-quiet" type="submit">
+        <button className="header-logout" type="submit">
           Log out
         </button>
       </Form>
-    </>
+    </div>
   ) : (
     <>
       <Link className="text-link" to="/login">
@@ -81,15 +86,10 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
   );
 
   const isCurrent = (href: string) => {
-    if (href.startsWith("/#")) {
-      const hash = href.slice(1);
-      return (
-        location.pathname === "/" &&
-        (location.hash === hash ||
-          (hash === "#arrival" &&
-            (location.hash === "" || location.hash === "#arrival")))
-      );
-    }
+    // URL fragments are unavailable during server rendering. The House link
+    // represents the current homepage; chapter links remain ordinary anchors
+    // so hydration never changes aria-current after the browser reads a hash.
+    if (href.startsWith("/#")) return false;
     const [path, hash = ""] = href.split("#");
     if (path === "/") return location.pathname === "/";
     return (

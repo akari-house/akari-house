@@ -99,6 +99,12 @@ export default function ProjectEdit({
               {actionData.error}
             </p>
           )}
+          {project.status === "published" && (
+            <p className="notice">
+              Saving changes sends this project back for review and temporarily
+              removes it from the public project directory.
+            </p>
+          )}
           <label>
             Project name
             <input
@@ -153,7 +159,9 @@ export default function ProjectEdit({
             value="submit"
             disabled={navigation.state !== "idle"}
           >
-            Save and submit for review
+            {navigation.state === "idle"
+              ? "Save and submit for review"
+              : "Submitting changes..."}
           </button>
         </Form>
       </main>

@@ -85,10 +85,13 @@ export async function action({ request, context }: Route.ActionArgs) {
       .bind(connectionId)
       .run();
   else throw new Response("Action not allowed.", { status: 403 });
-  return { saved: true };
+  return { saved: true, intent };
 }
 
-export default function Connections({ loaderData }: Route.ComponentProps) {
+export default function Connections({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   const navigation = useNavigation();
   const pending = navigation.state !== "idle";
   return (
@@ -105,6 +108,17 @@ export default function Connections({ loaderData }: Route.ComponentProps) {
             </p>
           </div>
         </header>
+        {actionData?.saved && (
+          <p className="notice success" role="status">
+            {actionData.intent === "accept"
+              ? "Connection accepted."
+              : actionData.intent === "decline"
+                ? "Request declined."
+                : actionData.intent === "cancel"
+                  ? "Request cancelled."
+                  : "Connection removed."}
+          </p>
+        )}
         <div className="notification-list" aria-busy={pending}>
           {loaderData.connections.length === 0 && (
             <div className="status-card">
@@ -180,6 +194,14 @@ export default function Connections({ loaderData }: Route.ComponentProps) {
                       name="intent"
                       value="disconnect"
                       disabled={pending}
+                      onClick={(event) => {
+                        if (
+                          !window.confirm(
+                            `Disconnect from ${connection.displayName}? Private contact access provided by this connection will end.`,
+                          )
+                        )
+                          event.preventDefault();
+                      }}
                     >
                       Disconnect
                     </button>

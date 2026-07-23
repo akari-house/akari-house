@@ -54,9 +54,26 @@ export async function action({ request, context }: Route.ActionArgs) {
   return { saved: true };
 }
 
-export default function Notifications({ loaderData }: Route.ComponentProps) {
+const notificationKindLabels: Record<string, string> = {
+  "connection.request": "Connection request",
+  "connection.accepted": "Connection accepted",
+  "project.interest": "Project interest",
+  "project.contact_shared": "Contact shared",
+  "project.reviewed": "Project review",
+  "event.registration": "Event registration",
+  "event.reviewed": "Event review",
+  "interest.reviewed": "Access request",
+};
+
+export default function Notifications({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   const navigation = useNavigation();
   const pending = navigation.state !== "idle";
+  const unreadCount = loaderData.notifications.filter(
+    (notification) => !notification.readAt,
+  ).length;
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -66,12 +83,19 @@ export default function Notifications({ loaderData }: Route.ComponentProps) {
             <span className="eyebrow">Notification lantern</span>
             <h1>What changed around you.</h1>
           </div>
-          <Form method="post">
-            <button className="button button-quiet" disabled={pending}>
-              {pending ? "Updating..." : "Mark all as read"}
-            </button>
-          </Form>
+          {unreadCount > 0 && (
+            <Form method="post">
+              <button className="button button-quiet" disabled={pending}>
+                {pending ? "Updating..." : `Mark all ${unreadCount} as read`}
+              </button>
+            </Form>
+          )}
         </header>
+        {actionData?.saved && (
+          <p className="notice success" role="status">
+            Notification status updated.
+          </p>
+        )}
         <div className="notification-list" aria-busy={pending}>
           {loaderData.notifications.length ? (
             loaderData.notifications.map((notification) => (
@@ -81,7 +105,8 @@ export default function Notifications({ loaderData }: Route.ComponentProps) {
               >
                 <div>
                   <span className="chapter">
-                    {notification.kind.replace(".", " ")}
+                    {notificationKindLabels[notification.kind] ??
+                      "Account update"}
                   </span>
                   <h2>{notification.title}</h2>
                   <p>{notification.body}</p>

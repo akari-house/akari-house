@@ -67,29 +67,29 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   if (!profile) throw new Response("Profile missing", { status: 500 });
   const [membership, socialAccounts, interests, contacts, activity] =
     await Promise.all([
-    membershipStatusForUser(db, user.id),
-    loadSocialAccounts(db, user.id),
-    db
-      .prepare(
-        "SELECT interest_type AS interestType, status FROM interest_requests WHERE user_id = ?",
-      )
-      .bind(user.id)
-      .all<{ interestType: InterestType; status: string }>(),
-    db
-      .prepare(
-        `SELECT contact_type AS contactType, contact_value AS contactValue,
+      membershipStatusForUser(db, user.id),
+      loadSocialAccounts(db, user.id),
+      db
+        .prepare(
+          "SELECT interest_type AS interestType, status FROM interest_requests WHERE user_id = ?",
+        )
+        .bind(user.id)
+        .all<{ interestType: InterestType; status: string }>(),
+      db
+        .prepare(
+          `SELECT contact_type AS contactType, contact_value AS contactValue,
                 visibility
          FROM profile_contacts WHERE user_id = ? ORDER BY contact_type`,
-      )
-      .bind(user.id)
-      .all<{
-        contactType: string;
-        contactValue: string;
-        visibility: string;
-      }>(),
-    db
-      .prepare(
-        `SELECT
+        )
+        .bind(user.id)
+        .all<{
+          contactType: string;
+          contactValue: string;
+          visibility: string;
+        }>(),
+      db
+        .prepare(
+          `SELECT
           (SELECT COUNT(*) FROM notifications
             WHERE user_id = ? AND read_at IS NULL) AS unreadNotifications,
           (SELECT COUNT(*) FROM connections
@@ -100,15 +100,15 @@ export async function loader({ request, context }: Route.LoaderArgs) {
           (SELECT COUNT(*) FROM event_registrations
             WHERE user_id = ? AND status IN ('registered', 'waitlisted'))
             AS upcomingEvents`,
-      )
-      .bind(user.id, user.id, user.id, user.id, user.id)
-      .first<{
-        unreadNotifications: number;
-        connections: number;
-        followedProjects: number;
-        upcomingEvents: number;
-      }>(),
-  ]);
+        )
+        .bind(user.id, user.id, user.id, user.id, user.id)
+        .first<{
+          unreadNotifications: number;
+          connections: number;
+          followedProjects: number;
+          upcomingEvents: number;
+        }>(),
+    ]);
   return {
     user,
     profile,
@@ -184,8 +184,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     ) ||
     interestNote.length > 500 ||
     (contactEmail !== "" && !validateEmail(contactEmail)) ||
-    (telegramHandle !== "" &&
-      !/^@?[a-zA-Z0-9_]{5,32}$/.test(telegramHandle)) ||
+    (telegramHandle !== "" && !/^@?[a-zA-Z0-9_]{5,32}$/.test(telegramHandle)) ||
     !validContactVisibility
   ) {
     return {
@@ -270,12 +269,7 @@ export async function action({ request, context }: Route.ActionArgs) {
                  END,
                  updated_at = excluded.updated_at`,
             )
-            .bind(
-              crypto.randomUUID(),
-              user.id,
-              interestType,
-              interestNote,
-            )
+            .bind(crypto.randomUUID(), user.id, interestType, interestNote)
         : db
             .prepare(
               `UPDATE interest_requests SET status = 'withdrawn',
@@ -288,9 +282,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       ["email", contactEmail],
       [
         "telegram",
-        telegramHandle
-          ? `@${telegramHandle.replace(/^@/, "")}`
-          : "",
+        telegramHandle ? `@${telegramHandle.replace(/^@/, "")}` : "",
       ],
     ].map(([contactType, contactValue]) =>
       contactValue
@@ -305,12 +297,7 @@ export async function action({ request, context }: Route.ActionArgs) {
                  verified_at = NULL,
                  updated_at = excluded.updated_at`,
             )
-            .bind(
-              user.id,
-              contactType,
-              contactValue,
-              contactVisibility,
-            )
+            .bind(user.id, contactType, contactValue, contactVisibility)
         : db
             .prepare(
               "DELETE FROM profile_contacts WHERE user_id = ? AND contact_type = ?",
@@ -359,13 +346,14 @@ export default function Dashboard({
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
       <main id="main-content" className="dashboard-main">
-        <aside className="dashboard-nav">
+        <nav className="dashboard-nav" aria-label="Your House">
           <span className="eyebrow">Your House</span>
-          <Link className="active" to="/app">
-            Home
+          <Link className="active" aria-current="page" to="/app">
+            Overview
           </Link>
-          <a href="#profile-editor">Profile</a>
-          <a href="#role-workspaces">Membership</a>
+          <a href="#member-home">Account status</a>
+          <a href="#role-workspaces">Profile readiness</a>
+          <a href="#profile-editor">Edit profile</a>
           <a href="#privacy-controls">Privacy and security</a>
           <Link to="/projects">Projects</Link>
           {loaderData.user.roles.includes("founder") &&
@@ -381,7 +369,7 @@ export default function Dashboard({
           <Link to="/connections">Connections</Link>
           <Link to="/notifications">Notifications</Link>
           <Link to="/settings/telegram">Telegram</Link>
-        </aside>
+        </nav>
         <section className="dashboard-content">
           {loaderData.welcome && (
             <div className="notice">
@@ -395,9 +383,9 @@ export default function Dashboard({
           )}
           {!isMember && (
             <div className="notice applicant-notice">
-              <strong>Your applicant profile is open.</strong> You can keep
-              your biography, roles, social links and interests current while
-              the Membership Desk reviews your application. Your profile stays
+              <strong>Your applicant profile is open.</strong> You can keep your
+              biography, roles, social links and interests current while the
+              Membership Desk reviews your application. Your profile stays
               private, and media uploads and event hosting remain locked until
               approval.
             </div>
@@ -420,7 +408,11 @@ export default function Dashboard({
               </span>
             )}
           </div>
-          <section className="member-home" aria-labelledby="member-home-title">
+          <section
+            className="member-home"
+            id="member-home"
+            aria-labelledby="member-home-title"
+          >
             <div className="member-home-intro">
               <span className="chapter">Your place in the House</span>
               <h2 id="member-home-title">{membershipLabel}</h2>
@@ -429,7 +421,9 @@ export default function Dashboard({
                   ? "Your member spaces are open. Continue a conversation, follow an opportunity or keep your profile current."
                   : "You can keep your lightweight profile and interests current while the Membership Desk completes its review."}
               </p>
-              <span className={`membership-seal status-${loaderData.membership?.status ?? "pending_review"}`}>
+              <span
+                className={`membership-seal status-${loaderData.membership?.status ?? "pending_review"}`}
+              >
                 {membershipLabel}
               </span>
             </div>
@@ -451,7 +445,10 @@ export default function Dashboard({
                 <span>Event places</span>
               </Link>
             </div>
-            <nav className="member-next-actions" aria-label="Recommended next steps">
+            <nav
+              className="member-next-actions"
+              aria-label="Recommended next steps"
+            >
               <Link className="button button-primary" to="/projects">
                 Discover projects
               </Link>
@@ -509,6 +506,7 @@ export default function Dashboard({
                 Display name
                 <input
                   name="displayName"
+                  autoComplete="name"
                   defaultValue={loaderData.profile.displayName}
                   required
                 />
@@ -517,6 +515,7 @@ export default function Dashboard({
                 Location
                 <input
                   name="location"
+                  autoComplete="address-level2"
                   defaultValue={loaderData.profile.location}
                   placeholder="Berlin, Germany"
                 />
@@ -527,9 +526,13 @@ export default function Dashboard({
               <input
                 name="headline"
                 maxLength={120}
+                aria-describedby="headline-help"
                 defaultValue={loaderData.profile.headline}
                 placeholder="Founder building trusted creator infrastructure"
               />
+              <small id="headline-help">
+                A concise introduction, up to 120 characters.
+              </small>
             </label>
             <label>
               Biography
@@ -537,9 +540,13 @@ export default function Dashboard({
                 name="bio"
                 rows={5}
                 maxLength={600}
+                aria-describedby="bio-help"
                 defaultValue={loaderData.profile.bio}
                 placeholder="What should trusted members know about you?"
               />
+              <small id="bio-help">
+                Share useful context in up to 600 characters.
+              </small>
             </label>
             <div className="form-row">
               <label>
@@ -569,18 +576,20 @@ export default function Dashboard({
                 name="websiteUrl"
                 type="url"
                 inputMode="url"
+                autoComplete="url"
+                aria-describedby="website-help"
                 defaultValue={loaderData.profile.websiteUrl}
                 placeholder="https://example.com"
               />
-              <small>HTTPS links only.</small>
+              <small id="website-help">HTTPS links only.</small>
             </label>
             <RoleSelector selected={loaderData.user.roles} />
             <fieldset className="profile-panel" id="social-links">
               <legend>Social presence</legend>
               <p className="field-help">
                 Add links and an optional current count. Counts you enter are
-                labelled member-reported; supported official syncs replace
-                them with a dated verified count.
+                labelled member-reported; supported official syncs replace them
+                with a dated verified count.
               </p>
               <div className="social-profile-grid">
                 {loaderData.socialAccounts.map((account) => (
@@ -600,6 +609,7 @@ export default function Dashboard({
                       <input
                         name={`followers_${account.platform}`}
                         type="number"
+                        inputMode="numeric"
                         min={0}
                         max={2_000_000_000}
                         defaultValue={account.followerCount ?? ""}
@@ -617,8 +627,8 @@ export default function Dashboard({
             <fieldset className="profile-panel" id="interest-requests">
               <legend>What would you like to explore?</legend>
               <p className="field-help">
-                Showing interest is not automatic access. The AKARI team
-                reviews ambassador, project and event-host requests.
+                Showing interest is not automatic access. The AKARI team reviews
+                ambassador, project and event-host requests.
               </p>
               <div className="interest-grid">
                 {interestTypes.map((interestType) => (
@@ -646,9 +656,9 @@ export default function Dashboard({
             <fieldset className="profile-panel" id="contact-sharing">
               <legend>Private contact sharing</legend>
               <p className="field-help">
-                These details never appear publicly. A connection is mutual
-                only after acceptance. Project-interest sharing also requires
-                your explicit consent on the individual interest.
+                These details never appear publicly. A connection is mutual only
+                after acceptance. Project-interest sharing also requires your
+                explicit consent on the individual interest.
               </p>
               <div className="form-row">
                 <label>
@@ -656,6 +666,7 @@ export default function Dashboard({
                   <input
                     name="contactEmail"
                     type="email"
+                    autoComplete="email"
                     defaultValue={contactMap.get("email") ?? ""}
                   />
                 </label>
@@ -663,6 +674,7 @@ export default function Dashboard({
                   Telegram handle
                   <input
                     name="telegramHandle"
+                    autoComplete="off"
                     defaultValue={contactMap.get("telegram") ?? ""}
                     placeholder="@username"
                     pattern="@?[a-zA-Z0-9_]{5,32}"
@@ -694,8 +706,8 @@ export default function Dashboard({
               <legend>Who can see your profile?</legend>
               {!isMember && (
                 <p className="field-help">
-                  Applicant profiles are enforced as private. Visibility
-                  choices unlock after membership approval.
+                  Applicant profiles are enforced as private. Visibility choices
+                  unlock after membership approval.
                 </p>
               )}
               {[
