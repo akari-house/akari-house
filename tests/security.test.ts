@@ -9,6 +9,7 @@ describe("authentication security", () => {
   it("hashes and verifies passwords without storing the plaintext", async () => {
     const password = "A-strong-test-password-2026";
     const hash = await hashPassword(password);
+    expect(hash).toMatch(/^scrypt\$16384\$8\$1\$/);
     expect(hash).not.toContain(password);
     await expect(verifyPassword(password, hash)).resolves.toBe(true);
     await expect(verifyPassword("wrong-password", hash)).resolves.toBe(false);

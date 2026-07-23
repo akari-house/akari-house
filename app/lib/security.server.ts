@@ -1,6 +1,9 @@
-import { timingSafeEqual } from "node:crypto";
+import { scrypt, timingSafeEqual } from "node:crypto";
 
-const iterations = 210_000;
+const scryptCost = 16_384;
+const scryptBlockSize = 8;
+const scryptParallelization = 1;
+const derivedKeyLength = 32;
 
 function bytesToBase64(bytes: Uint8Array) {
   let value = "";
@@ -13,32 +16,39 @@ function base64ToBytes(value: string) {
 }
 
 async function derivePassword(password: string, salt: Uint8Array) {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(password),
-    "PBKDF2",
-    false,
-    ["deriveBits"],
-  );
-  const bits = await crypto.subtle.deriveBits(
-    { name: "PBKDF2", hash: "SHA-256", salt: salt.slice().buffer, iterations },
-    key,
-    256,
-  );
-  return new Uint8Array(bits);
+  return new Promise<Uint8Array>((resolve, reject) => {
+    scrypt(
+      password,
+      salt,
+      derivedKeyLength,
+      {
+        N: scryptCost,
+        r: scryptBlockSize,
+        p: scryptParallelization,
+        maxmem: 32 * 1024 * 1024,
+      },
+      (error, key) => {
+        if (error) reject(error);
+        else resolve(new Uint8Array(key));
+      },
+    );
+  });
 }
 
 export async function hashPassword(password: string) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const hash = await derivePassword(password, salt);
-  return `pbkdf2-sha256$${iterations}$${bytesToBase64(salt)}$${bytesToBase64(hash)}`;
+  return `scrypt$${scryptCost}$${scryptBlockSize}$${scryptParallelization}$${bytesToBase64(salt)}$${bytesToBase64(hash)}`;
 }
 
 export async function verifyPassword(password: string, stored: string) {
-  const [algorithm, count, saltValue, hashValue] = stored.split("$");
+  const [algorithm, cost, blockSize, parallelization, saltValue, hashValue] =
+    stored.split("$");
   if (
-    algorithm !== "pbkdf2-sha256" ||
-    Number(count) !== iterations ||
+    algorithm !== "scrypt" ||
+    Number(cost) !== scryptCost ||
+    Number(blockSize) !== scryptBlockSize ||
+    Number(parallelization) !== scryptParallelization ||
     !saltValue ||
     !hashValue
   )
