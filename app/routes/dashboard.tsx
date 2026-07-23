@@ -4,7 +4,12 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { RoleSelector } from "~/components/RoleSelector";
 import { requireUser } from "~/lib/auth.server";
 import { assertSameOrigin } from "~/lib/security.server";
-import { formText, selectedRoles, selectedVisibility } from "~/lib/validation";
+import {
+  formText,
+  normalizeWebsite,
+  selectedRoles,
+  selectedVisibility,
+} from "~/lib/validation";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { CommonTable } from "~/components/common-table/CommonTable";
 
@@ -13,16 +18,23 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireUser(request, db);
   const profile = await db
     .prepare(
-      `SELECT p.display_name AS displayName, COALESCE(p.bio, '') AS bio,
-            COALESCE(p.location, '') AS location, COALESCE(v.visibility, p.visibility) AS visibility
+      `SELECT p.display_name AS displayName, COALESCE(p.headline, '') AS headline,
+            COALESCE(p.bio, '') AS bio, COALESCE(p.location, '') AS location,
+            COALESCE(p.website_url, '') AS websiteUrl,
+            COALESCE(p.expertise, '') AS expertise, COALESCE(p.open_to, '') AS openTo,
+            COALESCE(v.visibility, p.visibility) AS visibility
      FROM profiles p LEFT JOIN profile_visibility v ON v.user_id = p.user_id
      WHERE p.user_id = ?`,
     )
     .bind(user.id)
     .first<{
       displayName: string;
+      headline: string;
       bio: string;
       location: string;
+      websiteUrl: string;
+      expertise: string;
+      openTo: string;
       visibility: string;
     }>();
   if (!profile) throw new Response("Profile missing", { status: 500 });
@@ -40,15 +52,23 @@ export async function action({ request, context }: Route.ActionArgs) {
   const user = await requireUser(request, db);
   const formData = await request.formData();
   const displayName = formText(formData.get("displayName")).trim();
+  const headline = formText(formData.get("headline")).trim();
   const bio = formText(formData.get("bio")).trim();
   const location = formText(formData.get("location")).trim();
+  const websiteUrl = normalizeWebsite(formData.get("websiteUrl"));
+  const expertise = formText(formData.get("expertise")).trim();
+  const openTo = formText(formData.get("openTo")).trim();
   const visibility = selectedVisibility(formData.get("visibility"));
   const selected = selectedRoles(formData);
   if (
     displayName.length < 2 ||
     displayName.length > 80 ||
+    headline.length > 120 ||
     bio.length > 600 ||
     location.length > 100 ||
+    websiteUrl === null ||
+    expertise.length > 240 ||
+    openTo.length > 240 ||
     selected.length === 0
   ) {
     return { error: "Check your profile fields and select at least one role." };
@@ -56,9 +76,19 @@ export async function action({ request, context }: Route.ActionArgs) {
   await db.batch([
     db
       .prepare(
-        "UPDATE profiles SET display_name = ?, bio = ?, location = ?, visibility = ?, updated_at = datetime('now') WHERE user_id = ?",
+        "UPDATE profiles SET display_name = ?, headline = ?, bio = ?, location = ?, website_url = ?, expertise = ?, open_to = ?, visibility = ?, updated_at = datetime('now') WHERE user_id = ?",
       )
-      .bind(displayName, bio, location, visibility, user.id),
+      .bind(
+        displayName,
+        headline,
+        bio,
+        location,
+        websiteUrl,
+        expertise,
+        openTo,
+        visibility,
+        user.id,
+      ),
     db
       .prepare(
         "INSERT INTO profile_visibility (user_id, visibility, updated_at) VALUES (?, ?, datetime('now')) ON CONFLICT(user_id) DO UPDATE SET visibility = excluded.visibility, updated_at = excluded.updated_at",
@@ -157,6 +187,15 @@ export default function Dashboard({
               </label>
             </div>
             <label>
+              Professional headline
+              <input
+                name="headline"
+                maxLength={120}
+                defaultValue={loaderData.profile.headline}
+                placeholder="Founder building trusted creator infrastructure"
+              />
+            </label>
+            <label>
               Biography
               <textarea
                 name="bio"
@@ -165,6 +204,39 @@ export default function Dashboard({
                 defaultValue={loaderData.profile.bio}
                 placeholder="What should trusted members know about you?"
               />
+            </label>
+            <div className="form-row">
+              <label>
+                Expertise
+                <textarea
+                  name="expertise"
+                  rows={3}
+                  maxLength={240}
+                  defaultValue={loaderData.profile.expertise}
+                  placeholder="Community strategy, consumer products, Japan market"
+                />
+              </label>
+              <label>
+                Open to
+                <textarea
+                  name="openTo"
+                  rows={3}
+                  maxLength={240}
+                  defaultValue={loaderData.profile.openTo}
+                  placeholder="Collaborations, thoughtful introductions, advisory work"
+                />
+              </label>
+            </div>
+            <label>
+              Website
+              <input
+                name="websiteUrl"
+                type="url"
+                inputMode="url"
+                defaultValue={loaderData.profile.websiteUrl}
+                placeholder="https://example.com"
+              />
+              <small>HTTPS links only.</small>
             </label>
             <RoleSelector selected={loaderData.user.roles} />
             <fieldset className="visibility-fieldset">

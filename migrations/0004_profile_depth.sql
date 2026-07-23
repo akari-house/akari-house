@@ -1,0 +1,6 @@
+PRAGMA foreign_keys = ON;
+
+ALTER TABLE profiles ADD COLUMN headline TEXT NOT NULL DEFAULT '';
+ALTER TABLE profiles ADD COLUMN website_url TEXT NOT NULL DEFAULT '';
+ALTER TABLE profiles ADD COLUMN expertise TEXT NOT NULL DEFAULT '';
+ALTER TABLE profiles ADD COLUMN open_to TEXT NOT NULL DEFAULT '';

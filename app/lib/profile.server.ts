@@ -9,7 +9,11 @@ export async function getVisibleProfile(
   const profile = await db
     .prepare(
       `SELECT p.user_id AS userId, u.username, p.display_name AS displayName,
+            COALESCE(p.headline, '') AS headline,
             COALESCE(p.bio, '') AS bio, COALESCE(p.location, '') AS location,
+            COALESCE(p.website_url, '') AS websiteUrl,
+            COALESCE(p.expertise, '') AS expertise,
+            COALESCE(p.open_to, '') AS openTo,
             COALESCE(v.visibility, p.visibility) AS visibility
      FROM profiles p JOIN users u ON u.id = p.user_id
      LEFT JOIN profile_visibility v ON v.user_id = p.user_id

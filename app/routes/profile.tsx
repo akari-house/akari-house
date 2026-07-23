@@ -38,6 +38,9 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
         </div>
         <span className="eyebrow">AKARI member</span>
         <h1>{profile.displayName}</h1>
+        {profile.headline && (
+          <p className="profile-headline">{profile.headline}</p>
+        )}
         <p className="profile-username">
           @{profile.username} · {profile.location || "Location private"}
         </p>
@@ -49,6 +52,32 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
         <p className="profile-bio">
           {profile.bio || "This member is still shaping their introduction."}
         </p>
+        {(profile.expertise || profile.openTo) && (
+          <dl className="profile-details">
+            {profile.expertise && (
+              <div>
+                <dt>Expertise</dt>
+                <dd>{profile.expertise}</dd>
+              </div>
+            )}
+            {profile.openTo && (
+              <div>
+                <dt>Open to</dt>
+                <dd>{profile.openTo}</dd>
+              </div>
+            )}
+          </dl>
+        )}
+        {profile.websiteUrl && (
+          <a
+            className="profile-website"
+            href={profile.websiteUrl}
+            rel="noreferrer"
+            target="_blank"
+          >
+            Visit website ↗
+          </a>
+        )}
         {user?.id === profile.userId && (
           <Link className="button button-primary" to="/app">
             Edit profile

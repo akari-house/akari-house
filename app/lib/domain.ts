@@ -21,8 +21,12 @@ export interface ProfileRecord {
   userId: string;
   username: string;
   displayName: string;
+  headline: string;
   bio: string;
   location: string;
+  websiteUrl: string;
+  expertise: string;
+  openTo: string;
   visibility: Visibility;
   roles: Role[];
 }

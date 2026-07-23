@@ -22,6 +22,17 @@ export function validateUsername(username: string) {
   return usernamePattern.test(username);
 }
 
+export function normalizeWebsite(value: FormDataEntryValue | null) {
+  const website = formText(value).trim();
+  if (!website) return "";
+  try {
+    const parsed = new URL(website);
+    return parsed.protocol === "https:" ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 export function selectedRoles(formData: FormData): Role[] {
   return formData
     .getAll("roles")
