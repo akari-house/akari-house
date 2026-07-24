@@ -1,0 +1,23 @@
+name: Verify Launch Gate Deployment
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/verify-launch-gate-deployment.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Cloudflare deployment
+        run: sleep 45
+      - name: Verify production health
+        run: |
+          body=$(curl --fail --silent --show-error https://akari-house.spacematesxyz.workers.dev/health)
+          echo "$body" | grep '"status":"ready"'
+          echo "$body" | grep '"launchGate":true'
+      - name: Verify protected launch gate console
+        run: |
+          headers=$(curl --silent --show-error --dump-header - --output /dev/null https://akari-house.spacematesxyz.workers.dev/admin/launch-gate)
+          echo "$headers" | grep -E 'HTTP/[0-9.]+ (302|303)'
+          echo "$headers" | grep -i '^location:.*login'
