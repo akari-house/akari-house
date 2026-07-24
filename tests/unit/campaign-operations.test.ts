@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 
 const migration = readFileSync(
-  new URL("../../migrations/0095_campaign_ownership_reminders.sql", import.meta.url),
+  new URL(
+    "../../migrations/0095_campaign_ownership_reminders.sql",
+    import.meta.url,
+  ),
   "utf8",
 );
 const reminders = readFileSync(

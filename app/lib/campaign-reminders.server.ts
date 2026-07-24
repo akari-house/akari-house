@@ -110,7 +110,10 @@ export async function createCampaignWorkReminders(
         userId: item.creatorUserId,
         reminderType: "starting",
         key: `${item.campaignId}:${item.creatorUserId}:start:${item.startsAt}`,
-        title: startDays === 0 ? "Campaign starts today" : "Campaign starts tomorrow",
+        title:
+          startDays === 0
+            ? "Campaign starts today"
+            : "Campaign starts tomorrow",
         body: `${item.title} ${startDays === 0 ? "starts today" : "starts tomorrow"}. Review the brief and delivery schedule.`,
         actionUrl: `/campaigns/${item.slug}/work`,
       });
