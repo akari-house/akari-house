@@ -33,6 +33,8 @@ export default [
   route("admin/team", "routes/admin-team.tsx"),
   route("admin/verifications", "routes/admin-verifications.tsx"),
   route("admin/campaigns", "routes/admin-campaigns.tsx"),
+  route("admin/iio/:slug", "routes/admin-iio-detail.tsx"),
+  route("admin/iio/:slug/export.csv", "routes/admin-iio-export.ts"),
   route("notifications", "routes/notifications.tsx"),
   route("connections", "routes/connections.tsx"),
   route("members", "routes/members.tsx"),

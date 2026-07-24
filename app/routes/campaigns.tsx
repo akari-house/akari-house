@@ -12,6 +12,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     db
       .prepare(
         `SELECT c.slug, c.title, c.summary, c.compensation,
+                c.campaign_kind AS campaignKind,
                 c.application_deadline AS applicationDeadline,
                 p.slug AS projectSlug, p.title AS projectTitle
          FROM ambassador_campaigns c
@@ -24,6 +25,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         title: string;
         summary: string;
         compensation: string;
+        campaignKind: string;
         applicationDeadline: string | null;
         projectSlug: string;
         projectTitle: string;
@@ -39,8 +41,8 @@ export default function Campaigns({ loaderData }: Route.ComponentProps) {
       <main id="main-content" className="directory-main">
         <header className="directory-heading">
           <div>
-            <span className="eyebrow">Ambassador campaigns</span>
-            <h1>Projects inviting creators in.</h1>
+            <span className="eyebrow">Initial Interest Offerings</span>
+            <h1>Where project stories meet Creator influence.</h1>
             <p>
               Follow the project first, understand its story, then apply with
               clear context.
@@ -51,16 +53,21 @@ export default function Campaigns({ loaderData }: Route.ComponentProps) {
           {loaderData.campaigns.length ? (
             loaderData.campaigns.map((campaign) => (
               <article className="status-card" key={campaign.slug}>
-                <span className="chapter">{campaign.projectTitle}</span>
+                <span className="chapter">
+                  {campaign.campaignKind === "iio" ? "IIO · Live" : "Campaign"}{" "}
+                  · {campaign.projectTitle}
+                </span>
                 <h2>
                   <Link to={`/campaigns/${campaign.slug}`}>
                     {campaign.title}
                   </Link>
                 </h2>
                 <p>{campaign.summary}</p>
-                {campaign.compensation && <p>{campaign.compensation}</p>}
+                {campaign.campaignKind !== "iio" && campaign.compensation && (
+                  <p>{campaign.compensation}</p>
+                )}
                 <Link className="quiet-link" to={`/campaigns/${campaign.slug}`}>
-                  Read campaign brief
+                  Enter the offering
                 </Link>
               </article>
             ))

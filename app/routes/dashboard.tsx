@@ -71,31 +71,37 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       visibility: string;
     }>();
   if (!profile) throw new Response("Profile missing", { status: 500 });
-  const [membership, socialAccounts, interests, contacts, activity] =
-    await Promise.all([
-      membershipStatusForUser(db, user.id),
-      loadSocialAccounts(db, user.id),
-      db
-        .prepare(
-          "SELECT interest_type AS interestType, status FROM interest_requests WHERE user_id = ?",
-        )
-        .bind(user.id)
-        .all<{ interestType: InterestType; status: string }>(),
-      db
-        .prepare(
-          `SELECT contact_type AS contactType, contact_value AS contactValue,
+  const [
+    membership,
+    socialAccounts,
+    interests,
+    contacts,
+    activity,
+    adminAccess,
+  ] = await Promise.all([
+    membershipStatusForUser(db, user.id),
+    loadSocialAccounts(db, user.id),
+    db
+      .prepare(
+        "SELECT interest_type AS interestType, status FROM interest_requests WHERE user_id = ?",
+      )
+      .bind(user.id)
+      .all<{ interestType: InterestType; status: string }>(),
+    db
+      .prepare(
+        `SELECT contact_type AS contactType, contact_value AS contactValue,
                 visibility
          FROM profile_contacts WHERE user_id = ? ORDER BY contact_type`,
-        )
-        .bind(user.id)
-        .all<{
-          contactType: string;
-          contactValue: string;
-          visibility: string;
-        }>(),
-      db
-        .prepare(
-          `SELECT
+      )
+      .bind(user.id)
+      .all<{
+        contactType: string;
+        contactValue: string;
+        visibility: string;
+      }>(),
+    db
+      .prepare(
+        `SELECT
           (SELECT COUNT(*) FROM notifications
             WHERE user_id = ? AND read_at IS NULL) AS unreadNotifications,
           (SELECT COUNT(*) FROM connections
@@ -106,15 +112,27 @@ export async function loader({ request, context }: Route.LoaderArgs) {
           (SELECT COUNT(*) FROM event_registrations
             WHERE user_id = ? AND status IN ('registered', 'waitlisted'))
             AS upcomingEvents`,
-        )
-        .bind(user.id, user.id, user.id, user.id, user.id)
-        .first<{
-          unreadNotifications: number;
-          connections: number;
-          followedProjects: number;
-          upcomingEvents: number;
-        }>(),
-    ]);
+      )
+      .bind(user.id, user.id, user.id, user.id, user.id)
+      .first<{
+        unreadNotifications: number;
+        connections: number;
+        followedProjects: number;
+        upcomingEvents: number;
+      }>(),
+    db
+      .prepare(
+        `SELECT au.access_level AS accessLevel,
+                  CASE WHEN au.access_level = 'superadmin' OR s.scope IS NOT NULL
+                    THEN 1 ELSE 0 END AS canManageCampaigns
+           FROM admin_users au
+           LEFT JOIN admin_scopes s
+             ON s.admin_user_id = au.user_id AND s.scope = 'campaigns'
+           WHERE au.user_id = ?`,
+      )
+      .bind(user.id)
+      .first<{ accessLevel: string; canManageCampaigns: number }>(),
+  ]);
   return {
     user,
     profile,
@@ -128,6 +146,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       followedProjects: 0,
       upcomingEvents: 0,
     },
+    adminAccess,
     saved: new URL(request.url).searchParams.has("saved"),
     photoSaved: new URL(request.url).searchParams.has("photo"),
     welcome: new URL(request.url).searchParams.has("welcome"),
@@ -452,6 +471,12 @@ export default function Dashboard({
           <Link to="/members">Discover members</Link>
           <Link to="/notifications">Notifications</Link>
           <Link to="/settings/telegram">Telegram</Link>
+          {loaderData.adminAccess?.canManageCampaigns === 1 && (
+            <Link to="/admin/campaigns">IIO control room</Link>
+          )}
+          {loaderData.adminAccess?.accessLevel === "superadmin" && (
+            <Link to="/admin/team">Admin team</Link>
+          )}
         </nav>
         <section className="dashboard-content">
           {loaderData.welcome && (

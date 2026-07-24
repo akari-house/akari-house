@@ -7,7 +7,7 @@ import type { SessionUser } from "~/lib/domain";
 const links = [
   ["The House", "/"],
   ["Projects", "/projects"],
-  ["Campaigns", "/campaigns"],
+  ["IIO", "/campaigns"],
   ["Events", "/events"],
   ["Archive", "/archive"],
   ["Membership", "/membership"],
@@ -114,7 +114,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
     ? [
         ["Dashboard", "/app"],
         ["Projects", "/projects"],
-        ["Campaigns", "/campaigns"],
+        ["IIO", "/campaigns"],
         ...(user.accessTier === "member" && user.roles.includes("founder")
           ? [["My projects", "/projects/manage"]]
           : []),

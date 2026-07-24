@@ -21,7 +21,7 @@ export function PublicFooter() {
       <nav aria-label="Footer">
         <Link to="/">The House</Link>
         <Link to="/projects">Projects</Link>
-        <Link to="/campaigns">Campaigns</Link>
+        <Link to="/campaigns">IIO campaigns</Link>
         <Link to="/events">Events</Link>
         <Link to="/archive">Archive</Link>
         <Link to="/membership">Membership</Link>
