@@ -1,0 +1,37 @@
+name: Format Account Rights
+
+on:
+  pull_request:
+    paths:
+      - "app/routes/account-settings.tsx"
+      - "app/routes/account-export.ts"
+      - "app/lib/account-retention.server.ts"
+      - "app/components/SiteHeader.tsx"
+      - "app/routes.ts"
+      - "worker/index.ts"
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write app/routes/account-settings.tsx app/routes/account-export.ts app/lib/account-retention.server.ts app/components/SiteHeader.tsx app/routes.ts worker/index.ts
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app worker
+          git commit -m "Format account rights release"
+          git push
