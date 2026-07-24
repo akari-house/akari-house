@@ -52,11 +52,12 @@ jobs:
             exit 0
           fi
 
-          cp /tmp/launch-completion.log /tmp/launch-completion-diagnostics.log
-          git reset --hard HEAD
-          git clean -fd
-          cp /tmp/launch-completion-diagnostics.log .github/launch-completion-diagnostics.log
-          git add .github/launch-completion-diagnostics.log
-          git commit -m "Record launch completion verification failure"
-          git push
+          echo "Launch completion verification failed with status $STATUS" >&2
           exit "$STATUS"
+      - name: Upload verification diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: launch-completion-diagnostics
+          path: /tmp/launch-completion.log
+          retention-days: 1
