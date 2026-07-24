@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { KeyboardEvent } from "react";
 import type { Role } from "~/lib/domain";
 import { workspaceData } from "~/data/house";
+import { ScrollTo } from "~/components/ScrollTo";
 
 const roles: Role[] = ["founder", "creator", "investor"];
 const columns = [
@@ -134,9 +135,9 @@ export function CommonTable({ compact = false }: { compact?: boolean }) {
                   </div>
                 ))}
               </div>
-              <a className="button button-quiet" href="#membership">
+              <ScrollTo className="button button-quiet" targetId="membership">
                 See what membership unlocks
-              </a>
+              </ScrollTo>
             </section>
           );
         })}

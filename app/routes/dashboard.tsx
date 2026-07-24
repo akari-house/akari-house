@@ -1,6 +1,7 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/dashboard";
 import { SiteHeader } from "~/components/SiteHeader";
+import { ScrollTo } from "~/components/ScrollTo";
 import { ProfilePhotoEditor } from "~/components/ProfilePhotoEditor";
 import { RoleSelector } from "~/components/RoleSelector";
 import { requireUser } from "~/lib/auth.server";
@@ -191,7 +192,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
     if (previous?.avatarKey && previous.avatarKey !== key)
       await env.MEDIA.delete(previous.avatarKey);
-    throw redirect("/app?photo=saved#profile-photo");
+    throw redirect("/app?photo=saved");
   }
 
   if (intent === "remove-photo") {
@@ -210,7 +211,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       .bind(user.id)
       .run();
     if (previous?.avatarKey) await env.MEDIA.delete(previous.avatarKey);
-    throw redirect("/app?photo=saved#profile-photo");
+    throw redirect("/app?photo=saved");
   }
 
   const displayName = formText(formData.get("displayName")).trim();
@@ -432,10 +433,10 @@ export default function Dashboard({
           <Link className="active" aria-current="page" to="/app">
             Overview
           </Link>
-          <a href="#member-home">Account status</a>
-          <a href="#role-workspaces">Profile readiness</a>
-          <a href="#profile-editor">Edit profile</a>
-          <a href="#privacy-controls">Privacy and security</a>
+          <ScrollTo targetId="member-home">Account status</ScrollTo>
+          <ScrollTo targetId="role-workspaces">Profile readiness</ScrollTo>
+          <ScrollTo targetId="profile-editor">Edit profile</ScrollTo>
+          <ScrollTo targetId="privacy-controls">Privacy and security</ScrollTo>
           <Link to="/projects">Projects</Link>
           {loaderData.user.roles.includes("founder") &&
             loaderData.user.accessTier === "member" && (
@@ -542,9 +543,9 @@ export default function Dashboard({
               <Link className="button button-quiet" to="/events">
                 Explore events
               </Link>
-              <a className="quiet-link" href="#profile-editor">
+              <ScrollTo className="quiet-link" targetId="profile-editor">
                 Continue your profile
-              </a>
+              </ScrollTo>
             </nav>
           </section>
           <section

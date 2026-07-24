@@ -64,7 +64,7 @@ test("desktop journey reaches the Hall, active House and Membership Desk", async
     );
     expect(transformAfterPointer).toBe(initialTransform);
   }
-  await page.getByRole("link", { name: /Enter the House/ }).click();
+  await page.getByRole("button", { name: /Enter the House/ }).click();
   await expect(
     page.getByRole("heading", { name: "Your paths. One House." }),
   ).toBeVisible();

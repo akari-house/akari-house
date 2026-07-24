@@ -319,6 +319,14 @@
 * {
   box-sizing: border-box;
 }
+.standalone-membership {
+  padding-top: clamp(7rem, 12vw, 10rem);
+}
+.admin-scope-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+}
 html {
   scroll-behavior: smooth;
   overflow-x: clip;
@@ -1806,6 +1814,9 @@ img {
   letter-spacing: 0.16em;
   text-transform: uppercase;
   text-decoration: none;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
 }
 .arrival-enter-cue i {
   width: 1px;
@@ -4256,14 +4267,21 @@ select:disabled {
   grid-template-columns: repeat(3, 1fr);
   gap: 0.65rem;
 }
-.role-orientation a {
+.role-orientation a,
+.role-orientation button {
   min-height: 84px;
   padding: 1rem;
   display: grid;
   align-content: center;
   gap: 0.35rem;
   border-left: 1px solid var(--line);
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
   background: linear-gradient(90deg, #f04f8708, transparent);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 .role-orientation span {
   color: var(--yellow);
@@ -5850,6 +5868,7 @@ select:disabled {
 }
 
 .dashboard-nav > a,
+.dashboard-nav > button,
 .disabled-link {
   min-height: 42px;
   padding: 0.65rem 0.8rem;
@@ -5858,10 +5877,16 @@ select:disabled {
   border: 1px solid transparent;
   border-radius: 0.65rem;
   line-height: 1.25;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
 }
 
 .dashboard-nav > a:hover,
-.dashboard-nav > a:focus-visible {
+.dashboard-nav > a:focus-visible,
+.dashboard-nav > button:hover,
+.dashboard-nav > button:focus-visible {
   color: #fff;
   background: #ffffff08;
 }

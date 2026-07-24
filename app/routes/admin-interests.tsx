@@ -2,7 +2,7 @@ import { Form, Link, useNavigation } from "react-router";
 import type { Route } from "./+types/admin-interests";
 import { SiteHeader } from "~/components/SiteHeader";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import { requireAdmin } from "~/lib/membership.server";
+import { requireAdminScope } from "~/lib/membership.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 import { EventTimeDisplay } from "~/components/EventTimeDisplay";
@@ -10,7 +10,7 @@ import { isValidDecisionNote } from "~/lib/review";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireAdmin(request, db);
+  const user = await requireAdminScope(request, db, "projects");
   const [projects, interests, events] = await Promise.all([
     db
       .prepare(
@@ -76,7 +76,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
-  const admin = await requireAdmin(request, db);
+  const admin = await requireAdminScope(request, db, "projects");
   const form = await request.formData();
   const subjectType = formText(form.get("subjectType"));
   const subjectId = formText(form.get("subjectId"));

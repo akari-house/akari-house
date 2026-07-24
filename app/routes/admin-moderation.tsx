@@ -2,13 +2,13 @@ import { Form, Link, useNavigation } from "react-router";
 import type { Route } from "./+types/admin-moderation";
 import { SiteHeader } from "~/components/SiteHeader";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import { requireAdmin } from "~/lib/membership.server";
+import { requireAdminScope } from "~/lib/membership.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireAdmin(request, db);
+  const user = await requireAdminScope(request, db, "moderation");
   const reports = await db
     .prepare(
       `SELECT mr.id, mr.subject_type AS subjectType,
@@ -35,7 +35,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
-  const admin = await requireAdmin(request, db);
+  const admin = await requireAdminScope(request, db, "moderation");
   const form = await request.formData();
   const reportId = formText(form.get("reportId"));
   const intent = formText(form.get("intent"));

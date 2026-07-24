@@ -88,7 +88,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
                     Light a project lantern
                   </Link>
                 ) : (
-                  <Link className="button button-quiet" to="/#membership">
+                  <Link className="button button-quiet" to="/membership">
                     Understand membership
                   </Link>
                 )}

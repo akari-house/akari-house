@@ -25,7 +25,44 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       status: string;
     }>();
   if (!project) throw new Response("Project not found.", { status: 404 });
-  return { user, project };
+  const projectId = await db
+    .prepare("SELECT id FROM projects WHERE slug = ? AND founder_user_id = ?")
+    .bind(params.slug, user.id)
+    .first<{ id: string }>();
+  const [socials, team] = await Promise.all([
+    db
+      .prepare(
+        `SELECT platform, url FROM project_social_links
+         WHERE project_id = ? ORDER BY platform`,
+      )
+      .bind(projectId!.id)
+      .all<{ platform: string; url: string }>(),
+    db
+      .prepare(
+        `SELECT ptm.id, ptm.display_name AS displayName,
+                ptm.team_role AS teamRole, ptm.social_url AS socialUrl,
+                u.username AS linkedUsername
+         FROM project_team_members ptm
+         LEFT JOIN users u ON u.id = ptm.linked_user_id
+         WHERE ptm.project_id = ? ORDER BY ptm.created_at`,
+      )
+      .bind(projectId!.id)
+      .all<{
+        id: string;
+        displayName: string;
+        teamRole: string;
+        socialUrl: string;
+        linkedUsername: string | null;
+      }>(),
+  ]);
+  return {
+    user,
+    project,
+    socials: Object.fromEntries(
+      socials.results.map((item) => [item.platform, item.url]),
+    ),
+    team: team.results,
+  };
 }
 
 export async function action({ request, context, params }: Route.ActionArgs) {
@@ -33,12 +70,123 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const user = await requireApprovedMember(request, db);
   const form = await request.formData();
+  const intent = formText(form.get("intent"));
+  const current = await db
+    .prepare(
+      "SELECT id, status FROM projects WHERE slug = ? AND founder_user_id = ?",
+    )
+    .bind(params.slug, user.id)
+    .first<{ id: string; status: string }>();
+  if (!current) throw new Response("Project not found.", { status: 404 });
+
+  if (intent === "save-socials") {
+    const platforms = [
+      "website",
+      "x",
+      "linkedin",
+      "tiktok",
+      "instagram",
+      "facebook",
+      "youtube",
+    ] as const;
+    const values = platforms.map((platform) => ({
+      platform,
+      url: formText(form.get(`social_${platform}`)).trim(),
+    }));
+    if (
+      values.some(
+        ({ url }) =>
+          url &&
+          (!URL.canParse(url) ||
+            !["http:", "https:"].includes(new URL(url).protocol)),
+      )
+    )
+      return { error: "Every project social link must be a complete http or https URL." };
+    await db.batch([
+      ...platforms.map((platform) =>
+        db
+          .prepare(
+            "DELETE FROM project_social_links WHERE project_id = ? AND platform = ?",
+          )
+          .bind(current.id, platform),
+      ),
+      ...values
+        .filter(({ url }) => url)
+        .map(({ platform, url }) =>
+          db
+            .prepare(
+              `INSERT INTO project_social_links (project_id, platform, url)
+               VALUES (?, ?, ?)`,
+            )
+            .bind(current.id, platform, url),
+        ),
+    ]);
+    throw redirect(`/projects/${params.slug}/edit?saved=socials`);
+  }
+
+  if (intent === "add-team") {
+    const linkedUsername = formText(form.get("linkedUsername"))
+      .trim()
+      .toLowerCase();
+    let linkedUser: { id: string; displayName: string } | null = null;
+    if (linkedUsername)
+      linkedUser = await db
+        .prepare(
+          `SELECT u.id, p.display_name AS displayName
+           FROM users u JOIN profiles p ON p.user_id = u.id
+           WHERE u.username = ? AND u.status IN ('active', 'restricted')`,
+        )
+        .bind(linkedUsername)
+        .first<{ id: string; displayName: string }>();
+    if (linkedUsername && !linkedUser)
+      return { error: "That AKARI username could not be found." };
+    const displayName =
+      linkedUser?.displayName ?? formText(form.get("displayName")).trim();
+    const teamRole = formText(form.get("teamRole")).trim();
+    const socialUrl = formText(form.get("socialUrl")).trim();
+    if (
+      displayName.length < 2 ||
+      displayName.length > 100 ||
+      teamRole.length < 2 ||
+      teamRole.length > 100 ||
+      (socialUrl &&
+        (!URL.canParse(socialUrl) ||
+          !["http:", "https:"].includes(new URL(socialUrl).protocol)))
+    )
+      return { error: "Add a valid team name, role and optional social URL." };
+    await db
+      .prepare(
+        `INSERT INTO project_team_members
+         (id, project_id, linked_user_id, display_name, team_role, social_url)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      )
+      .bind(
+        crypto.randomUUID(),
+        current.id,
+        linkedUser?.id ?? null,
+        displayName,
+        teamRole,
+        socialUrl,
+      )
+      .run();
+    throw redirect(`/projects/${params.slug}/edit?saved=team`);
+  }
+
+  if (intent === "remove-team") {
+    await db
+      .prepare(
+        "DELETE FROM project_team_members WHERE id = ? AND project_id = ?",
+      )
+      .bind(formText(form.get("teamMemberId")), current.id)
+      .run();
+    throw redirect(`/projects/${params.slug}/edit?saved=team`);
+  }
+
   const title = formText(form.get("title")).trim();
   const summary = formText(form.get("summary")).trim();
   const description = formText(form.get("description")).trim();
   const seeking = formText(form.get("seeking")).trim();
   const stage = formText(form.get("stage"));
-  const intent = formText(form.get("intent"));
   if (
     title.length < 3 ||
     title.length > 100 ||
@@ -49,13 +197,6 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     !["idea", "prototype", "early_revenue", "growth"].includes(stage)
   )
     return { error: "Check the project fields and limits." };
-  const current = await db
-    .prepare(
-      "SELECT id, status FROM projects WHERE slug = ? AND founder_user_id = ?",
-    )
-    .bind(params.slug, user.id)
-    .first<{ id: string; status: string }>();
-  if (!current) throw new Response("Project not found.", { status: 404 });
   const status =
     intent === "submit" && ["draft", "declined"].includes(current.status)
       ? "submitted"
@@ -164,6 +305,53 @@ export default function ProjectEdit({
               : "Submitting changes..."}
           </button>
         </Form>
+        <section className="project-action-panel">
+          <span className="eyebrow">Project channels</span>
+          <h2>Official links</h2>
+          <Form method="post" className="profile-form">
+            {["website", "x", "linkedin", "tiktok", "instagram", "facebook", "youtube"].map((platform) => (
+              <label key={platform}>
+                {platform[0].toUpperCase() + platform.slice(1)}
+                <input
+                  name={`social_${platform}`}
+                  type="url"
+                  defaultValue={loaderData.socials[platform] ?? ""}
+                  placeholder="https://"
+                />
+              </label>
+            ))}
+            <button className="button button-quiet" name="intent" value="save-socials">
+              Save project links
+            </button>
+          </Form>
+        </section>
+        <section className="project-action-panel">
+          <span className="eyebrow">Project team</span>
+          <h2>People behind the work</h2>
+          <p>
+            Link an AKARI username when the teammate is already onboarded.
+            Otherwise add their name, role and one public social link.
+          </p>
+          {loaderData.team.map((member) => (
+            <article key={member.id}>
+              <h3>{member.displayName}</h3>
+              <p>{member.teamRole}</p>
+              {member.linkedUsername && <p>Linked to @{member.linkedUsername}</p>}
+              {member.socialUrl && <a href={member.socialUrl} rel="noreferrer" target="_blank">Public profile</a>}
+              <Form method="post">
+                <input type="hidden" name="teamMemberId" value={member.id} />
+                <button className="text-button" name="intent" value="remove-team">Remove</button>
+              </Form>
+            </article>
+          ))}
+          <Form method="post" className="profile-form">
+            <label>AKARI username, when onboarded<input name="linkedUsername" /></label>
+            <label>Name, when not yet on AKARI<input name="displayName" maxLength={100} /></label>
+            <label>Role on the project<input name="teamRole" maxLength={100} required /></label>
+            <label>Public social link<input name="socialUrl" type="url" placeholder="https://" /></label>
+            <button className="button button-quiet" name="intent" value="add-team">Add team member</button>
+          </Form>
+        </section>
       </main>
     </div>
   );

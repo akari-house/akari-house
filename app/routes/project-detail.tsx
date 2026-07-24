@@ -1,7 +1,7 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/project-detail";
 import { SiteHeader } from "~/components/SiteHeader";
-import { getOptionalUser, requireApprovedMember } from "~/lib/auth.server";
+import { getOptionalUser, requireUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
@@ -124,6 +124,39 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
           .bind(project.founderUserId)
           .all<{ contactType: string; contactValue: string }>()
       : null;
+  const campaigns = await db
+    .prepare(
+      `SELECT slug, title, summary, status
+       FROM ambassador_campaigns
+       WHERE project_id = ?
+         AND (status = 'published' OR created_by = ?)
+       ORDER BY updated_at DESC`,
+    )
+    .bind(project.id, user?.id ?? "")
+    .all<{ slug: string; title: string; summary: string; status: string }>();
+  const [socials, team] = await Promise.all([
+    db
+      .prepare(
+        "SELECT platform, url FROM project_social_links WHERE project_id = ? ORDER BY platform",
+      )
+      .bind(project.id)
+      .all<{ platform: string; url: string }>(),
+    db
+      .prepare(
+        `SELECT ptm.display_name AS displayName, ptm.team_role AS teamRole,
+                ptm.social_url AS socialUrl, u.username AS linkedUsername
+         FROM project_team_members ptm
+         LEFT JOIN users u ON u.id = ptm.linked_user_id
+         WHERE ptm.project_id = ? ORDER BY ptm.created_at`,
+      )
+      .bind(project.id)
+      .all<{
+        displayName: string;
+        teamRole: string;
+        socialUrl: string;
+        linkedUsername: string | null;
+      }>(),
+  ]);
   return {
     user,
     project,
@@ -131,6 +164,9 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     ownInterest,
     interests: interests?.results ?? [],
     founderSharedContacts: founderSharedContacts?.results ?? [],
+    campaigns: campaigns.results,
+    socials: socials.results,
+    team: team.results,
     submitted: new URL(request.url).searchParams.has("submitted"),
   };
 }
@@ -138,7 +174,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireApprovedMember(request, db);
+  const user = await requireUser(request, db);
   const project = await db
     .prepare(
       `SELECT id, founder_user_id AS founderUserId, title, status
@@ -186,6 +222,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   }
 
   if (intent === "interest") {
+    if (user.accessTier !== "member")
+      throw new Response("Approved membership is required.", { status: 403 });
     if (!user.roles.includes("investor"))
       throw new Response("Investor role required.", { status: 403 });
     if (user.id === project.founderUserId)
@@ -238,6 +276,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   }
 
   if (intent === "share-founder-contact") {
+    if (user.accessTier !== "member")
+      throw new Response("Approved membership is required.", { status: 403 });
     if (user.id !== project.founderUserId)
       throw new Response("Project owner required.", { status: 403 });
     const interestId = formText(form.get("interestId"));
@@ -311,6 +351,70 @@ export default function ProjectDetail({
             {project.founderName}
           </Link>
         </p>
+        {loaderData.socials.length > 0 && (
+          <nav className="profile-socials" aria-label="Project links">
+            {loaderData.socials.map((social) => (
+              <a
+                href={social.url}
+                key={social.platform}
+                rel="noreferrer"
+                target="_blank"
+              >
+                {social.platform}
+              </a>
+            ))}
+          </nav>
+        )}
+        {loaderData.team.length > 0 && (
+          <section className="project-action-panel">
+            <span className="eyebrow">Team</span>
+            <h2>People behind the project</h2>
+            {loaderData.team.map((member) => (
+              <article key={`${member.displayName}:${member.teamRole}`}>
+                <h3>
+                  {member.linkedUsername ? (
+                    <Link to={`/profiles/${member.linkedUsername}`}>
+                      {member.displayName}
+                    </Link>
+                  ) : (
+                    member.displayName
+                  )}
+                </h3>
+                <p>{member.teamRole}</p>
+                {!member.linkedUsername && member.socialUrl && (
+                  <a href={member.socialUrl} rel="noreferrer" target="_blank">
+                    Public profile
+                  </a>
+                )}
+              </article>
+            ))}
+          </section>
+        )}
+        {isFounder && project.status === "published" && (
+          <Link
+            className="button button-primary"
+            to={`/projects/${project.slug}/campaigns/new`}
+          >
+            Propose an Ambassador campaign
+          </Link>
+        )}
+        {loaderData.campaigns.length > 0 && (
+          <section className="project-action-panel">
+            <span className="eyebrow">Ambassador campaigns</span>
+            <h2>Creator opportunities</h2>
+            {loaderData.campaigns.map((campaign) => (
+              <article key={campaign.slug}>
+                <span className="chapter">{campaign.status}</span>
+                <h3>
+                  <Link to={`/campaigns/${campaign.slug}`}>
+                    {campaign.title}
+                  </Link>
+                </h3>
+                <p>{campaign.summary}</p>
+              </article>
+            ))}
+          </section>
+        )}
 
         {user?.roles.includes("creator") && !isFounder && (
           <Form method="post">

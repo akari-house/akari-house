@@ -56,7 +56,7 @@ describe("dashboard role actions", () => {
     );
 
     expect(actions.map((action) => action.to)).toEqual([
-      "/app#profile-editor",
+      "/app",
       "/projects",
       "/events",
     ]);

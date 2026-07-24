@@ -7,9 +7,10 @@ import type { SessionUser } from "~/lib/domain";
 const links = [
   ["The House", "/"],
   ["Projects", "/projects"],
+  ["Campaigns", "/campaigns"],
   ["Events", "/events"],
   ["Archive", "/archive"],
-  ["Membership", "/#membership"],
+  ["Membership", "/membership"],
 ];
 
 export function SiteHeader({ user }: { user: SessionUser | null }) {
@@ -102,24 +103,18 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
   );
 
   const isCurrent = (href: string) => {
-    // URL fragments are unavailable during server rendering. The House link
-    // represents the current homepage; chapter links remain ordinary anchors
-    // so hydration never changes aria-current after the browser reads a hash.
-    if (href.startsWith("/#")) return false;
-    const [path, hash = ""] = href.split("#");
+    const [path] = href.split("#");
     if (path === "/") return location.pathname === "/";
     return (
-      (location.pathname === path ||
-        location.pathname.startsWith(`${path}/`)) &&
-      (!hash || location.hash === `#${hash}`)
+      location.pathname === path || location.pathname.startsWith(`${path}/`)
     );
   };
 
   const memberLinks = user
     ? [
         ["Dashboard", "/app"],
-        ["Edit profile", "/app#profile-editor"],
         ["Projects", "/projects"],
+        ["Campaigns", "/campaigns"],
         ...(user.accessTier === "member" && user.roles.includes("founder")
           ? [["My projects", "/projects/manage"]]
           : []),
@@ -131,10 +126,8 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
       ]
     : [];
   const isCurrentMemberLink = (href: string) => {
-    const [path, hash = ""] = href.split("#");
-    return (
-      location.pathname === path && (!hash || location.hash === `#${hash}`)
-    );
+    const [path] = href.split("#");
+    return location.pathname === path;
   };
 
   const mobileActions = user ? (

@@ -6,13 +6,13 @@ import {
   sendApprovalEmail,
   type MembershipEmailEnvironment,
 } from "~/lib/email.server";
-import { requireAdmin } from "~/lib/membership.server";
+import { requireAdminScope } from "~/lib/membership.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireAdmin(request, db);
+  const user = await requireAdminScope(request, db, "membership");
   const applications = await db
     .prepare(
       `SELECT ma.id, ma.status, ma.applicant_note AS applicantNote,
@@ -47,7 +47,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const env = context.get(cloudflareContext).env as CloudflareEnvironment &
     MembershipEmailEnvironment;
   const db = env.DB;
-  const admin = await requireAdmin(request, db);
+  const admin = await requireAdminScope(request, db, "membership");
   const formData = await request.formData();
   const applicationId = formText(formData.get("applicationId"));
   const intent = formText(formData.get("intent"));
@@ -142,6 +142,15 @@ export default function AdminApplications({
           </Link>
           <Link className="button button-quiet" to="/admin/moderation">
             Moderation
+          </Link>
+          <Link className="button button-quiet" to="/admin/verifications">
+            Role verification
+          </Link>
+          <Link className="button button-quiet" to="/admin/campaigns">
+            Campaigns
+          </Link>
+          <Link className="button button-quiet" to="/admin/team">
+            Admin team
           </Link>
         </header>
         {actionData?.error && (

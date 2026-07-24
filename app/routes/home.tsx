@@ -9,6 +9,7 @@ import { BlossomJourney } from "~/components/house/BlossomJourney";
 import { MembershipDesk } from "~/components/membership/MembershipDesk";
 import { SiteHeader } from "~/components/SiteHeader";
 import { PublicFooter } from "~/components/PublicFooter";
+import { ScrollTo } from "~/components/ScrollTo";
 import { caseStudies } from "~/data/case-studies";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
@@ -102,28 +103,28 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               <h1 id="arrival-title">Welcome to AKARI House</h1>
               <p>A private place for people building what comes next.</p>
               <div>
-                <a className="button button-primary" href="#hall">
+                <ScrollTo className="button button-primary" targetId="hall">
                   Enter the House <span aria-hidden="true">→</span>
-                </a>
-                <a className="quiet-link" href="#common">
+                </ScrollTo>
+                <ScrollTo className="quiet-link" targetId="common">
                   Explore the experience
-                </a>
+                </ScrollTo>
               </div>
             </div>
             <div className="arrival-threshold" aria-hidden="true">
               <span>The threshold</span>
               <strong>Three paths. One House.</strong>
             </div>
-            <a
+            <ScrollTo
               className="arrival-enter-cue"
-              href="#hall"
-              aria-label="Enter the Hall"
+              targetId="hall"
+              ariaLabel="Enter the Hall"
             >
               <span>Enter the Hall</span>
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path d="m7 9 5 5 5-5" />
               </svg>
-            </a>
+            </ScrollTo>
           </div>
         </section>
 
@@ -136,18 +137,18 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             matters to you.
           </p>
           <div>
-            <a href="#hall">
+            <ScrollTo targetId="hall">
               <span>Founder</span>
               <strong>Find relevant support</strong>
-            </a>
-            <a href="#hall">
+            </ScrollTo>
+            <ScrollTo targetId="hall">
               <span>Creator</span>
               <strong>Present work with context</strong>
-            </a>
-            <a href="#hall">
+            </ScrollTo>
+            <ScrollTo targetId="hall">
               <span>Investor</span>
               <strong>Review considered opportunities</strong>
-            </a>
+            </ScrollTo>
           </div>
         </section>
 

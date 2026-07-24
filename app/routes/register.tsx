@@ -129,6 +129,14 @@ export async function action({ request, context }: Route.ActionArgs) {
           .prepare("INSERT INTO user_roles (user_id, role) VALUES (?, ?)")
           .bind(userId, role),
       ),
+      ...selected.map((role) =>
+        db
+          .prepare(
+            `INSERT INTO role_verifications (user_id, role, status)
+             VALUES (?, ?, 'pending')`,
+          )
+          .bind(userId, role),
+      ),
       db
         .prepare(
           "INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id) VALUES (?, ?, 'account.registered', 'user', ?)",

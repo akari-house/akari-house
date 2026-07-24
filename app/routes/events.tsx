@@ -94,7 +94,7 @@ export default function Events({ loaderData }: Route.ComponentProps) {
                     Propose a gathering
                   </Link>
                 ) : (
-                  <Link className="button button-quiet" to="/#membership">
+                  <Link className="button button-quiet" to="/membership">
                     Learn how the House gathers
                   </Link>
                 )}

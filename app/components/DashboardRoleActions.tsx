@@ -16,7 +16,7 @@ export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
         title: "Continue your profile",
         description:
           "Keep your roles, biography and interests current while your request is reviewed.",
-        to: "/app#profile-editor",
+        to: "/app",
       },
       {
         eyebrow: "Explore the House",
