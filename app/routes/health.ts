@@ -1,4 +1,5 @@
 import type { Route } from "./+types/health";
+import { ensureAccountRightsSchema } from "~/lib/account-rights-schema.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 
 export async function loader({ context }: Route.LoaderArgs) {
@@ -6,6 +7,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   let database: boolean;
 
   try {
+    await ensureAccountRightsSchema(env.DB);
     const result = await env.DB.prepare("SELECT 1 AS ready").first<{
       ready: number;
     }>();
