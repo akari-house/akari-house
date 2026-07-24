@@ -1,10 +1,15 @@
-import { Link } from "react-router";
+import { Form, Link } from "react-router";
 import type { Route } from "./+types/projects";
 import { SiteHeader } from "~/components/SiteHeader";
 import { PublicFooter } from "~/components/PublicFooter";
 import { ProjectLanternCard } from "~/components/discovery/ProjectLanternCard";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import {
+  projectHasNeed,
+  projectNeedOptions,
+  type ProjectNeed,
+} from "~/lib/project-needs";
 
 export const meta: Route.MetaFunction = () => [
   { title: "Project Lanterns | AKARI House" },
@@ -18,6 +23,12 @@ export const meta: Route.MetaFunction = () => [
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const user = await getOptionalUser(request, db);
+  const requestedNeed = new URL(request.url).searchParams.get("need") ?? "";
+  const selectedNeed = projectNeedOptions.some(
+    (option) => option.value === requestedNeed,
+  )
+    ? (requestedNeed as ProjectNeed)
+    : "";
   const projects = await db
     .prepare(
       `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
@@ -41,7 +52,15 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       founderUsername: string;
       followerCount: number;
     }>();
-  return { user, projects: projects.results };
+  return {
+    user,
+    selectedNeed,
+    projects: selectedNeed
+      ? projects.results.filter((project) =>
+          projectHasNeed(project.seeking, selectedNeed),
+        )
+      : projects.results,
+  };
 }
 
 export default function Projects({ loaderData }: Route.ComponentProps) {
@@ -65,6 +84,25 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
               </Link>
             )}
         </header>
+        <Form method="get" className="project-directory-filter">
+          <label>
+            Filter by support need
+            <select name="need" defaultValue={loaderData.selectedNeed}>
+              <option value="">All project needs</option>
+              {projectNeedOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button className="button button-primary">Filter projects</button>
+          {loaderData.selectedNeed && (
+            <Link className="quiet-link" to="/projects">
+              Clear filter
+            </Link>
+          )}
+        </Form>
         <section className="project-lantern-gallery" aria-label="Projects">
           {loaderData.projects.length ? (
             loaderData.projects.map((project) => (
@@ -77,13 +115,21 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
               </div>
               <div>
                 <span className="eyebrow">The gallery before first light</span>
-                <h2>The first project lanterns are being prepared.</h2>
+                <h2>
+                  {loaderData.selectedNeed
+                    ? "No published projects currently request this support."
+                    : "The first project lanterns are being prepared."}
+                </h2>
                 <p>
                   Approved Founder projects will gather here with their story,
                   stage and the support they are seeking.
                 </p>
-                {loaderData.user?.roles.includes("founder") &&
-                loaderData.user.accessTier === "member" ? (
+                {loaderData.selectedNeed ? (
+                  <Link className="button button-quiet" to="/projects">
+                    View every project
+                  </Link>
+                ) : loaderData.user?.roles.includes("founder") &&
+                  loaderData.user.accessTier === "member" ? (
                   <Link className="button button-primary" to="/projects/new">
                     Light a project lantern
                   </Link>

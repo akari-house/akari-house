@@ -9,6 +9,7 @@ import {
 import type { Route } from "./+types/root";
 import { RouteScrollReset } from "~/components/RouteScrollReset";
 import "./styles/app.css";
+import "./styles/project-needs.css";
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", href: "/assets/brand/favicon.ico", sizes: "any" },

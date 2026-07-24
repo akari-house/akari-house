@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { ProjectNeedChips } from "~/components/projects/ProjectNeedChips";
 
 export type ProjectLantern = {
   slug: string;
@@ -33,10 +34,10 @@ export function ProjectLanternCard({
         </h3>
         <p>{project.summary}</p>
         {project.seeking && (
-          <p className="project-lantern-seeking">
+          <div className="project-lantern-seeking">
             <strong>Looking for</strong>
-            <span>{project.seeking}</span>
-          </p>
+            <ProjectNeedChips value={project.seeking} compact />
+          </div>
         )}
         <footer>
           <Link to={`/profiles/${project.founderUsername}`}>
