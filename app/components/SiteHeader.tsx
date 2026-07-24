@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Form, Link, useLocation } from "react-router";
 import { Icon } from "~/components/Icon";
+import { JourneyBack } from "~/components/JourneyBack";
 import type { SessionUser } from "~/lib/domain";
 
 const links = [
@@ -175,6 +176,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
           </button>
         </div>
       </header>
+      <JourneyBack />
       <div
         className={`drawer-scrim${open ? " is-open" : ""}`}
         aria-hidden="true"

@@ -69,9 +69,19 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
     <div className="site-shell">
       <SiteHeader user={user} />
       <main id="main-content" className="public-profile">
-        <div className="profile-monogram">
-          {profile.displayName.slice(0, 1).toUpperCase()}
-        </div>
+        {profile.avatarKey ? (
+          <img
+            className="profile-photo"
+            src={`/media/profile/${encodeURIComponent(profile.username)}?v=${encodeURIComponent(profile.avatarKey)}`}
+            alt={`${profile.displayName}'s profile`}
+            width={176}
+            height={176}
+          />
+        ) : (
+          <div className="profile-monogram">
+            {profile.displayName.slice(0, 1).toUpperCase()}
+          </div>
+        )}
         <span className="eyebrow">AKARI member</span>
         <h1>{profile.displayName}</h1>
         {profile.headline && (

@@ -23,6 +23,7 @@ interface DirectoryMember {
   location: string;
   expertise: string;
   openTo: string;
+  avatarKey: string;
   rolesCsv: string;
   relationship: ConnectionState;
 }
@@ -52,6 +53,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
               COALESCE(p.location, '') AS location,
               COALESCE(p.expertise, '') AS expertise,
               COALESCE(p.open_to, '') AS openTo,
+              COALESCE(p.avatar_key, '') AS avatarKey,
               group_concat(DISTINCT ur.role) AS rolesCsv,
               CASE
                 WHEN c.status = 'blocked' THEN 'blocked'
@@ -254,9 +256,19 @@ export default function Members({ loaderData }: Route.ComponentProps) {
               const status = relationshipLabel(member.relationship);
               return (
                 <article className="member-card" key={member.id}>
-                  <div className="member-card-monogram" aria-hidden="true">
-                    {member.displayName.slice(0, 1).toUpperCase()}
-                  </div>
+                  {member.avatarKey ? (
+                    <img
+                      className="member-card-photo"
+                      src={`/media/profile/${encodeURIComponent(member.username)}?v=${encodeURIComponent(member.avatarKey)}`}
+                      alt=""
+                      width={88}
+                      height={88}
+                    />
+                  ) : (
+                    <div className="member-card-monogram" aria-hidden="true">
+                      {member.displayName.slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
                   <div className="member-card-body">
                     <div className="role-pills">
                       {member.roles.map((role) => (

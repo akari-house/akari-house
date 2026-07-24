@@ -47,6 +47,7 @@ export interface ProfileRecord {
   websiteUrl: string;
   expertise: string;
   openTo: string;
+  avatarKey: string;
   visibility: Visibility;
   roles: Role[];
 }

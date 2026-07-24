@@ -35,6 +35,7 @@ export default [
   route("logout", "routes/logout.tsx"),
   route("app", "routes/dashboard.tsx"),
   route("profiles/:username", "routes/profile.tsx"),
+  route("media/profile/:username", "routes/profile-photo.ts"),
   route("privacy", "routes/legal.tsx"),
   route("terms", "routes/terms.tsx"),
   route("community-guidelines", "routes/community-guidelines.tsx"),

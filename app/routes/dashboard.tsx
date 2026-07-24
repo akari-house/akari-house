@@ -22,6 +22,7 @@ import {
 } from "~/lib/domain";
 import { membershipStatusForUser } from "~/lib/membership.server";
 import { loadSocialAccounts } from "~/lib/social.server";
+import { validateProfilePhoto } from "~/lib/profile-photo.server";
 
 const socialLabels: Record<SocialPlatform, string> = {
   x: "X",
@@ -49,6 +50,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
             COALESCE(p.bio, '') AS bio, COALESCE(p.location, '') AS location,
             COALESCE(p.website_url, '') AS websiteUrl,
             COALESCE(p.expertise, '') AS expertise, COALESCE(p.open_to, '') AS openTo,
+            COALESCE(p.avatar_key, '') AS avatarKey,
             COALESCE(v.visibility, p.visibility) AS visibility
      FROM profiles p LEFT JOIN profile_visibility v ON v.user_id = p.user_id
      WHERE p.user_id = ?`,
@@ -62,6 +64,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       websiteUrl: string;
       expertise: string;
       openTo: string;
+      avatarKey: string;
       visibility: string;
     }>();
   if (!profile) throw new Response("Profile missing", { status: 500 });
@@ -123,6 +126,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       upcomingEvents: 0,
     },
     saved: new URL(request.url).searchParams.has("saved"),
+    photoSaved: new URL(request.url).searchParams.has("photo"),
     welcome: new URL(request.url).searchParams.has("welcome"),
   };
 }
@@ -130,8 +134,82 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
+  const env = context.get(cloudflareContext).env;
   const user = await requireUser(request, db);
+  const contentLength = Number(request.headers.get("content-length") ?? "0");
+  if (contentLength > 2_300_000)
+    return { error: "Profile photos must be 2 MB or smaller." };
   const formData = await request.formData();
+  const intent = formText(formData.get("intent"));
+
+  if (intent === "upload-photo") {
+    if (user.accessTier !== "member")
+      return { error: "Profile photos unlock after membership approval." };
+    const photo = formData.get("profilePhoto");
+    if (!(photo instanceof File))
+      return { error: "Choose a JPG, PNG or WebP profile photo." };
+    const validPhoto = await validateProfilePhoto(photo);
+    if (!validPhoto)
+      return {
+        error: "Choose a valid JPG, PNG or WebP image no larger than 2 MB.",
+      };
+    const previous = await db
+      .prepare("SELECT avatar_key AS avatarKey FROM profiles WHERE user_id = ?")
+      .bind(user.id)
+      .first<{ avatarKey: string | null }>();
+    const key = `profile-photos/${user.id}/${crypto.randomUUID()}.${validPhoto.extension}`;
+    await env.MEDIA.put(key, photo.stream(), {
+      httpMetadata: {
+        contentType: validPhoto.contentType,
+        cacheControl: "private, max-age=300",
+      },
+      customMetadata: { ownerId: user.id, purpose: "profile-photo" },
+    });
+    try {
+      await db.batch([
+        db
+          .prepare(
+            `UPDATE profiles SET avatar_key = ?, avatar_content_type = ?,
+             avatar_updated_at = datetime('now'), updated_at = datetime('now')
+             WHERE user_id = ?`,
+          )
+          .bind(key, validPhoto.contentType, user.id),
+        db
+          .prepare(
+            `INSERT INTO audit_logs
+             (id, actor_user_id, action, subject_type, subject_id)
+             VALUES (?, ?, 'profile.photo_updated', 'profile', ?)`,
+          )
+          .bind(crypto.randomUUID(), user.id, user.id),
+      ]);
+    } catch (error) {
+      await env.MEDIA.delete(key);
+      throw error;
+    }
+    if (previous?.avatarKey && previous.avatarKey !== key)
+      await env.MEDIA.delete(previous.avatarKey);
+    throw redirect("/app?photo=saved#profile-photo");
+  }
+
+  if (intent === "remove-photo") {
+    if (user.accessTier !== "member")
+      return { error: "Profile photos unlock after membership approval." };
+    const previous = await db
+      .prepare("SELECT avatar_key AS avatarKey FROM profiles WHERE user_id = ?")
+      .bind(user.id)
+      .first<{ avatarKey: string | null }>();
+    await db
+      .prepare(
+        `UPDATE profiles SET avatar_key = NULL, avatar_content_type = NULL,
+         avatar_updated_at = datetime('now'), updated_at = datetime('now')
+         WHERE user_id = ?`,
+      )
+      .bind(user.id)
+      .run();
+    if (previous?.avatarKey) await env.MEDIA.delete(previous.avatarKey);
+    throw redirect("/app?photo=saved#profile-photo");
+  }
+
   const displayName = formText(formData.get("displayName")).trim();
   const headline = formText(formData.get("headline")).trim();
   const bio = formText(formData.get("bio")).trim();
@@ -382,6 +460,11 @@ export default function Dashboard({
               Profile saved.
             </div>
           )}
+          {loaderData.photoSaved && (
+            <div className="notice success" role="status">
+              Profile photo updated.
+            </div>
+          )}
           {!isMember && (
             <div className="notice applicant-notice">
               <strong>Your applicant profile is open.</strong> You can keep your
@@ -496,12 +579,70 @@ export default function Dashboard({
             </h2>
             <CommonTable compact />
           </section>
-          <Form method="post" className="profile-form" id="profile-editor">
+          <Form
+            method="post"
+            encType="multipart/form-data"
+            className="profile-form"
+            id="profile-editor"
+          >
             {actionData?.error && (
               <p className="form-error" role="alert">
                 {actionData.error}
               </p>
             )}
+            <fieldset className="profile-photo-editor" id="profile-photo">
+              <legend>Profile photo</legend>
+              <div className="profile-photo-preview">
+                {loaderData.profile.avatarKey ? (
+                  <img
+                    src={`/media/profile/${encodeURIComponent(loaderData.user.username)}?v=${encodeURIComponent(loaderData.profile.avatarKey)}`}
+                    alt={`${loaderData.profile.displayName}'s current profile`}
+                    width={112}
+                    height={112}
+                  />
+                ) : (
+                  <span aria-hidden="true">
+                    {loaderData.profile.displayName.slice(0, 1).toUpperCase()}
+                  </span>
+                )}
+                <div>
+                  <strong>
+                    {isMember ? "Add your face to the House" : "Available after approval"}
+                  </strong>
+                  <small>JPG, PNG or WebP. Maximum 2 MB.</small>
+                </div>
+              </div>
+              {isMember && (
+                <div className="profile-photo-actions">
+                  <label className="profile-photo-picker">
+                    <span>Choose image</span>
+                    <input
+                      name="profilePhoto"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                    />
+                  </label>
+                  <button
+                    className="button button-primary"
+                    name="intent"
+                    value="upload-photo"
+                    type="submit"
+                  >
+                    Upload photo
+                  </button>
+                  {loaderData.profile.avatarKey && (
+                    <button
+                      className="button button-quiet"
+                      name="intent"
+                      value="remove-photo"
+                      type="submit"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              )}
+            </fieldset>
             <div className="form-row">
               <label>
                 Display name

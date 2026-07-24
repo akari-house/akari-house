@@ -14,6 +14,7 @@ export async function getVisibleProfile(
             COALESCE(p.website_url, '') AS websiteUrl,
             COALESCE(p.expertise, '') AS expertise,
             COALESCE(p.open_to, '') AS openTo,
+            COALESCE(p.avatar_key, '') AS avatarKey,
             COALESCE(v.visibility, p.visibility) AS visibility
      FROM profiles p JOIN users u ON u.id = p.user_id
      LEFT JOIN profile_visibility v ON v.user_id = p.user_id
