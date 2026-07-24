@@ -1,0 +1,32 @@
+name: Verify IIO Settlement Production
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/verify-iio-settlement-production.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Cloudflare deployment
+        run: sleep 90
+      - name: Verify production health and settlement schema
+        run: |
+          curl --fail --silent --show-error \
+            https://akari-house.spacematesxyz.workers.dev/health \
+            | grep -q '"status":"ready"'
+      - name: Verify protected settlement route
+        run: |
+          STATUS=$(curl --silent --show-error --output /dev/null \
+            --write-out "%{http_code}" \
+            https://akari-house.spacematesxyz.workers.dev/campaigns/example/settlement)
+          test "$STATUS" -ge 200
+          test "$STATUS" -lt 500
+      - name: Verify protected settlement export route
+        run: |
+          STATUS=$(curl --silent --show-error --output /dev/null \
+            --write-out "%{http_code}" \
+            https://akari-house.spacematesxyz.workers.dev/admin/iio/example/settlement.csv)
+          test "$STATUS" -ge 200
+          test "$STATUS" -lt 500
