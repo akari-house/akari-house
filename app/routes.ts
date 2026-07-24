@@ -15,6 +15,7 @@ export default [
   route("projects/:slug/campaigns/new", "routes/campaign-new.tsx"),
   route("campaigns", "routes/campaigns.tsx"),
   route("campaigns/:slug", "routes/campaign-detail.tsx"),
+  route("campaigns/:slug/work", "routes/campaign-workspace.tsx"),
   route("events", "routes/events.tsx"),
   route("events/new", "routes/event-new.tsx"),
   route("events/manage", "routes/event-manage.tsx"),

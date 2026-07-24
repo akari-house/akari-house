@@ -3,6 +3,7 @@ import type { Route } from "./+types/campaign-new";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import { postingCadences } from "~/lib/campaign-delivery";
 import { slugifyProject } from "~/lib/projects.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
@@ -43,9 +44,12 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const user = await requireApprovedMember(request, db);
   const project = await ownedVerifiedProject(db, user.id, params.slug);
   if (!project)
-    throw new Response("A verified Founder and published project are required.", {
-      status: 403,
-    });
+    throw new Response(
+      "A verified Founder and published project are required.",
+      {
+        status: 403,
+      },
+    );
   return { user, project };
 }
 
@@ -62,6 +66,10 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const deliverables = formText(form.get("deliverables")).trim();
   const compensation = formText(form.get("compensation")).trim();
   const applicationDeadline = formText(form.get("applicationDeadline")).trim();
+  const registrationOpensAt = formText(form.get("registrationOpensAt")).trim();
+  const startsAt = formText(form.get("startsAt")).trim();
+  const endsAt = formText(form.get("endsAt")).trim();
+  const postingCadence = formText(form.get("postingCadence"));
   if (
     title.length < 5 ||
     title.length > 120 ||
@@ -72,7 +80,17 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     deliverables.length < 10 ||
     deliverables.length > 1500 ||
     compensation.length < 3 ||
-    compensation.length > 500
+    compensation.length > 500 ||
+    !postingCadences.some((item) => item.value === postingCadence) ||
+    !registrationOpensAt ||
+    !applicationDeadline ||
+    !startsAt ||
+    !endsAt ||
+    !(
+      registrationOpensAt <= applicationDeadline &&
+      applicationDeadline < startsAt &&
+      startsAt <= endsAt
+    )
   )
     return { error: "Complete every campaign field within the stated limits." };
   const id = crypto.randomUUID();
@@ -82,8 +100,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       .prepare(
         `INSERT INTO ambassador_campaigns
          (id, project_id, created_by, slug, title, summary, brief,
-          deliverables, compensation, application_deadline, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, ''), 'submitted')`,
+          deliverables, compensation, application_deadline, status,
+          registration_opens_at, starts_at, ends_at, posting_cadence)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted', ?, ?, ?, ?)`,
       )
       .bind(
         id,
@@ -96,6 +115,10 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         deliverables,
         compensation,
         applicationDeadline,
+        registrationOpensAt,
+        startsAt,
+        endsAt,
+        postingCadence,
       ),
     db
       .prepare(
@@ -117,18 +140,93 @@ export default function CampaignNew({
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
       <main id="main-content" className="editor-main">
-        <span className="eyebrow">Ambassador campaign · {loaderData.project.title}</span>
+        <span className="eyebrow">
+          Ambassador campaign · {loaderData.project.title}
+        </span>
         <h1>Invite the right creators.</h1>
         <p>Every campaign is reviewed before creators can apply.</p>
         <Form method="post" className="profile-form">
-          {actionData?.error && <p className="form-error">{actionData.error}</p>}
-          <label>Campaign title<input name="title" minLength={5} maxLength={120} required /></label>
-          <label>Short summary<textarea name="summary" minLength={20} maxLength={300} rows={3} required /></label>
-          <label>Campaign brief<textarea name="brief" minLength={50} maxLength={5000} rows={9} required /></label>
-          <label>Expected deliverables<textarea name="deliverables" minLength={10} maxLength={1500} rows={5} required /></label>
-          <label>Compensation and terms<textarea name="compensation" minLength={3} maxLength={500} rows={3} required /></label>
-          <label>Application deadline<input name="applicationDeadline" type="date" /></label>
-          <button className="button button-primary" disabled={navigation.state !== "idle"}>
+          {actionData?.error && (
+            <p className="form-error">{actionData.error}</p>
+          )}
+          <label>
+            Campaign title
+            <input name="title" minLength={5} maxLength={120} required />
+          </label>
+          <label>
+            Short summary
+            <textarea
+              name="summary"
+              minLength={20}
+              maxLength={300}
+              rows={3}
+              required
+            />
+          </label>
+          <label>
+            Campaign brief
+            <textarea
+              name="brief"
+              minLength={50}
+              maxLength={5000}
+              rows={9}
+              required
+            />
+          </label>
+          <label>
+            Expected deliverables
+            <textarea
+              name="deliverables"
+              minLength={10}
+              maxLength={1500}
+              rows={5}
+              required
+            />
+          </label>
+          <label>
+            Compensation and terms
+            <textarea
+              name="compensation"
+              minLength={3}
+              maxLength={500}
+              rows={3}
+              required
+            />
+          </label>
+          <div className="form-row">
+            <label>
+              Registration opens
+              <input name="registrationOpensAt" type="date" required />
+            </label>
+            <label>
+              Registration closes
+              <input name="applicationDeadline" type="date" required />
+            </label>
+          </div>
+          <div className="form-row">
+            <label>
+              Campaign starts
+              <input name="startsAt" type="date" required />
+            </label>
+            <label>
+              Campaign ends
+              <input name="endsAt" type="date" required />
+            </label>
+          </div>
+          <label>
+            Creator commitment
+            <select name="postingCadence" defaultValue="weekly_3" required>
+              {postingCadences.map((cadence) => (
+                <option key={cadence.value} value={cadence.value}>
+                  {cadence.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            className="button button-primary"
+            disabled={navigation.state !== "idle"}
+          >
             Submit campaign for review
           </button>
         </Form>

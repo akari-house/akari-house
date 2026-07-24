@@ -10,7 +10,9 @@ authentication, reviewed membership, multi-role accounts, personal profiles,
 server-enforced visibility, private R2 profile photos, member discovery,
 mutual connections, Founder projects, Creator follows, Investor interest,
 curated events, notifications, Telegram linking, moderation and administrator
-review desks. AI matching, direct messaging, campaigns, articles and automated
+review desks, IIO execution, Google Sheets review, scheduled Ambassador
+campaigns, Creator work-link submission, delivery moderation and proportional
+payout guidance. AI matching, direct messaging, articles and authenticated
 cross-platform social synchronization remain outside the current MVP.
 
 ## Local development

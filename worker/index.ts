@@ -1,5 +1,6 @@
 import { createRequestHandler, RouterContextProvider } from "react-router";
 import { cloudflareContext } from "../app/lib/cloudflare-context";
+import { createCampaignWorkReminders } from "../app/lib/campaign-reminders.server";
 import { withSecurityHeaders } from "../app/lib/response-security";
 import { syncDailySocialMetrics } from "../app/lib/social.server";
 import { deliverTelegramNotifications } from "../app/lib/telegram.server";
@@ -24,6 +25,7 @@ export default {
     ctx.waitUntil(
       Promise.all([
         syncDailySocialMetrics(env),
+        createCampaignWorkReminders(env),
         deliverTelegramNotifications(env),
       ]).then(() => undefined),
     );

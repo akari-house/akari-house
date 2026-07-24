@@ -14,6 +14,9 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     .prepare(
       `SELECT c.id, c.slug, c.title, c.summary, c.brief, c.deliverables,
               c.compensation, c.application_deadline AS applicationDeadline,
+              c.registration_opens_at AS registrationOpensAt,
+              c.starts_at AS startsAt, c.ends_at AS endsAt,
+              c.posting_cadence AS postingCadence,
               c.status, c.created_by AS createdBy,
               c.campaign_kind AS campaignKind,
               c.finalized_at AS finalizedAt, c.currency,
@@ -32,6 +35,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       deliverables: string;
       compensation: string;
       applicationDeadline: string | null;
+      registrationOpensAt: string | null;
+      startsAt: string | null;
+      endsAt: string | null;
+      postingCadence: string;
       status: string;
       createdBy: string;
       campaignKind: string;
@@ -61,7 +68,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     ? await db
         .prepare(
           `SELECT status, payout_cents AS payoutCents,
-                  payout_percent AS payoutPercent
+                  payout_percent AS payoutPercent,
+                  final_payout_cents AS finalPayoutCents
            FROM campaign_applications
            WHERE campaign_id = ? AND creator_user_id = ?`,
         )
@@ -70,6 +78,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
           status: string;
           payoutCents: number;
           payoutPercent: number;
+          finalPayoutCents: number | null;
         }>()
     : null;
   const applications =
@@ -136,7 +145,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const campaign = await db
     .prepare(
       `SELECT c.id, c.project_id AS projectId, c.title, c.created_by AS createdBy,
-              c.campaign_kind AS campaignKind
+              c.campaign_kind AS campaignKind,
+              c.registration_opens_at AS registrationOpensAt,
+              c.application_deadline AS applicationDeadline
        FROM ambassador_campaigns c
        WHERE c.slug = ? AND c.status = 'published'`,
     )
@@ -147,6 +158,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       title: string;
       createdBy: string;
       campaignKind: string;
+      registrationOpensAt: string | null;
+      applicationDeadline: string | null;
     }>();
   if (!campaign) throw new Response("Campaign not found.", { status: 404 });
   const form = await request.formData();
@@ -219,6 +232,12 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   }
   if (intent !== "apply")
     throw new Response("Unsupported action.", { status: 400 });
+  const today = new Date().toISOString().slice(0, 10);
+  if (
+    (campaign.registrationOpensAt && today < campaign.registrationOpensAt) ||
+    (campaign.applicationDeadline && today > campaign.applicationDeadline)
+  )
+    return { error: "Campaign registration is not currently open." };
   const following = await db
     .prepare(
       "SELECT 1 FROM project_follows WHERE project_id = ? AND user_id = ?",
@@ -345,6 +364,24 @@ export default function CampaignDetail({
         <h1>{campaign.title}</h1>
         <p className="project-lede">{campaign.summary}</p>
         <p className="project-story">{campaign.brief}</p>
+        <section className="iio-command-bar">
+          <div>
+            <strong>{campaign.registrationOpensAt ?? "Announced soon"}</strong>
+            <span>registration opens</span>
+          </div>
+          <div>
+            <strong>{campaign.applicationDeadline ?? "Announced soon"}</strong>
+            <span>registration closes</span>
+          </div>
+          <div>
+            <strong>{campaign.startsAt ?? "Announced soon"}</strong>
+            <span>campaign starts</span>
+          </div>
+          <div>
+            <strong>{campaign.endsAt ?? "Announced soon"}</strong>
+            <span>campaign ends</span>
+          </div>
+        </section>
         <section className="project-action-panel">
           <h2>Deliverables</h2>
           <p>{campaign.deliverables}</p>
@@ -409,6 +446,16 @@ export default function CampaignDetail({
                       of the finalized Creator distribution
                     </small>
                   </div>
+                )}
+              {loaderData.application?.status === "accepted" &&
+                campaign.startsAt &&
+                campaign.endsAt && (
+                  <Link
+                    className="button button-primary"
+                    to={`/campaigns/${campaign.slug}/work`}
+                  >
+                    Open your campaign workroom
+                  </Link>
                 )}
               {!loaderData.following && (
                 <p>
@@ -565,6 +612,12 @@ export default function CampaignDetail({
           )}
         {user?.id === campaign.createdBy && (
           <section className="project-interest-list">
+            <Link
+              className="button button-primary"
+              to={`/campaigns/${campaign.slug}/work`}
+            >
+              Open delivery moderation
+            </Link>
             <span className="eyebrow">Creator applications</span>
             <h2>People who want to participate.</h2>
             {loaderData.applications.length ? (

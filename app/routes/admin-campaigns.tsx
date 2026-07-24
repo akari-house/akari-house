@@ -2,6 +2,7 @@ import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/admin-campaigns";
 import { SiteHeader } from "~/components/SiteHeader";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import { postingCadences } from "~/lib/campaign-delivery";
 import { requireAdminScope } from "~/lib/membership.server";
 import { slugifyProject } from "~/lib/projects.server";
 import { assertSameOrigin } from "~/lib/security.server";
@@ -86,6 +87,12 @@ export async function action({ request, context }: Route.ActionArgs) {
     const applicationDeadline = formText(
       form.get("applicationDeadline"),
     ).trim();
+    const registrationOpensAt = formText(
+      form.get("registrationOpensAt"),
+    ).trim();
+    const startsAt = formText(form.get("startsAt")).trim();
+    const endsAt = formText(form.get("endsAt")).trim();
+    const postingCadence = formText(form.get("postingCadence"));
     const budget = Number(formText(form.get("budget")));
     const followers = Number(formText(form.get("weightFollowers")));
     const xScore = Number(formText(form.get("weightXScore")));
@@ -104,7 +111,17 @@ export async function action({ request, context }: Route.ActionArgs) {
       ![followers, xScore, sorsaScore].every(
         (value) => Number.isInteger(value) && value >= 0 && value <= 100,
       ) ||
-      followers + xScore + sorsaScore !== 100
+      followers + xScore + sorsaScore !== 100 ||
+      !postingCadences.some((item) => item.value === postingCadence) ||
+      !registrationOpensAt ||
+      !applicationDeadline ||
+      !startsAt ||
+      !endsAt ||
+      !(
+        registrationOpensAt <= applicationDeadline &&
+        applicationDeadline < startsAt &&
+        startsAt <= endsAt
+      )
     )
       return {
         error:
@@ -124,9 +141,10 @@ export async function action({ request, context }: Route.ActionArgs) {
            (id, project_id, created_by, slug, title, summary, brief,
             deliverables, compensation, application_deadline, status,
             campaign_kind, budget_cents, currency, weight_followers,
-            weight_x_score, weight_sorsa_score)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', NULLIF(?, ''), 'draft',
-                   'iio', ?, 'USD', ?, ?, ?)`,
+            weight_x_score, weight_sorsa_score, registration_opens_at,
+            starts_at, ends_at, posting_cadence)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, '', ?, 'draft',
+                   'iio', ?, 'USD', ?, ?, ?, ?, ?, ?, ?)`,
         )
         .bind(
           id,
@@ -142,6 +160,10 @@ export async function action({ request, context }: Route.ActionArgs) {
           followers,
           xScore,
           sorsaScore,
+          registrationOpensAt,
+          startsAt,
+          endsAt,
+          postingCadence,
         ),
       db
         .prepare(
@@ -278,10 +300,34 @@ export default function AdminCampaigns({
                 />
               </label>
               <label>
-                Application deadline
-                <input name="applicationDeadline" type="date" />
+                Registration opens
+                <input name="registrationOpensAt" type="date" required />
               </label>
             </div>
+            <div className="form-row form-row-three">
+              <label>
+                Registration closes
+                <input name="applicationDeadline" type="date" required />
+              </label>
+              <label>
+                Campaign starts
+                <input name="startsAt" type="date" required />
+              </label>
+              <label>
+                Campaign ends
+                <input name="endsAt" type="date" required />
+              </label>
+            </div>
+            <label>
+              Creator commitment
+              <select name="postingCadence" defaultValue="weekly_3" required>
+                {postingCadences.map((cadence) => (
+                  <option key={cadence.value} value={cadence.value}>
+                    {cadence.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             <fieldset>
               <legend>AKARI score weights (must total 100)</legend>
               <div className="form-row form-row-three">

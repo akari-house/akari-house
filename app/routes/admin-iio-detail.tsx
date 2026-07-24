@@ -394,6 +394,12 @@ export default function AdminIioDetail({
             <span>followers / XScore / Sorsa</span>
           </div>
           <div className="iio-command-actions">
+            <Link
+              className="button button-quiet"
+              to={`/campaigns/${campaign.slug}/work`}
+            >
+              Delivery workroom
+            </Link>
             {campaign.status === "draft" && (
               <Form method="post">
                 <button
