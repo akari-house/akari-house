@@ -9,11 +9,20 @@ export const launchGateChecks = [
   ["superadmin", "Full administration with audited actions"],
   ["suspended", "Authenticated access denied except account support paths"],
   ["blocked", "Sessions invalidated and all protected access denied"],
-  ["cross_account", "Foreign profile, project, campaign and settlement records denied"],
+  [
+    "cross_account",
+    "Foreign profile, project, campaign and settlement records denied",
+  ],
   ["private_media", "R2 objects require an authorised application route"],
   ["session", "Logout, password reset and status changes invalidate sessions"],
-  ["request_security", "Same-origin, CSRF, rate-limit and upload controls enforced"],
-  ["accessibility", "Keyboard navigation and mobile viewport launch checks pass"],
+  [
+    "request_security",
+    "Same-origin, CSRF, rate-limit and upload controls enforced",
+  ],
+  [
+    "accessibility",
+    "Keyboard navigation and mobile viewport launch checks pass",
+  ],
 ] as const;
 
 export type LaunchGateKey = (typeof launchGateChecks)[number][0];
