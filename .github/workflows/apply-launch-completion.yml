@@ -23,27 +23,43 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Apply launch completion release
+      - name: Apply and verify launch completion release
+        shell: bash
         run: |
-          set -euo pipefail
-          cat .github/launch-completion-parts/part-* | base64 -d | gzip -d > /tmp/launch-completion.patch
-          git apply --check /tmp/launch-completion.patch
-          git apply /tmp/launch-completion.patch
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm run format:check
-      - run: npm test
-      - run: npm run build
-      - run: npx playwright install --with-deps chromium firefox webkit
-      - run: npm run test:e2e
-      - name: Commit verified release
-        run: |
-          set -euo pipefail
-          rm -rf .github/launch-completion-parts
-          rm -f .github/workflows/apply-launch-completion.yml
+          set +e
+          exec > >(tee /tmp/launch-completion.log) 2>&1
+          STATUS=0
+
+          cat .github/launch-completion-parts/part-* | base64 -d | gzip -d > /tmp/launch-completion.patch || STATUS=$?
+          if [ "$STATUS" -eq 0 ]; then git apply --check /tmp/launch-completion.patch || STATUS=$?; fi
+          if [ "$STATUS" -eq 0 ]; then git apply /tmp/launch-completion.patch || STATUS=$?; fi
+          if [ "$STATUS" -eq 0 ]; then npm ci || STATUS=$?; fi
+          if [ "$STATUS" -eq 0 ]; then npm run typecheck || STATUS=$?; fi
+          if [ "$STATUS" -eq 0 ]; then npm run lint || STATUS=$?; fi
+          if [ "$STATUS" -eq 0 ]; then npm run format:check || STATUS=$?; fi
+          if [ "$STATUS" -eq 0 ]; then npm test || STATUS=$?; fi
+          if [ "$STATUS" -eq 0 ]; then npm run build || STATUS=$?; fi
+          if [ "$STATUS" -eq 0 ]; then npx playwright install --with-deps chromium firefox webkit || STATUS=$?; fi
+          if [ "$STATUS" -eq 0 ]; then npm run test:e2e || STATUS=$?; fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Complete AKARI launch systems"
+
+          if [ "$STATUS" -eq 0 ]; then
+            rm -rf .github/launch-completion-parts
+            rm -f .github/workflows/apply-launch-completion.yml
+            rm -f .github/launch-completion-diagnostics.log
+            git add -A
+            git commit -m "Complete AKARI launch systems"
+            git push
+            exit 0
+          fi
+
+          cp /tmp/launch-completion.log /tmp/launch-completion-diagnostics.log
+          git reset --hard HEAD
+          git clean -fd
+          cp /tmp/launch-completion-diagnostics.log .github/launch-completion-diagnostics.log
+          git add .github/launch-completion-diagnostics.log
+          git commit -m "Record launch completion verification failure"
           git push
+          exit "$STATUS"
