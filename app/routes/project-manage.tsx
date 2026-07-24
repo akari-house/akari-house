@@ -58,6 +58,9 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
                     Edit project
                   </Link>
                   <Link to={`/projects/${project.slug}/needs`}>Edit needs</Link>
+                  <Link to={`/projects/${project.slug}/diligence`}>
+                    Diligence room
+                  </Link>
                 </footer>
               </article>
             ))
