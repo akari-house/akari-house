@@ -332,3 +332,23 @@ export const legalDocuments: Record<LegalDocumentKey, LegalDocument> = {
 export const legalDocumentByPath = Object.fromEntries(
   Object.values(legalDocuments).map((document) => [document.path, document]),
 ) as Record<string, LegalDocument>;
+
+export function legalDocumentForUrl(value: string | URL) {
+  const url = value instanceof URL ? value : new URL(value);
+  const pathname = url.pathname;
+  const segment = pathname
+    .split("/")
+    .filter(Boolean)
+    .at(-1)
+    ?.toLowerCase()
+    .replace(/\.data$/, "");
+  if (segment === "terms") return legalDocuments.terms;
+  if (segment === "privacy") return legalDocuments.privacy;
+  if (segment === "community-guidelines") return legalDocuments.community;
+  const routeHint = [...url.searchParams.values()].join("/").toLowerCase();
+  if (routeHint.includes("community-guidelines"))
+    return legalDocuments.community;
+  if (routeHint.includes("privacy")) return legalDocuments.privacy;
+  if (routeHint.includes("terms")) return legalDocuments.terms;
+  return null;
+}

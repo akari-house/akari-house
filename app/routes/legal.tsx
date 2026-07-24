@@ -2,12 +2,12 @@ import { Link } from "react-router";
 import type { Route } from "./+types/legal";
 import { PublicFooter } from "~/components/PublicFooter";
 import { SiteHeader } from "~/components/SiteHeader";
-import { legalDocumentByPath, legalDocuments } from "~/content/legal-documents";
+import { legalDocumentForUrl, legalDocuments } from "~/content/legal-documents";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const document = legalDocumentByPath[new URL(request.url).pathname];
+  const document = legalDocumentForUrl(request.url);
   if (!document) throw new Response("Not found", { status: 404 });
   const user = await getOptionalUser(
     request,
