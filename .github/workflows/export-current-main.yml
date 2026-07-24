@@ -1,0 +1,25 @@
+name: Export Current Main
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/export-current-main.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Package repository
+        run: |
+          tar --exclude=.git --exclude=node_modules --exclude=build --exclude=.wrangler -czf /tmp/akari-current-main.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: akari-current-main
+          path: /tmp/akari-current-main.tar.gz
+          retention-days: 1
