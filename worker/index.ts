@@ -3,6 +3,7 @@ import { ensureAccountRightsSchema } from "../app/lib/account-rights-schema.serv
 import { processAccountRetention } from "../app/lib/account-retention.server";
 import { createCampaignWorkReminders } from "../app/lib/campaign-reminders.server";
 import { cloudflareContext } from "../app/lib/cloudflare-context";
+import { runOperationalResilienceMaintenance } from "../app/lib/operational-resilience.server";
 import { withSecurityHeaders } from "../app/lib/response-security";
 import { syncDailySocialMetrics } from "../app/lib/social.server";
 import { deliverTelegramNotifications } from "../app/lib/telegram.server";
@@ -32,6 +33,7 @@ export default {
         ensureAccountRightsSchema(env.DB).then(() =>
           processAccountRetention(env),
         ),
+        runOperationalResilienceMaintenance(env),
       ]).then(() => undefined),
     );
   },

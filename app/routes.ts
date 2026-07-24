@@ -33,6 +33,7 @@ export default [
   route("membership/check-email", "routes/membership-check-email.tsx"),
   route("verify-email", "routes/verify-email.tsx"),
   route("admin/operations", "routes/admin-operations.tsx"),
+  route("admin/resilience", "routes/admin-resilience.tsx"),
   route("admin/applications", "routes/admin-applications.tsx"),
   route("admin/interests", "routes/admin-interests.tsx"),
   route("admin/moderation", "routes/admin-moderation.tsx"),
