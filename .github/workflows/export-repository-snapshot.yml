@@ -1,0 +1,23 @@
+name: Export Repository Snapshot
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/export-repository-snapshot.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package repository
+        run: |
+          tar --exclude=.git --exclude=node_modules --exclude=build --exclude=.wrangler -czf akari-house-source.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: akari-house-source
+          path: akari-house-source.tar.gz
+          retention-days: 1
