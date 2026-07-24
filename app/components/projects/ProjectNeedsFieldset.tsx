@@ -1,13 +1,6 @@
-import {
-  parseProjectSeeking,
-  projectNeedOptions,
-} from "~/lib/project-needs";
+import { parseProjectSeeking, projectNeedOptions } from "~/lib/project-needs";
 
-export function ProjectNeedsFieldset({
-  value,
-}: {
-  value?: string | null;
-}) {
+export function ProjectNeedsFieldset({ value }: { value?: string | null }) {
   const parsed = parseProjectSeeking(value);
   const selected = new Set(parsed.needs);
 

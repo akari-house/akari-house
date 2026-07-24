@@ -82,7 +82,10 @@ export default function ProjectNeeds({
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
       <main id="main-content" className="editor-main">
-        <Link className="quiet-link" to={`/projects/${loaderData.project.slug}/edit`}>
+        <Link
+          className="quiet-link"
+          to={`/projects/${loaderData.project.slug}/edit`}
+        >
           Back to project editor
         </Link>
         <span className="eyebrow">Project opportunity routing</span>

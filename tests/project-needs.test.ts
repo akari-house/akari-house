@@ -44,10 +44,7 @@ describe("project support needs", () => {
 
   it("supports project directory filtering", () => {
     expect(
-      projectHasNeed(
-        "Fundraising · Strategic partnerships",
-        "partnerships",
-      ),
+      projectHasNeed("Fundraising · Strategic partnerships", "partnerships"),
     ).toBe(true);
     expect(
       projectHasNeed("Fundraising · Strategic partnerships", "community"),

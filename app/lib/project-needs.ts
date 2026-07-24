@@ -18,17 +18,20 @@ export const projectNeedOptions: Array<{
   {
     value: "fundraising",
     label: "Fundraising",
-    description: "Investor discovery, fundraising preparation and relevant introductions.",
+    description:
+      "Investor discovery, fundraising preparation and relevant introductions.",
   },
   {
     value: "gtm_marketing",
     label: "GTM & marketing",
-    description: "Positioning, market entry, growth planning and execution support.",
+    description:
+      "Positioning, market entry, growth planning and execution support.",
   },
   {
     value: "creator_kol",
     label: "Creator & KOL campaign",
-    description: "Creator discovery, campaign design and coordinated activation.",
+    description:
+      "Creator discovery, campaign design and coordinated activation.",
   },
   {
     value: "community",
@@ -38,32 +41,38 @@ export const projectNeedOptions: Array<{
   {
     value: "partnerships",
     label: "Strategic partnerships",
-    description: "Ecosystem, distribution, institutional and commercial partnerships.",
+    description:
+      "Ecosystem, distribution, institutional and commercial partnerships.",
   },
   {
     value: "product_feedback",
     label: "Product feedback & beta users",
-    description: "Structured feedback, testing groups and early product adoption.",
+    description:
+      "Structured feedback, testing groups and early product adoption.",
   },
   {
     value: "hiring",
     label: "Hiring & talent",
-    description: "Introductions to operators, advisors, developers and specialist talent.",
+    description:
+      "Introductions to operators, advisors, developers and specialist talent.",
   },
   {
     value: "technical",
     label: "Product & technical support",
-    description: "Architecture, development, security and product-delivery assistance.",
+    description:
+      "Architecture, development, security and product-delivery assistance.",
   },
   {
     value: "ecosystem",
     label: "Ecosystem integrations",
-    description: "Infrastructure, launchpad, exchange and ecosystem-access support.",
+    description:
+      "Infrastructure, launchpad, exchange and ecosystem-access support.",
   },
   {
     value: "pr_media",
     label: "PR & media exposure",
-    description: "Media positioning, announcements, interviews and communications support.",
+    description:
+      "Media positioning, announcements, interviews and communications support.",
   },
 ];
 
@@ -106,7 +115,8 @@ export function parseProjectSeeking(
         : [];
       return {
         needs: [...new Set(needs)],
-        other: typeof candidate.other === "string" ? candidate.other.trim() : "",
+        other:
+          typeof candidate.other === "string" ? candidate.other.trim() : "",
       };
     }
   } catch {
@@ -115,7 +125,10 @@ export function parseProjectSeeking(
 
   const needs: ProjectNeed[] = [];
   const otherParts: string[] = [];
-  for (const part of value.split(" · ").map((item) => item.trim()).filter(Boolean)) {
+  for (const part of value
+    .split(" · ")
+    .map((item) => item.trim())
+    .filter(Boolean)) {
     const need = needByLabel.get(part);
     if (need) needs.push(need);
     else otherParts.push(part);

@@ -54,7 +54,9 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
                 <ProjectNeedChips value={project.seeking} compact />
                 <footer>
                   <Link to={`/projects/${project.slug}`}>View</Link>
-                  <Link to={`/projects/${project.slug}/edit`}>Edit project</Link>
+                  <Link to={`/projects/${project.slug}/edit`}>
+                    Edit project
+                  </Link>
                   <Link to={`/projects/${project.slug}/needs`}>Edit needs</Link>
                 </footer>
               </article>

@@ -1,7 +1,4 @@
-import {
-  parseProjectSeeking,
-  projectNeedLabel,
-} from "~/lib/project-needs";
+import { parseProjectSeeking, projectNeedLabel } from "~/lib/project-needs";
 
 export function ProjectNeedChips({
   value,
