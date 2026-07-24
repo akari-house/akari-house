@@ -1,0 +1,23 @@
+name: Verify Campaign Operations Deployment
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/verify-campaign-operations-deployment.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Cloudflare deployment
+        run: sleep 45
+      - name: Verify production health
+        run: |
+          body=$(curl --fail --silent --show-error https://akari-house.spacematesxyz.workers.dev/health)
+          echo "$body"
+          echo "$body" | grep '"status":"ready"'
+          echo "$body" | grep '"campaignOperations":true'
+      - name: Verify protected campaign operations console
+        run: |
+          status=$(curl --silent --output /tmp/response --write-out '%{http_code}' https://akari-house.spacematesxyz.workers.dev/admin/campaign-operations)
+          test "$status" = "302" -o "$status" = "303" -o "$status" = "401"
