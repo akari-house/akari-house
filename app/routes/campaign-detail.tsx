@@ -257,36 +257,76 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const instagramUrl = formText(form.get("instagramUrl")).trim();
   const youtubeUrl = formText(form.get("youtubeUrl")).trim();
   const xFollowers = Number(formText(form.get("xFollowers")));
+  const tiktokFollowers = Number(formText(form.get("tiktokFollowers")));
+  const instagramFollowers = Number(formText(form.get("instagramFollowers")));
+  const youtubeFollowers = Number(formText(form.get("youtubeFollowers")));
   const xScore = Number(formText(form.get("xScore")));
   const sorsaScore = Number(formText(form.get("sorsaScore")));
   const deliverablesAccepted =
     form.get("deliverablesAccepted") === "yes" ? 1 : 0;
   if (message.length < 30 || message.length > 1200)
     return { error: "Write an application between 30 and 1,200 characters." };
+  const socialInputs = [
+    ["x", xUrl, xFollowers],
+    ["tiktok", tiktokUrl, tiktokFollowers],
+    ["instagram", instagramUrl, instagramFollowers],
+    ["youtube", youtubeUrl, youtubeFollowers],
+  ] as const;
   if (
-    campaign.campaignKind === "iio" &&
-    (creatorName.length < 2 ||
-      creatorName.length > 100 ||
-      !xUrl ||
-      ![xFollowers, xScore, sorsaScore].every(
-        (value) => Number.isFinite(value) && value >= 0,
-      ) ||
-      !deliverablesAccepted)
+    creatorName.length < 2 ||
+    creatorName.length > 100 ||
+    socialInputs.some(
+      ([, url, count]) =>
+        Boolean(url) && (!Number.isFinite(count) || count < 0),
+    ) ||
+    (campaign.campaignKind === "iio" &&
+      (!xUrl ||
+        ![xFollowers, xScore, sorsaScore].every(
+          (value) => Number.isFinite(value) && value >= 0,
+        ) ||
+        !deliverablesAccepted))
   )
     return {
       error:
         "Add your name, X profile, current metrics, and accept the campaign deliverables.",
     };
+  const socialStatements = socialInputs.flatMap(([platform, url, count]) => {
+    if (!url) return [];
+    const roundedCount = Math.round(count);
+    return [
+      db
+        .prepare(
+          `INSERT INTO profile_social_accounts
+           (user_id, platform, profile_url, follower_count, count_source,
+            sync_status, last_reported_at)
+           VALUES (?, ?, ?, ?, 'member_reported', 'manual', datetime('now'))
+           ON CONFLICT(user_id, platform) DO UPDATE SET
+             profile_url = excluded.profile_url,
+             follower_count = excluded.follower_count,
+             count_source = 'member_reported', sync_status = 'manual',
+             last_reported_at = datetime('now'), updated_at = datetime('now')`,
+        )
+        .bind(user.id, platform, url, roundedCount),
+      db
+        .prepare(
+          `INSERT INTO social_metric_snapshots
+           (id, user_id, platform, follower_count, source)
+           VALUES (?, ?, ?, ?, 'member_reported')`,
+        )
+        .bind(crypto.randomUUID(), user.id, platform, roundedCount),
+    ];
+  });
   await db.batch([
     db
       .prepare(
         `INSERT INTO campaign_applications
          (id, campaign_id, creator_user_id, message, portfolio_url,
           contact_sharing, status, updated_at, creator_name, x_url,
-          tiktok_url, instagram_url, youtube_url, x_followers, x_score,
+          tiktok_url, instagram_url, youtube_url, x_followers,
+          tiktok_followers, instagram_followers, youtube_followers, x_score,
           sorsa_score, deliverables_accepted)
          VALUES (?, ?, ?, ?, ?, ?, 'submitted', datetime('now'), ?, ?, ?, ?, ?,
-                 ?, ?, ?, ?)
+                 ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(campaign_id, creator_user_id) DO UPDATE SET
            message = excluded.message, portfolio_url = excluded.portfolio_url,
            contact_sharing = excluded.contact_sharing, status = 'submitted',
@@ -295,6 +335,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
            instagram_url = excluded.instagram_url,
            youtube_url = excluded.youtube_url,
            x_followers = excluded.x_followers, x_score = excluded.x_score,
+           tiktok_followers = excluded.tiktok_followers,
+           instagram_followers = excluded.instagram_followers,
+           youtube_followers = excluded.youtube_followers,
            sorsa_score = excluded.sorsa_score,
            deliverables_accepted = excluded.deliverables_accepted,
            updated_at = excluded.updated_at`,
@@ -312,6 +355,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         instagramUrl,
         youtubeUrl,
         Math.round(xFollowers),
+        Math.round(tiktokFollowers),
+        Math.round(instagramFollowers),
+        Math.round(youtubeFollowers),
         xScore,
         sorsaScore,
         deliverablesAccepted,
@@ -335,6 +381,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
          VALUES (?, ?, 'campaign.application_submitted', 'campaign', ?)`,
       )
       .bind(crypto.randomUUID(), user.id, campaign.id),
+    ...socialStatements,
   ]);
   throw redirect(`/campaigns/${params.slug}?applied=1`);
 }
@@ -471,88 +518,73 @@ export default function CampaignDetail({
               )}
               {campaign.status === "published" && (
                 <Form method="post" className="form-stack">
+                  <label>
+                    Creator name
+                    <input
+                      name="creatorName"
+                      minLength={2}
+                      maxLength={100}
+                      defaultValue={user.displayName}
+                      required
+                    />
+                  </label>
+                  {(["x", "tiktok", "instagram", "youtube"] as const).map(
+                    (platform) => (
+                      <div className="form-row">
+                        <label>
+                          {platform === "x"
+                            ? "X profile"
+                            : `${platform[0].toUpperCase()}${platform.slice(1)} profile`}
+                          <input
+                            name={`${platform}Url`}
+                            type="url"
+                            defaultValue={socials.get(platform)?.profileUrl}
+                            required={
+                              platform === "x" &&
+                              campaign.campaignKind === "iio"
+                            }
+                          />
+                        </label>
+                        <label>
+                          Current followers
+                          <input
+                            name={`${platform}Followers`}
+                            type="number"
+                            min="0"
+                            defaultValue={
+                              socials.get(platform)?.followerCount ?? 0
+                            }
+                            required={Boolean(
+                              socials.get(platform)?.profileUrl,
+                            )}
+                          />
+                        </label>
+                      </div>
+                    ),
+                  )}
                   {campaign.campaignKind === "iio" && (
-                    <>
+                    <div className="form-row">
                       <label>
-                        Creator name
+                        Current XScore
                         <input
-                          name="creatorName"
-                          minLength={2}
-                          maxLength={100}
-                          defaultValue={user.displayName}
+                          name="xScore"
+                          type="number"
+                          min="0"
+                          step="0.01"
                           required
                         />
                       </label>
-                      <div className="form-row">
-                        <label>
-                          X profile
-                          <input
-                            name="xUrl"
-                            type="url"
-                            defaultValue={socials.get("x")?.profileUrl}
-                            required
-                          />
-                        </label>
-                        <label>
-                          X followers
-                          <input
-                            name="xFollowers"
-                            type="number"
-                            min="0"
-                            defaultValue={socials.get("x")?.followerCount ?? 0}
-                            required
-                          />
-                        </label>
-                      </div>
-                      <div className="form-row">
-                        <label>
-                          TikTok
-                          <input
-                            name="tiktokUrl"
-                            type="url"
-                            defaultValue={socials.get("tiktok")?.profileUrl}
-                          />
-                        </label>
-                        <label>
-                          Instagram
-                          <input
-                            name="instagramUrl"
-                            type="url"
-                            defaultValue={socials.get("instagram")?.profileUrl}
-                          />
-                        </label>
-                      </div>
                       <label>
-                        YouTube
+                        Current Sorsa score
                         <input
-                          name="youtubeUrl"
-                          type="url"
-                          defaultValue={socials.get("youtube")?.profileUrl}
+                          name="sorsaScore"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          required
                         />
                       </label>
-                      <div className="form-row">
-                        <label>
-                          Current XScore
-                          <input
-                            name="xScore"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            required
-                          />
-                        </label>
-                        <label>
-                          Current Sorsa score
-                          <input
-                            name="sorsaScore"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            required
-                          />
-                        </label>
-                      </div>
-                    </>
+                    </div>
                   )}
                   <label>
                     Why are you a strong fit?
