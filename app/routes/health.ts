@@ -4,6 +4,7 @@ import { ensureCampaignOperationsSchema } from "~/lib/campaign-operations-schema
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { ensureDiligenceSchema } from "~/lib/diligence-schema.server";
 import { ensureIioSettlementSchema } from "~/lib/iio-settlement-schema.server";
+import { ensureLaunchGateSchema } from "~/lib/launch-gate-schema.server";
 import { ensureOperationalResilienceSchema } from "~/lib/operational-resilience-schema.server";
 import { ensureProductionSecuritySchema } from "~/lib/production-security-schema.server";
 
@@ -18,6 +19,7 @@ export async function loader({ context }: Route.LoaderArgs) {
     await ensureProductionSecuritySchema(env.DB);
     await ensureOperationalResilienceSchema(env.DB);
     await ensureCampaignOperationsSchema(env.DB);
+    await ensureLaunchGateSchema(env.DB);
     const result = await env.DB.prepare("SELECT 1 AS ready").first<{
       ready: number;
     }>();
@@ -45,6 +47,7 @@ export async function loader({ context }: Route.LoaderArgs) {
         securityHeaders: true,
         operationalResilience: database,
         campaignOperations: database,
+        launchGate: database,
       },
     },
     {
