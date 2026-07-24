@@ -24,6 +24,7 @@ export type GoogleSheetCampaign = {
 };
 
 export type GoogleSheetApplicant = {
+  id: string;
   creatorName: string;
   xUrl: string;
   tiktokUrl: string;
@@ -272,6 +273,7 @@ export function googleSheetValues(
       "AKARI Score",
       "Distribution %",
       `Payout (${campaign.currency})`,
+      "AKARI Application ID",
     ],
   ];
   for (const [index, applicant] of applicants.entries()) {
@@ -293,6 +295,7 @@ export function googleSheetValues(
       `=IF(${selected},MAX(0.05,J${row}*${campaign.weightFollowers / 100}+K${row}*${campaign.weightXScore / 100}+L${row}*${campaign.weightSorsaScore / 100}),0)`,
       `=IFERROR(M${row}/SUM($M$2:$M$${lastRow}),0)`,
       `=ROUND(N${row}*${campaign.budgetCents / 100},2)`,
+      applicant.id,
     ]);
   }
   rows.push(
@@ -369,7 +372,7 @@ export async function createOrRefreshIioSheet(
     spreadsheetId = created.spreadsheetId;
     spreadsheetUrl = created.spreadsheetUrl;
   }
-  const range = encodeURIComponent("IIO!A1:O");
+  const range = encodeURIComponent("IIO!A1:P");
   await googleRequest(
     `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:clear`,
     accessToken,
@@ -419,6 +422,42 @@ export async function createOrRefreshIioSheet(
               },
             },
           },
+          {
+            setDataValidation: {
+              range: {
+                sheetId: 0,
+                startRowIndex: 1,
+                endRowIndex: Math.max(2, applicants.length + 1),
+                startColumnIndex: 8,
+                endColumnIndex: 9,
+              },
+              rule: {
+                condition: {
+                  type: "ONE_OF_LIST",
+                  values: [
+                    { userEnteredValue: "submitted" },
+                    { userEnteredValue: "shortlisted" },
+                    { userEnteredValue: "accepted" },
+                    { userEnteredValue: "declined" },
+                  ],
+                },
+                strict: true,
+                showCustomUi: true,
+              },
+            },
+          },
+          {
+            updateDimensionProperties: {
+              range: {
+                sheetId: 0,
+                dimension: "COLUMNS",
+                startIndex: 15,
+                endIndex: 16,
+              },
+              properties: { hiddenByUser: true },
+              fields: "hiddenByUser",
+            },
+          },
         ],
       }),
     },
@@ -436,4 +475,106 @@ export async function createOrRefreshIioSheet(
     .bind(campaign.id, spreadsheetId, spreadsheetUrl, userId)
     .run();
   return { spreadsheetId, spreadsheetUrl };
+}
+
+function finiteNonNegative(value: unknown) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : null;
+}
+
+export function parseIioSheetReviews(
+  rows: Array<Array<string | number | boolean>>,
+) {
+  const header = rows[0]?.map(String) ?? [];
+  const expected = [
+    "Creator",
+    "X",
+    "TikTok",
+    "Instagram",
+    "YouTube",
+    "X Followers",
+    "XScore",
+    "Sorsa Score",
+    "Decision",
+    "Follower Percentile",
+    "XScore Percentile",
+    "Sorsa Percentile",
+    "AKARI Score",
+    "Distribution %",
+  ];
+  if (expected.some((column, index) => header[index] !== column))
+    throw new Error("The AKARI Sheet columns were changed. Refresh it first.");
+  const allowedStatuses = new Set([
+    "submitted",
+    "shortlisted",
+    "accepted",
+    "declined",
+  ]);
+  return rows.slice(1).flatMap((row) => {
+    const applicationId = String(row[15] ?? "").trim();
+    const status = String(row[8] ?? "")
+      .trim()
+      .toLowerCase();
+    const xFollowers = finiteNonNegative(row[5]);
+    const xScore = finiteNonNegative(row[6]);
+    const sorsaScore = finiteNonNegative(row[7]);
+    if (!applicationId || !allowedStatuses.has(status)) return [];
+    if (xFollowers === null || xScore === null || sorsaScore === null)
+      throw new Error("Follower and score values must be zero or greater.");
+    return [
+      {
+        applicationId,
+        status,
+        xFollowers: Math.round(xFollowers),
+        xScore,
+        sorsaScore,
+      },
+    ];
+  });
+}
+
+export async function importIioSheetReviews(
+  db: D1Database,
+  userId: string,
+  campaignId: string,
+  env: GoogleEnvironment,
+) {
+  const mapping = await db
+    .prepare(
+      `SELECT spreadsheet_id AS spreadsheetId
+       FROM iio_google_sheets WHERE campaign_id = ?`,
+    )
+    .bind(campaignId)
+    .first<{ spreadsheetId: string }>();
+  if (!mapping) throw new Error("Create the Google Sheet first.");
+  const { accessToken } = await refreshAccessToken(db, userId, env);
+  const range = encodeURIComponent("IIO!A1:P");
+  const payload = await googleRequest<{
+    values?: Array<Array<string | number | boolean>>;
+  }>(
+    `https://sheets.googleapis.com/v4/spreadsheets/${mapping.spreadsheetId}/values/${range}`,
+    accessToken,
+    { method: "GET" },
+  );
+  const rows = payload.values ?? [];
+  const reviews = parseIioSheetReviews(rows);
+  const updates = reviews.map((review) =>
+    db
+      .prepare(
+        `UPDATE campaign_applications
+           SET status = ?, x_followers = ?, x_score = ?, sorsa_score = ?,
+               updated_at = datetime('now')
+           WHERE id = ? AND campaign_id = ?`,
+      )
+      .bind(
+        review.status,
+        review.xFollowers,
+        review.xScore,
+        review.sorsaScore,
+        review.applicationId,
+        campaignId,
+      ),
+  );
+  if (updates.length) await db.batch(updates);
+  return updates.length;
 }

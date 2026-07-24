@@ -3,7 +3,10 @@ import type { Route } from "./+types/admin-iio-detail";
 import { SiteHeader } from "~/components/SiteHeader";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { distributeIioBudget } from "~/lib/iio-scoring";
-import { createOrRefreshIioSheet } from "~/lib/google-sheets.server";
+import {
+  createOrRefreshIioSheet,
+  importIioSheetReviews,
+} from "~/lib/google-sheets.server";
 import { requireAdminScope } from "~/lib/membership.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
@@ -119,6 +122,41 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   if (!campaign) throw new Response("IIO not found.", { status: 404 });
   const form = await request.formData();
   const intent = formText(form.get("intent"));
+
+  if (intent === "google-sheet-import") {
+    if (campaign.finalizedAt)
+      return { error: "Finalized campaign decisions cannot be changed." };
+    try {
+      const imported = await importIioSheetReviews(
+        db,
+        admin.id,
+        campaign.id,
+        env,
+      );
+      await db
+        .prepare(
+          `INSERT INTO audit_logs
+           (id, actor_user_id, action, subject_type, subject_id, metadata_json)
+           VALUES (?, ?, 'iio.google_sheet_imported', 'campaign', ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          admin.id,
+          campaign.id,
+          JSON.stringify({ imported }),
+        )
+        .run();
+      return { imported };
+    } catch (error) {
+      console.error("Google Sheet import failed", error);
+      return {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Google Sheet decisions could not be imported.",
+      };
+    }
+  }
 
   if (intent === "google-sheet") {
     const applicants = await getApplicants(db, campaign.id);
@@ -327,6 +365,12 @@ export default function AdminIioDetail({
         {actionData?.saved && (
           <p className="notice success">Creator review saved.</p>
         )}
+        {typeof actionData?.imported === "number" && (
+          <p className="notice success">
+            Imported {actionData.imported} Creator review
+            {actionData.imported === 1 ? "" : "s"} from Google Sheets.
+          </p>
+        )}
         <section className="iio-command-bar">
           <div>
             <strong>{loaderData.applicants.length}</strong>
@@ -393,14 +437,28 @@ export default function AdminIioDetail({
                   </button>
                 </Form>
                 {loaderData.googleSheet && (
-                  <a
-                    className="button button-quiet"
-                    href={loaderData.googleSheet.spreadsheetUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Open Google Sheet
-                  </a>
+                  <>
+                    <a
+                      className="button button-quiet"
+                      href={loaderData.googleSheet.spreadsheetUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Open Google Sheet
+                    </a>
+                    {!campaign.finalizedAt && (
+                      <Form method="post">
+                        <button
+                          name="intent"
+                          value="google-sheet-import"
+                          className="button button-quiet"
+                          disabled={navigation.state !== "idle"}
+                        >
+                          Import Sheet decisions
+                        </button>
+                      </Form>
+                    )}
+                  </>
                 )}
               </>
             ) : (
