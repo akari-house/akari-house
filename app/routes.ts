@@ -12,6 +12,7 @@ export default [
   route("projects/manage", "routes/project-manage.tsx"),
   route("projects/:slug/edit", "routes/project-edit.tsx"),
   route("projects/:slug/needs", "routes/project-needs.tsx"),
+  route("projects/:slug/diligence", "routes/project-diligence.tsx"),
   route("projects/:slug/documents/:documentId", "routes/project-document.ts"),
   route("projects/:slug", "routes/project-detail.tsx"),
   route("projects/:slug/campaigns/new", "routes/campaign-new.tsx"),
