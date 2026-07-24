@@ -27,7 +27,20 @@ jobs:
           exec > >(tee /tmp/launch-completion.log) 2>&1
           STATUS=0
 
-          cat .github/launch-completion-parts/part-* | base64 -d | gzip -d > /tmp/launch-completion.patch || STATUS=$?
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('.github/launch-completion-parts/part-02')
+          value = path.read_text()
+          value = value.replace('ptlNEYqJG9c', 'ptlCNEYqJG9c')
+          path.write_text(value)
+          PY
+          ACTUAL=$(git hash-object .github/launch-completion-parts/part-02)
+          if [ "$ACTUAL" != "d2707bff3cd7bfefde495f691c2af14f1d72aef1" ]; then
+            echo "Unexpected part-02 checksum: $ACTUAL"
+            STATUS=1
+          fi
+
+          if [ "$STATUS" -eq 0 ]; then cat .github/launch-completion-parts/part-* | base64 -d | gzip -d > /tmp/launch-completion.patch || STATUS=$?; fi
           if [ "$STATUS" -eq 0 ]; then git apply --check /tmp/launch-completion.patch || STATUS=$?; fi
           if [ "$STATUS" -eq 0 ]; then git apply /tmp/launch-completion.patch || STATUS=$?; fi
           if [ "$STATUS" -eq 0 ]; then npm ci || STATUS=$?; fi
