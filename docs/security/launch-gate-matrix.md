@@ -1,6 +1,6 @@
 # AKARI launch-gate matrix
 
-The commercial launch gate is complete only when every check below has current evidence.
+The commercial launch gate is complete only when every check below has current evidence from the target production environment.
 
 - Visitor and applicant isolation
 - Founder, Creator, Investor and multi-role boundaries
@@ -16,4 +16,4 @@ The commercial launch gate is complete only when every check below has current e
 - Rate limiting and malicious upload rejection
 - Keyboard navigation, mobile viewport and accessible naming
 
-Evidence must include the tested identity, route/action, expected result, observed result, environment, reviewer and timestamp. Failed checks block launch until remediated and retested.
+Evidence must include the tested identity, route/action, expected result, observed result, environment, reviewer and timestamp. Failed checks block launch until remediated and retested. Evidence must be refreshed after material authentication, authorisation, storage or routing changes.
