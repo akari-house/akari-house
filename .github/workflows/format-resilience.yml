@@ -1,0 +1,32 @@
+name: Format Resilience
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/format-resilience.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write app/routes.ts app/routes/admin-resilience.tsx app/routes/health.ts app/lib/operational-resilience.server.ts app/lib/operational-resilience-schema.server.ts worker/index.ts tests/unit/operational-resilience.test.ts docs/operations/backup-recovery-incident-runbook.md
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app worker tests docs
+          git commit -m "Format operational resilience release"
+          git push
