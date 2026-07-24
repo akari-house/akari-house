@@ -44,6 +44,8 @@ export default [
   route("notifications", "routes/notifications.tsx"),
   route("connections", "routes/connections.tsx"),
   route("members", "routes/members.tsx"),
+  route("settings/account", "routes/account-settings.tsx"),
+  route("settings/account/export", "routes/account-export.ts"),
   route("settings/telegram", "routes/telegram-settings.tsx"),
   route("integrations/telegram/webhook", "routes/telegram-webhook.ts"),
   route("report", "routes/report.tsx"),
