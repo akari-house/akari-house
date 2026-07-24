@@ -39,7 +39,7 @@ export function ProjectNeedsFieldset({
         <input
           name="seekingOther"
           defaultValue={parsed.other}
-          maxLength={160}
+          maxLength={100}
           placeholder="Describe another specific type of support."
         />
       </label>
