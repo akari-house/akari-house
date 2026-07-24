@@ -70,6 +70,9 @@ export const projectNeedOptions: Array<{
 const validNeeds = new Set<ProjectNeed>(
   projectNeedOptions.map((option) => option.value),
 );
+const needByLabel = new Map(
+  projectNeedOptions.map((option) => [option.label, option.value] as const),
+);
 
 export type ParsedProjectSeeking = {
   needs: ProjectNeed[];
@@ -107,10 +110,20 @@ export function parseProjectSeeking(
       };
     }
   } catch {
-    // Legacy projects stored a free-text seeking field. Keep that text visible.
+    // Continue into the readable delimited format and legacy free text.
   }
 
-  return { needs: [], other: value };
+  const needs: ProjectNeed[] = [];
+  const otherParts: string[] = [];
+  for (const part of value.split(" · ").map((item) => item.trim()).filter(Boolean)) {
+    const need = needByLabel.get(part);
+    if (need) needs.push(need);
+    else otherParts.push(part);
+  }
+  return {
+    needs: [...new Set(needs)],
+    other: otherParts.join(" · "),
+  };
 }
 
 export function projectSeekingFromForm(form: FormData) {
@@ -133,16 +146,28 @@ export function projectSeekingFromForm(form: FormData) {
       other,
       error: "Select at least one type of support or describe another need.",
     };
-  if (other.length > 160)
+  if (other.length > 100)
     return {
       value: "",
       needs,
       other,
-      error: "Keep the additional project need within 160 characters.",
+      error: "Keep the additional project need within 100 characters.",
+    };
+
+  const value = [
+    ...needs.map((need) => projectNeedLabel(need)),
+    ...(other ? [other] : []),
+  ].join(" · ");
+  if (value.length > 300)
+    return {
+      value: "",
+      needs,
+      other,
+      error: "Choose fewer needs or shorten the additional note.",
     };
 
   return {
-    value: JSON.stringify({ needs, other }),
+    value,
     needs,
     other,
     error: null,
