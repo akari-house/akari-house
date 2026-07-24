@@ -1,0 +1,32 @@
+name: Verify Account Rights Production
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/verify-account-rights-production.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Cloudflare deployment
+        run: sleep 90
+      - name: Verify production health and schema initialisation
+        run: |
+          curl --fail --silent --show-error \
+            https://akari-house.spacematesxyz.workers.dev/health \
+            | grep -q '"status":"ready"'
+      - name: Verify protected account settings route
+        run: |
+          STATUS=$(curl --silent --show-error --output /dev/null \
+            --write-out "%{http_code}" \
+            https://akari-house.spacematesxyz.workers.dev/settings/account)
+          test "$STATUS" -ge 200
+          test "$STATUS" -lt 500
+      - name: Verify protected account export route
+        run: |
+          STATUS=$(curl --silent --show-error --output /dev/null \
+            --write-out "%{http_code}" \
+            https://akari-house.spacematesxyz.workers.dev/settings/account/export)
+          test "$STATUS" -ge 200
+          test "$STATUS" -lt 500
