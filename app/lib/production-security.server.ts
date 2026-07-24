@@ -45,10 +45,10 @@ export function validateImageUpload(file: File) {
 export function isSafeReturnPath(value: string | null | undefined) {
   return Boolean(
     value &&
-      value.startsWith("/") &&
-      !value.startsWith("//") &&
-      !value.includes("\\") &&
-      !value.includes("\u0000"),
+    value.startsWith("/") &&
+    !value.startsWith("//") &&
+    !value.includes("\\") &&
+    !value.includes("\u0000"),
   );
 }
 

@@ -10,7 +10,9 @@ describe("production security", () => {
     const headers = productionSecurityHeaders();
     expect(headers["X-Frame-Options"]).toBe("DENY");
     expect(headers["X-Content-Type-Options"]).toBe("nosniff");
-    expect(headers["Content-Security-Policy"]).toContain("frame-ancestors 'none'");
+    expect(headers["Content-Security-Policy"]).toContain(
+      "frame-ancestors 'none'",
+    );
     expect(headers["Strict-Transport-Security"]).toContain("max-age=31536000");
   });
 
@@ -28,9 +30,13 @@ describe("production security", () => {
     const badType = new File([new Uint8Array(64)], "avatar.svg", {
       type: "image/svg+xml",
     });
-    const tooLarge = new File([new Uint8Array(5 * 1024 * 1024 + 1)], "large.png", {
-      type: "image/png",
-    });
+    const tooLarge = new File(
+      [new Uint8Array(5 * 1024 * 1024 + 1)],
+      "large.png",
+      {
+        type: "image/png",
+      },
+    );
     expect(validateImageUpload(good).ok).toBe(true);
     expect(validateImageUpload(badType).ok).toBe(false);
     expect(validateImageUpload(tooLarge).ok).toBe(false);
