@@ -30,11 +30,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   await ensureDiligenceSchema(db);
   const user = await requireAdminScope(request, db, "verification");
-  await db.prepare(
-    `UPDATE verification_provenance SET status = 'expired', updated_at = datetime('now')
+  await db
+    .prepare(
+      `UPDATE verification_provenance SET status = 'expired', updated_at = datetime('now')
      WHERE status = 'active' AND review_due_at IS NOT NULL
        AND review_due_at <= datetime('now')`,
-  ).run();
+    )
+    .run();
   const verifications = await db
     .prepare(
       `SELECT rv.user_id AS userId, u.username,
@@ -85,7 +87,11 @@ export async function action({ request, context }: Route.ActionArgs) {
     };
 
   const status =
-    intent === "verify" ? "verified" : intent === "revoke" ? "revoked" : "declined";
+    intent === "verify"
+      ? "verified"
+      : intent === "revoke"
+        ? "revoked"
+        : "declined";
   const statements = [
     db
       .prepare(
@@ -177,7 +183,8 @@ export default function AdminVerifications({
             <h1>Verification with evidence and review dates</h1>
             <p>
               Every active badge records its evidence category, reviewer and
-              scheduled refresh date. Verification is never treated as permanent.
+              scheduled refresh date. Verification is never treated as
+              permanent.
             </p>
           </div>
           <Link className="button button-quiet" to="/admin/operations">
@@ -227,7 +234,10 @@ export default function AdminVerifications({
                 <input type="hidden" name="role" value={item.role} />
                 <label>
                   Evidence category
-                  <select name="evidenceCategory" defaultValue="identity_and_profile">
+                  <select
+                    name="evidenceCategory"
+                    defaultValue="identity_and_profile"
+                  >
                     {evidenceCategories.map((category) => (
                       <option value={category} key={category}>
                         {category.replaceAll("_", " ")}
