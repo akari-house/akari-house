@@ -8,13 +8,19 @@ describe("resilienceStatus", () => {
 
   it("surfaces failed operational runs", () => {
     expect(
-      resilienceStatus({ status: "failed", startedAt: new Date().toISOString() }),
+      resilienceStatus({
+        status: "failed",
+        startedAt: new Date().toISOString(),
+      }),
     ).toBe("attention");
   });
 
   it("marks recent successful runs ready", () => {
     expect(
-      resilienceStatus({ status: "passed", startedAt: new Date().toISOString() }),
+      resilienceStatus({
+        status: "passed",
+        startedAt: new Date().toISOString(),
+      }),
     ).toBe("ready");
   });
 

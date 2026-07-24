@@ -15,7 +15,9 @@ export async function ensureOperationalResilienceSchema(db: D1Database) {
       metadata_json TEXT NOT NULL DEFAULT '{}',
       FOREIGN KEY (initiated_by) REFERENCES users(id) ON DELETE SET NULL
     )`),
-    db.prepare(`CREATE INDEX IF NOT EXISTS idx_operational_runs_type_date ON operational_runs(run_type, started_at DESC)`),
+    db.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_operational_runs_type_date ON operational_runs(run_type, started_at DESC)`,
+    ),
     db.prepare(`CREATE TABLE IF NOT EXISTS managed_r2_objects (
       object_key TEXT PRIMARY KEY,
       owner_user_id TEXT,
@@ -30,7 +32,9 @@ export async function ensureOperationalResilienceSchema(db: D1Database) {
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE SET NULL
     )`),
-    db.prepare(`CREATE INDEX IF NOT EXISTS idx_managed_r2_retention ON managed_r2_objects(retention_status, expires_at)`),
+    db.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_managed_r2_retention ON managed_r2_objects(retention_status, expires_at)`,
+    ),
     db.prepare(`CREATE TABLE IF NOT EXISTS incident_records (
       id TEXT PRIMARY KEY,
       severity TEXT NOT NULL CHECK (severity IN ('sev1', 'sev2', 'sev3', 'sev4')),
@@ -47,7 +51,9 @@ export async function ensureOperationalResilienceSchema(db: D1Database) {
       updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE SET NULL
     )`),
-    db.prepare(`CREATE INDEX IF NOT EXISTS idx_incident_records_status ON incident_records(status, severity, detected_at DESC)`),
+    db.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_incident_records_status ON incident_records(status, severity, detected_at DESC)`,
+    ),
     db.prepare(`CREATE TABLE IF NOT EXISTS incident_events (
       id TEXT PRIMARY KEY,
       incident_id TEXT NOT NULL,
@@ -58,7 +64,9 @@ export async function ensureOperationalResilienceSchema(db: D1Database) {
       FOREIGN KEY (incident_id) REFERENCES incident_records(id) ON DELETE CASCADE,
       FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
     )`),
-    db.prepare(`CREATE INDEX IF NOT EXISTS idx_incident_events_incident ON incident_events(incident_id, created_at DESC)`),
+    db.prepare(
+      `CREATE INDEX IF NOT EXISTS idx_incident_events_incident ON incident_events(incident_id, created_at DESC)`,
+    ),
   ]);
   schemaReady = true;
 }

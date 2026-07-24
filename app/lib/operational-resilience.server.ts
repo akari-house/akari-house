@@ -40,13 +40,20 @@ export async function runOperationalResilienceMaintenance(
        SET status = 'failed', completed_at = datetime('now'), notes = ?
        WHERE id = ?`,
     )
-      .bind(error instanceof Error ? error.message.slice(0, 500) : "Unknown failure", runId)
+      .bind(
+        error instanceof Error
+          ? error.message.slice(0, 500)
+          : "Unknown failure",
+        runId,
+      )
       .run();
     throw error;
   }
 }
 
-export function resilienceStatus(lastRun: { status: string; startedAt: string } | null) {
+export function resilienceStatus(
+  lastRun: { status: string; startedAt: string } | null,
+) {
   if (!lastRun) return "not_tested" as const;
   if (lastRun.status === "failed") return "attention" as const;
   const age = Date.now() - new Date(lastRun.startedAt).getTime();
