@@ -1,0 +1,11 @@
+
+> akari-house@0.1.0 lint
+> eslint . --fix
+
+
+/home/runner/work/akari-house/akari-house/app/lib/project-needs.ts
+  147:31  error  'item' may use Object's default stringification format ('[object Object]') when stringified                            @typescript-eslint/no-base-to-string
+  153:24  error  'form.get("seekingOther") ?? ""' may use Object's default stringification format ('[object Object]') when stringified  @typescript-eslint/no-base-to-string
+
+✖ 2 problems (2 errors, 0 warnings)
+
