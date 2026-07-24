@@ -2,11 +2,7 @@ import { Link } from "react-router";
 import type { Route } from "./+types/legal";
 import { PublicFooter } from "~/components/PublicFooter";
 import { SiteHeader } from "~/components/SiteHeader";
-import {
-  legalContactEmail,
-  legalDocumentByPath,
-  legalDocuments,
-} from "~/content/legal-documents";
+import { legalDocumentByPath, legalDocuments } from "~/content/legal-documents";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 
@@ -40,6 +36,18 @@ export default function Legal({ loaderData }: Route.ComponentProps) {
           <span aria-hidden="true">/</span>
           <span aria-current="page">{document.shortTitle}</span>
         </nav>
+        <nav className="legal-policy-switcher" aria-label="Legal policies">
+          {Object.values(legalDocuments).map((item) => (
+            <Link
+              key={item.key}
+              to={item.path}
+              aria-current={item.key === document.key ? "page" : undefined}
+            >
+              {item.shortTitle}
+            </Link>
+          ))}
+          <Link to="/contact">Contact AKARI</Link>
+        </nav>
         <header className="legal-header">
           <span className="eyebrow">{document.eyebrow}</span>
           <h1>{document.title}</h1>
@@ -63,7 +71,9 @@ export default function Legal({ loaderData }: Route.ComponentProps) {
               <li key={item}>{item}</li>
             ))}
           </ul>
-          <small>This summary helps navigation; the full text below governs.</small>
+          <small>
+            This summary helps navigation; the full text below governs.
+          </small>
         </aside>
         <details className="legal-mobile-toc">
           <summary>On this page</summary>
@@ -111,7 +121,7 @@ export default function Legal({ loaderData }: Route.ComponentProps) {
         <footer className="legal-document-footer">
           <div>
             <span className="chapter">Questions or rights requests</span>
-            <a href={`mailto:${legalContactEmail}`}>{legalContactEmail}</a>
+            <Link to="/contact">Open the private contact desk</Link>
           </div>
           <nav aria-label="Related legal documents">
             {Object.values(legalDocuments)
