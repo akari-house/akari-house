@@ -1,19 +1,19 @@
 name: Apply Launch Completion
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/apply-launch-completion.yml"
-      - ".github/launch-completion-parts/**"
+  issue_comment:
+    types: [created]
 
 permissions:
   contents: write
+  issues: read
 
 jobs:
   apply-and-verify:
-    if: github.actor != 'github-actions[bot]'
+    if: >-
+      github.event.issue.number == 8 &&
+      github.event.comment.body == '/apply-launch-completion' &&
+      github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
