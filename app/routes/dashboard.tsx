@@ -472,7 +472,10 @@ export default function Dashboard({
           <Link to="/notifications">Notifications</Link>
           <Link to="/settings/telegram">Telegram</Link>
           {loaderData.adminAccess?.canManageCampaigns === 1 && (
-            <Link to="/admin/campaigns">IIO control room</Link>
+            <>
+              <Link to="/admin/campaigns">IIO control room</Link>
+              <Link to="/admin/integrations/google">Google Sheets</Link>
+            </>
           )}
           {loaderData.adminAccess?.accessLevel === "superadmin" && (
             <Link to="/admin/team">Admin team</Link>

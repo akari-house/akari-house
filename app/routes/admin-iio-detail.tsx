@@ -3,6 +3,7 @@ import type { Route } from "./+types/admin-iio-detail";
 import { SiteHeader } from "~/components/SiteHeader";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { distributeIioBudget } from "~/lib/iio-scoring";
+import { createOrRefreshIioSheet } from "~/lib/google-sheets.server";
 import { requireAdminScope } from "~/lib/membership.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
@@ -87,17 +88,73 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const user = await requireAdminScope(request, db, "campaigns");
   const campaign = await getIio(db, params.slug);
   if (!campaign) throw new Response("IIO not found.", { status: 404 });
-  return { user, campaign, applicants: await getApplicants(db, campaign.id) };
+  const [googleConnection, googleSheet] = await Promise.all([
+    db
+      .prepare("SELECT 1 FROM google_connections WHERE user_id = ?")
+      .bind(user.id)
+      .first(),
+    db
+      .prepare(
+        `SELECT spreadsheet_url AS spreadsheetUrl
+         FROM iio_google_sheets WHERE campaign_id = ?`,
+      )
+      .bind(campaign.id)
+      .first<{ spreadsheetUrl: string }>(),
+  ]);
+  return {
+    user,
+    campaign,
+    applicants: await getApplicants(db, campaign.id),
+    googleConnected: Boolean(googleConnection),
+    googleSheet,
+  };
 }
 
 export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
-  const db = context.get(cloudflareContext).env.DB;
+  const { env } = context.get(cloudflareContext);
+  const db = env.DB;
   const admin = await requireAdminScope(request, db, "campaigns");
   const campaign = await getIio(db, params.slug);
   if (!campaign) throw new Response("IIO not found.", { status: 404 });
   const form = await request.formData();
   const intent = formText(form.get("intent"));
+
+  if (intent === "google-sheet") {
+    const applicants = await getApplicants(db, campaign.id);
+    try {
+      const sheet = await createOrRefreshIioSheet(
+        db,
+        admin.id,
+        campaign,
+        applicants,
+        env,
+      );
+      await db
+        .prepare(
+          `INSERT INTO audit_logs
+           (id, actor_user_id, action, subject_type, subject_id, metadata_json)
+           VALUES (?, ?, 'iio.google_sheet_synced', 'campaign', ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          admin.id,
+          campaign.id,
+          JSON.stringify({ spreadsheetId: sheet.spreadsheetId }),
+        )
+        .run();
+      throw redirect(`/admin/iio/${campaign.slug}?sheet=1`);
+    } catch (error) {
+      if (error instanceof Response) throw error;
+      console.error("Google Sheet sync failed", error);
+      return {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Google Sheet could not be created.",
+      };
+    }
+  }
 
   if (intent === "publish" || intent === "close") {
     const status = intent === "publish" ? "published" : "closed";
@@ -321,6 +378,39 @@ export default function AdminIioDetail({
             >
               Download for Google Sheets
             </a>
+            {loaderData.googleConnected ? (
+              <>
+                <Form method="post">
+                  <button
+                    name="intent"
+                    value="google-sheet"
+                    className="button button-primary"
+                    disabled={navigation.state !== "idle"}
+                  >
+                    {loaderData.googleSheet
+                      ? "Refresh Google Sheet"
+                      : "Create Google Sheet"}
+                  </button>
+                </Form>
+                {loaderData.googleSheet && (
+                  <a
+                    className="button button-quiet"
+                    href={loaderData.googleSheet.spreadsheetUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open Google Sheet
+                  </a>
+                )}
+              </>
+            ) : (
+              <Link
+                className="button button-quiet"
+                to="/admin/integrations/google"
+              >
+                Connect Google Drive
+              </Link>
+            )}
           </div>
         </section>
         <section className="application-list">

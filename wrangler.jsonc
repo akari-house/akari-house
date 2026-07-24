@@ -23,6 +23,9 @@
       "TURNSTILE_SECRET_KEY",
       "RESEND_API_KEY",
       "MEMBERSHIP_FROM_EMAIL",
+      "GOOGLE_CLIENT_ID",
+      "GOOGLE_CLIENT_SECRET",
+      "GOOGLE_TOKEN_ENCRYPTION_KEY",
     ],
   },
   "d1_databases": [
