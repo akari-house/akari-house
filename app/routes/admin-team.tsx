@@ -19,7 +19,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireSuperAdmin(request, db);
   const admins = await db
     .prepare(
-      `SELECT u.id, u.username, u.email, p.display_name AS displayName,
+      `SELECT u.id, u.username, p.display_name AS displayName,
               au.access_level AS accessLevel,
               group_concat(s.scope, ',') AS scopes
        FROM admin_users au
@@ -31,7 +31,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     .all<{
       id: string;
       username: string;
-      email: string;
       displayName: string;
       accessLevel: "admin" | "superadmin";
       scopes: string | null;
@@ -109,7 +108,9 @@ export async function action({ request, context }: Route.ActionArgs) {
       .first<{ accessLevel: string }>();
     if (!target) return { error: "Administrator not found." };
     if (target.accessLevel === "superadmin")
-      return { error: "Another Superadmin cannot be removed from this screen." };
+      return {
+        error: "Another Superadmin cannot be removed from this screen.",
+      };
     await db.batch([
       db.prepare("DELETE FROM admin_users WHERE user_id = ?").bind(targetId),
       db
@@ -146,7 +147,9 @@ export default function AdminTeam({
           </Link>
         </header>
         {actionData?.error && (
-          <p className="form-error" role="alert">{actionData.error}</p>
+          <p className="form-error" role="alert">
+            {actionData.error}
+          </p>
         )}
         {actionData?.saved && (
           <p className="notice success">{actionData.saved}</p>
@@ -185,7 +188,7 @@ export default function AdminTeam({
               <div>
                 <span className="chapter">{admin.accessLevel}</span>
                 <h2>{admin.displayName}</h2>
-                <p>@{admin.username} · {admin.email}</p>
+                <p>@{admin.username}</p>
                 <p>
                   {admin.accessLevel === "superadmin"
                     ? "All platform permissions"

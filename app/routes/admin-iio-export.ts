@@ -35,7 +35,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const applications = await db
     .prepare(
       `SELECT COALESCE(NULLIF(ca.creator_name, ''), p.display_name) AS creatorName,
-              u.email, ca.x_url AS xUrl, ca.tiktok_url AS tiktokUrl,
+              ca.x_url AS xUrl, ca.tiktok_url AS tiktokUrl,
               ca.instagram_url AS instagramUrl, ca.youtube_url AS youtubeUrl,
               ca.x_followers AS xFollowers, ca.x_score AS xScore,
               ca.sorsa_score AS sorsaScore, ca.status,
@@ -52,7 +52,6 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     .all<Record<string, string | number>>();
   const headers = [
     "Creator",
-    "Email",
     "X",
     "TikTok",
     "Instagram",
@@ -71,16 +70,15 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const lastRow = applications.results.length + 1;
   const rows = applications.results.map((item, index) => {
     const row = index + 2;
-    const selected = `$J${row}="accepted"`;
-    const followerPercentile = `=IF(${selected},IFERROR(PERCENTRANK(FILTER($G$2:$G$${lastRow},$J$2:$J$${lastRow}="accepted"),G${row}),1),0)`;
-    const xPercentile = `=IF(${selected},IFERROR(PERCENTRANK(FILTER($H$2:$H$${lastRow},$J$2:$J$${lastRow}="accepted"),H${row}),1),0)`;
-    const sorsaPercentile = `=IF(${selected},IFERROR(PERCENTRANK(FILTER($I$2:$I$${lastRow},$J$2:$J$${lastRow}="accepted"),I${row}),1),0)`;
-    const score = `=IF(${selected},MAX(0.05,K${row}*${campaign.weightFollowers / 100}+L${row}*${campaign.weightXScore / 100}+M${row}*${campaign.weightSorsaScore / 100}),0)`;
-    const share = `=IFERROR(N${row}/SUM($N$2:$N$${lastRow}),0)`;
-    const payout = `=ROUND(O${row}*${campaign.budgetCents / 100},2)`;
+    const selected = `$I${row}="accepted"`;
+    const followerPercentile = `=IF(${selected},IFERROR(PERCENTRANK(FILTER($F$2:$F$${lastRow},$I$2:$I$${lastRow}="accepted"),F${row}),1),0)`;
+    const xPercentile = `=IF(${selected},IFERROR(PERCENTRANK(FILTER($G$2:$G$${lastRow},$I$2:$I$${lastRow}="accepted"),G${row}),1),0)`;
+    const sorsaPercentile = `=IF(${selected},IFERROR(PERCENTRANK(FILTER($H$2:$H$${lastRow},$I$2:$I$${lastRow}="accepted"),H${row}),1),0)`;
+    const score = `=IF(${selected},MAX(0.05,J${row}*${campaign.weightFollowers / 100}+K${row}*${campaign.weightXScore / 100}+L${row}*${campaign.weightSorsaScore / 100}),0)`;
+    const share = `=IFERROR(M${row}/SUM($M$2:$M$${lastRow}),0)`;
+    const payout = `=ROUND(N${row}*${campaign.budgetCents / 100},2)`;
     return [
       item.creatorName,
-      item.email,
       item.xUrl,
       item.tiktokUrl,
       item.instagramUrl,
@@ -96,7 +94,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       share,
       payout,
     ]
-      .map((value, column) => csvCell(value, column >= 10))
+      .map((value, column) => csvCell(value, column >= 9))
       .join(",");
   });
   const csv = [

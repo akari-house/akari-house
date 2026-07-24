@@ -12,7 +12,6 @@ type Applicant = {
   creatorUserId: string;
   creatorName: string;
   username: string;
-  email: string;
   status: string;
   xUrl: string;
   tiktokUrl: string;
@@ -65,7 +64,7 @@ async function getApplicants(db: D1Database, campaignId: string) {
     .prepare(
       `SELECT ca.id, ca.creator_user_id AS creatorUserId,
               COALESCE(NULLIF(ca.creator_name, ''), p.display_name) AS creatorName,
-              u.username, u.email, ca.status,
+              u.username, ca.status,
               ca.x_url AS xUrl, ca.tiktok_url AS tiktokUrl,
               ca.instagram_url AS instagramUrl, ca.youtube_url AS youtubeUrl,
               ca.x_followers AS xFollowers, ca.x_score AS xScore,

@@ -115,7 +115,6 @@ describe("house interactions", () => {
       <SiteHeader
         user={{
           id: "member-1",
-          email: "member@example.test",
           username: "member",
           displayName: "AKARI Member",
           accessTier: "member",

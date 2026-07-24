@@ -11,7 +11,6 @@ export type Visibility = (typeof visibilities)[number];
 
 export interface SessionUser {
   id: string;
-  email: string;
   username: string;
   displayName: string;
   accessTier: "applicant" | "member";

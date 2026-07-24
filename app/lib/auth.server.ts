@@ -41,7 +41,7 @@ export async function getOptionalUser(
   const tokenHash = await sha256(token);
   const row = await db
     .prepare(
-      `SELECT u.id, u.email, u.username, u.status,
+      `SELECT u.id, u.username, u.status,
               p.display_name AS displayName
      FROM sessions s
      JOIN users u ON u.id = s.user_id
@@ -53,7 +53,6 @@ export async function getOptionalUser(
     .bind(tokenHash)
     .first<{
       id: string;
-      email: string;
       username: string;
       displayName: string;
       status: "active" | "restricted";
@@ -67,10 +66,7 @@ export async function getOptionalUser(
   };
 }
 
-export async function requireApprovedMember(
-  request: Request,
-  db: D1Database,
-) {
+export async function requireApprovedMember(request: Request, db: D1Database) {
   const user = await requireUser(request, db);
   if (user.accessTier !== "member")
     throw new Response("Approved membership is required.", { status: 403 });

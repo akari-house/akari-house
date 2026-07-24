@@ -7,10 +7,8 @@ export type MembershipStatus =
 export async function membershipStatusForUser(db: D1Database, userId: string) {
   return db
     .prepare(
-      `SELECT ma.id, ma.status, ma.created_at AS createdAt,
-              u.email, u.email_verified_at AS emailVerifiedAt
+      `SELECT ma.id, ma.status, ma.created_at AS createdAt
        FROM membership_applications ma
-       JOIN users u ON u.id = ma.user_id
        WHERE ma.user_id = ?`,
     )
     .bind(userId)
@@ -18,8 +16,6 @@ export async function membershipStatusForUser(db: D1Database, userId: string) {
       id: string;
       status: MembershipStatus;
       createdAt: string;
-      email: string;
-      emailVerifiedAt: string | null;
     }>();
 }
 
@@ -42,14 +38,16 @@ export async function requireSuperAdmin(request: Request, db: D1Database) {
     )
     .bind(user.id)
     .first();
-  if (!admin) throw new Response("Superadmin access required.", { status: 403 });
+  if (!admin)
+    throw new Response("Superadmin access required.", { status: 403 });
   return user;
 }
 
 export async function requireAdminScope(
   request: Request,
   db: D1Database,
-  scope: "membership" | "verification" | "projects" | "campaigns" | "moderation",
+  scope:
+    "membership" | "verification" | "projects" | "campaigns" | "moderation",
 ) {
   const user = await requireUser(request, db);
   const admin = await db

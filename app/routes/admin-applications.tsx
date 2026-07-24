@@ -16,7 +16,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const applications = await db
     .prepare(
       `SELECT ma.id, ma.status, ma.applicant_note AS applicantNote,
-              ma.created_at AS createdAt, u.email, u.username,
+              ma.created_at AS createdAt, u.username,
               u.email_verified_at AS emailVerifiedAt,
               p.display_name AS displayName,
               group_concat(ur.role, ', ') AS roles
@@ -33,7 +33,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       status: string;
       applicantNote: string;
       createdAt: string;
-      email: string;
       username: string;
       emailVerifiedAt: string | null;
       displayName: string;
@@ -175,9 +174,7 @@ export default function AdminApplications({
                     {application.status.replace("_", " ")}
                   </span>
                   <h2>{application.displayName}</h2>
-                  <p>
-                    {application.email} · @{application.username}
-                  </p>
+                  <p>@{application.username}</p>
                   <p>{application.roles}</p>
                 </div>
                 <blockquote>{application.applicantNote}</blockquote>

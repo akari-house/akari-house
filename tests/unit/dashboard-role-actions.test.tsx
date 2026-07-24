@@ -15,7 +15,6 @@ afterEach(cleanup);
 function user(overrides: Partial<SessionUser> = {}): SessionUser {
   return {
     id: "user-1",
-    email: "member@example.com",
     username: "akari-member",
     displayName: "Akari Member",
     accessTier: "member",
