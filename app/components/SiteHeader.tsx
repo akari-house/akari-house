@@ -123,6 +123,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
         ["Discover members", "/members"],
         ["Notifications", "/notifications"],
         ["Telegram", "/settings/telegram"],
+        ["Account & privacy", "/settings/account"],
       ]
     : [];
   const isCurrentMemberLink = (href: string) => {
