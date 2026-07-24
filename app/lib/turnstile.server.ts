@@ -12,12 +12,18 @@ interface TurnstileResult {
   hostname?: string;
 }
 
+function isLocalRequest(request: Request) {
+  const hostname = new URL(request.url).hostname;
+  return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+}
+
 export async function verifyTurnstile(
   request: Request,
   formData: FormData,
   env: TurnstileEnvironment,
   expectedAction: string,
 ) {
+  if (!env.TURNSTILE_SECRET_KEY && isLocalRequest(request)) return true;
   if (env.APP_ENV === "development" && !env.TURNSTILE_SECRET_KEY) return true;
   const token = formText(formData.get("cf-turnstile-response"));
   if (!env.TURNSTILE_SECRET_KEY || !token || token.length > 2048) return false;
