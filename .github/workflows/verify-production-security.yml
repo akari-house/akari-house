@@ -1,0 +1,27 @@
+name: Verify Production Security
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/verify-production-security.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Cloudflare deployment
+        run: sleep 90
+      - name: Verify production health and security schema
+        run: |
+          body=$(curl -sS https://akari-house.spacematesxyz.workers.dev/health)
+          echo "$body"
+          echo "$body" | grep '"status":"ready"'
+          echo "$body" | grep '"securityHeaders":true'
+      - name: Verify browser security headers
+        run: |
+          headers=$(curl -fsSI https://akari-house.spacematesxyz.workers.dev/)
+          echo "$headers" | grep -i '^content-security-policy:'
+          echo "$headers" | grep -i '^strict-transport-security:'
+          echo "$headers" | grep -i '^x-content-type-options: nosniff'
+          echo "$headers" | grep -i '^x-frame-options: DENY'
+          echo "$headers" | grep -i '^referrer-policy:'
