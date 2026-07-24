@@ -1,7 +1,9 @@
 name: Apply Launch Completion
 
 on:
-  pull_request:
+  push:
+    branches:
+      - "agent/launch-completion"
     paths:
       - ".github/workflows/apply-launch-completion.yml"
       - ".github/launch-completion-parts/**"
@@ -11,12 +13,12 @@ permissions:
 
 jobs:
   apply:
-    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'github-actions[bot]'
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: agent/launch-completion
       - name: Apply launch completion release
         run: |
           set -euo pipefail
