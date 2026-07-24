@@ -10,10 +10,11 @@ authentication, reviewed membership, multi-role accounts, personal profiles,
 server-enforced visibility, private R2 profile photos, member discovery,
 mutual connections, Founder projects, Creator follows, Investor interest,
 curated events, notifications, Telegram linking, moderation and administrator
-review desks, IIO execution, Google Sheets review, scheduled Ambassador
-campaigns, Creator work-link submission, delivery moderation and proportional
-payout guidance. AI matching, direct messaging, articles and authenticated
-cross-platform social synchronization remain outside the current MVP.
+review desks, the launch operations command centre, IIO execution, Google
+Sheets review, scheduled Ambassador campaigns, Creator work-link submission,
+delivery moderation and proportional payout guidance. AI matching, direct
+messaging, articles and authenticated cross-platform social synchronization
+remain outside the current MVP.
 
 ## Local development
 
@@ -77,3 +78,7 @@ production configuration without returning secret values. A ready deployment
 returns HTTP 200; an incomplete deployment returns HTTP 503. Wrangler also
 declares the required secret names so future full-backend deployments cannot
 silently omit them.
+
+Superadmins can use `/admin/operations` to review launch queues, production
+configuration readiness and the latest audit activity without exposing secret
+values.

@@ -8,14 +8,12 @@ export const legalPolicyVersions = {
 
 export type LegalPolicy = keyof typeof legalPolicyVersions;
 
-const legalPolicyActions: Record<
-  LegalPolicy,
-  "agreement" | "acknowledgement"
-> = {
-  terms: "agreement",
-  privacy: "acknowledgement",
-  community_guidelines: "agreement",
-};
+const legalPolicyActions: Record<LegalPolicy, "agreement" | "acknowledgement"> =
+  {
+    terms: "agreement",
+    privacy: "acknowledgement",
+    community_guidelines: "agreement",
+  };
 
 export async function legalAcceptanceStatements(
   db: D1Database,

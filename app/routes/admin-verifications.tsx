@@ -49,7 +49,9 @@ export async function action({ request, context }: Route.ActionArgs) {
     decisionNote.length < 5 ||
     decisionNote.length > 500
   )
-    return { error: "Choose a valid decision and record a 5 to 500 character note." };
+    return {
+      error: "Choose a valid decision and record a 5 to 500 character note.",
+    };
   const status = intent === "verify" ? "verified" : "declined";
   await db.batch([
     db
@@ -109,21 +111,54 @@ export default function AdminVerifications({
           </Link>
         </header>
         {actionData?.error && <p className="form-error">{actionData.error}</p>}
-        {actionData?.saved && <p className="notice success">Verification decision saved.</p>}
+        {actionData?.saved && (
+          <p className="notice success">Verification decision saved.</p>
+        )}
         <div className="application-list">
           {loaderData.verifications.map((item) => (
-            <article className="application-card" key={`${item.userId}:${item.role}`}>
+            <article
+              className="application-card"
+              key={`${item.userId}:${item.role}`}
+            >
               <div>
-                <span className="chapter">{item.role} · {item.status}</span>
-                <h2><Link to={`/profiles/${item.username}`}>{item.displayName}</Link></h2>
+                <span className="chapter">
+                  {item.role} · {item.status}
+                </span>
+                <h2>
+                  <Link to={`/profiles/${item.username}`}>
+                    {item.displayName}
+                  </Link>
+                </h2>
                 <p>@{item.username}</p>
               </div>
               <Form method="post" className="application-actions">
                 <input type="hidden" name="userId" value={item.userId} />
                 <input type="hidden" name="role" value={item.role} />
-                <label>Decision note<textarea name="decisionNote" minLength={5} maxLength={500} required /></label>
-                <button className="button button-primary" name="intent" value="verify" disabled={navigation.state !== "idle"}>Verify {item.role}</button>
-                <button className="button button-quiet" name="intent" value="decline" disabled={navigation.state !== "idle"}>Decline</button>
+                <label>
+                  Decision note
+                  <textarea
+                    name="decisionNote"
+                    minLength={5}
+                    maxLength={500}
+                    required
+                  />
+                </label>
+                <button
+                  className="button button-primary"
+                  name="intent"
+                  value="verify"
+                  disabled={navigation.state !== "idle"}
+                >
+                  Verify {item.role}
+                </button>
+                <button
+                  className="button button-quiet"
+                  name="intent"
+                  value="decline"
+                  disabled={navigation.state !== "idle"}
+                >
+                  Decline
+                </button>
               </Form>
             </article>
           ))}
