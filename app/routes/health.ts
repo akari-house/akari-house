@@ -2,6 +2,7 @@ import type { Route } from "./+types/health";
 import { ensureAccountRightsSchema } from "~/lib/account-rights-schema.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { ensureDiligenceSchema } from "~/lib/diligence-schema.server";
+import { ensureIioSettlementSchema } from "~/lib/iio-settlement-schema.server";
 
 export async function loader({ context }: Route.LoaderArgs) {
   const env = context.get(cloudflareContext).env;
@@ -11,6 +12,7 @@ export async function loader({ context }: Route.LoaderArgs) {
     await Promise.all([
       ensureAccountRightsSchema(env.DB),
       ensureDiligenceSchema(env.DB),
+      ensureIioSettlementSchema(env.DB),
     ]);
     const result = await env.DB.prepare("SELECT 1 AS ready").first<{
       ready: number;
