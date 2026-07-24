@@ -1,0 +1,27 @@
+name: Verify IIO Production
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    if: github.head_ref == 'ops/verify-iio-engagement-deploy'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Cloudflare deployment
+        run: sleep 45
+      - name: Verify production health
+        run: |
+          response="$(curl --fail --silent --show-error --retry 5 --retry-delay 10 --max-time 30 https://akari-house.spacematesxyz.workers.dev/health)"
+          echo "$response"
+          echo "$response" | grep -q '"status":"ready"'
+      - name: Verify protected IIO campaign administration route
+        run: |
+          status="$(curl --silent --output /tmp/admin.html --write-out '%{http_code}' --max-time 30 https://akari-house.spacematesxyz.workers.dev/admin/campaigns)"
+          test "$status" = "302" -o "$status" = "303" -o "$status" = "200"
+          if [ "$status" = "200" ]; then
+            grep -Eqi 'Log in|IIO control room|Campaigns' /tmp/admin.html
+          fi
