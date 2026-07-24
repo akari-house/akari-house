@@ -1,5 +1,6 @@
 import { createRequestHandler, RouterContextProvider } from "react-router";
 import { cloudflareContext } from "../app/lib/cloudflare-context";
+import { processAccountRetention } from "../app/lib/account-retention.server";
 import { createCampaignWorkReminders } from "../app/lib/campaign-reminders.server";
 import { withSecurityHeaders } from "../app/lib/response-security";
 import { syncDailySocialMetrics } from "../app/lib/social.server";
@@ -27,6 +28,7 @@ export default {
         syncDailySocialMetrics(env),
         createCampaignWorkReminders(env),
         deliverTelegramNotifications(env),
+        processAccountRetention(env),
       ]).then(() => undefined),
     );
   },
