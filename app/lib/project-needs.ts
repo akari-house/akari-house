@@ -144,13 +144,14 @@ export function projectSeekingFromForm(form: FormData) {
     ...new Set(
       form
         .getAll("projectNeed")
-        .map((item) => String(item))
+        .filter((item): item is string => typeof item === "string")
         .filter((item): item is ProjectNeed =>
           validNeeds.has(item as ProjectNeed),
         ),
     ),
   ];
-  const other = String(form.get("seekingOther") ?? "").trim();
+  const otherValue = form.get("seekingOther");
+  const other = typeof otherValue === "string" ? otherValue.trim() : "";
 
   if (!needs.length && !other)
     return {
