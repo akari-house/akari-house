@@ -170,9 +170,7 @@ test("membership request remains gated before human approval", async ({
     .fill(
       "I am building a trusted community product and want to contribute thoughtful partnerships.",
     );
-  await page
-    .getByLabel(/I agree to the Terms/)
-    .check();
+  await page.getByLabel(/I agree to the Terms/).check();
   await page.getByRole("button", { name: "Send membership request" }).click();
 
   await expect(page).toHaveURL(/\/membership\/check-email$/);
@@ -185,5 +183,7 @@ test("membership request remains gated before human approval", async ({
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Log in" }).click();
   await expect(page).toHaveURL(/\/login/);
-  await expect(page.getByText("Confirm your email before signing in.")).toBeVisible();
+  await expect(
+    page.getByText("Confirm your email before signing in."),
+  ).toBeVisible();
 });

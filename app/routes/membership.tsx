@@ -16,10 +16,7 @@ export const meta: Route.MetaFunction = () => [
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   return {
-    user: await getOptionalUser(
-      request,
-      context.get(cloudflareContext).env.DB,
-    ),
+    user: await getOptionalUser(request, context.get(cloudflareContext).env.DB),
   };
 }
 

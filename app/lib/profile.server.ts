@@ -29,13 +29,13 @@ export async function getVisibleProfile(
     viewerId === profile.userId ||
     Boolean(
       viewerId &&
-        (await db
-          .prepare(
-            `SELECT 1 FROM membership_applications
+      (await db
+        .prepare(
+          `SELECT 1 FROM membership_applications
              WHERE user_id = ? AND status = 'approved'`,
-          )
-          .bind(viewerId)
-          .first()),
+        )
+        .bind(viewerId)
+        .first()),
     );
   if (
     viewerId &&

@@ -1,7 +1,4 @@
-import {
-  socialPlatforms,
-  type SocialPlatform,
-} from "./domain";
+import { socialPlatforms, type SocialPlatform } from "./domain";
 
 export interface SocialAccount {
   platform: SocialPlatform;
@@ -63,7 +60,9 @@ export async function syncDailySocialMetrics(
     const handle = youtubeHandle(account.profileUrl);
     if (!handle) continue;
     try {
-      const endpoint = new URL("https://www.googleapis.com/youtube/v3/channels");
+      const endpoint = new URL(
+        "https://www.googleapis.com/youtube/v3/channels",
+      );
       endpoint.searchParams.set("part", "statistics");
       endpoint.searchParams.set("forHandle", handle);
       endpoint.searchParams.set("key", env.YOUTUBE_API_KEY);
@@ -75,31 +74,26 @@ export async function syncDailySocialMetrics(
       if (!response.ok || !Number.isSafeInteger(count) || count < 0)
         throw new Error("YouTube statistics unavailable");
       await env.DB.batch([
-        env.DB
-          .prepare(
-            `UPDATE profile_social_accounts
+        env.DB.prepare(
+          `UPDATE profile_social_accounts
              SET follower_count = ?, count_source = 'official_api',
                  sync_status = 'synced', last_synced_at = datetime('now'),
                  updated_at = datetime('now')
              WHERE user_id = ? AND platform = 'youtube'`,
-          )
-          .bind(count, account.userId),
-        env.DB
-          .prepare(
-            `INSERT INTO social_metric_snapshots
+        ).bind(count, account.userId),
+        env.DB.prepare(
+          `INSERT INTO social_metric_snapshots
              (id, user_id, platform, follower_count, source)
              VALUES (?, ?, 'youtube', ?, 'official_api')`,
-          )
-          .bind(crypto.randomUUID(), account.userId, count),
+        ).bind(crypto.randomUUID(), account.userId, count),
       ]);
     } catch {
-      await env.DB
-        .prepare(
-          `UPDATE profile_social_accounts
+      await env.DB.prepare(
+        `UPDATE profile_social_accounts
            SET sync_status = 'error', last_synced_at = datetime('now'),
                updated_at = datetime('now')
            WHERE user_id = ? AND platform = 'youtube'`,
-        )
+      )
         .bind(account.userId)
         .run();
     }

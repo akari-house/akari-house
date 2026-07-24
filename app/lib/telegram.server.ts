@@ -75,7 +75,9 @@ export async function deliverTelegramNotifications(
          WHERE notification_id = ? AND channel = 'telegram'`,
       )
         .bind(
-          error instanceof Error ? error.message.slice(0, 300) : "Unknown error",
+          error instanceof Error
+            ? error.message.slice(0, 300)
+            : "Unknown error",
           item.notificationId,
         )
         .run();

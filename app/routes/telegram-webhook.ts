@@ -1,9 +1,6 @@
 import type { Route } from "./+types/telegram-webhook";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import {
-  safeEqualText,
-  sha256,
-} from "~/lib/security.server";
+import { safeEqualText, sha256 } from "~/lib/security.server";
 import type { TelegramEnvironment } from "~/lib/telegram.server";
 
 type TelegramUpdate = {
@@ -19,8 +16,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     TelegramEnvironment;
   if (!env.TELEGRAM_WEBHOOK_SECRET || !env.TELEGRAM_BOT_TOKEN)
     throw new Response("Not configured.", { status: 503 });
-  const supplied =
-    request.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "";
+  const supplied = request.headers.get("X-Telegram-Bot-Api-Secret-Token") ?? "";
   if (!safeEqualText(supplied, env.TELEGRAM_WEBHOOK_SECRET))
     throw new Response("Forbidden.", { status: 403 });
   if (Number(request.headers.get("Content-Length") ?? "0") > 65_536)
@@ -39,9 +35,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     .first<{ id: string; userId: string }>();
   if (!token) return Response.json({ ok: true });
   await env.DB.batch([
-    env.DB
-      .prepare(
-        `INSERT INTO telegram_accounts
+    env.DB.prepare(
+      `INSERT INTO telegram_accounts
          (user_id, telegram_user_id, telegram_username, chat_id, status,
           linked_at, updated_at)
          VALUES (?, ?, ?, ?, 'linked', datetime('now'), datetime('now'))
@@ -50,18 +45,15 @@ export async function action({ request, context }: Route.ActionArgs) {
            telegram_username = excluded.telegram_username,
            chat_id = excluded.chat_id, status = 'linked',
            linked_at = excluded.linked_at, updated_at = excluded.updated_at`,
-      )
-      .bind(
-        token.userId,
-        String(telegramUserId),
-        update.message?.from?.username ?? "",
-        String(chatId),
-      ),
-    env.DB
-      .prepare(
-        "UPDATE telegram_link_tokens SET consumed_at = datetime('now') WHERE id = ?",
-      )
-      .bind(token.id),
+    ).bind(
+      token.userId,
+      String(telegramUserId),
+      update.message?.from?.username ?? "",
+      String(chatId),
+    ),
+    env.DB.prepare(
+      "UPDATE telegram_link_tokens SET consumed_at = datetime('now') WHERE id = ?",
+    ).bind(token.id),
   ]);
   await fetch(
     `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`,
