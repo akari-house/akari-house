@@ -1,0 +1,23 @@
+name: Verify Resilience Deployment
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/verify-resilience-deployment.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Cloudflare deployment
+        run: sleep 90
+      - name: Verify production health
+        run: |
+          body=$(curl -fsS https://akari-house.spacematesxyz.workers.dev/health)
+          echo "$body"
+          echo "$body" | grep '"status":"ready"'
+          echo "$body" | grep '"operationalResilience":true'
+      - name: Verify protected resilience console
+        run: |
+          status=$(curl -sS -o /dev/null -w "%{http_code}" https://akari-house.spacematesxyz.workers.dev/admin/resilience)
+          test "$status" = "302" -o "$status" = "303"
