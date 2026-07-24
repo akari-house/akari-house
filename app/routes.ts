@@ -35,6 +35,7 @@ export default [
   route("admin/operations", "routes/admin-operations.tsx"),
   route("admin/resilience", "routes/admin-resilience.tsx"),
   route("admin/campaign-operations", "routes/admin-campaign-operations.tsx"),
+  route("admin/launch-gate", "routes/admin-launch-gate.tsx"),
   route("admin/applications", "routes/admin-applications.tsx"),
   route("admin/interests", "routes/admin-interests.tsx"),
   route("admin/moderation", "routes/admin-moderation.tsx"),
