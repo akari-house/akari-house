@@ -10,12 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Wait for Cloudflare deployment
-        run: sleep 75
+        run: sleep 45
       - name: Verify production health
         run: |
           curl --fail --silent --show-error \
             https://akari-house.spacematesxyz.workers.dev/health \
-            | grep -q '"ready":true'
+            | grep -q '"status":"ready"'
       - name: Verify Project Lantern support filter
         run: |
           curl --fail --silent --show-error \
