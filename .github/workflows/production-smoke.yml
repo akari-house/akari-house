@@ -1,0 +1,43 @@
+name: Production Smoke
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for AKARI production health
+        shell: bash
+        run: |
+          set -euo pipefail
+          health_code="000"
+          for attempt in $(seq 1 36); do
+            health_code=$(curl --silent --show-error --output health.json --write-out "%{http_code}" https://akari-house.spacematesxyz.workers.dev/health || true)
+            echo "Attempt ${attempt}: health returned ${health_code}"
+            if [ "${health_code}" = "200" ]; then
+              break
+            fi
+            sleep 10
+          done
+          cat health.json || true
+          test "${health_code}" = "200"
+
+      - name: Verify public homepage
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl --silent --show-error --location --output homepage.html --write-out "%{http_code}" https://akari-house.spacematesxyz.workers.dev/)
+          test "${code}" = "200"
+          grep -qi "AKARI" homepage.html
+
+      - name: Verify operations route is deployed
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl --silent --show-error --location --output operations.html --write-out "%{http_code}" https://akari-house.spacematesxyz.workers.dev/admin/operations)
+          test "${code}" = "200"
+          grep -Eqi "Log in|AKARI" operations.html
