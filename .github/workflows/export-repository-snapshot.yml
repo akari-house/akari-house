@@ -15,9 +15,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Package repository
         run: |
-          tar --exclude=.git --exclude=node_modules --exclude=build --exclude=.wrangler -czf akari-house-source.tar.gz .
+          tar --exclude=.git --exclude=node_modules --exclude=build --exclude=.wrangler -czf /tmp/akari-house-source.tar.gz .
       - uses: actions/upload-artifact@v4
         with:
           name: akari-house-source
-          path: akari-house-source.tar.gz
+          path: /tmp/akari-house-source.tar.gz
           retention-days: 1
