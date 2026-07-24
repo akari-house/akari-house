@@ -1,15 +1,29 @@
 export type PostingCadence =
-  "daily_posting" | "weekly_2" | "weekly_3" | "weekly_4" | "daily_engagement";
+  | "daily_posting"
+  | "weekly_2"
+  | "weekly_3"
+  | "weekly_4"
+  | "daily_engagement";
+
+export type SelectablePostingCadence = Exclude<
+  PostingCadence,
+  "daily_engagement"
+>;
+
+export const dailyEngagementRequirement = {
+  label: "Daily engagement required",
+  detail: "Comment, Like, Repost and Bookmark",
+  actions: ["Comment", "Like", "Repost", "Bookmark"],
+} as const;
 
 export const postingCadences: Array<{
-  value: PostingCadence;
+  value: SelectablePostingCadence;
   label: string;
 }> = [
   { value: "daily_posting", label: "Daily posting" },
   { value: "weekly_2", label: "Weekly 2x posting" },
   { value: "weekly_3", label: "Weekly 3x posting" },
   { value: "weekly_4", label: "Weekly 4x posting" },
-  { value: "daily_engagement", label: "Daily engagement" },
 ];
 
 function utcDay(value: string) {
@@ -28,12 +42,13 @@ export function expectedCampaignSlots(
   cadence: PostingCadence,
   asOf = new Date(),
 ) {
+  if (cadence === "daily_engagement") return [];
   const start = utcDay(startsAt);
   const end = utcDay(endsAt);
   const today = utcDay(asOf.toISOString());
   const effectiveEnd = new Date(Math.min(end.getTime(), today.getTime()));
   if (effectiveEnd < start) return [];
-  const daily = cadence === "daily_posting" || cadence === "daily_engagement";
+  const daily = cadence === "daily_posting";
   const perWeek = daily ? 1 : Number(cadence.split("_")[1]);
   const slots: Array<{ periodStart: string; slotNumber: number }> = [];
   if (daily) {
