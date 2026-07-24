@@ -8,8 +8,11 @@ import {
 } from "react-router";
 import type { Route } from "./+types/root";
 import { RouteScrollReset } from "~/components/RouteScrollReset";
+import { productionSecurityHeaders } from "~/lib/production-security.server";
 import "./styles/app.css";
 import "./styles/project-needs.css";
+
+export const headers: Route.HeadersFunction = () => productionSecurityHeaders();
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", href: "/assets/brand/favicon.ico", sizes: "any" },
