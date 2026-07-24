@@ -1,0 +1,28 @@
+name: Verify Trusted Diligence Production
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/verify-diligence-production.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Cloudflare deployment
+        run: sleep 90
+      - name: Verify production health and diligence schema
+        run: |
+          response="$(curl --fail --silent --show-error --retry 5 --retry-delay 10 https://akari-house.spacematesxyz.workers.dev/health)"
+          echo "$response"
+          echo "$response" | grep -q '"status":"ready"'
+      - name: Verify protected diligence route
+        run: |
+          status="$(curl --silent --show-error --output /tmp/diligence.html --write-out '%{http_code}' https://akari-house.spacematesxyz.workers.dev/projects/does-not-exist/diligence)"
+          test "$status" -ge 200
+          test "$status" -lt 500
+      - name: Verify verification provenance administration route
+        run: |
+          status="$(curl --silent --show-error --output /tmp/verifications.html --write-out '%{http_code}' https://akari-house.spacematesxyz.workers.dev/admin/verifications)"
+          test "$status" -ge 200
+          test "$status" -lt 500
