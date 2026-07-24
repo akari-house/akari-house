@@ -63,21 +63,26 @@ export async function action({ request, context }: Route.ActionArgs) {
       : intent === "waitlist"
         ? "waitlisted"
         : "declined";
-  const result = await db
+  const application = await db
     .prepare(
-      `UPDATE membership_applications
-       SET status = ?, reviewed_by = ?, reviewed_at = datetime('now'),
-           decision_note = ?, updated_at = datetime('now')
-       WHERE id = ? AND status IN ('pending_review', 'waitlisted')
-         AND (? <> 'approved' OR EXISTS (
-           SELECT 1 FROM users
-           WHERE users.id = membership_applications.user_id
-             AND users.email_verified_at IS NOT NULL
-         ))`,
+      `SELECT ma.user_id AS userId, ma.status,
+              u.email, u.email_verified_at AS emailVerifiedAt
+       FROM membership_applications ma
+       JOIN users u ON u.id = ma.user_id
+       WHERE ma.id = ?`,
     )
-    .bind(status, admin.id, decisionNote, applicationId, status)
-    .run();
-  if ((result.meta.changes ?? 0) !== 1)
+    .bind(applicationId)
+    .first<{
+      userId: string;
+      status: string;
+      email: string;
+      emailVerifiedAt: string | null;
+    }>();
+  if (
+    !application ||
+    !["pending_review", "waitlisted"].includes(application.status) ||
+    (status === "approved" && !application.emailVerifiedAt)
+  )
     return {
       error:
         "That application could not be changed. Confirm the email is verified and refresh the list.",
@@ -86,10 +91,20 @@ export async function action({ request, context }: Route.ActionArgs) {
   await db.batch([
     db
       .prepare(
-        `UPDATE users SET status = ?, updated_at = datetime('now')
-         WHERE id = (SELECT user_id FROM membership_applications WHERE id = ?)`,
+        `UPDATE membership_applications
+         SET status = ?, reviewed_by = ?, reviewed_at = datetime('now'),
+             decision_note = ?, updated_at = datetime('now')
+         WHERE id = ? AND status IN ('pending_review', 'waitlisted')`,
       )
-      .bind(status === "approved" ? "active" : "restricted", applicationId),
+      .bind(status, admin.id, decisionNote, applicationId),
+    db
+      .prepare(
+        "UPDATE users SET status = ?, updated_at = datetime('now') WHERE id = ?",
+      )
+      .bind(
+        status === "approved" ? "active" : "restricted",
+        application.userId,
+      ),
     db
       .prepare(
         "INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id, metadata_json) VALUES (?, ?, 'membership.decision', 'membership_application', ?, ?)",
@@ -101,15 +116,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         JSON.stringify({ status, decisionNote }),
       ),
   ]);
-  if (status === "approved") {
-    const approved = await db
-      .prepare(
-        "SELECT email FROM users WHERE id = (SELECT user_id FROM membership_applications WHERE id = ?)",
-      )
-      .bind(applicationId)
-      .first<{ email: string }>();
-    if (approved) await sendApprovalEmail(env, approved.email);
-  }
+  if (status === "approved") await sendApprovalEmail(env, application.email);
   return { saved: true };
 }
 

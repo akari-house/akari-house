@@ -6,6 +6,7 @@ import { requireAdmin } from "~/lib/membership.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 import { EventTimeDisplay } from "~/components/EventTimeDisplay";
+import { isValidDecisionNote } from "~/lib/review";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -80,8 +81,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   const subjectType = formText(form.get("subjectType"));
   const subjectId = formText(form.get("subjectId"));
   const decision = formText(form.get("decision"));
+  const decisionNote = formText(form.get("decisionNote")).trim();
   if (!["approve", "decline"].includes(decision))
     throw new Response("Invalid decision.", { status: 400 });
+  if (!isValidDecisionNote(decisionNote))
+    return { error: "Add a decision note between 5 and 500 characters." };
 
   if (subjectType === "project") {
     const project = await db
@@ -115,6 +119,18 @@ export async function action({ request, context }: Route.ActionArgs) {
           `${project.title} was ${status}.`,
           `/projects/${project.slug}`,
         ),
+      db
+        .prepare(
+          `INSERT INTO audit_logs
+           (id, actor_user_id, action, subject_type, subject_id, metadata_json)
+           VALUES (?, ?, 'project.reviewed', 'project', ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          admin.id,
+          subjectId,
+          JSON.stringify({ status, decisionNote }),
+        ),
     ]);
   } else if (subjectType === "event") {
     const event = await db
@@ -147,6 +163,18 @@ export async function action({ request, context }: Route.ActionArgs) {
           `${event.title} was ${status}.`,
           `/events/${event.slug}`,
         ),
+      db
+        .prepare(
+          `INSERT INTO audit_logs
+           (id, actor_user_id, action, subject_type, subject_id, metadata_json)
+           VALUES (?, ?, 'event.reviewed', 'event', ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          admin.id,
+          subjectId,
+          JSON.stringify({ status, decisionNote }),
+        ),
     ]);
   } else if (subjectType === "interest") {
     const interest = await db
@@ -175,6 +203,18 @@ export async function action({ request, context }: Route.ActionArgs) {
           crypto.randomUUID(),
           interest.userId,
           `Your ${interest.interestType.replaceAll("_", " ")} request was ${status}.`,
+        ),
+      db
+        .prepare(
+          `INSERT INTO audit_logs
+           (id, actor_user_id, action, subject_type, subject_id, metadata_json)
+           VALUES (?, ?, 'interest.reviewed', 'interest_request', ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          admin.id,
+          subjectId,
+          JSON.stringify({ status, decisionNote }),
         ),
     ]);
   } else throw new Response("Invalid subject.", { status: 400 });
@@ -218,6 +258,16 @@ export default function AdminInterests({
                   <Form method="post" className="application-actions">
                     <input type="hidden" name="subjectType" value="project" />
                     <input type="hidden" name="subjectId" value={project.id} />
+                    <label>
+                      Decision note
+                      <textarea
+                        name="decisionNote"
+                        minLength={5}
+                        maxLength={500}
+                        required
+                        rows={3}
+                      />
+                    </label>
                     <button
                       className="button button-primary"
                       name="decision"
@@ -269,6 +319,16 @@ export default function AdminInterests({
                   <Form method="post" className="application-actions">
                     <input type="hidden" name="subjectType" value="event" />
                     <input type="hidden" name="subjectId" value={event.id} />
+                    <label>
+                      Decision note
+                      <textarea
+                        name="decisionNote"
+                        minLength={5}
+                        maxLength={500}
+                        required
+                        rows={3}
+                      />
+                    </label>
                     <button
                       className="button button-primary"
                       name="decision"
@@ -315,6 +375,16 @@ export default function AdminInterests({
                   <Form method="post" className="application-actions">
                     <input type="hidden" name="subjectType" value="interest" />
                     <input type="hidden" name="subjectId" value={interest.id} />
+                    <label>
+                      Decision note
+                      <textarea
+                        name="decisionNote"
+                        minLength={5}
+                        maxLength={500}
+                        required
+                        rows={3}
+                      />
+                    </label>
                     <button
                       className="button button-primary"
                       name="decision"

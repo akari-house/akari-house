@@ -25,6 +25,7 @@ import {
   type TurnstileEnvironment,
 } from "~/lib/turnstile.server";
 import { consumeAuthLimit } from "~/lib/rate-limit.server";
+import { legalAcceptanceStatements } from "~/lib/legal-consent.server";
 
 type RegistrationEnvironment = CloudflareEnvironment &
   MembershipEmailEnvironment &
@@ -62,7 +63,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const password = formText(formData.get("password"));
   const passwordConfirmation = formText(formData.get("passwordConfirmation"));
   const applicantNote = formText(formData.get("applicantNote")).trim();
-  const membershipTerms = formData.get("membershipTerms") === "on";
+  const legalTerms = formData.get("legalTerms") === "on";
   const selected = selectedRoles(formData);
   const errors: Record<string, string> = {};
   if (!validateEmail(email)) errors.email = "Enter a valid email address.";
@@ -77,8 +78,9 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (applicantNote.length < 30 || applicantNote.length > 600)
     errors.applicantNote =
       "Tell us what brings you to AKARI in 30 to 600 characters.";
-  if (!membershipTerms)
-    errors.membershipTerms = "Confirm that you understand the review process.";
+  if (!legalTerms)
+    errors.legalTerms =
+      "Agree to the Terms and Community Guidelines and acknowledge the Privacy Notice.";
   if (selected.length === 0) errors.roles = "Select at least one role.";
   if (Object.keys(errors).length)
     return {
@@ -88,7 +90,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         username,
         displayName,
         applicantNote,
-        membershipTerms,
+        legalTerms,
       },
       selected,
     };
@@ -104,6 +106,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const userId = crypto.randomUUID();
   const passwordHash = await hashPassword(password);
+  const legalAcceptances = await legalAcceptanceStatements(db, request, userId);
   try {
     await db.batch([
       db
@@ -131,6 +134,7 @@ export async function action({ request, context }: Route.ActionArgs) {
           "INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id) VALUES (?, ?, 'account.registered', 'user', ?)",
         )
         .bind(crypto.randomUUID(), userId, userId),
+      ...legalAcceptances,
       db
         .prepare(
           "INSERT INTO membership_applications (id, user_id, status, applicant_note) VALUES (?, ?, 'pending_email', ?)",
@@ -314,25 +318,26 @@ export default function Register({
         )}
         <label className="consent-row">
           <input
-            name="membershipTerms"
+            name="legalTerms"
             type="checkbox"
             required
-            defaultChecked={actionData?.values.membershipTerms}
-            aria-invalid={Boolean(actionData?.errors.membershipTerms)}
+            defaultChecked={actionData?.values.legalTerms}
+            aria-invalid={Boolean(actionData?.errors.legalTerms)}
             aria-describedby={
-              actionData?.errors.membershipTerms
-                ? "membership-terms-error"
-                : undefined
+              actionData?.errors.legalTerms ? "legal-terms-error" : undefined
             }
           />
           <span>
-            I understand that AKARI reviews every request and that submitting
-            this form does not guarantee membership.
+            I agree to the <Link to="/terms">Terms</Link> and{" "}
+            <Link to="/community-guidelines">Community Guidelines</Link>. I
+            acknowledge that I have read the{" "}
+            <Link to="/privacy">Privacy Notice</Link>. I understand that
+            submitting this form does not guarantee membership.
           </span>
         </label>
-        {actionData?.errors.membershipTerms && (
-          <small id="membership-terms-error" className="field-error">
-            {actionData.errors.membershipTerms}
+        {actionData?.errors.legalTerms && (
+          <small id="legal-terms-error" className="field-error">
+            {actionData.errors.legalTerms}
           </small>
         )}
         <TurnstileWidget

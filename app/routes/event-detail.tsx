@@ -8,6 +8,7 @@ import { formText } from "~/lib/validation";
 import { EventTimeDisplay } from "~/components/EventTimeDisplay";
 import { AkariMotif } from "~/components/AkariMotif";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
+import { cancellationOpensEventPlace } from "~/lib/event-registration";
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -122,9 +123,11 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     60,
   );
   if (intent === "register") {
-    const result = await db
-      .prepare(
-        `INSERT INTO event_registrations
+    const registrationId = crypto.randomUUID();
+    const results = await db.batch([
+      db
+        .prepare(
+          `INSERT INTO event_registrations
          (event_id, user_id, status, updated_at)
          VALUES (?, ?, CASE
            WHEN ? IS NULL OR (
@@ -133,10 +136,47 @@ export async function action({ request, context, params }: Route.ActionArgs) {
            ) < ? THEN 'registered' ELSE 'waitlisted' END, datetime('now'))
          ON CONFLICT(event_id, user_id) DO UPDATE SET
            status = excluded.status, updated_at = excluded.updated_at`,
-      )
-      .bind(event.id, user.id, event.capacity, event.id, event.capacity)
-      .run();
-    if ((result.meta.changes ?? 0) !== 1)
+        )
+        .bind(event.id, user.id, event.capacity, event.id, event.capacity),
+      db
+        .prepare(
+          `INSERT INTO notifications
+           (id, user_id, kind, title, body, action_url)
+           SELECT ?, ?, 'event.registration', 'New event registration',
+                  ? || CASE status
+                    WHEN 'waitlisted' THEN ' joined the waitlist for '
+                    ELSE ' registered for '
+                  END || ?, ?
+           FROM event_registrations WHERE event_id = ? AND user_id = ?`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          event.hostUserId,
+          user.displayName,
+          event.title,
+          `/events/${params.slug}`,
+          event.id,
+          user.id,
+        ),
+      db
+        .prepare(
+          `INSERT INTO audit_logs
+           (id, actor_user_id, action, subject_type, subject_id, metadata_json)
+           SELECT ?, ?, 'event.registration_saved', 'event', ?, json_object(
+             'registrationId', ?, 'status', status
+           )
+           FROM event_registrations WHERE event_id = ? AND user_id = ?`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          user.id,
+          event.id,
+          registrationId,
+          event.id,
+          user.id,
+        ),
+    ]);
+    if ((results[0].meta.changes ?? 0) !== 1)
       return { error: "Registration could not be saved." };
     const saved = await db
       .prepare(
@@ -145,30 +185,89 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       )
       .bind(event.id, user.id)
       .first<{ status: string }>();
-    await db
-      .prepare(
-        `INSERT INTO notifications
-         (id, user_id, kind, title, body, action_url)
-         VALUES (?, ?, 'event.registration', 'New event registration', ?, ?)`,
-      )
-      .bind(
-        crypto.randomUUID(),
-        event.hostUserId,
-        `${user.displayName} ${saved?.status === "waitlisted" ? "joined the waitlist for" : "registered for"} ${event.title}.`,
-        `/events/${params.slug}`,
-      )
-      .run();
     throw redirect(
       `/events/${params.slug}?registration=${saved?.status === "waitlisted" ? "waitlisted" : "registered"}`,
     );
   } else if (intent === "cancel") {
-    await db
+    const existingRegistration = await db
       .prepare(
-        `UPDATE event_registrations SET status = 'cancelled',
-         updated_at = datetime('now') WHERE event_id = ? AND user_id = ?`,
+        `SELECT status FROM event_registrations
+         WHERE event_id = ? AND user_id = ?
+           AND status IN ('registered', 'waitlisted')`,
       )
       .bind(event.id, user.id)
-      .run();
+      .first<{ status: string }>();
+    if (!existingRegistration)
+      throw new Response("Registration not found.", { status: 404 });
+    const promoted = cancellationOpensEventPlace(existingRegistration.status)
+      ? await db
+          .prepare(
+            `SELECT user_id AS userId FROM event_registrations
+               WHERE event_id = ? AND status = 'waitlisted'
+               ORDER BY created_at, user_id LIMIT 1`,
+          )
+          .bind(event.id)
+          .first<{ userId: string }>()
+      : null;
+    const statements = [
+      db
+        .prepare(
+          `UPDATE event_registrations SET status = 'cancelled',
+           updated_at = datetime('now')
+           WHERE event_id = ? AND user_id = ?
+             AND status IN ('registered', 'waitlisted')`,
+        )
+        .bind(event.id, user.id),
+      db
+        .prepare(
+          `INSERT INTO audit_logs
+           (id, actor_user_id, action, subject_type, subject_id, metadata_json)
+           VALUES (?, ?, 'event.registration_cancelled', 'event', ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          user.id,
+          event.id,
+          JSON.stringify({ previousStatus: existingRegistration.status }),
+        ),
+    ];
+    if (promoted) {
+      statements.push(
+        db
+          .prepare(
+            `UPDATE event_registrations SET status = 'registered',
+             updated_at = datetime('now')
+             WHERE event_id = ? AND user_id = ? AND status = 'waitlisted'`,
+          )
+          .bind(event.id, promoted.userId),
+        db
+          .prepare(
+            `INSERT INTO notifications
+             (id, user_id, kind, title, body, action_url)
+             VALUES (?, ?, 'event.waitlist_promoted', 'Your event place is confirmed',
+                     ?, ?)`,
+          )
+          .bind(
+            crypto.randomUUID(),
+            promoted.userId,
+            `A place opened for ${event.title}. You are now registered.`,
+            `/events/${params.slug}`,
+          ),
+        db
+          .prepare(
+            `INSERT INTO audit_logs
+             (id, actor_user_id, action, subject_type, subject_id, metadata_json)
+             VALUES (?, ?, 'event.waitlist_promoted', 'event', ?, ?)`,
+          )
+          .bind(
+            crypto.randomUUID(),
+            user.id,
+            event.id,
+            JSON.stringify({ promotedUserId: promoted.userId }),
+          ),
+      );
+    }
+    await db.batch(statements);
     throw redirect(`/events/${params.slug}?registration=cancelled`);
   } else throw new Response("Unsupported action.", { status: 400 });
 }

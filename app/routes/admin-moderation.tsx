@@ -70,54 +70,60 @@ export async function action({ request, context }: Route.ActionArgs) {
     !["project", "event"].includes(report.subjectType)
   )
     return { error: "Content hiding applies only to projects or events." };
-  await db
-    .prepare(
-      `UPDATE moderation_reports SET status = ?, reviewed_by = ?,
-       reviewed_at = CASE WHEN ? IN ('resolved', 'dismissed')
-         THEN datetime('now') ELSE reviewed_at END,
-       resolution_note = ?, updated_at = datetime('now')
-       WHERE id = ?`,
-    )
-    .bind(status, admin.id, status, note, reportId)
-    .run();
+  const statements = [
+    db
+      .prepare(
+        `UPDATE moderation_reports SET status = ?, reviewed_by = ?,
+         reviewed_at = CASE WHEN ? IN ('resolved', 'dismissed')
+           THEN datetime('now') ELSE reviewed_at END,
+         resolution_note = ?, updated_at = datetime('now')
+         WHERE id = ?`,
+      )
+      .bind(status, admin.id, status, note, reportId),
+  ];
   if (enforcement === "suspend_account")
-    await db
-      .prepare(
-        `UPDATE users SET status = 'suspended',
+    statements.push(
+      db
+        .prepare(
+          `UPDATE users SET status = 'suspended',
          updated_at = datetime('now') WHERE id = ?`,
-      )
-      .bind(report.subjectId)
-      .run();
+        )
+        .bind(report.subjectId),
+    );
   if (enforcement === "hide_content" && report.subjectType === "project")
-    await db
-      .prepare(
-        `UPDATE projects SET status = 'archived',
+    statements.push(
+      db
+        .prepare(
+          `UPDATE projects SET status = 'archived',
          updated_at = datetime('now') WHERE id = ?`,
-      )
-      .bind(report.subjectId)
-      .run();
+        )
+        .bind(report.subjectId),
+    );
   if (enforcement === "hide_content" && report.subjectType === "event")
-    await db
-      .prepare(
-        `UPDATE events SET status = 'cancelled',
+    statements.push(
+      db
+        .prepare(
+          `UPDATE events SET status = 'cancelled',
          updated_at = datetime('now') WHERE id = ?`,
+        )
+        .bind(report.subjectId),
+    );
+  statements.push(
+    db
+      .prepare(
+        `INSERT INTO audit_logs
+         (id, actor_user_id, action, subject_type, subject_id, metadata_json)
+         VALUES (?, ?, 'moderation.decision', ?, ?, ?)`,
       )
-      .bind(report.subjectId)
-      .run();
-  await db
-    .prepare(
-      `INSERT INTO audit_logs
-       (id, actor_user_id, action, subject_type, subject_id, metadata_json)
-       VALUES (?, ?, 'moderation.decision', ?, ?, ?)`,
-    )
-    .bind(
-      crypto.randomUUID(),
-      admin.id,
-      report.subjectType,
-      report.subjectId,
-      JSON.stringify({ status, enforcement, reportId }),
-    )
-    .run();
+      .bind(
+        crypto.randomUUID(),
+        admin.id,
+        report.subjectType,
+        report.subjectId,
+        JSON.stringify({ status, enforcement, reportId, note }),
+      ),
+  );
+  await db.batch(statements);
   return { saved: true };
 }
 

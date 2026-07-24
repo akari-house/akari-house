@@ -171,7 +171,7 @@ test("membership request remains gated before human approval", async ({
       "I am building a trusted community product and want to contribute thoughtful partnerships.",
     );
   await page
-    .getByLabel(/I understand that AKARI reviews every request/)
+    .getByLabel(/I agree to the Terms/)
     .check();
   await page.getByRole("button", { name: "Send membership request" }).click();
 
