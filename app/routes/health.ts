@@ -3,6 +3,7 @@ import { ensureAccountRightsSchema } from "~/lib/account-rights-schema.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { ensureDiligenceSchema } from "~/lib/diligence-schema.server";
 import { ensureIioSettlementSchema } from "~/lib/iio-settlement-schema.server";
+import { ensureOperationalResilienceSchema } from "~/lib/operational-resilience-schema.server";
 import { ensureProductionSecuritySchema } from "~/lib/production-security-schema.server";
 
 export async function loader({ context }: Route.LoaderArgs) {
@@ -14,6 +15,7 @@ export async function loader({ context }: Route.LoaderArgs) {
     await ensureDiligenceSchema(env.DB);
     await ensureIioSettlementSchema(env.DB);
     await ensureProductionSecuritySchema(env.DB);
+    await ensureOperationalResilienceSchema(env.DB);
     const result = await env.DB.prepare("SELECT 1 AS ready").first<{
       ready: number;
     }>();
@@ -39,6 +41,7 @@ export async function loader({ context }: Route.LoaderArgs) {
         media: Boolean(env.MEDIA),
         configuration,
         securityHeaders: true,
+        operationalResilience: database,
       },
     },
     {
