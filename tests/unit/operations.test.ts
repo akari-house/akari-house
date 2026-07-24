@@ -31,9 +31,9 @@ describe("launch operations state", () => {
   });
 
   it("prioritises trust, safety and support queues", () => {
-    expect(
-      operationsState({ ...emptyCounts, moderationReports: 1 }),
-    ).toBe("attention");
+    expect(operationsState({ ...emptyCounts, moderationReports: 1 })).toBe(
+      "attention",
+    );
     expect(operationsState({ ...emptyCounts, contactMessages: 1 })).toBe(
       "attention",
     );

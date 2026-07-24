@@ -71,16 +71,16 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       label: "Turnstile protection",
       ready: Boolean(
         env.TURNSTILE_SITE_KEY &&
-          env.TURNSTILE_SECRET_KEY &&
-          env.TURNSTILE_HOSTNAME,
+        env.TURNSTILE_SECRET_KEY &&
+        env.TURNSTILE_HOSTNAME,
       ),
     },
     {
       label: "Google campaign export",
       ready: Boolean(
         env.GOOGLE_CLIENT_ID &&
-          env.GOOGLE_CLIENT_SECRET &&
-          env.GOOGLE_TOKEN_ENCRYPTION_KEY,
+        env.GOOGLE_CLIENT_SECRET &&
+        env.GOOGLE_TOKEN_ENCRYPTION_KEY,
       ),
     },
   ];
@@ -195,15 +195,23 @@ export default function AdminOperations({ loaderData }: Route.ComponentProps) {
           <div className="application-list">
             {loaderData.checks.map((check) => (
               <article className="status-card" key={check.label}>
-                <span className="chapter">{check.ready ? "Ready" : "Missing"}</span>
+                <span className="chapter">
+                  {check.ready ? "Ready" : "Missing"}
+                </span>
                 <h3>{check.label}</h3>
               </article>
             ))}
           </div>
           <p>
-            <strong>Application URL:</strong> {loaderData.appUrl || "Not configured"}
+            <strong>Application URL:</strong>{" "}
+            {loaderData.appUrl || "Not configured"}
           </p>
-          <a className="button button-quiet" href="/health" target="_blank" rel="noreferrer">
+          <a
+            className="button button-quiet"
+            href="/health"
+            target="_blank"
+            rel="noreferrer"
+          >
             Open live health check
           </a>
           {!loaderData.allServicesReady && (
@@ -216,7 +224,9 @@ export default function AdminOperations({ loaderData }: Route.ComponentProps) {
         <section aria-labelledby="operations-activity-title">
           <header>
             <span className="chapter">Audit trail</span>
-            <h2 id="operations-activity-title">Recent administrative activity</h2>
+            <h2 id="operations-activity-title">
+              Recent administrative activity
+            </h2>
           </header>
           <div className="application-list">
             {loaderData.recentActivity.map((item) => (
@@ -225,7 +235,9 @@ export default function AdminOperations({ loaderData }: Route.ComponentProps) {
                   <span className="chapter">
                     {item.subjectType.replaceAll("_", " ")}
                   </span>
-                  <h3>{item.action.replaceAll(".", " · ").replaceAll("_", " ")}</h3>
+                  <h3>
+                    {item.action.replaceAll(".", " · ").replaceAll("_", " ")}
+                  </h3>
                   {item.subjectId && <p>Reference: {item.subjectId}</p>}
                 </div>
                 <time dateTime={item.createdAt}>

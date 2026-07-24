@@ -6,7 +6,13 @@ import { requireAdminScope } from "~/lib/membership.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 
-const contactStatuses = ["open", "reviewing", "resolved", "spam", "all"] as const;
+const contactStatuses = [
+  "open",
+  "reviewing",
+  "resolved",
+  "spam",
+  "all",
+] as const;
 type ContactStatusFilter = (typeof contactStatuses)[number];
 
 type ContactMessageRow = {
@@ -79,7 +85,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     .prepare("SELECT status FROM contact_messages WHERE id = ?")
     .bind(messageId)
     .first<{ status: string }>();
-  if (!current) throw new Response("Contact message not found.", { status: 404 });
+  if (!current)
+    throw new Response("Contact message not found.", { status: 404 });
 
   await db.batch([
     db
@@ -138,7 +145,10 @@ export default function AdminContact({
           </Link>
         </header>
 
-        <nav className="member-next-actions" aria-label="Contact status filters">
+        <nav
+          className="member-next-actions"
+          aria-label="Contact status filters"
+        >
           {contactStatuses.map((status) => (
             <Link
               className={
@@ -252,7 +262,10 @@ export default function AdminContact({
           ))}
           {!loaderData.messages.length && (
             <section className="status-card">
-              <h2>No {loaderData.status === "all" ? "" : loaderData.status} contact messages.</h2>
+              <h2>
+                No {loaderData.status === "all" ? "" : loaderData.status}{" "}
+                contact messages.
+              </h2>
             </section>
           )}
         </div>
