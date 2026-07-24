@@ -1,0 +1,32 @@
+name: Apply Launch Completion
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/apply-launch-completion.yml"
+      - ".github/launch-completion-parts/**"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Apply launch completion release
+        run: |
+          set -euo pipefail
+          cat .github/launch-completion-parts/part-* | base64 -d | gzip -d > /tmp/launch-completion.patch
+          git apply --check /tmp/launch-completion.patch
+          git apply /tmp/launch-completion.patch
+          rm -rf .github/launch-completion-parts
+          rm -f .github/workflows/apply-launch-completion.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Complete AKARI launch systems"
+          git push
