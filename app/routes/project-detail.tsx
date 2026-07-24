@@ -1,10 +1,11 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/project-detail";
 import { SiteHeader } from "~/components/SiteHeader";
-import { getOptionalUser, requireUser } from "~/lib/auth.server";
+import { getOptionalUser, requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
+import { requireActionRateLimit } from "~/lib/rate-limit.server";
 
 type ProjectRow = {
   id: string;
@@ -137,7 +138,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireUser(request, db);
+  const user = await requireApprovedMember(request, db);
   const project = await db
     .prepare(
       `SELECT id, founder_user_id AS founderUserId, title, status
@@ -155,6 +156,14 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     throw new Response("Project not found.", { status: 404 });
   const form = await request.formData();
   const intent = formText(form.get("intent"));
+  await requireActionRateLimit(
+    db,
+    request,
+    "project-engagement",
+    user.id,
+    40,
+    60,
+  );
 
   if (intent === "follow" || intent === "unfollow") {
     if (!user.roles.includes("creator"))
@@ -199,13 +208,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
              investor_shares_contact = excluded.investor_shares_contact,
              status = 'active', updated_at = excluded.updated_at`,
         )
-        .bind(
-          crypto.randomUUID(),
-          project.id,
-          user.id,
-          message,
-          shareContact,
-        ),
+        .bind(crypto.randomUUID(), project.id, user.id, message, shareContact),
       db
         .prepare(
           `INSERT INTO notifications
@@ -245,8 +248,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       )
       .bind(interestId, project.id)
       .first<{ investorUserId: string }>();
-    if (!interest)
-      throw new Response("Interest not found.", { status: 404 });
+    if (!interest) throw new Response("Interest not found.", { status: 404 });
     await db.batch([
       db
         .prepare(

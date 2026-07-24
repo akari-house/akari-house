@@ -28,8 +28,19 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
     if (!open) return;
     const trigger = menuRef.current;
     const previousOverflow = document.body.style.overflow;
+    const background = [
+      ...document.querySelectorAll<HTMLElement>(
+        "#main-content, .public-footer, .story-progress",
+      ),
+    ];
+    const previousInert = background.map((element) => element.inert);
     document.body.style.overflow = "hidden";
-    drawerRef.current?.querySelector<HTMLElement>("a")?.focus();
+    background.forEach((element) => {
+      element.inert = true;
+    });
+    drawerRef.current
+      ?.querySelector<HTMLElement>("[data-drawer-initial-focus]")
+      ?.focus();
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
       if (event.key !== "Tab" || !drawerRef.current) return;
@@ -52,6 +63,9 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
     document.addEventListener("keydown", handleKey);
     return () => {
       document.body.style.overflow = previousOverflow;
+      background.forEach((element, index) => {
+        element.inert = previousInert[index];
+      });
       document.removeEventListener("keydown", handleKey);
       trigger?.focus();
     };
@@ -176,7 +190,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
           </button>
         </div>
       </header>
-      <JourneyBack />
+      <JourneyBack hidden={open} />
       <div
         className={`drawer-scrim${open ? " is-open" : ""}`}
         aria-hidden="true"
@@ -187,7 +201,19 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
         className={`mobile-drawer${open ? " is-open" : ""}`}
         id="mobile-menu"
         aria-hidden={!open}
+        aria-label="Site navigation"
+        aria-modal={open}
+        role="dialog"
       >
+        <button
+          className="mobile-drawer-close"
+          type="button"
+          data-drawer-initial-focus
+          onClick={() => setOpen(false)}
+        >
+          <Icon name="close" />
+          <span>Close menu</span>
+        </button>
         <nav aria-label="Mobile navigation">
           {links.map(([label, href]) => (
             <a

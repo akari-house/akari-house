@@ -1,10 +1,11 @@
 import { Form, Link, redirect } from "react-router";
 import type { Route } from "./+types/report";
 import { SiteHeader } from "~/components/SiteHeader";
-import { requireUser } from "~/lib/auth.server";
+import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
+import { requireActionRateLimit } from "~/lib/rate-limit.server";
 
 function reportTarget(request: Request) {
   const url = new URL(request.url);
@@ -20,7 +21,7 @@ function reportTarget(request: Request) {
 }
 
 export async function loader({ request, context }: Route.LoaderArgs) {
-  const user = await requireUser(
+  const user = await requireApprovedMember(
     request,
     context.get(cloudflareContext).env.DB,
   );
@@ -36,7 +37,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireUser(request, db);
+  const user = await requireApprovedMember(request, db);
+  await requireActionRateLimit(db, request, "reports", user.id, 5, 1440);
   const form = await request.formData();
   const subjectType = formText(form.get("subjectType"));
   const subjectId = formText(form.get("subjectId"));
@@ -84,21 +86,19 @@ export async function action({ request, context }: Route.ActionArgs) {
        (id, reporter_user_id, subject_type, subject_id, reason, details)
        VALUES (?, ?, ?, ?, ?, ?)`,
     )
-    .bind(
-      crypto.randomUUID(),
-      user.id,
-      subjectType,
-      subjectId,
-      reason,
-      details,
-    )
+    .bind(crypto.randomUUID(), user.id, subjectType, subjectId, reason, details)
     .run();
   const safeReturn =
     returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/";
-  throw redirect(`${safeReturn}${safeReturn.includes("?") ? "&" : "?"}reported=1`);
+  throw redirect(
+    `${safeReturn}${safeReturn.includes("?") ? "&" : "?"}reported=1`,
+  );
 }
 
-export default function Report({ loaderData, actionData }: Route.ComponentProps) {
+export default function Report({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />

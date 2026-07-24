@@ -1,15 +1,16 @@
 import { Form, Link, useNavigation } from "react-router";
 import type { Route } from "./+types/connections";
 import { SiteHeader } from "~/components/SiteHeader";
-import { requireUser } from "~/lib/auth.server";
+import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { acceptConnectionRequest } from "~/lib/network.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
+import { requireActionRateLimit } from "~/lib/rate-limit.server";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireUser(request, db);
+  const user = await requireApprovedMember(request, db);
   const rows = await db
     .prepare(
       `SELECT c.id, c.requester_id AS requesterId,
@@ -40,7 +41,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 export async function action({ request, context }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireUser(request, db);
+  const user = await requireApprovedMember(request, db);
+  await requireActionRateLimit(db, request, "connections", user.id, 30, 60);
   const form = await request.formData();
   const connectionId = formText(form.get("connectionId"));
   const intent = formText(form.get("intent"));

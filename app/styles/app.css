@@ -2492,8 +2492,10 @@ select:focus {
   border: 1px solid #f35f9535;
   border-radius: 1.1rem;
   background:
-    radial-gradient(circle at 12% 20%, #f35f9518, transparent 30%),
-    #10131dcc;
+    radial-gradient(circle at 12% 20%, #f35f9518, transparent 30%), #10131dcc;
+}
+.profile-photo-form {
+  margin-bottom: 1.5rem;
 }
 .profile-photo-editor legend {
   padding: 0 0.4rem;
@@ -2566,11 +2568,12 @@ select:focus {
   width: 176px;
   height: 176px;
   display: block;
-  margin-bottom: 1.15rem;
+  margin: 0 auto 1.15rem;
 }
 .member-card-photo {
-  width: 88px;
-  height: 88px;
+  width: 58px;
+  height: 58px;
+  align-self: start;
   border: 1px solid #ffd45a75;
   border-radius: 50%;
   object-fit: cover;
@@ -2651,15 +2654,19 @@ select:focus {
   text-align: center;
 }
 .profile-monogram {
-  width: 110px;
-  height: 110px;
-  margin: 0 auto 2rem;
+  width: 176px;
+  height: 176px;
+  margin: 0 auto 1.15rem;
   display: grid;
   place-items: center;
   border-radius: 50%;
-  border: 1px solid var(--line);
+  border: 2px solid #ffd45a9e;
+  background: #171421;
+  box-shadow:
+    0 0 0 5px #f35f9512,
+    0 16px 35px #0007;
   color: var(--yellow);
-  font-size: 3rem;
+  font-size: 3.5rem;
 }
 .public-profile h1 {
   font-size: 4.5rem;
@@ -2767,7 +2774,7 @@ select:focus {
   }
   .drawer-scrim {
     position: fixed;
-    z-index: 140;
+    z-index: 155;
     inset: 0;
     background: #0009;
     opacity: 0;
@@ -2780,7 +2787,7 @@ select:focus {
   }
   .mobile-drawer {
     position: fixed;
-    z-index: 145;
+    z-index: 160;
     top: 0;
     right: 0;
     width: min(340px, 88vw);
@@ -2800,6 +2807,22 @@ select:focus {
   }
   .mobile-drawer nav {
     display: grid;
+  }
+  .mobile-drawer-close {
+    min-height: 44px;
+    margin: 0 0 1rem auto;
+    padding: 0.55rem 0.7rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    border: 1px solid var(--hair);
+    border-radius: 999px;
+    background: #ffffff08;
+    cursor: pointer;
+  }
+  .mobile-drawer-close .icon {
+    width: 1rem;
+    height: 1rem;
   }
   .mobile-drawer nav a {
     min-height: 52px;
@@ -3270,8 +3293,64 @@ select:focus {
   letter-spacing: -0.03em;
   margin: 0.6rem 0 1.2rem;
 }
-.dashboard-workspace .product-demo {
-  width: 100%;
+.dashboard-workspace > p {
+  max-width: 650px;
+  margin: -0.6rem 0 1.25rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.dashboard-role-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+.dashboard-role-card {
+  min-width: 0;
+  min-height: 178px;
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 95% 8%, #ffd33d0d, transparent 34%),
+    linear-gradient(145deg, #141824, #0c1019);
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease;
+}
+.dashboard-role-card:hover,
+.dashboard-role-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: #f04f8758;
+}
+.dashboard-role-card > span {
+  color: #d8bd68;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.dashboard-role-card > strong {
+  margin-top: 0.55rem;
+  font-size: 1.2rem;
+}
+.dashboard-role-card > p {
+  margin: 0.5rem 0 1rem;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+.dashboard-role-card > small {
+  margin-top: auto;
+  color: #f4aec6;
+  font-weight: 700;
+}
+@media (max-width: 640px) {
+  .dashboard-role-actions {
+    grid-template-columns: 1fr;
+  }
 }
 .archive-main,
 .case-page main {
@@ -4512,6 +4591,11 @@ select:disabled {
     width: 44px;
     height: 44px;
     font-size: 1rem;
+  }
+
+  .member-card-photo {
+    width: 44px;
+    height: 44px;
   }
 }
 
@@ -6125,8 +6209,7 @@ select:disabled {
   position: relative;
   border-color: #f04f872e;
   background:
-    linear-gradient(135deg, transparent 0 20px, #111522 21px),
-    var(--surface);
+    linear-gradient(135deg, transparent 0 20px, #111522 21px), var(--surface);
 }
 
 .event-form::before {

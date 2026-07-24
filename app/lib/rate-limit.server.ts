@@ -1,5 +1,9 @@
 import { sha256 } from "./security.server";
 
+export function isWithinRateLimit(attempts: number | null, limit: number) {
+  return (attempts ?? limit + 1) <= limit;
+}
+
 export async function consumeAuthLimit(
   db: D1Database,
   request: Request,
@@ -37,5 +41,28 @@ export async function consumeAuthLimit(
     )
     .bind(bucket, subjectHash)
     .first<{ attempts: number }>();
-  return (row?.attempts ?? limit + 1) <= limit;
+  return isWithinRateLimit(row?.attempts ?? null, limit);
+}
+
+export async function requireActionRateLimit(
+  db: D1Database,
+  request: Request,
+  bucket: string,
+  userId: string,
+  limit: number,
+  windowMinutes: number,
+) {
+  const allowed = await consumeAuthLimit(
+    db,
+    request,
+    `action:${bucket}`,
+    userId,
+    limit,
+    windowMinutes,
+  );
+  if (!allowed)
+    throw new Response("Too many requests. Please try again later.", {
+      status: 429,
+      headers: { "Retry-After": String(windowMinutes * 60) },
+    });
 }

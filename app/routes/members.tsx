@@ -1,6 +1,7 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/members";
 import { PublicFooter } from "~/components/PublicFooter";
+import { ProfileAvatar } from "~/components/ProfileAvatar";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember, requireUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
@@ -8,11 +9,14 @@ import type { Role } from "~/lib/domain";
 import { memberDirectoryFilters } from "~/lib/member-directory";
 import {
   acceptConnectionRequest,
+  connectionState,
   sendConnectionRequest,
   type ConnectionState,
 } from "~/lib/network.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
+import { getVisibleProfile } from "~/lib/profile.server";
+import { requireActionRateLimit } from "~/lib/rate-limit.server";
 
 interface DirectoryMember {
   id: string;
@@ -135,15 +139,30 @@ export async function action({ request, context }: Route.ActionArgs) {
   const returnTo = formText(form.get("returnTo"));
 
   const target = await db
-    .prepare("SELECT id FROM users WHERE id = ? AND status = 'active'")
+    .prepare(
+      "SELECT id, username FROM users WHERE id = ? AND status = 'active'",
+    )
     .bind(recipientId)
-    .first<{ id: string }>();
+    .first<{ id: string; username: string }>();
   if (!target) throw new Response("Member not found.", { status: 404 });
 
-  if (intent === "connect") await sendConnectionRequest(db, user, recipientId);
-  else if (intent === "accept")
+  await requireActionRateLimit(db, request, "connections", user.id, 30, 60);
+  const relationship = await connectionState(db, user.id, target.id);
+  if (relationship === "blocked")
+    throw new Response("Member not found.", { status: 404 });
+
+  if (intent === "connect") {
+    if (relationship !== "none")
+      throw new Response("Connection action is not available.", {
+        status: 409,
+      });
+    await getVisibleProfile(db, target.username, user.id);
+    await sendConnectionRequest(db, user, recipientId);
+  } else if (intent === "accept") {
+    if (relationship !== "incoming_pending")
+      throw new Response("Connection request not found.", { status: 404 });
     await acceptConnectionRequest(db, user, recipientId);
-  else throw new Response("Unsupported action.", { status: 400 });
+  } else throw new Response("Unsupported action.", { status: 400 });
 
   throw redirect(returnTo.startsWith("/members") ? returnTo : "/members");
 }
@@ -256,19 +275,15 @@ export default function Members({ loaderData }: Route.ComponentProps) {
               const status = relationshipLabel(member.relationship);
               return (
                 <article className="member-card" key={member.id}>
-                  {member.avatarKey ? (
-                    <img
-                      className="member-card-photo"
-                      src={`/media/profile/${encodeURIComponent(member.username)}?v=${encodeURIComponent(member.avatarKey)}`}
-                      alt=""
-                      width={88}
-                      height={88}
-                    />
-                  ) : (
-                    <div className="member-card-monogram" aria-hidden="true">
-                      {member.displayName.slice(0, 1).toUpperCase()}
-                    </div>
-                  )}
+                  <ProfileAvatar
+                    displayName={member.displayName}
+                    src={
+                      member.avatarKey
+                        ? `/media/profile/${encodeURIComponent(member.username)}?v=${encodeURIComponent(member.avatarKey)}`
+                        : undefined
+                    }
+                    variant="card"
+                  />
                   <div className="member-card-body">
                     <div className="role-pills">
                       {member.roles.map((role) => (

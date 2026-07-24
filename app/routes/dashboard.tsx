@@ -1,6 +1,7 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/dashboard";
 import { SiteHeader } from "~/components/SiteHeader";
+import { ProfilePhotoEditor } from "~/components/ProfilePhotoEditor";
 import { RoleSelector } from "~/components/RoleSelector";
 import { requireUser } from "~/lib/auth.server";
 import { assertSameOrigin } from "~/lib/security.server";
@@ -12,7 +13,7 @@ import {
   validateEmail,
 } from "~/lib/validation";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import { CommonTable } from "~/components/common-table/CommonTable";
+import { DashboardRoleActions } from "~/components/DashboardRoleActions";
 import { profileCompletion } from "~/lib/profile-completion";
 import {
   interestTypes,
@@ -23,6 +24,7 @@ import {
 import { membershipStatusForUser } from "~/lib/membership.server";
 import { loadSocialAccounts } from "~/lib/social.server";
 import { validateProfilePhoto } from "~/lib/profile-photo.server";
+import { requireActionRateLimit } from "~/lib/rate-limit.server";
 
 const socialLabels: Record<SocialPlatform, string> = {
   x: "X",
@@ -145,6 +147,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (intent === "upload-photo") {
     if (user.accessTier !== "member")
       return { error: "Profile photos unlock after membership approval." };
+    await requireActionRateLimit(db, request, "profile-photo", user.id, 12, 60);
     const photo = formData.get("profilePhoto");
     if (!(photo instanceof File))
       return { error: "Choose a JPG, PNG or WebP profile photo." };
@@ -570,79 +573,27 @@ export default function Dashboard({
             </div>
           </section>
           <section
-            aria-labelledby="workspace-preview-title"
+            aria-labelledby="role-workspaces-title"
             className="dashboard-workspace"
           >
             <span className="chapter">Role workspaces</span>
-            <h2 id="workspace-preview-title">
-              Switch context without splitting your identity.
+            <h2 id="role-workspaces-title">
+              Continue from the role you need now.
             </h2>
-            <CommonTable compact />
+            <p>
+              Every workspace uses the same profile, privacy choices and trusted
+              network.
+            </p>
+            <DashboardRoleActions user={loaderData.user} />
           </section>
-          <Form
-            method="post"
-            encType="multipart/form-data"
-            className="profile-form"
-            id="profile-editor"
-          >
-            {actionData?.error && (
-              <p className="form-error" role="alert">
-                {actionData.error}
-              </p>
-            )}
-            <fieldset className="profile-photo-editor" id="profile-photo">
-              <legend>Profile photo</legend>
-              <div className="profile-photo-preview">
-                {loaderData.profile.avatarKey ? (
-                  <img
-                    src={`/media/profile/${encodeURIComponent(loaderData.user.username)}?v=${encodeURIComponent(loaderData.profile.avatarKey)}`}
-                    alt={`${loaderData.profile.displayName}'s current profile`}
-                    width={112}
-                    height={112}
-                  />
-                ) : (
-                  <span aria-hidden="true">
-                    {loaderData.profile.displayName.slice(0, 1).toUpperCase()}
-                  </span>
-                )}
-                <div>
-                  <strong>
-                    {isMember ? "Add your face to the House" : "Available after approval"}
-                  </strong>
-                  <small>JPG, PNG or WebP. Maximum 2 MB.</small>
-                </div>
-              </div>
-              {isMember && (
-                <div className="profile-photo-actions">
-                  <label className="profile-photo-picker">
-                    <span>Choose image</span>
-                    <input
-                      name="profilePhoto"
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                    />
-                  </label>
-                  <button
-                    className="button button-primary"
-                    name="intent"
-                    value="upload-photo"
-                    type="submit"
-                  >
-                    Upload photo
-                  </button>
-                  {loaderData.profile.avatarKey && (
-                    <button
-                      className="button button-quiet"
-                      name="intent"
-                      value="remove-photo"
-                      type="submit"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-              )}
-            </fieldset>
+          <ProfilePhotoEditor
+            avatarKey={loaderData.profile.avatarKey}
+            displayName={loaderData.profile.displayName}
+            error={actionData?.error}
+            isMember={isMember}
+            username={loaderData.user.username}
+          />
+          <Form method="post" className="profile-form" id="profile-editor">
             <div className="form-row">
               <label>
                 Display name

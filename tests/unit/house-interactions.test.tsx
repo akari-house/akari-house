@@ -69,11 +69,44 @@ describe("house interactions", () => {
     await waitFor(() => expect(menu).toBeEnabled());
     await user.click(menu);
     expect(document.body.style.overflow).toBe("hidden");
+    expect(
+      screen.getByRole("dialog", { name: "Site navigation" }),
+    ).toHaveAttribute("aria-modal", "true");
+    expect(screen.getByRole("button", { name: "Close menu" })).toHaveFocus();
     await user.keyboard("{Escape}");
     expect(document.body.style.overflow).toBe("");
     expect(
       screen.getByRole("button", { name: "Open navigation" }),
     ).toHaveFocus();
+  });
+
+  it("makes page content inert and removes Journey Back while the drawer is open", async () => {
+    const user = userEvent.setup();
+    withRouter(
+      <>
+        <SiteHeader user={null} />
+        <main id="main-content">Page content</main>
+      </>,
+      "/projects/example",
+    );
+
+    expect(
+      screen.getByRole("link", { name: "Back to projects" }),
+    ).toBeVisible();
+    const menu = screen.getByRole("button", { name: "Open navigation" });
+    await waitFor(() => expect(menu).toBeEnabled());
+    await user.click(menu);
+
+    expect(document.getElementById("main-content")?.inert).toBe(true);
+    expect(
+      screen.queryByRole("link", { name: "Back to projects" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Close menu" }));
+    expect(document.getElementById("main-content")?.inert).not.toBe(true);
+    expect(
+      screen.getByRole("link", { name: "Back to projects" }),
+    ).toHaveAttribute("href", "/projects");
   });
 
   it("exposes authenticated destinations in mobile navigation", async () => {

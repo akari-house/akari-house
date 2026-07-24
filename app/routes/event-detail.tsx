@@ -1,12 +1,13 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/event-detail";
 import { SiteHeader } from "~/components/SiteHeader";
-import { getOptionalUser, requireUser } from "~/lib/auth.server";
+import { getOptionalUser, requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 import { EventTimeDisplay } from "~/components/EventTimeDisplay";
 import { AkariMotif } from "~/components/AkariMotif";
+import { requireActionRateLimit } from "~/lib/rate-limit.server";
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -94,7 +95,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireUser(request, db);
+  const user = await requireApprovedMember(request, db);
   const event = await db
     .prepare(
       `SELECT id, host_user_id AS hostUserId, title, capacity, status
@@ -112,6 +113,14 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     throw new Response("Event not available.", { status: 404 });
   const form = await request.formData();
   const intent = formText(form.get("intent"));
+  await requireActionRateLimit(
+    db,
+    request,
+    "event-registration",
+    user.id,
+    30,
+    60,
+  );
   if (intent === "register") {
     const result = await db
       .prepare(

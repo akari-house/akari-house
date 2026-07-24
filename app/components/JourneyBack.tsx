@@ -1,37 +1,16 @@
-import { useNavigate, useLocation } from "react-router";
+import { Link, useLocation } from "react-router";
 import { Icon } from "~/components/Icon";
-import { fallbackPath } from "~/lib/navigation";
+import { fallbackLabel, fallbackPath } from "~/lib/navigation";
 
-export function JourneyBack() {
-  const navigate = useNavigate();
+export function JourneyBack({ hidden = false }: { hidden?: boolean }) {
   const location = useLocation();
 
-  if (location.pathname === "/") return null;
-
-  const goBack = () => {
-    const cameFromAkari = (() => {
-      try {
-        return (
-          Boolean(document.referrer) &&
-          new URL(document.referrer).origin === window.location.origin
-        );
-      } catch {
-        return false;
-      }
-    })();
-    if (cameFromAkari) void navigate(-1);
-    else void navigate(fallbackPath(location.pathname));
-  };
+  if (location.pathname === "/" || hidden) return null;
 
   return (
-    <button
-      className="journey-back-button"
-      type="button"
-      onClick={goBack}
-      aria-label="Return to the previous AKARI page"
-    >
+    <Link className="journey-back-button" to={fallbackPath(location.pathname)}>
       <Icon name="arrow-left" />
-      <span>Back</span>
-    </button>
+      <span>{fallbackLabel(location.pathname)}</span>
+    </Link>
   );
 }

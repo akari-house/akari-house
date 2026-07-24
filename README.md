@@ -2,9 +2,16 @@
 
 AKARI House is a curated Web3 relationship and GTM network for founders, creators, and investors. This repository uses dedicated GitHub and Cloudflare resources, storage, secrets, and deployment workflows.
 
-## Foundation scope
+## Current MVP scope
 
-This release contains the Inari Arrival, spatial Hall and rooms, Common Table demonstration, Blossom Journey, Archive structure, Membership Desk, authentication foundation, multi-role accounts, personal profiles, server-enforced visibility, an authenticated dashboard shell, and local Cloudflare D1/R2 bindings. Messaging, campaigns, articles, events, social synchronization, notifications, and AI matching are intentionally deferred.
+This release contains the Inari Arrival, spatial Hall and rooms, Blossom
+Journey, Archive and case studies, Membership Desk, email-verified
+authentication, reviewed membership, multi-role accounts, personal profiles,
+server-enforced visibility, private R2 profile photos, member discovery,
+mutual connections, Founder projects, Creator follows, Investor interest,
+curated events, notifications, Telegram linking, moderation and administrator
+review desks. AI matching, direct messaging, campaigns, articles and automated
+cross-platform social synchronization remain outside the current MVP.
 
 ## Local development
 

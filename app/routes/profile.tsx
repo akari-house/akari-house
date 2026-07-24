@@ -1,7 +1,8 @@
 import { Form, Link, redirect } from "react-router";
 import type { Route } from "./+types/profile";
 import { SiteHeader } from "~/components/SiteHeader";
-import { getOptionalUser, requireUser } from "~/lib/auth.server";
+import { ProfileAvatar } from "~/components/ProfileAvatar";
+import { getOptionalUser, requireApprovedMember } from "~/lib/auth.server";
 import { getVisibleProfile } from "~/lib/profile.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import {
@@ -12,6 +13,7 @@ import {
 } from "~/lib/network.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
+import { requireActionRateLimit } from "~/lib/rate-limit.server";
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -37,7 +39,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
 export async function action({ request, params, context }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireUser(request, db);
+  const user = await requireApprovedMember(request, db);
   const target = await db
     .prepare("SELECT id FROM users WHERE username = ? AND status = 'active'")
     .bind(params.username)
@@ -45,8 +47,8 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   if (!target) throw new Response("Profile not found.", { status: 404 });
   const form = await request.formData();
   const intent = formText(form.get("intent"));
-  if (intent === "connect")
-    await sendConnectionRequest(db, user, target.id);
+  await requireActionRateLimit(db, request, "connections", user.id, 30, 60);
+  if (intent === "connect") await sendConnectionRequest(db, user, target.id);
   else if (intent === "accept")
     await acceptConnectionRequest(db, user, target.id);
   else throw new Response("Unsupported action.", { status: 400 });
@@ -69,19 +71,15 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
     <div className="site-shell">
       <SiteHeader user={user} />
       <main id="main-content" className="public-profile">
-        {profile.avatarKey ? (
-          <img
-            className="profile-photo"
-            src={`/media/profile/${encodeURIComponent(profile.username)}?v=${encodeURIComponent(profile.avatarKey)}`}
-            alt={`${profile.displayName}'s profile`}
-            width={176}
-            height={176}
-          />
-        ) : (
-          <div className="profile-monogram">
-            {profile.displayName.slice(0, 1).toUpperCase()}
-          </div>
-        )}
+        <ProfileAvatar
+          displayName={profile.displayName}
+          src={
+            profile.avatarKey
+              ? `/media/profile/${encodeURIComponent(profile.username)}?v=${encodeURIComponent(profile.avatarKey)}`
+              : undefined
+          }
+          variant="profile"
+        />
         <span className="eyebrow">AKARI member</span>
         <h1>{profile.displayName}</h1>
         {profile.headline && (

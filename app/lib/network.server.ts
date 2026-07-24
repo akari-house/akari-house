@@ -1,11 +1,18 @@
 import type { SessionUser } from "./domain";
 
 export type ConnectionState =
-  | "none"
-  | "outgoing_pending"
-  | "incoming_pending"
-  | "connected"
-  | "blocked";
+  "none" | "outgoing_pending" | "incoming_pending" | "connected" | "blocked";
+
+export function connectionStateFromRow(
+  row: { requesterId: string; status: string } | null,
+  viewerId: string,
+): ConnectionState {
+  if (!row || row.status === "declined") return "none";
+  if (row.status === "blocked") return "blocked";
+  if (row.status === "accepted") return "connected";
+  if (row.status !== "pending") return "none";
+  return row.requesterId === viewerId ? "outgoing_pending" : "incoming_pending";
+}
 
 export async function connectionState(
   db: D1Database,
@@ -24,12 +31,7 @@ export async function connectionState(
     )
     .bind(viewerId, otherUserId, otherUserId, viewerId)
     .first<{ requesterId: string; status: string }>();
-  if (!row) return "none";
-  if (row.status === "blocked") return "blocked";
-  if (row.status === "accepted") return "connected";
-  return row.requesterId === viewerId
-    ? "outgoing_pending"
-    : "incoming_pending";
+  return connectionStateFromRow(row, viewerId);
 }
 
 export async function sendConnectionRequest(
@@ -45,6 +47,14 @@ export async function sendConnectionRequest(
     });
   const connectionId = crypto.randomUUID();
   await db.batch([
+    db
+      .prepare(
+        `DELETE FROM connections
+         WHERE status = 'declined'
+           AND ((requester_id = ? AND recipient_id = ?)
+             OR (requester_id = ? AND recipient_id = ?))`,
+      )
+      .bind(user.id, recipientId, recipientId, user.id),
     db
       .prepare(
         `INSERT INTO connections
