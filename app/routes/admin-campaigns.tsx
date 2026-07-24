@@ -95,8 +95,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     ).trim();
     const startsAt = formText(form.get("startsAt")).trim();
     const endsAt = formText(form.get("endsAt")).trim();
-    const dailyEngagementConfirmed =
-      form.get("dailyEngagement") === "required";
+    const dailyEngagementConfirmed = form.get("dailyEngagement") === "required";
     const postingCadence = formText(form.get("postingCadence"));
     const budget = Number(formText(form.get("budget")));
     const followers = Number(formText(form.get("weightFollowers")));

@@ -1,9 +1,5 @@
 export type PostingCadence =
-  | "daily_posting"
-  | "weekly_2"
-  | "weekly_3"
-  | "weekly_4"
-  | "daily_engagement";
+  "daily_posting" | "weekly_2" | "weekly_3" | "weekly_4" | "daily_engagement";
 
 export type SelectablePostingCadence = Exclude<
   PostingCadence,
