@@ -10,12 +10,10 @@ export async function loader({ context }: Route.LoaderArgs) {
   let database: boolean;
 
   try {
-    await Promise.all([
-      ensureAccountRightsSchema(env.DB),
-      ensureDiligenceSchema(env.DB),
-      ensureIioSettlementSchema(env.DB),
-      ensureProductionSecuritySchema(env.DB),
-    ]);
+    await ensureAccountRightsSchema(env.DB);
+    await ensureDiligenceSchema(env.DB);
+    await ensureIioSettlementSchema(env.DB);
+    await ensureProductionSecuritySchema(env.DB);
     const result = await env.DB.prepare("SELECT 1 AS ready").first<{
       ready: number;
     }>();
