@@ -1,5 +1,6 @@
 import type { Route } from "./+types/health";
 import { ensureAccountRightsSchema } from "~/lib/account-rights-schema.server";
+import { ensureCampaignOperationsSchema } from "~/lib/campaign-operations-schema.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { ensureDiligenceSchema } from "~/lib/diligence-schema.server";
 import { ensureIioSettlementSchema } from "~/lib/iio-settlement-schema.server";
@@ -16,6 +17,7 @@ export async function loader({ context }: Route.LoaderArgs) {
     await ensureIioSettlementSchema(env.DB);
     await ensureProductionSecuritySchema(env.DB);
     await ensureOperationalResilienceSchema(env.DB);
+    await ensureCampaignOperationsSchema(env.DB);
     const result = await env.DB.prepare("SELECT 1 AS ready").first<{
       ready: number;
     }>();
@@ -42,6 +44,7 @@ export async function loader({ context }: Route.LoaderArgs) {
         configuration,
         securityHeaders: true,
         operationalResilience: database,
+        campaignOperations: database,
       },
     },
     {
