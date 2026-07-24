@@ -21,12 +21,12 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx prettier --write app/routes/project-diligence.tsx app/routes/project-document.ts app/routes/admin-verifications.tsx app/routes/project-manage.tsx app/routes/health.ts app/routes.ts app/lib/diligence-schema.server.ts migrations/0091_trusted_diligence.sql
+      - run: npx prettier --write app/routes/project-diligence.tsx app/routes/project-document.ts app/routes/admin-verifications.tsx app/routes/project-manage.tsx app/routes/health.ts app/routes.ts app/lib/diligence-schema.server.ts
       - name: Commit formatting
         run: |
           if git diff --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app migrations
+          git add app
           git commit -m "Format trusted diligence release"
           git push
