@@ -136,7 +136,9 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   if (!campaign) throw new Response("IIO not found.", { status: 404 });
   const moderator = await canModerate(db, user.id, campaign.id);
   const settlements = await getSettlements(db, campaign.id);
-  const ownSettlement = settlements.find((item) => item.creatorUserId === user.id);
+  const ownSettlement = settlements.find(
+    (item) => item.creatorUserId === user.id,
+  );
   if (!moderator && !ownSettlement)
     throw new Response("Accepted Creators only.", { status: 403 });
   const disputes = await getDisputes(db, campaign.id);
@@ -172,7 +174,11 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
        FROM campaign_final_reports WHERE campaign_id = ?`,
     )
     .bind(campaign.id)
-    .first<{ status: string; generatedAt: string; finalizedAt: string | null }>();
+    .first<{
+      status: string;
+      generatedAt: string;
+      finalizedAt: string | null;
+    }>();
   return {
     user,
     campaign,
@@ -224,7 +230,10 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         (!URL.canParse(evidenceUrl) ||
           !["http:", "https:"].includes(new URL(evidenceUrl).protocol)))
     )
-      return { error: "Add a clear dispute description and optional valid evidence URL." };
+      return {
+        error:
+          "Add a clear dispute description and optional valid evidence URL.",
+      };
     await db.batch([
       db
         .prepare(
@@ -284,22 +293,34 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     const tokenSymbol = formText(form.get("tokenSymbol")).trim().toUpperCase();
     const paymentMethod = formText(form.get("paymentMethod")).trim();
     const evidenceReference = formText(form.get("evidenceReference")).trim();
-    const transactionReference = formText(form.get("transactionReference")).trim();
+    const transactionReference = formText(
+      form.get("transactionReference"),
+    ).trim();
     const internalNote = formText(form.get("internalNote")).trim();
     const adjustmentReason = formText(form.get("adjustmentReason")).trim();
     if (
       !Number.isFinite(amount) ||
       amount < 0 ||
       !["cash", "token", "mixed", "other"].includes(settlementType) ||
-      !["pending", "approved", "processing", "paid", "failed", "cancelled"].includes(
-        paymentStatus,
-      ) ||
-      [tokenSymbol, paymentMethod, evidenceReference, transactionReference].some(
-        (value) => value.length > 200,
-      ) ||
+      ![
+        "pending",
+        "approved",
+        "processing",
+        "paid",
+        "failed",
+        "cancelled",
+      ].includes(paymentStatus) ||
+      [
+        tokenSymbol,
+        paymentMethod,
+        evidenceReference,
+        transactionReference,
+      ].some((value) => value.length > 200) ||
       internalNote.length > 1000
     )
-      return { error: "Check the settlement amount, type, status and references." };
+      return {
+        error: "Check the settlement amount, type, status and references.",
+      };
     const existing = await db
       .prepare(
         `SELECT id, final_amount_cents AS finalAmountCents
@@ -407,7 +428,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       resolutionNote.length < 10 ||
       resolutionNote.length > 1000
     )
-      return { error: "Choose a dispute decision and record a clear resolution note." };
+      return {
+        error: "Choose a dispute decision and record a clear resolution note.",
+      };
     const dispute = await db
       .prepare(
         `SELECT creator_user_id AS creatorUserId FROM campaign_disputes
@@ -465,15 +488,21 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         0,
       ),
       finalAmountCents: settlements.reduce(
-        (total, item) => total + (item.finalAmountCents ?? item.calculatedFinalCents ?? 0),
+        (total, item) =>
+          total + (item.finalAmountCents ?? item.calculatedFinalCents ?? 0),
         0,
       ),
-      paidCreators: settlements.filter((item) => item.paymentStatus === "paid").length,
-      openDisputes: disputes.filter((item) => ["open", "reviewing"].includes(item.status))
+      paidCreators: settlements.filter((item) => item.paymentStatus === "paid")
         .length,
+      openDisputes: disputes.filter((item) =>
+        ["open", "reviewing"].includes(item.status),
+      ).length,
     };
     if (summary.openDisputes > 0)
-      return { error: "Resolve every open dispute before finalizing the campaign report." };
+      return {
+        error:
+          "Resolve every open dispute before finalizing the campaign report.",
+      };
     await db.batch([
       db
         .prepare(
@@ -485,14 +514,24 @@ export async function action({ request, context, params }: Route.ActionArgs) {
              generated_at = datetime('now'), finalized_at = datetime('now'),
              summary_json = excluded.summary_json`,
         )
-        .bind(crypto.randomUUID(), campaign.id, user.id, JSON.stringify(summary)),
+        .bind(
+          crypto.randomUUID(),
+          campaign.id,
+          user.id,
+          JSON.stringify(summary),
+        ),
       db
         .prepare(
           `INSERT INTO audit_logs
            (id, actor_user_id, action, subject_type, subject_id, metadata_json)
            VALUES (?, ?, 'campaign.final_report_generated', 'campaign', ?, ?)`,
         )
-        .bind(crypto.randomUUID(), user.id, campaign.id, JSON.stringify(summary)),
+        .bind(
+          crypto.randomUUID(),
+          user.id,
+          campaign.id,
+          JSON.stringify(summary),
+        ),
     ]);
     throw redirect(`/campaigns/${campaign.slug}/settlement?report=final`);
   }
@@ -500,7 +539,10 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   throw new Response("Unsupported action.", { status: 400 });
 }
 
-export default function IioSettlement({ loaderData, actionData }: Route.ComponentProps) {
+export default function IioSettlement({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   const navigation = useNavigation();
   const { campaign, moderator } = loaderData;
   const money = new Intl.NumberFormat("en-GB", {
@@ -518,45 +560,162 @@ export default function IioSettlement({ loaderData, actionData }: Route.Componen
           <div>
             <span className="eyebrow">IIO settlement & disputes</span>
             <h1>{campaign.title}</h1>
-            <p>Finalize allocations, record external settlement and resolve corrections without overwriting history.</p>
+            <p>
+              Finalize allocations, record external settlement and resolve
+              corrections without overwriting history.
+            </p>
           </div>
           {moderator && (
-            <a className="button button-quiet" href={`/admin/iio/${campaign.slug}/settlement.csv`}>
+            <a
+              className="button button-quiet"
+              href={`/admin/iio/${campaign.slug}/settlement.csv`}
+            >
               Export final CSV
             </a>
           )}
         </header>
-        {actionData?.error && <p className="form-error" role="alert">{actionData.error}</p>}
+        {actionData?.error && (
+          <p className="form-error" role="alert">
+            {actionData.error}
+          </p>
+        )}
         {loaderData.report?.status === "final" && (
-          <p className="notice success">Final campaign report generated {new Date(loaderData.report.generatedAt).toLocaleString()}.</p>
+          <p className="notice success">
+            Final campaign report generated{" "}
+            {new Date(loaderData.report.generatedAt).toLocaleString()}.
+          </p>
         )}
         {loaderData.settlements.map((item) => {
-          const currentAmount = item.finalAmountCents ?? item.calculatedFinalCents ?? item.originalAllocationCents;
+          const currentAmount =
+            item.finalAmountCents ??
+            item.calculatedFinalCents ??
+            item.originalAllocationCents;
           return (
             <section className="admin-panel" key={item.applicationId}>
-              <span className="chapter">{moderator ? item.creatorName : "Your settlement"}</span>
+              <span className="chapter">
+                {moderator ? item.creatorName : "Your settlement"}
+              </span>
               <h2>{money.format(currentAmount / 100)}</h2>
-              <p>Original allocation: {money.format(item.originalAllocationCents / 100)} · Status: {item.paymentStatus ?? "pending"}</p>
-              {item.transactionReference && <p><strong>Transaction reference:</strong> {item.transactionReference}</p>}
-              {item.evidenceReference && <p><strong>Evidence:</strong> {item.evidenceReference}</p>}
+              <p>
+                Original allocation:{" "}
+                {money.format(item.originalAllocationCents / 100)} · Status:{" "}
+                {item.paymentStatus ?? "pending"}
+              </p>
+              {item.transactionReference && (
+                <p>
+                  <strong>Transaction reference:</strong>{" "}
+                  {item.transactionReference}
+                </p>
+              )}
+              {item.evidenceReference && (
+                <p>
+                  <strong>Evidence:</strong> {item.evidenceReference}
+                </p>
+              )}
               {moderator && (
                 <Form method="post" className="profile-form">
                   <input type="hidden" name="intent" value="save-settlement" />
-                  <input type="hidden" name="applicationId" value={item.applicationId} />
+                  <input
+                    type="hidden"
+                    name="applicationId"
+                    value={item.applicationId}
+                  />
                   <div className="form-row">
-                    <label>Final amount ({campaign.currency})<input name="amount" type="number" min="0" step="0.01" defaultValue={currentAmount / 100} required /></label>
-                    <label>Settlement type<select name="settlementType" defaultValue={item.settlementType ?? "cash"}><option value="cash">Cash</option><option value="token">Token</option><option value="mixed">Mixed</option><option value="other">Other</option></select></label>
-                    <label>Payment status<select name="paymentStatus" defaultValue={item.paymentStatus ?? "pending"}><option value="pending">Pending</option><option value="approved">Approved</option><option value="processing">Processing</option><option value="paid">Paid</option><option value="failed">Failed</option><option value="cancelled">Cancelled</option></select></label>
+                    <label>
+                      Final amount ({campaign.currency})
+                      <input
+                        name="amount"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        defaultValue={currentAmount / 100}
+                        required
+                      />
+                    </label>
+                    <label>
+                      Settlement type
+                      <select
+                        name="settlementType"
+                        defaultValue={item.settlementType ?? "cash"}
+                      >
+                        <option value="cash">Cash</option>
+                        <option value="token">Token</option>
+                        <option value="mixed">Mixed</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </label>
+                    <label>
+                      Payment status
+                      <select
+                        name="paymentStatus"
+                        defaultValue={item.paymentStatus ?? "pending"}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="processing">Processing</option>
+                        <option value="paid">Paid</option>
+                        <option value="failed">Failed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </label>
                   </div>
                   <div className="form-row">
-                    <label>Token symbol<input name="tokenSymbol" maxLength={20} defaultValue={item.tokenSymbol ?? ""} /></label>
-                    <label>Payment method<input name="paymentMethod" maxLength={200} defaultValue={item.paymentMethod ?? ""} /></label>
+                    <label>
+                      Token symbol
+                      <input
+                        name="tokenSymbol"
+                        maxLength={20}
+                        defaultValue={item.tokenSymbol ?? ""}
+                      />
+                    </label>
+                    <label>
+                      Payment method
+                      <input
+                        name="paymentMethod"
+                        maxLength={200}
+                        defaultValue={item.paymentMethod ?? ""}
+                      />
+                    </label>
                   </div>
-                  <label>Transaction reference<input name="transactionReference" maxLength={200} defaultValue={item.transactionReference ?? ""} /></label>
-                  <label>Payment evidence or invoice reference<input name="evidenceReference" maxLength={200} defaultValue={item.evidenceReference ?? ""} /></label>
-                  <label>Adjustment reason<input name="adjustmentReason" maxLength={500} placeholder="Required when changing a saved final amount." /></label>
-                  <label>Internal note<textarea name="internalNote" rows={3} maxLength={1000} defaultValue={item.internalNote ?? ""} /></label>
-                  <button className="button button-primary" disabled={navigation.state !== "idle"}>Save settlement</button>
+                  <label>
+                    Transaction reference
+                    <input
+                      name="transactionReference"
+                      maxLength={200}
+                      defaultValue={item.transactionReference ?? ""}
+                    />
+                  </label>
+                  <label>
+                    Payment evidence or invoice reference
+                    <input
+                      name="evidenceReference"
+                      maxLength={200}
+                      defaultValue={item.evidenceReference ?? ""}
+                    />
+                  </label>
+                  <label>
+                    Adjustment reason
+                    <input
+                      name="adjustmentReason"
+                      maxLength={500}
+                      placeholder="Required when changing a saved final amount."
+                    />
+                  </label>
+                  <label>
+                    Internal note
+                    <textarea
+                      name="internalNote"
+                      rows={3}
+                      maxLength={1000}
+                      defaultValue={item.internalNote ?? ""}
+                    />
+                  </label>
+                  <button
+                    className="button button-primary"
+                    disabled={navigation.state !== "idle"}
+                  >
+                    Save settlement
+                  </button>
                 </Form>
               )}
             </section>
@@ -568,10 +727,35 @@ export default function IioSettlement({ loaderData, actionData }: Route.Componen
             <h2>Raise a traceable review request</h2>
             <Form method="post" className="profile-form">
               <input type="hidden" name="intent" value="open-dispute" />
-              <label>Issue type<select name="disputeType" defaultValue="settlement"><option value="missing_submission">Missing submission</option><option value="rejected_submission">Rejected submission</option><option value="allocation">Allocation</option><option value="settlement">Settlement</option><option value="other">Other</option></select></label>
-              <label>What should be reviewed?<textarea name="description" rows={5} minLength={20} maxLength={1500} required /></label>
-              <label>Evidence URL<input name="evidenceUrl" type="url" /></label>
-              <button className="button button-primary">Submit review request</button>
+              <label>
+                Issue type
+                <select name="disputeType" defaultValue="settlement">
+                  <option value="missing_submission">Missing submission</option>
+                  <option value="rejected_submission">
+                    Rejected submission
+                  </option>
+                  <option value="allocation">Allocation</option>
+                  <option value="settlement">Settlement</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+              <label>
+                What should be reviewed?
+                <textarea
+                  name="description"
+                  rows={5}
+                  minLength={20}
+                  maxLength={1500}
+                  required
+                />
+              </label>
+              <label>
+                Evidence URL
+                <input name="evidenceUrl" type="url" />
+              </label>
+              <button className="button button-primary">
+                Submit review request
+              </button>
             </Form>
           </section>
         )}
@@ -581,19 +765,50 @@ export default function IioSettlement({ loaderData, actionData }: Route.Componen
           {loaderData.disputes.map((dispute) => (
             <article className="application-card" key={dispute.id}>
               <div>
-                <span className="chapter">{dispute.disputeType.replaceAll("_", " ")} · {dispute.status}</span>
+                <span className="chapter">
+                  {dispute.disputeType.replaceAll("_", " ")} · {dispute.status}
+                </span>
                 <h3>{dispute.creatorName}</h3>
                 <p>{dispute.description}</p>
-                {dispute.evidenceUrl && <a href={dispute.evidenceUrl} target="_blank" rel="noreferrer">Open evidence</a>}
-                {dispute.resolutionNote && <p><strong>Decision:</strong> {dispute.resolutionNote}</p>}
+                {dispute.evidenceUrl && (
+                  <a
+                    href={dispute.evidenceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Open evidence
+                  </a>
+                )}
+                {dispute.resolutionNote && (
+                  <p>
+                    <strong>Decision:</strong> {dispute.resolutionNote}
+                  </p>
+                )}
               </div>
               {moderator && ["open", "reviewing"].includes(dispute.status) && (
                 <Form method="post" className="application-actions">
                   <input type="hidden" name="intent" value="resolve-dispute" />
                   <input type="hidden" name="disputeId" value={dispute.id} />
-                  <label>Status<select name="status" defaultValue="reviewing"><option value="reviewing">Reviewing</option><option value="resolved">Resolved</option><option value="declined">Declined</option></select></label>
-                  <label>Resolution note<textarea name="resolutionNote" minLength={10} maxLength={1000} required /></label>
-                  <button className="button button-primary">Save decision</button>
+                  <label>
+                    Status
+                    <select name="status" defaultValue="reviewing">
+                      <option value="reviewing">Reviewing</option>
+                      <option value="resolved">Resolved</option>
+                      <option value="declined">Declined</option>
+                    </select>
+                  </label>
+                  <label>
+                    Resolution note
+                    <textarea
+                      name="resolutionNote"
+                      minLength={10}
+                      maxLength={1000}
+                      required
+                    />
+                  </label>
+                  <button className="button button-primary">
+                    Save decision
+                  </button>
                 </Form>
               )}
             </article>
@@ -605,7 +820,11 @@ export default function IioSettlement({ loaderData, actionData }: Route.Componen
             <span className="chapter">Adjustment history</span>
             <h2>Original decisions remain visible</h2>
             {loaderData.adjustments.map((adjustment) => (
-              <p key={adjustment.id}>{money.format(adjustment.previousAmountCents / 100)} → {money.format(adjustment.newAmountCents / 100)} · {adjustment.reason} · {adjustment.createdByName}</p>
+              <p key={adjustment.id}>
+                {money.format(adjustment.previousAmountCents / 100)} →{" "}
+                {money.format(adjustment.newAmountCents / 100)} ·{" "}
+                {adjustment.reason} · {adjustment.createdByName}
+              </p>
             ))}
           </section>
         )}
@@ -613,8 +832,19 @@ export default function IioSettlement({ loaderData, actionData }: Route.Componen
           <section className="admin-panel">
             <span className="chapter">Final campaign report</span>
             <h2>Lock the operational outcome</h2>
-            <p>The final report summarizes allocations, settlements, payment status and resolved disputes.</p>
-            <Form method="post"><button className="button button-primary" name="intent" value="finalize-report">Generate final report</button></Form>
+            <p>
+              The final report summarizes allocations, settlements, payment
+              status and resolved disputes.
+            </p>
+            <Form method="post">
+              <button
+                className="button button-primary"
+                name="intent"
+                value="finalize-report"
+              >
+                Generate final report
+              </button>
+            </Form>
           </section>
         )}
       </main>

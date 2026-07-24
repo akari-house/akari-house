@@ -82,12 +82,15 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       .map(csvCell)
       .join(","),
   );
-  return new Response(`\uFEFF${[headers.map(csvCell).join(","), ...csvRows].join("\r\n")}`, {
-    headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${campaign.slug}-settlement.csv"`,
-      "Cache-Control": "private, no-store",
-      "X-Content-Type-Options": "nosniff",
+  return new Response(
+    `\uFEFF${[headers.map(csvCell).join(","), ...csvRows].join("\r\n")}`,
+    {
+      headers: {
+        "Content-Type": "text/csv; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${campaign.slug}-settlement.csv"`,
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+      },
     },
-  });
+  );
 }
