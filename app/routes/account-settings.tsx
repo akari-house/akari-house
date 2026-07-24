@@ -30,7 +30,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
        ORDER BY requested_at DESC LIMIT 1`,
     )
     .bind(user.id)
-    .first<{ status: string; requestedAt: string; completedAt: string | null }>();
+    .first<{
+      status: string;
+      requestedAt: string;
+      completedAt: string | null;
+    }>();
   return { user, closure, latestExport };
 }
 
@@ -45,7 +49,9 @@ export async function action({ request, context }: Route.ActionArgs) {
     const confirmation = formText(form.get("confirmation")).trim();
     const reason = formText(form.get("reason")).trim();
     if (confirmation !== user.username)
-      return { error: "Type your username exactly to confirm account closure." };
+      return {
+        error: "Type your username exactly to confirm account closure.",
+      };
     if (reason.length > 500)
       return { error: "Keep the optional reason within 500 characters." };
 
@@ -83,7 +89,10 @@ export async function action({ request, context }: Route.ActionArgs) {
           crypto.randomUUID(),
           user.id,
           user.id,
-          JSON.stringify({ coolingOffDays: 14, reasonProvided: Boolean(reason) }),
+          JSON.stringify({
+            coolingOffDays: 14,
+            reasonProvided: Boolean(reason),
+          }),
         ),
     ]);
     throw redirect("/settings/account?closure=requested");

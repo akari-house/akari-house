@@ -35,75 +35,72 @@ export async function processAccountRetention(env: RetentionEnvironment) {
       const anonymisedUsername = `closed-${request.userId.slice(0, 12)}`;
 
       await env.DB.batch([
-        env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(request.userId),
-        env.DB.prepare("DELETE FROM account_tokens WHERE user_id = ?").bind(request.userId),
-        env.DB.prepare("DELETE FROM profile_contacts WHERE user_id = ?").bind(request.userId),
-        env.DB.prepare("DELETE FROM social_accounts WHERE user_id = ?").bind(request.userId),
-        env.DB
-          .prepare(
-            `UPDATE profiles SET display_name = 'Former AKARI member',
+        env.DB.prepare("DELETE FROM sessions WHERE user_id = ?").bind(
+          request.userId,
+        ),
+        env.DB.prepare("DELETE FROM account_tokens WHERE user_id = ?").bind(
+          request.userId,
+        ),
+        env.DB.prepare("DELETE FROM profile_contacts WHERE user_id = ?").bind(
+          request.userId,
+        ),
+        env.DB.prepare("DELETE FROM social_accounts WHERE user_id = ?").bind(
+          request.userId,
+        ),
+        env.DB.prepare(
+          `UPDATE profiles SET display_name = 'Former AKARI member',
              headline = NULL, bio = NULL, location = NULL, website_url = NULL,
              expertise = NULL, open_to = NULL, avatar_key = NULL,
              avatar_content_type = NULL, visibility = 'private',
              updated_at = datetime('now') WHERE user_id = ?`,
-          )
-          .bind(request.userId),
-        env.DB
-          .prepare(
-            `UPDATE profile_visibility SET visibility = 'private',
+        ).bind(request.userId),
+        env.DB.prepare(
+          `UPDATE profile_visibility SET visibility = 'private',
              updated_at = datetime('now') WHERE user_id = ?`,
-          )
-          .bind(request.userId),
-        env.DB
-          .prepare(
-            `UPDATE users SET email = ?, username = ?, password_hash = ?,
+        ).bind(request.userId),
+        env.DB.prepare(
+          `UPDATE users SET email = ?, username = ?, password_hash = ?,
              status = 'restricted', email_verified_at = NULL,
              updated_at = datetime('now') WHERE id = ?`,
-          )
-          .bind(
-            anonymisedEmail,
-            anonymisedUsername,
-            `closed:${crypto.randomUUID()}`,
-            request.userId,
-          ),
-        env.DB
-          .prepare(
-            `UPDATE account_closure_requests
+        ).bind(
+          anonymisedEmail,
+          anonymisedUsername,
+          `closed:${crypto.randomUUID()}`,
+          request.userId,
+        ),
+        env.DB.prepare(
+          `UPDATE account_closure_requests
              SET status = 'completed', completed_at = datetime('now'),
                  updated_at = datetime('now') WHERE id = ?`,
-          )
-          .bind(request.id),
-        env.DB
-          .prepare(
-            `INSERT INTO audit_logs
+        ).bind(request.id),
+        env.DB.prepare(
+          `INSERT INTO audit_logs
              (id, actor_user_id, action, subject_type, subject_id, metadata_json)
              VALUES (?, NULL, 'account.anonymised', 'user', ?, ?)`,
-          )
-          .bind(
-            crypto.randomUUID(),
-            request.userId,
-            JSON.stringify({ retentionRunId: runId, closureRequestId: request.id }),
-          ),
+        ).bind(
+          crypto.randomUUID(),
+          request.userId,
+          JSON.stringify({
+            retentionRunId: runId,
+            closureRequestId: request.id,
+          }),
+        ),
       ]);
       affected += 1;
     }
 
     await env.DB.batch([
-      env.DB
-        .prepare(
-          `DELETE FROM sessions WHERE expires_at <= datetime('now')`,
-        ),
-      env.DB
-        .prepare(
-          `DELETE FROM account_tokens WHERE expires_at <= datetime('now')
+      env.DB.prepare(
+        `DELETE FROM sessions WHERE expires_at <= datetime('now')`,
+      ),
+      env.DB.prepare(
+        `DELETE FROM account_tokens WHERE expires_at <= datetime('now')
              OR consumed_at IS NOT NULL`,
-        ),
-      env.DB
-        .prepare(
-          `UPDATE retention_runs SET status = 'completed',
+      ),
+      env.DB.prepare(
+        `UPDATE retention_runs SET status = 'completed',
            completed_at = datetime('now'), affected_records = ? WHERE id = ?`,
-        )
-        .bind(affected, runId),
+      ).bind(affected, runId),
     ]);
   } catch (error) {
     await env.DB.prepare(
@@ -112,7 +109,9 @@ export async function processAccountRetention(env: RetentionEnvironment) {
     )
       .bind(
         affected,
-        JSON.stringify({ error: error instanceof Error ? error.message : "unknown" }),
+        JSON.stringify({
+          error: error instanceof Error ? error.message : "unknown",
+        }),
         runId,
       )
       .run();

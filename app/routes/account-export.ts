@@ -6,98 +6,113 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const user = await requireUser(request, db);
 
-  const [account, roles, profile, contacts, social, connections, projects, follows, events, campaigns, notifications, legal] =
-    await Promise.all([
-      db
-        .prepare(
-          `SELECT id, email, username, status, email_verified_at AS emailVerifiedAt,
+  const [
+    account,
+    roles,
+    profile,
+    contacts,
+    social,
+    connections,
+    projects,
+    follows,
+    events,
+    campaigns,
+    notifications,
+    legal,
+  ] = await Promise.all([
+    db
+      .prepare(
+        `SELECT id, email, username, status, email_verified_at AS emailVerifiedAt,
                   created_at AS createdAt, updated_at AS updatedAt
            FROM users WHERE id = ?`,
-        )
-        .bind(user.id)
-        .first(),
-      db.prepare("SELECT role FROM user_roles WHERE user_id = ? ORDER BY role").bind(user.id).all(),
-      db
-        .prepare(
-          `SELECT display_name AS displayName, headline, bio, location,
+      )
+      .bind(user.id)
+      .first(),
+    db
+      .prepare("SELECT role FROM user_roles WHERE user_id = ? ORDER BY role")
+      .bind(user.id)
+      .all(),
+    db
+      .prepare(
+        `SELECT display_name AS displayName, headline, bio, location,
                   website_url AS websiteUrl, expertise, open_to AS openTo,
                   visibility, created_at AS createdAt, updated_at AS updatedAt
            FROM profiles WHERE user_id = ?`,
-        )
-        .bind(user.id)
-        .first(),
-      db
-        .prepare(
-          `SELECT contact_type AS contactType, contact_value AS contactValue,
+      )
+      .bind(user.id)
+      .first(),
+    db
+      .prepare(
+        `SELECT contact_type AS contactType, contact_value AS contactValue,
                   visibility, created_at AS createdAt, updated_at AS updatedAt
            FROM profile_contacts WHERE user_id = ?`,
-        )
-        .bind(user.id)
-        .all(),
-      db
-        .prepare(
-          `SELECT platform, profile_url AS profileUrl, follower_count AS followerCount,
+      )
+      .bind(user.id)
+      .all(),
+    db
+      .prepare(
+        `SELECT platform, profile_url AS profileUrl, follower_count AS followerCount,
                   sync_status AS syncStatus, updated_at AS updatedAt
            FROM social_accounts WHERE user_id = ?`,
-        )
-        .bind(user.id)
-        .all(),
-      db
-        .prepare(
-          `SELECT id, requester_id AS requesterId, recipient_id AS recipientId,
+      )
+      .bind(user.id)
+      .all(),
+    db
+      .prepare(
+        `SELECT id, requester_id AS requesterId, recipient_id AS recipientId,
                   status, created_at AS createdAt, updated_at AS updatedAt
            FROM connections WHERE requester_id = ? OR recipient_id = ?`,
-        )
-        .bind(user.id, user.id)
-        .all(),
-      db
-        .prepare(
-          `SELECT id, slug, title, summary, story, stage, seeking, status,
+      )
+      .bind(user.id, user.id)
+      .all(),
+    db
+      .prepare(
+        `SELECT id, slug, title, summary, story, stage, seeking, status,
                   created_at AS createdAt, updated_at AS updatedAt
            FROM projects WHERE founder_user_id = ?`,
-        )
-        .bind(user.id)
-        .all(),
-      db
-        .prepare(
-          `SELECT project_id AS projectId, created_at AS createdAt
+      )
+      .bind(user.id)
+      .all(),
+    db
+      .prepare(
+        `SELECT project_id AS projectId, created_at AS createdAt
            FROM project_follows WHERE user_id = ?`,
-        )
-        .bind(user.id)
-        .all(),
-      db
-        .prepare(
-          `SELECT event_id AS eventId, status, created_at AS createdAt,
+      )
+      .bind(user.id)
+      .all(),
+    db
+      .prepare(
+        `SELECT event_id AS eventId, status, created_at AS createdAt,
                   updated_at AS updatedAt
            FROM event_registrations WHERE user_id = ?`,
-        )
-        .bind(user.id)
-        .all(),
-      db
-        .prepare(
-          `SELECT campaign_id AS campaignId, status, created_at AS createdAt,
+      )
+      .bind(user.id)
+      .all(),
+    db
+      .prepare(
+        `SELECT campaign_id AS campaignId, status, created_at AS createdAt,
                   updated_at AS updatedAt
            FROM campaign_applications WHERE creator_user_id = ?`,
-        )
-        .bind(user.id)
-        .all(),
-      db
-        .prepare(
-          `SELECT kind, title, body, action_url AS actionUrl,
+      )
+      .bind(user.id)
+      .all(),
+    db
+      .prepare(
+        `SELECT kind, title, body, action_url AS actionUrl,
                   read_at AS readAt, created_at AS createdAt
            FROM notifications WHERE user_id = ? ORDER BY created_at DESC`,
-        )
-        .bind(user.id)
-        .all(),
-      db
-        .prepare(
-          `SELECT policy, action, policy_version AS policyVersion,
+      )
+      .bind(user.id)
+      .all(),
+    db
+      .prepare(
+        `SELECT policy, action, policy_version AS policyVersion,
                   accepted_at AS acceptedAt
            FROM legal_acceptances WHERE user_id = ? ORDER BY accepted_at`,
-        )
-        .bind(user.id)
-        .all(),
-    ]);
+      )
+      .bind(user.id)
+      .all(),
+  ]);
 
   const exportId = crypto.randomUUID();
   const generatedAt = new Date().toISOString();
