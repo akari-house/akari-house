@@ -1,19 +1,16 @@
 name: Apply Launch Completion
 
 on:
-  issue_comment:
-    types: [created]
+  pull_request:
+    paths:
+      - ".github/launch-completion-trigger"
 
 permissions:
   contents: write
-  issues: read
 
 jobs:
   apply-and-verify:
-    if: >-
-      github.event.issue.number == 8 &&
-      github.event.comment.body == '/apply-launch-completion' &&
-      github.actor != 'github-actions[bot]'
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
