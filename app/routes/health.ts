@@ -1,13 +1,17 @@
 import type { Route } from "./+types/health";
 import { ensureAccountRightsSchema } from "~/lib/account-rights-schema.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import { ensureDiligenceSchema } from "~/lib/diligence-schema.server";
 
 export async function loader({ context }: Route.LoaderArgs) {
   const env = context.get(cloudflareContext).env;
   let database: boolean;
 
   try {
-    await ensureAccountRightsSchema(env.DB);
+    await Promise.all([
+      ensureAccountRightsSchema(env.DB),
+      ensureDiligenceSchema(env.DB),
+    ]);
     const result = await env.DB.prepare("SELECT 1 AS ready").first<{
       ready: number;
     }>();
