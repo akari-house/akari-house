@@ -1,0 +1,30 @@
+name: Verify Project Needs Production
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/verify-project-needs-production.yml"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for Cloudflare deployment
+        run: sleep 75
+      - name: Verify production health
+        run: |
+          curl --fail --silent --show-error \
+            https://akari-house.spacematesxyz.workers.dev/health \
+            | grep -q '"ready":true'
+      - name: Verify Project Lantern support filter
+        run: |
+          curl --fail --silent --show-error \
+            https://akari-house.spacematesxyz.workers.dev/projects \
+            | grep -q "Filter by support need"
+      - name: Verify protected project creation route
+        run: |
+          STATUS=$(curl --silent --show-error --output /dev/null \
+            --write-out "%{http_code}" \
+            https://akari-house.spacematesxyz.workers.dev/projects/new)
+          test "$STATUS" -ge 200
+          test "$STATUS" -lt 500
