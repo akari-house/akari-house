@@ -51,4 +51,6 @@ export default [
   route("privacy", "routes/legal.tsx"),
   route("terms", "routes/terms.tsx"),
   route("community-guidelines", "routes/community-guidelines.tsx"),
+  route("contact", "routes/contact.tsx"),
+  route("admin/contact", "routes/admin-contact.tsx"),
 ] satisfies RouteConfig;

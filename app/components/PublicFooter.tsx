@@ -21,14 +21,14 @@ export function PublicFooter() {
       <nav aria-label="Footer">
         <Link to="/">The House</Link>
         <Link to="/projects">Projects</Link>
-        <Link to="/campaigns">IIO campaigns</Link>
+        <Link to="/campaigns">Campaigns</Link>
         <Link to="/events">Events</Link>
         <Link to="/archive">Archive</Link>
         <Link to="/membership">Membership</Link>
         <Link to="/privacy">Privacy</Link>
         <Link to="/terms">Terms</Link>
         <Link to="/community-guidelines">Community guidelines</Link>
-        <a href="mailto:hello@akari.house">Contact</a>
+        <Link to="/contact">Contact</Link>
       </nav>
       <small>© 2026 AKARI House</small>
     </footer>

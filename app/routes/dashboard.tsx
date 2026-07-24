@@ -123,15 +123,25 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     db
       .prepare(
         `SELECT au.access_level AS accessLevel,
-                  CASE WHEN au.access_level = 'superadmin' OR s.scope IS NOT NULL
-                    THEN 1 ELSE 0 END AS canManageCampaigns
+                  CASE WHEN au.access_level = 'superadmin' OR campaigns.scope IS NOT NULL
+                    THEN 1 ELSE 0 END AS canManageCampaigns,
+                  CASE WHEN au.access_level = 'superadmin' OR moderation.scope IS NOT NULL
+                    THEN 1 ELSE 0 END AS canModerate
            FROM admin_users au
-           LEFT JOIN admin_scopes s
-             ON s.admin_user_id = au.user_id AND s.scope = 'campaigns'
+           LEFT JOIN admin_scopes campaigns
+             ON campaigns.admin_user_id = au.user_id
+                AND campaigns.scope = 'campaigns'
+           LEFT JOIN admin_scopes moderation
+             ON moderation.admin_user_id = au.user_id
+                AND moderation.scope = 'moderation'
            WHERE au.user_id = ?`,
       )
       .bind(user.id)
-      .first<{ accessLevel: string; canManageCampaigns: number }>(),
+      .first<{
+        accessLevel: string;
+        canManageCampaigns: number;
+        canModerate: number;
+      }>(),
   ]);
   return {
     user,
@@ -475,6 +485,12 @@ export default function Dashboard({
             <>
               <Link to="/admin/campaigns">IIO control room</Link>
               <Link to="/admin/integrations/google">Google Sheets</Link>
+            </>
+          )}
+          {loaderData.adminAccess?.canModerate === 1 && (
+            <>
+              <Link to="/admin/moderation">Moderation</Link>
+              <Link to="/admin/contact">Contact desk</Link>
             </>
           )}
           {loaderData.adminAccess?.accessLevel === "superadmin" && (
