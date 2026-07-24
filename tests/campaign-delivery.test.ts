@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   campaignPayoutSuggestion,
   expectedCampaignSlots,
+  postingCadences,
 } from "../app/lib/campaign-delivery";
 
 describe("campaign delivery requirements", () => {
@@ -17,7 +18,10 @@ describe("campaign delivery requirements", () => {
     expect(slots[7]).toEqual({ periodStart: "2026-08-10", slotNumber: 4 });
   });
 
-  it("creates one requirement per day for daily engagement", () => {
+  it("keeps daily engagement separate from posting cadence", () => {
+    expect(postingCadences.map((cadence) => cadence.value)).not.toContain(
+      "daily_engagement",
+    );
     expect(
       expectedCampaignSlots(
         "2026-08-01",
@@ -25,7 +29,7 @@ describe("campaign delivery requirements", () => {
         "daily_engagement",
         new Date("2026-08-03T12:00:00.000Z"),
       ),
-    ).toHaveLength(3);
+    ).toEqual([]);
   });
 
   it("does not expose future requirements", () => {

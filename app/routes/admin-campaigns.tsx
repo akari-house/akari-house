@@ -2,7 +2,10 @@ import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/admin-campaigns";
 import { SiteHeader } from "~/components/SiteHeader";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import { postingCadences } from "~/lib/campaign-delivery";
+import {
+  dailyEngagementRequirement,
+  postingCadences,
+} from "~/lib/campaign-delivery";
 import { requireAdminScope } from "~/lib/membership.server";
 import { slugifyProject } from "~/lib/projects.server";
 import { assertSameOrigin } from "~/lib/security.server";
@@ -92,6 +95,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     ).trim();
     const startsAt = formText(form.get("startsAt")).trim();
     const endsAt = formText(form.get("endsAt")).trim();
+    const dailyEngagementConfirmed = form.get("dailyEngagement") === "required";
     const postingCadence = formText(form.get("postingCadence"));
     const budget = Number(formText(form.get("budget")));
     const followers = Number(formText(form.get("weightFollowers")));
@@ -112,6 +116,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         (value) => Number.isInteger(value) && value >= 0 && value <= 100,
       ) ||
       followers + xScore + sorsaScore !== 100 ||
+      !dailyEngagementConfirmed ||
       !postingCadences.some((item) => item.value === postingCadence) ||
       !registrationOpensAt ||
       !applicationDeadline ||
@@ -125,7 +130,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     )
       return {
         error:
-          "Complete the IIO brief, add a positive private budget, and make the three weights total 100.",
+          "Complete the IIO brief, confirm mandatory daily engagement, select a posting cadence, add a positive private budget, and make the three weights total 100.",
       };
     const project = await db
       .prepare("SELECT id FROM projects WHERE id = ? AND status = 'published'")
@@ -318,16 +323,32 @@ export default function AdminCampaigns({
                 <input name="endsAt" type="date" required />
               </label>
             </div>
-            <label>
-              Creator commitment
-              <select name="postingCadence" defaultValue="weekly_3" required>
-                {postingCadences.map((cadence) => (
-                  <option key={cadence.value} value={cadence.value}>
-                    {cadence.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <fieldset>
+              <legend>Creator commitments</legend>
+              <label className="inline-choice">
+                <input
+                  name="dailyEngagement"
+                  type="checkbox"
+                  value="required"
+                  defaultChecked
+                  required
+                />
+                <span>
+                  <strong>{dailyEngagementRequirement.label}</strong>
+                  <small>{dailyEngagementRequirement.detail}</small>
+                </span>
+              </label>
+              <label>
+                Posting cadence
+                <select name="postingCadence" defaultValue="weekly_3" required>
+                  {postingCadences.map((cadence) => (
+                    <option key={cadence.value} value={cadence.value}>
+                      {cadence.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </fieldset>
             <fieldset>
               <legend>AKARI score weights (must total 100)</legend>
               <div className="form-row form-row-three">
