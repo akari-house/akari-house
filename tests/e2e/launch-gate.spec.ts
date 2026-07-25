@@ -38,10 +38,8 @@ test.describe("automated launch gate", () => {
     page,
   }) => {
     await activatePersona(page, "applicant");
-    const dashboard = await page.goto("/app");
-    expect(dashboard?.status()).toBe(200);
-    const founderTool = await page.goto("/projects/new");
-    expect(founderTool?.status()).toBe(403);
+    expect((await page.goto("/app"))?.status()).toBe(200);
+    expect((await page.goto("/projects/new"))?.status()).toBe(403);
   });
 
   test("[founder:founder] Founder can open project creation without admin access", async ({
@@ -76,20 +74,23 @@ test.describe("automated launch gate", () => {
     expect((await page.goto("/admin/launch-gate"))?.status()).toBe(403);
   });
 
-  test("[scoped_admin:scoped_admin] membership admin cannot enter campaign administration", async ({
+  test("[scoped_admin:scoped_admin] membership and campaign administrators stay inside their scopes", async ({
     page,
   }) => {
     await activatePersona(page, "scoped_admin");
     expect((await page.goto("/admin/applications"))?.status()).toBe(200);
     expect((await page.goto("/admin/campaigns"))?.status()).toBe(403);
+
+    await activatePersona(page, "campaign_admin");
+    expect((await page.goto("/admin/campaigns"))?.status()).toBe(200);
+    expect((await page.goto("/admin/applications"))?.status()).toBe(403);
   });
 
   test("[superadmin:superadmin] Superadmin can open the launch gate", async ({
     page,
   }) => {
     await activatePersona(page, "superadmin");
-    const response = await page.goto("/admin/launch-gate");
-    expect(response?.status()).toBe(200);
+    expect((await page.goto("/admin/launch-gate"))?.status()).toBe(200);
     await expect(
       page.getByRole("heading", { name: "Real-role permission testing" }),
     ).toBeVisible();
@@ -123,8 +124,26 @@ test.describe("automated launch gate", () => {
       },
     );
     expect(target.status()).toBe(201);
-    const profile = await page.goto("/profiles/launch-gate-private-target");
-    expect([403, 404]).toContain(profile?.status());
+    expect([403, 404]).toContain(
+      (await page.goto("/profiles/launch-gate-private-target"))?.status(),
+    );
+  });
+
+  test("[private_media:founder] unrelated member cannot download private R2-backed profile media", async ({
+    page,
+  }) => {
+    await activatePersona(page, "founder");
+    const target = await page.request.post(
+      "/__test__/personas/private_target",
+      {
+        headers: fixtureHeaders,
+        form: { session: "false" },
+      },
+    );
+    expect(target.status()).toBe(201);
+    expect(
+      (await page.goto("/media/profile/launch-gate-private-target"))?.status(),
+    ).toBe(404);
   });
 
   test("[session:founder] logout destroys the server session", async ({
