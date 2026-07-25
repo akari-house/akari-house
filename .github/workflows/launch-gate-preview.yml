@@ -1,0 +1,59 @@
+name: Launch Gate Preview
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "app/**"
+      - "tests/e2e/launch-gate.spec.ts"
+      - "scripts/build-launch-gate-report.mjs"
+      - "migrations/**"
+      - "playwright.config.ts"
+      - ".github/workflows/launch-gate-preview.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  launch-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run role permission matrix
+        id: launch-tests
+        continue-on-error: true
+        run: |
+          mkdir -p launch-gate-artifacts
+          npx playwright test tests/e2e/launch-gate.spec.ts \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --reporter=json > launch-gate-artifacts/playwright.json
+      - name: Build machine-readable evidence
+        if: always()
+        env:
+          LAUNCH_GATE_SOURCE: automated_preview
+          LAUNCH_GATE_ENV: github-actions-preview
+        run: |
+          node scripts/build-launch-gate-report.mjs \
+            launch-gate-artifacts/playwright.json \
+            launch-gate-artifacts/report.json
+      - name: Upload launch-gate evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: launch-gate-evidence-${{ github.sha }}
+          path: |
+            launch-gate-artifacts/playwright.json
+            launch-gate-artifacts/report.json
+            test-results/**/trace.zip
+          if-no-files-found: error
+          retention-days: 30
+      - name: Enforce launch gate
+        if: steps.launch-tests.outcome != 'success'
+        run: exit 1
