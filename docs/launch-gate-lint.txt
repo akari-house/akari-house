@@ -1,12 +1,1 @@
-
-/home/runner/work/akari-house/akari-house/scripts/build-launch-gate-report.mjs
-   4:15  error  'process' is not defined  no-undef
-   5:16  error  'process' is not defined  no-undef
-  53:11  error  'process' is not defined  no-undef
-  54:16  error  'process' is not defined  no-undef
-  55:14  error  'process' is not defined  no-undef
-  69:1   error  'console' is not defined  no-undef
-  72:33  error  'process' is not defined  no-undef
-
-✖ 7 problems (7 errors, 0 warnings)
-
+No targeted lint diagnostics.
