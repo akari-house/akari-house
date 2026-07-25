@@ -1,0 +1,6 @@
+
+/home/runner/work/akari-house/akari-house/app/lib/delivery-policy.ts
+  22:53  error  'error || "Unknown error"' will use Object's default stringification format ('[object Object]') when stringified  @typescript-eslint/no-base-to-string
+
+✖ 1 problem (1 error, 0 warnings)
+

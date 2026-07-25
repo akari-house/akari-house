@@ -44,9 +44,7 @@ type DeliveryProviderResult = { providerResponseId?: string };
 
 async function existingDelivery(db: D1Database, idempotencyKey: string) {
   return db
-    .prepare(
-      `SELECT id, status FROM delivery_outbox WHERE idempotency_key = ?`,
-    )
+    .prepare(`SELECT id, status FROM delivery_outbox WHERE idempotency_key = ?`)
     .bind(idempotencyKey)
     .first<{ id: string; status: DeliveryStatus }>();
 }
@@ -69,7 +67,10 @@ export async function enqueueEmailDelivery(
   const payloadReference = `delivery-payloads/${id}.json`;
   await env.MEDIA.put(payloadReference, JSON.stringify(input.payload), {
     httpMetadata: { contentType: "application/json" },
-    customMetadata: { purpose: "delivery-outbox", messageType: input.messageType },
+    customMetadata: {
+      purpose: "delivery-outbox",
+      messageType: input.messageType,
+    },
   });
 
   try {
@@ -169,7 +170,8 @@ async function deliverEmail(
 ): Promise<DeliveryProviderResult> {
   if (!env.RESEND_API_KEY || !env.MEMBERSHIP_FROM_EMAIL)
     throw new Error("Transactional email is not configured.");
-  if (!item.payloadReference) throw new Error("Email payload reference missing.");
+  if (!item.payloadReference)
+    throw new Error("Email payload reference missing.");
   const object = await env.MEDIA.get(item.payloadReference);
   if (!object) throw new Error("Email payload is unavailable.");
   const payload = await object.json<EmailDeliveryPayload>();
@@ -216,7 +218,8 @@ async function deliverTelegram(
       actionUrl: string;
       chatId: string;
     }>();
-  if (!notification) throw new Error("Telegram recipient has no linked account.");
+  if (!notification)
+    throw new Error("Telegram recipient has no linked account.");
   const endpoint = `https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`;
   const response = await fetch(endpoint, {
     method: "POST",
@@ -260,11 +263,7 @@ async function markDelivered(
     await env.MEDIA.delete(item.payloadReference);
 }
 
-async function markFailed(
-  db: D1Database,
-  item: DeliveryRow,
-  error: unknown,
-) {
+async function markFailed(db: D1Database, item: DeliveryRow, error: unknown) {
   const status = deliveryFailureStatus(item.attemptCount, item.maxAttempts);
   const retrySeconds = deliveryRetryDelaySeconds(item.attemptCount);
   await db
@@ -293,7 +292,9 @@ async function deliverItem(env: DeliveryEnvironment, item: DeliveryRow) {
         : item.channel === "telegram"
           ? await deliverTelegram(env, item)
           : (() => {
-              throw new Error("Export delivery requires an explicit operator action.");
+              throw new Error(
+                "Export delivery requires an explicit operator action.",
+              );
             })();
     await markDelivered(env, item, result);
   } catch (error) {

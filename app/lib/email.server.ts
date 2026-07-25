@@ -28,8 +28,7 @@ async function queueEmail(
     text: string;
   },
 ): Promise<EmailResult> {
-  if (!env.APP_URL)
-    return { sent: false, reason: "not-configured" } as const;
+  if (!env.APP_URL) return { sent: false, reason: "not-configured" } as const;
   const [recipientReference, materialHash] = await Promise.all([
     sha256(input.recipient.trim().toLowerCase()),
     sha256(input.idempotencyMaterial),

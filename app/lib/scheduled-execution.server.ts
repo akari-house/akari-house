@@ -71,8 +71,7 @@ export async function executeScheduledPlan<JobName extends string>(
     }
   }
 
-  const status =
-    failed === 0 ? "passed" : passed === 0 ? "failed" : "partial";
+  const status = failed === 0 ? "passed" : passed === 0 ? "failed" : "partial";
   await env.DB.prepare(
     `UPDATE scheduled_invocations
      SET status = ?, completed_at = datetime('now'), updated_at = datetime('now')

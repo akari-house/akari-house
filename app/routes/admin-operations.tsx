@@ -177,16 +177,16 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       label: "Turnstile protection",
       ready: Boolean(
         env.TURNSTILE_SITE_KEY &&
-          env.TURNSTILE_SECRET_KEY &&
-          env.TURNSTILE_HOSTNAME,
+        env.TURNSTILE_SECRET_KEY &&
+        env.TURNSTILE_HOSTNAME,
       ),
     },
     {
       label: "Google campaign export",
       ready: Boolean(
         env.GOOGLE_CLIENT_ID &&
-          env.GOOGLE_CLIENT_SECRET &&
-          env.GOOGLE_TOKEN_ENCRYPTION_KEY,
+        env.GOOGLE_CLIENT_SECRET &&
+        env.GOOGLE_TOKEN_ENCRYPTION_KEY,
       ),
     },
     { label: "Delivery outbox", ready: true },
@@ -388,12 +388,13 @@ export default function AdminOperations({
                   </p>
                   {delivery.errorCategory && (
                     <p>
-                      {delivery.errorCategory.replaceAll("_", " ")}: {" "}
+                      {delivery.errorCategory.replaceAll("_", " ")}:{" "}
                       {delivery.lastError || "No provider detail"}
                     </p>
                   )}
                   <p>
-                    Next attempt: {new Date(delivery.nextAttemptAt).toLocaleString()}
+                    Next attempt:{" "}
+                    {new Date(delivery.nextAttemptAt).toLocaleString()}
                   </p>
                 </div>
                 <Form method="post" className="button-row">
