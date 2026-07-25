@@ -2,6 +2,24 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
+const requiredCheckKeys = [
+  "visitor",
+  "applicant",
+  "founder",
+  "creator",
+  "investor",
+  "multi_role",
+  "scoped_admin",
+  "superadmin",
+  "suspended",
+  "blocked",
+  "cross_account",
+  "private_media",
+  "session",
+  "request_security",
+  "accessibility",
+];
+
 const input = process.argv[2] ?? "test-results/launch-gate-playwright.json";
 const output = process.argv[3] ?? "test-results/launch-gate-report.json";
 const raw = JSON.parse(await readFile(input, "utf8"));
@@ -46,9 +64,20 @@ for (const item of evidence) {
   if (!existing || priority[item.status] > priority[existing.status])
     consolidated.set(item.checkKey, item);
 }
-const checks = [...consolidated.values()].sort((left, right) =>
-  left.checkKey.localeCompare(right.checkKey),
-);
+for (const checkKey of requiredCheckKeys) {
+  if (!consolidated.has(checkKey))
+    consolidated.set(checkKey, {
+      checkKey,
+      persona: "coverage",
+      routeOrAction: "Canonical launch-gate evidence coverage",
+      expectedResult: "An executable test provides evidence for this check",
+      observedResult: "No executable evidence was generated",
+      status: "failed",
+      project: "report-builder",
+      traceReference: null,
+    });
+}
+const checks = requiredCheckKeys.map((checkKey) => consolidated.get(checkKey));
 const report = {
   schemaVersion: 1,
   source: process.env.LAUNCH_GATE_SOURCE ?? "automated_preview",
