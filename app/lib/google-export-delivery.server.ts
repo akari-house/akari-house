@@ -30,7 +30,8 @@ async function requireCampaignExportAccess(db: D1Database, userId: string) {
     )
     .bind(userId)
     .first<{ allowed: number }>();
-  if (!access) throw new Error("Campaign export access is no longer available.");
+  if (!access)
+    throw new Error("Campaign export access is no longer available.");
 }
 
 async function loadCampaign(
@@ -88,7 +89,9 @@ export async function executeGoogleExportDelivery(
   if (!payloadReference) throw new Error("Google export payload is missing.");
   const reference = parseReference(payloadReference);
   const expectedType =
-    reference.operation === "sync" ? "google_sheet_sync" : "google_sheet_import";
+    reference.operation === "sync"
+      ? "google_sheet_sync"
+      : "google_sheet_import";
   if (messageType !== expectedType)
     throw new Error("Google export operation does not match its message type.");
 

@@ -26,6 +26,10 @@ import { membershipStatusForUser } from "~/lib/membership.server";
 import { loadSocialAccounts } from "~/lib/social.server";
 import { validateProfilePhoto } from "~/lib/profile-photo.server";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
+import {
+  markManagedR2ObjectDeleted,
+  registerManagedR2Object,
+} from "~/lib/r2-lifecycle.server";
 
 const socialLabels: Record<SocialPlatform, string> = {
   x: "X",
@@ -198,6 +202,12 @@ export async function action({ request, context }: Route.ActionArgs) {
       },
       customMetadata: { ownerId: user.id, purpose: "profile-photo" },
     });
+    await registerManagedR2Object(db, {
+      objectKey: key,
+      sourceType: "profile_photo",
+      sourceId: user.id,
+      ownerUserId: user.id,
+    });
     try {
       await db.batch([
         db
@@ -217,10 +227,13 @@ export async function action({ request, context }: Route.ActionArgs) {
       ]);
     } catch (error) {
       await env.MEDIA.delete(key);
+      await markManagedR2ObjectDeleted(db, key);
       throw error;
     }
-    if (previous?.avatarKey && previous.avatarKey !== key)
+    if (previous?.avatarKey && previous.avatarKey !== key) {
       await env.MEDIA.delete(previous.avatarKey);
+      await markManagedR2ObjectDeleted(db, previous.avatarKey);
+    }
     throw redirect("/app?photo=saved");
   }
 
@@ -239,7 +252,10 @@ export async function action({ request, context }: Route.ActionArgs) {
       )
       .bind(user.id)
       .run();
-    if (previous?.avatarKey) await env.MEDIA.delete(previous.avatarKey);
+    if (previous?.avatarKey) {
+      await env.MEDIA.delete(previous.avatarKey);
+      await markManagedR2ObjectDeleted(db, previous.avatarKey);
+    }
     throw redirect("/app?photo=saved");
   }
 

@@ -2,7 +2,12 @@ import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 
 const [mode, inputPath, outputPath] = process.argv.slice(2);
-if (!mode || !inputPath || !outputPath || !["encrypt", "decrypt"].includes(mode)) {
+if (
+  !mode ||
+  !inputPath ||
+  !outputPath ||
+  !["encrypt", "decrypt"].includes(mode)
+) {
   throw new Error(
     "Usage: node backup-crypto.mjs <encrypt|decrypt> <input> <output>",
   );

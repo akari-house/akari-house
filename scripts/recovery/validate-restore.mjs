@@ -3,7 +3,13 @@ import { readFile, writeFile } from "node:fs/promises";
 
 const [productionPath, restoredPath, integrityPath, evidencePath, sqlPath] =
   process.argv.slice(2);
-if (!productionPath || !restoredPath || !integrityPath || !evidencePath || !sqlPath)
+if (
+  !productionPath ||
+  !restoredPath ||
+  !integrityPath ||
+  !evidencePath ||
+  !sqlPath
+)
   throw new Error(
     "Usage: node validate-restore.mjs <production.json> <restored.json> <integrity.json> <evidence.json> <evidence.sql>",
   );
@@ -16,7 +22,10 @@ function findRows(value, predicate) {
   const matches = [];
   const visit = (node) => {
     if (Array.isArray(node)) {
-      if (node.every((item) => item && typeof item === "object") && predicate(node))
+      if (
+        node.every((item) => item && typeof item === "object") &&
+        predicate(node)
+      )
         matches.push(node);
       for (const item of node) visit(item);
       return;
@@ -35,8 +44,7 @@ function countMap(payload) {
       items.length > 0 &&
       items.every(
         (item) =>
-          "tableName" in item &&
-          ("rowCount" in item || "row_count" in item),
+          "tableName" in item && ("rowCount" in item || "row_count" in item),
       ),
   );
   return Object.fromEntries(
@@ -53,7 +61,9 @@ function integrityValue(payload) {
     (items) =>
       items.length > 0 &&
       items.some((item) =>
-        Object.keys(item).some((key) => key.toLowerCase().includes("integrity")),
+        Object.keys(item).some((key) =>
+          key.toLowerCase().includes("integrity"),
+        ),
       ),
   );
   for (const row of rows) {
@@ -68,14 +78,20 @@ function sqlLiteral(value) {
   return `'${String(value).replaceAll("'", "''")}'`;
 }
 
-const [productionPayload, restoredPayload, integrityPayload] = await Promise.all([
-  parse(productionPath),
-  parse(restoredPath),
-  parse(integrityPath),
-]);
+const [productionPayload, restoredPayload, integrityPayload] =
+  await Promise.all([
+    parse(productionPath),
+    parse(restoredPath),
+    parse(integrityPath),
+  ]);
 const productionCounts = countMap(productionPayload);
 const restoredCounts = countMap(restoredPayload);
-const requiredTables = ["users", "projects", "ambassador_campaigns", "audit_logs"];
+const requiredTables = [
+  "users",
+  "projects",
+  "ambassador_campaigns",
+  "audit_logs",
+];
 for (const table of requiredTables) {
   if (!(table in productionCounts) || !(table in restoredCounts))
     throw new Error(`Recovery evidence is missing the ${table} count.`);
@@ -93,7 +109,13 @@ const backupKey = process.env.RECOVERY_BACKUP_KEY;
 const backupSha256 = process.env.RECOVERY_BACKUP_SHA256;
 const workflowUrl = process.env.RECOVERY_WORKFLOW_URL;
 const temporaryDatabaseId = process.env.RECOVERY_TEMP_DATABASE_ID;
-if (!timestamp || !backupKey || !backupSha256 || !workflowUrl || !temporaryDatabaseId)
+if (
+  !timestamp ||
+  !backupKey ||
+  !backupSha256 ||
+  !workflowUrl ||
+  !temporaryDatabaseId
+)
   throw new Error("Recovery evidence environment is incomplete.");
 
 const evidence = {

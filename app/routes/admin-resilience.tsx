@@ -183,9 +183,9 @@ export default function AdminResilience({ loaderData }: Route.ComponentProps) {
           <span className="chapter">Private R2 storage</span>
           <h2>Inventory and retention</h2>
           <p>
-            Inventory reports unknown objects without deleting them. Cleanup only
-            removes registered objects after their retention window and seven-day
-            soft-delete grace period.
+            Inventory reports unknown objects without deleting them. Cleanup
+            only removes registered objects after their retention window and
+            seven-day soft-delete grace period.
           </p>
           <div className="member-home-stats" aria-label="Managed R2 objects">
             {loaderData.objectCounts.map((item) => (
@@ -252,8 +252,8 @@ export default function AdminResilience({ loaderData }: Route.ComponentProps) {
           <span className="chapter">External recovery evidence</span>
           <h2>Record an operational run</h2>
           <p>
-            Automated D1 drills record themselves. Use this form only for reviewed
-            evidence produced outside the automated workflow.
+            Automated D1 drills record themselves. Use this form only for
+            reviewed evidence produced outside the automated workflow.
           </p>
           <Form method="post" className="form-stack">
             <input type="hidden" name="intent" value="record-run" />

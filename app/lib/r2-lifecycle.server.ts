@@ -9,10 +9,7 @@ const managedPrefixes = [
 ] as const;
 
 export type ManagedR2SourceType =
-  | "profile_photo"
-  | "project_document"
-  | "delivery_payload"
-  | "d1_backup";
+  "profile_photo" | "project_document" | "delivery_payload" | "d1_backup";
 
 export async function registerManagedR2Object(
   db: D1Database,
@@ -158,12 +155,6 @@ async function listManagedR2Keys(bucket: R2Bucket) {
   return keys;
 }
 
-async function runStatements(statements: D1PreparedStatement[]) {
-  for (let index = 0; index < statements.length; index += 100) {
-    await statements[index]!.database.batch(statements.slice(index, index + 100));
-  }
-}
-
 export async function runR2Inventory(env: CloudflareEnvironment) {
   await ensureOperationalResilienceSchema(env.DB);
   const runId = await startOperationalRun(env.DB, "r2_inventory");
@@ -222,7 +213,8 @@ export async function runR2Inventory(env: CloudflareEnvironment) {
     }
 
     for (const row of managedRows.results) {
-      if (row.retentionStatus === "deleted" || r2Keys.has(row.objectKey)) continue;
+      if (row.retentionStatus === "deleted" || r2Keys.has(row.objectKey))
+        continue;
       missingCount += 1;
       observedFindings.add(`missing:${row.objectKey}`);
       statements.push(

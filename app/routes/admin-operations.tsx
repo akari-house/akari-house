@@ -212,7 +212,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export async function action({ request, context }: Route.ActionArgs) {
   assertSameOrigin(request);
-  const db = context.get(cloudflareContext).env.DB;
+  const env = context.get(cloudflareContext).env;
+  const db = env.DB;
   const user = await requireSuperAdmin(request, db);
   await ensureDeliveryOperationsSchema(db);
   const form = await request.formData();
@@ -226,7 +227,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       : { error: "Only failed or dead-letter deliveries can be retried." };
   }
   if (intent === "cancel") {
-    const changed = await cancelDelivery(db, deliveryId, user.id);
+    const changed = await cancelDelivery(env, deliveryId, user.id);
     return changed
       ? { saved: "Delivery cancelled." }
       : { error: "That delivery can no longer be cancelled." };
