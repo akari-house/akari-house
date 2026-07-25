@@ -1,0 +1,48 @@
+name: Format launch-gate branch
+
+on:
+  push:
+    branches:
+      - agent/launch-gate-ownership-evidence
+    paths:
+      - app/routes/test-persona.ts
+      - tests/e2e/launch-gate.spec.ts
+      - scripts/build-launch-gate-report.mjs
+      - .github/workflows/format-launch-gate-branch.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/launch-gate-ownership-evidence
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Format launch-gate files
+        run: |
+          npx prettier --write \
+            app/routes/test-persona.ts \
+            tests/e2e/launch-gate.spec.ts \
+            scripts/build-launch-gate-report.mjs
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            echo "Files already formatted."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            app/routes/test-persona.ts \
+            tests/e2e/launch-gate.spec.ts \
+            scripts/build-launch-gate-report.mjs
+          git commit -m "Format launch-gate ownership evidence"
+          git push origin HEAD:agent/launch-gate-ownership-evidence
