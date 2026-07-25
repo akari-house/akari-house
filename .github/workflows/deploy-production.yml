@@ -1,0 +1,46 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: akari-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      - name: Apply production migrations
+        run: npx wrangler d1 migrations apply akari-house-db --remote --yes
+      - name: Deploy production Worker
+        run: npx wrangler deploy --keep-vars
+      - name: Confirm public release
+        run: |
+          for attempt in $(seq 1 18); do
+            response=$(curl -fsS --max-time 20 https://akarihouse.com/health || true)
+            if echo "$response" | grep -q '"release":"launch-completion-2026-07-26"'; then
+              echo "$response"
+              exit 0
+            fi
+            sleep 10
+          done
+          exit 1
