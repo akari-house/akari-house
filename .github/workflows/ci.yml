@@ -7,49 +7,10 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  integrate:
-    if: github.event_name == 'pull_request' && github.actor != 'github-actions[bot]' && github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - name: Apply recovery integration and capture diagnostics
-        run: |
-          mkdir -p docs
-          set +e
-          python3 scripts/recovery/apply-integration.py > docs/recovery-integration.txt 2>&1
-          integration_status=$?
-          if [ "$integration_status" -eq 0 ]; then
-            npx prettier --write app scripts tests worker .github/workflows/d1-recovery-drill.yml >> docs/recovery-integration.txt 2>&1
-            npm run typecheck >> docs/recovery-integration.txt 2>&1
-            typecheck_status=$?
-            npm run lint >> docs/recovery-integration.txt 2>&1
-            lint_status=$?
-          else
-            typecheck_status=1
-            lint_status=1
-          fi
-          printf '\nintegration=%s\ntypecheck=%s\nlint=%s\n' "$integration_status" "$typecheck_status" "$lint_status" >> docs/recovery-integration.txt
-          exit 0
-      - name: Commit integration and diagnostics
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app scripts tests worker .github docs/recovery-integration.txt
-          git commit -m "Integrate export and R2 recovery automation"
-          git push
-
   verify:
-    if: github.event_name != 'pull_request' || github.actor == 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
