@@ -3,19 +3,55 @@ import { expect, test, type Page } from "@playwright/test";
 
 const fixtureHeaders = { "x-akari-test-fixture": "launch-gate-v1" };
 
-async function activatePersona(page: Page, persona: string, session = true) {
+type PersonaResponse = {
+  persona: string;
+  userId: string;
+  username: string;
+  session: boolean;
+  resources: {
+    projectSlug: string;
+    documentId: string;
+    campaignSlug: string;
+  } | null;
+};
+
+async function activatePersona(
+  page: Page,
+  persona: string,
+  session = true,
+  seedResources = false,
+  reuseExisting = false,
+) {
   await page.context().clearCookies();
   const response = await page.request.post(`/__test__/personas/${persona}`, {
     headers: fixtureHeaders,
-    form: { session: session ? "true" : "false" },
+    form: {
+      session: session ? "true" : "false",
+      seedResources: seedResources ? "true" : "false",
+      reuseExisting: reuseExisting ? "true" : "false",
+    },
   });
   expect(response.status()).toBe(201);
-  return response.json() as Promise<{
-    persona: string;
-    userId: string;
-    username: string;
-    session: boolean;
-  }>;
+  return response.json() as Promise<PersonaResponse>;
+}
+
+async function useExistingPersona(page: Page, persona: string) {
+  return activatePersona(page, persona, true, false, true);
+}
+
+async function seedOwnershipScenario(page: Page) {
+  await activatePersona(page, "project_owner", false);
+  for (const persona of [
+    "creator_selected",
+    "creator_other",
+    "investor_granted",
+    "investor_expired",
+    "moderator",
+  ])
+    await activatePersona(page, persona, false);
+  const owner = await activatePersona(page, "project_owner", true, true, true);
+  expect(owner.resources).not.toBeNull();
+  return owner.resources!;
 }
 
 test.describe("automated launch gate", () => {
@@ -144,6 +180,92 @@ test.describe("automated launch gate", () => {
     expect([403, 404]).toContain(
       (await page.goto("/media/profile/launch-gate-private-target"))?.status(),
     );
+  });
+
+  test("[project_ownership:project_owner] project owner can edit while an unrelated Founder is denied", async ({
+    page,
+  }) => {
+    const resources = await seedOwnershipScenario(page);
+    expect(
+      (await page.goto(`/projects/${resources.projectSlug}/edit`))?.status(),
+    ).toBe(200);
+
+    await activatePersona(page, "founder");
+    expect(
+      (await page.goto(`/projects/${resources.projectSlug}/edit`))?.status(),
+    ).toBe(404);
+  });
+
+  test("[diligence_grant:investor] active document access works and expired access is denied", async ({
+    page,
+  }) => {
+    const resources = await seedOwnershipScenario(page);
+    const documentUrl = `/projects/${resources.projectSlug}/documents/${resources.documentId}`;
+
+    await useExistingPersona(page, "investor_granted");
+    const active = await page.request.get(documentUrl);
+    expect(active.status()).toBe(200);
+    expect(await active.text()).toContain(
+      "private launch-gate diligence document",
+    );
+
+    await useExistingPersona(page, "investor_expired");
+    expect((await page.request.get(documentUrl)).status()).toBe(404);
+
+    await useExistingPersona(page, "creator_other");
+    expect(
+      (
+        await page.goto(`/projects/${resources.projectSlug}/diligence`)
+      )?.status(),
+    ).toBe(403);
+  });
+
+  test("[campaign_ownership:creator] only an accepted Creator or moderator can open the campaign workspace", async ({
+    page,
+  }) => {
+    const resources = await seedOwnershipScenario(page);
+    const workspaceUrl = `/campaigns/${resources.campaignSlug}/work`;
+
+    await useExistingPersona(page, "creator_selected");
+    expect((await page.goto(workspaceUrl))?.status()).toBe(200);
+
+    await useExistingPersona(page, "creator_other");
+    expect((await page.goto(workspaceUrl))?.status()).toBe(403);
+
+    await useExistingPersona(page, "moderator");
+    expect((await page.goto(workspaceUrl))?.status()).toBe(200);
+  });
+
+  test("[settlement_ownership:creator] settlement and dispute records stay limited to their Creator and moderators", async ({
+    page,
+  }) => {
+    const resources = await seedOwnershipScenario(page);
+    const settlementUrl = `/campaigns/${resources.campaignSlug}/settlement`;
+
+    await useExistingPersona(page, "creator_selected");
+    expect((await page.goto(settlementUrl))?.status()).toBe(200);
+
+    await useExistingPersona(page, "creator_other");
+    expect((await page.goto(settlementUrl))?.status()).toBe(403);
+
+    await useExistingPersona(page, "moderator");
+    expect((await page.goto(settlementUrl))?.status()).toBe(200);
+  });
+
+  test("[moderator:moderator] assigned moderator can operate the campaign without inheriting Superadmin access", async ({
+    page,
+  }) => {
+    const resources = await seedOwnershipScenario(page);
+    await useExistingPersona(page, "moderator");
+    expect(
+      (await page.goto(`/campaigns/${resources.campaignSlug}/work`))?.status(),
+    ).toBe(200);
+    expect(
+      (
+        await page.goto(`/campaigns/${resources.campaignSlug}/settlement`)
+      )?.status(),
+    ).toBe(200);
+    expect((await page.goto("/admin/launch-gate"))?.status()).toBe(403);
   });
 
   test("[session:founder] logout destroys the server session", async ({
