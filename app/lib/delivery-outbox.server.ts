@@ -5,6 +5,12 @@ import {
   sanitizeDeliveryError,
 } from "./delivery-policy";
 import { ensureDeliveryOperationsSchema } from "./delivery-operations-schema.server";
+import { executeGoogleExportDelivery } from "./google-export-delivery.server";
+import {
+  markManagedR2ObjectDeleted,
+  markManagedR2ObjectForDeletion,
+  registerManagedR2Object,
+} from "./r2-lifecycle.server";
 
 export type DeliveryChannel = "email" | "telegram" | "export";
 export type DeliveryStatus =
@@ -72,13 +78,20 @@ export async function enqueueEmailDelivery(
       messageType: input.messageType,
     },
   });
+  await registerManagedR2Object(env.DB, {
+    objectKey: payloadReference,
+    sourceType: "delivery_payload",
+    sourceId: id,
+    ownerUserId: input.createdBy ?? null,
+    expiresAtModifier: "+14 days",
+  });
 
   try {
     const result = await env.DB.prepare(
       `INSERT INTO delivery_outbox
        (id, channel, message_type, recipient_reference, idempotency_key,
         payload_reference, status, created_by)
-       VALUES (?, 'email', ?, ?, ?, ?, 'queued', ?) 
+       VALUES (?, 'email', ?, ?, ?, ?, 'queued', ?)
        ON CONFLICT(idempotency_key) DO NOTHING`,
     )
       .bind(
@@ -94,10 +107,12 @@ export async function enqueueEmailDelivery(
       return { id, status: "queued" as const };
   } catch (error) {
     await env.MEDIA.delete(payloadReference);
+    await markManagedR2ObjectDeleted(env.DB, payloadReference);
     throw error;
   }
 
   await env.MEDIA.delete(payloadReference);
+  await markManagedR2ObjectDeleted(env.DB, payloadReference);
   const duplicate = await existingDelivery(env.DB, input.idempotencyKey);
   if (!duplicate) throw new Error("Delivery could not be queued.");
   return duplicate;
@@ -259,8 +274,10 @@ async function markDelivered(
   )
     .bind(result.providerResponseId ?? null, item.id)
     .run();
-  if (item.channel === "email" && item.payloadReference)
+  if (item.channel === "email" && item.payloadReference) {
     await env.MEDIA.delete(item.payloadReference);
+    await markManagedR2ObjectDeleted(env.DB, item.payloadReference);
+  }
 }
 
 async function markFailed(db: D1Database, item: DeliveryRow, error: unknown) {
@@ -291,11 +308,11 @@ async function deliverItem(env: DeliveryEnvironment, item: DeliveryRow) {
         ? await deliverEmail(env, item)
         : item.channel === "telegram"
           ? await deliverTelegram(env, item)
-          : (() => {
-              throw new Error(
-                "Export delivery requires an explicit operator action.",
-              );
-            })();
+          : await executeGoogleExportDelivery(
+              env,
+              item.messageType,
+              item.payloadReference,
+            );
     await markDelivered(env, item, result);
   } catch (error) {
     await markFailed(env.DB, item, error);
@@ -366,26 +383,32 @@ export async function retryDelivery(
 }
 
 export async function cancelDelivery(
-  db: D1Database,
+  env: DeliveryEnvironment,
   deliveryId: string,
   actorUserId: string,
 ) {
-  await ensureDeliveryOperationsSchema(db);
-  const changed = await db
-    .prepare(
-      `UPDATE delivery_outbox
-       SET status = 'cancelled', claimed_at = NULL, updated_at = datetime('now')
-       WHERE id = ? AND status IN ('queued','failed','dead_letter')`,
-    )
+  await ensureDeliveryOperationsSchema(env.DB);
+  const delivery = await env.DB.prepare(
+    `SELECT channel, payload_reference AS payloadReference
+     FROM delivery_outbox WHERE id = ?`,
+  )
+    .bind(deliveryId)
+    .first<{ channel: DeliveryChannel; payloadReference: string | null }>();
+  const changed = await env.DB.prepare(
+    `UPDATE delivery_outbox
+     SET status = 'cancelled', claimed_at = NULL, updated_at = datetime('now')
+     WHERE id = ? AND status IN ('queued','failed','dead_letter')`,
+  )
     .bind(deliveryId)
     .run();
   if ((changed.meta.changes ?? 0) !== 1) return false;
-  await db
-    .prepare(
-      `INSERT INTO audit_logs
-       (id, actor_user_id, action, subject_type, subject_id)
-       VALUES (?, ?, 'delivery.cancelled', 'delivery_outbox', ?)`,
-    )
+  if (delivery?.channel === "email" && delivery.payloadReference)
+    await markManagedR2ObjectForDeletion(env.DB, delivery.payloadReference);
+  await env.DB.prepare(
+    `INSERT INTO audit_logs
+     (id, actor_user_id, action, subject_type, subject_id)
+     VALUES (?, ?, 'delivery.cancelled', 'delivery_outbox', ?)`,
+  )
     .bind(crypto.randomUUID(), actorUserId, deliveryId)
     .run();
   return true;
