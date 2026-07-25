@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
+import process from "node:process";
 
 const [productionPath, restoredPath, integrityPath, evidencePath, sqlPath] =
   process.argv.slice(2);
