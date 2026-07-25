@@ -56,9 +56,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     const user = await fixtureUser(env.DB, persona);
     if (!user) throw new Response("Fixture user not found.", { status: 404 });
     const [sessions, resetTokens] = await Promise.all([
-      env.DB.prepare(
-        "SELECT COUNT(*) AS count FROM sessions WHERE user_id = ?",
-      )
+      env.DB.prepare("SELECT COUNT(*) AS count FROM sessions WHERE user_id = ?")
         .bind(user.id)
         .first<{ count: number }>(),
       env.DB.prepare(
@@ -113,7 +111,8 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     )
       .bind(projectSlug)
       .first<{ id: string }>();
-    if (!project) throw new Response("Fixture project not found.", { status: 404 });
+    if (!project)
+      throw new Response("Fixture project not found.", { status: 404 });
     const [grant, active, audits] = await Promise.all([
       env.DB.prepare(
         `SELECT id FROM document_access_grants
@@ -152,7 +151,8 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     )
       .bind(projectSlug)
       .first<{ id: string }>();
-    if (!project) throw new Response("Fixture project not found.", { status: 404 });
+    if (!project)
+      throw new Response("Fixture project not found.", { status: 404 });
     const documents = await env.DB.prepare(
       "SELECT COUNT(*) AS count FROM project_documents WHERE project_id = ?",
     )

@@ -134,9 +134,9 @@ test.describe("launch-gate security completion", () => {
   }) => {
     await activatePersona(page, "founder", false);
     await activatePersona(page, "status_target");
-    const targetCookie = (
-      await page.context().cookies()
-    ).find((cookie) => cookie.name === "akari_session");
+    const targetCookie = (await page.context().cookies()).find(
+      (cookie) => cookie.name === "akari_session",
+    );
     expect(targetCookie).toBeTruthy();
 
     await activatePersona(page, "moderator");

@@ -97,6 +97,11 @@ const personaSpecs: Record<
     membership: "approved",
     invalidateSession: true,
   },
+  status_target: {
+    status: "active",
+    roles: ["founder"],
+    membership: "approved",
+  },
   private_target: {
     status: "active",
     roles: ["founder"],

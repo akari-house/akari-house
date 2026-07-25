@@ -4,6 +4,7 @@ export default [
   index("routes/home.tsx"),
   route("health", "routes/health.ts"),
   route("__test__/personas/:persona", "routes/test-persona.ts"),
+  route("__test__/launch-security/:action", "routes/test-launch-security.ts"),
   route("hall", "routes/hall.tsx"),
   route("rooms/:room", "routes/room.tsx"),
   route("archive", "routes/archive.tsx"),

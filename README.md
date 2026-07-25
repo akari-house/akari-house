@@ -58,7 +58,8 @@ TURNSTILE_HOSTNAME=akarihouse.com
 5. Confirm the intended administrators and scoped permissions.
 6. Run a preview smoke test covering registration, email verification, application review, approval, login, profile visibility, password recovery and logout.
 7. Deploy the Worker, repeat the smoke test on production, check Workers logs and retain the previous Worker version for rollback.
-8. Complete `/admin/launch-gate` with evidence from real production-role journeys before broad commercial launch.
+8. Run the manually approved **Launch Gate Production** workflow and import its reviewed JSON evidence into `/admin/launch-gate`.
+9. Execute the controlled IIO pilot in `docs/operations/controlled-iio-pilot.md` before broad commercial launch.
 
 The application intentionally fails closed when production Turnstile configuration is missing. Registration email delivery must also be verified before inviting applicants.
 
@@ -82,4 +83,4 @@ Superadmins can use:
 - `/admin/campaign-operations` for campaign ownership, escalation and reminder operations.
 - `/admin/launch-gate` for the commercial real-role evidence matrix.
 
-The launch-gate console records evidence; it does not replace actually executing the production-role, permission, storage, accessibility and recovery tests.
+The launch-gate console records evidence; it does not replace actually executing the production-role, permission, storage, accessibility and recovery tests. Production evidence expires after 30 days or when superseded by a newer successful production run. See `docs/operations/production-launch-audit.md`.

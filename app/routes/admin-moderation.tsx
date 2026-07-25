@@ -81,7 +81,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       )
       .bind(status, admin.id, status, note, reportId),
   ];
-  if (enforcement === "suspend_account")
+  if (enforcement === "suspend_account") {
     statements.push(
       db
         .prepare(
@@ -89,7 +89,11 @@ export async function action({ request, context }: Route.ActionArgs) {
          updated_at = datetime('now') WHERE id = ?`,
         )
         .bind(report.subjectId),
+      db
+        .prepare("DELETE FROM sessions WHERE user_id = ?")
+        .bind(report.subjectId),
     );
+  }
   if (enforcement === "hide_content" && report.subjectType === "project")
     statements.push(
       db

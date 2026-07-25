@@ -14,7 +14,10 @@ export const launchGateChecks = [
     "Foreign profile, project, campaign and settlement records denied",
   ],
   ["private_media", "R2 objects require an authorised application route"],
-  ["project_ownership", "Only the owning Founder can edit private project data"],
+  [
+    "project_ownership",
+    "Only the owning Founder can edit private project data",
+  ],
   [
     "diligence_grant",
     "Active Investor diligence grants work and expired grants fail closed",
@@ -49,10 +52,7 @@ export const launchGateChecks = [
     "upload_security",
     "Oversized, spoofed and unauthorised uploads create no stored records",
   ],
-  [
-    "accessibility",
-    "Automated accessibility and mobile viewport checks pass",
-  ],
+  ["accessibility", "Automated accessibility and mobile viewport checks pass"],
   [
     "keyboard_accessibility",
     "Keyboard navigation, focus trapping and focus restoration work",
