@@ -199,14 +199,18 @@ test.describe("automated launch gate", () => {
     await activatePersona(page, "investor_granted");
     const active = await page.request.get(documentUrl);
     expect(active.status()).toBe(200);
-    expect(await active.text()).toContain("private launch-gate diligence document");
+    expect(await active.text()).toContain(
+      "private launch-gate diligence document",
+    );
 
     await activatePersona(page, "investor_expired");
     expect((await page.request.get(documentUrl)).status()).toBe(404);
 
     await activatePersona(page, "creator_other");
     expect(
-      (await page.goto(`/projects/${resources.projectSlug}/diligence`))?.status(),
+      (
+        await page.goto(`/projects/${resources.projectSlug}/diligence`)
+      )?.status(),
     ).toBe(403);
   });
 
@@ -252,9 +256,7 @@ test.describe("automated launch gate", () => {
     ).toBe(200);
     expect(
       (
-        await page.goto(
-          `/campaigns/${resources.campaignSlug}/settlement`,
-        )
+        await page.goto(`/campaigns/${resources.campaignSlug}/settlement`)
       )?.status(),
     ).toBe(200);
     expect((await page.goto("/admin/launch-gate"))?.status()).toBe(403);

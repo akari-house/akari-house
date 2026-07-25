@@ -127,14 +127,19 @@ async function seedLaunchGateResources(
   env: { DB: D1Database; MEDIA: R2Bucket },
   founderUserId: string,
 ): Promise<SeededResources> {
-  const [selectedCreator, otherCreator, grantedInvestor, expiredInvestor, moderator] =
-    await Promise.all([
-      fixtureUserId(env.DB, "creator_selected"),
-      fixtureUserId(env.DB, "creator_other"),
-      fixtureUserId(env.DB, "investor_granted"),
-      fixtureUserId(env.DB, "investor_expired"),
-      fixtureUserId(env.DB, "moderator"),
-    ]);
+  const [
+    selectedCreator,
+    otherCreator,
+    grantedInvestor,
+    expiredInvestor,
+    moderator,
+  ] = await Promise.all([
+    fixtureUserId(env.DB, "creator_selected"),
+    fixtureUserId(env.DB, "creator_other"),
+    fixtureUserId(env.DB, "investor_granted"),
+    fixtureUserId(env.DB, "investor_expired"),
+    fixtureUserId(env.DB, "moderator"),
+  ]);
   if (
     !selectedCreator ||
     !otherCreator ||
@@ -174,13 +179,7 @@ async function seedLaunchGateResources(
       `INSERT INTO project_documents
        (id, project_id, uploaded_by, title, object_key, content_type, byte_size)
        VALUES (?, ?, ?, 'Launch Gate Diligence.txt', ?, 'text/plain', ?)`,
-    ).bind(
-      documentId,
-      projectId,
-      founderUserId,
-      objectKey,
-      fixtureBody.length,
-    ),
+    ).bind(documentId, projectId, founderUserId, objectKey, fixtureBody.length),
     env.DB.prepare(
       `INSERT INTO document_access_grants
        (id, project_id, document_id, investor_user_id, granted_by,
