@@ -16,10 +16,7 @@ const jobPlans: Record<string, readonly ScheduledJobName[]> = {
     "account_retention",
     "operational_resilience",
   ],
-  [scheduledCrons.frequent]: [
-    "campaign_reminders",
-    "telegram_notifications",
-  ],
+  [scheduledCrons.frequent]: ["campaign_reminders", "telegram_notifications"],
 };
 
 export function scheduledJobPlan(cron: string): readonly ScheduledJobName[] {
