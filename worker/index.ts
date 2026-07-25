@@ -5,6 +5,10 @@ import { createCampaignWorkReminders } from "../app/lib/campaign-reminders.serve
 import { cloudflareContext } from "../app/lib/cloudflare-context";
 import { runOperationalResilienceMaintenance } from "../app/lib/operational-resilience.server";
 import { withSecurityHeaders } from "../app/lib/response-security";
+import {
+  scheduledJobPlan,
+  type ScheduledJobName,
+} from "../app/lib/scheduled-jobs";
 import { syncDailySocialMetrics } from "../app/lib/social.server";
 import { deliverTelegramNotifications } from "../app/lib/telegram.server";
 
@@ -17,6 +21,23 @@ const requestHandler = createRequestHandler(
   import.meta.env.MODE,
 );
 
+function runScheduledJob(job: ScheduledJobName, env: CloudflareEnvironment) {
+  switch (job) {
+    case "social_metrics":
+      return syncDailySocialMetrics(env);
+    case "campaign_reminders":
+      return createCampaignWorkReminders(env);
+    case "telegram_notifications":
+      return deliverTelegramNotifications(env);
+    case "account_retention":
+      return ensureAccountRightsSchema(env.DB).then(() =>
+        processAccountRetention(env),
+      );
+    case "operational_resilience":
+      return runOperationalResilienceMaintenance(env);
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const context = new RouterContextProvider();
@@ -24,17 +45,10 @@ export default {
     const response = await requestHandler(request, context);
     return withSecurityHeaders(request, response);
   },
-  scheduled(_controller, env, ctx) {
-    ctx.waitUntil(
-      Promise.all([
-        syncDailySocialMetrics(env),
-        createCampaignWorkReminders(env),
-        deliverTelegramNotifications(env),
-        ensureAccountRightsSchema(env.DB).then(() =>
-          processAccountRetention(env),
-        ),
-        runOperationalResilienceMaintenance(env),
-      ]).then(() => undefined),
+  scheduled(controller, env, ctx) {
+    const jobs = scheduledJobPlan(controller.cron).map((job) =>
+      runScheduledJob(job, env),
     );
+    ctx.waitUntil(Promise.all(jobs).then(() => undefined));
   },
 } satisfies ExportedHandler<CloudflareEnvironment>;
