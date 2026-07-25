@@ -106,9 +106,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   const userId = crypto.randomUUID();
   const passwordHash = await hashPassword("Launch-gate-test-password-2026");
   const visibility = spec.privateProfile ? "private" : "members";
-  const avatarKey = spec.privateProfile
-    ? `launch-gate/${username}.txt`
-    : null;
+  const avatarKey = spec.privateProfile ? `launch-gate/${username}.txt` : null;
   const statements = [
     db
       .prepare(
