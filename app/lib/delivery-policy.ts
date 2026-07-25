@@ -19,7 +19,11 @@ export function deliveryFailureStatus(
 
 export function sanitizeDeliveryError(error: unknown) {
   const raw =
-    error instanceof Error ? error.message : String(error || "Unknown error");
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "Unknown error";
   return raw
     .replace(/Bearer\s+[A-Za-z0-9._~-]+/gi, "Bearer [redacted]")
     .replace(/([?&](?:token|code|key|secret)=)[^&\s]+/gi, "$1[redacted]")
