@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import process from "node:process";
 
 const input = process.argv[2] ?? "test-results/launch-gate-playwright.json";
 const output = process.argv[3] ?? "test-results/launch-gate-report.json";
@@ -66,7 +67,7 @@ const report = {
 
 await mkdir(path.dirname(output), { recursive: true });
 await writeFile(output, `${JSON.stringify(report, null, 2)}\n`);
-console.log(
-  `Launch gate: ${report.passedChecks}/${report.totalChecks} passed, ${report.failedChecks} failed.`,
+process.stdout.write(
+  `Launch gate: ${report.passedChecks}/${report.totalChecks} passed, ${report.failedChecks} failed.\n`,
 );
 if (report.status === "failed") process.exitCode = 1;
