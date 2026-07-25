@@ -1,0 +1,48 @@
+name: Verify Delivery Reliability Production
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/verify-delivery-reliability-production.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify production delivery reliability deployment
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            status=$(curl -sS -o health.json -w "%{http_code}" https://akarihouse.com/health || true)
+            if [ "$status" = "200" ] && node -e '
+              const fs = require("fs");
+              const health = JSON.parse(fs.readFileSync("health.json", "utf8"));
+              if (health.status !== "ready") process.exit(1);
+              if (health.checks?.deliveryOperations !== true) process.exit(1);
+              if (health.checks?.database !== true) process.exit(1);
+              if (health.checks?.media !== true) process.exit(1);
+            '; then
+              break
+            fi
+            if [ "$attempt" = "30" ]; then
+              echo "Production health never reported delivery operations ready."
+              cat health.json || true
+              exit 1
+            fi
+            sleep 10
+          done
+
+          admin_status=$(curl -sS -o /dev/null -D admin-headers.txt -w "%{http_code}" https://akarihouse.com/admin/operations)
+          if [ "$admin_status" != "302" ] && [ "$admin_status" != "303" ]; then
+            echo "Expected protected admin redirect, received $admin_status"
+            exit 1
+          fi
+          grep -qi "location:.*login" admin-headers.txt
+
+          fixture_status=$(curl -sS -o /dev/null -w "%{http_code}" -X POST \
+            -H "x-akari-test-fixture: launch-gate-v1" \
+            https://akarihouse.com/__test__/personas/founder)
+          test "$fixture_status" = "404"
