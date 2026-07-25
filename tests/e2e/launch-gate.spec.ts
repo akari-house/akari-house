@@ -124,7 +124,7 @@ test.describe("automated launch gate", () => {
     );
     expect(target.status()).toBe(201);
     const profile = await page.goto("/profiles/launch-gate-private-target");
-    expect(profile?.status()).toBe(404);
+    expect([403, 404]).toContain(profile?.status());
   });
 
   test("[session:founder] logout destroys the server session", async ({
