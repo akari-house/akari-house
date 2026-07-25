@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  scheduledCrons,
-  scheduledJobPlan,
-} from "../../app/lib/scheduled-jobs";
+import { scheduledCrons, scheduledJobPlan } from "../../app/lib/scheduled-jobs";
 
 describe("scheduled job plans", () => {
   it("runs heavy maintenance only on the daily trigger", () => {
