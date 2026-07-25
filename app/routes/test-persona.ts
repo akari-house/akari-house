@@ -12,7 +12,7 @@ const personaSpecs: Record<
     status: "active" | "restricted" | "suspended";
     roles: Role[];
     membership: "approved" | "pending_review";
-    admin?: "membership" | "campaigns" | "superadmin";
+    admin?: "membership" | "campaigns" | "moderation" | "superadmin";
     privateProfile?: boolean;
     invalidateSession?: boolean;
   }
@@ -23,8 +23,33 @@ const personaSpecs: Record<
     membership: "pending_review",
   },
   founder: { status: "active", roles: ["founder"], membership: "approved" },
+  project_owner: {
+    status: "active",
+    roles: ["founder"],
+    membership: "approved",
+  },
   creator: { status: "active", roles: ["creator"], membership: "approved" },
+  creator_selected: {
+    status: "active",
+    roles: ["creator"],
+    membership: "approved",
+  },
+  creator_other: {
+    status: "active",
+    roles: ["creator"],
+    membership: "approved",
+  },
   investor: {
+    status: "active",
+    roles: ["investor"],
+    membership: "approved",
+  },
+  investor_granted: {
+    status: "active",
+    roles: ["investor"],
+    membership: "approved",
+  },
+  investor_expired: {
     status: "active",
     roles: ["investor"],
     membership: "approved",
@@ -45,6 +70,12 @@ const personaSpecs: Record<
     roles: [],
     membership: "approved",
     admin: "campaigns",
+  },
+  moderator: {
+    status: "active",
+    roles: [],
+    membership: "approved",
+    admin: "moderation",
   },
   superadmin: {
     status: "active",
@@ -71,12 +102,166 @@ const personaSpecs: Record<
   },
 };
 
+type SeededResources = {
+  projectSlug: string;
+  documentId: string;
+  campaignSlug: string;
+};
+
 function allowFixtureRequest(request: Request) {
   const url = new URL(request.url);
   return (
     ["localhost", "127.0.0.1", "::1"].includes(url.hostname) &&
     request.headers.get("x-akari-test-fixture") === fixtureHeader
   );
+}
+
+async function fixtureUserId(db: D1Database, persona: string) {
+  return db
+    .prepare("SELECT id FROM users WHERE username = ?")
+    .bind(`launch-gate-${persona.replaceAll("_", "-")}`)
+    .first<{ id: string }>();
+}
+
+async function seedLaunchGateResources(
+  env: { DB: D1Database; MEDIA: R2Bucket },
+  founderUserId: string,
+): Promise<SeededResources> {
+  const [selectedCreator, otherCreator, grantedInvestor, expiredInvestor, moderator] =
+    await Promise.all([
+      fixtureUserId(env.DB, "creator_selected"),
+      fixtureUserId(env.DB, "creator_other"),
+      fixtureUserId(env.DB, "investor_granted"),
+      fixtureUserId(env.DB, "investor_expired"),
+      fixtureUserId(env.DB, "moderator"),
+    ]);
+  if (
+    !selectedCreator ||
+    !otherCreator ||
+    !grantedInvestor ||
+    !expiredInvestor ||
+    !moderator
+  )
+    throw new Response("Create linked launch-gate personas first.", {
+      status: 409,
+    });
+
+  const projectSlug = "launch-gate-owned-project";
+  const campaignSlug = "launch-gate-iio";
+  const projectId = crypto.randomUUID();
+  const documentId = crypto.randomUUID();
+  const campaignId = crypto.randomUUID();
+  const selectedApplicationId = crypto.randomUUID();
+  const fixtureBody = "private launch-gate diligence document";
+  const objectKey = "launch-gate/diligence-document.txt";
+
+  await env.DB.prepare("DELETE FROM projects WHERE slug = ?")
+    .bind(projectSlug)
+    .run();
+  await env.MEDIA.put(objectKey, fixtureBody, {
+    httpMetadata: { contentType: "text/plain" },
+  });
+
+  await env.DB.batch([
+    env.DB.prepare(
+      `INSERT INTO projects
+       (id, founder_user_id, slug, title, summary, description, stage, seeking, status)
+       VALUES (?, ?, ?, 'Launch Gate Project', 'Permission-bound project fixture.',
+               'Used only by isolated launch-gate tests.', 'prototype',
+               'Test evidence only', 'published')`,
+    ).bind(projectId, founderUserId, projectSlug),
+    env.DB.prepare(
+      `INSERT INTO project_documents
+       (id, project_id, uploaded_by, title, object_key, content_type, byte_size)
+       VALUES (?, ?, ?, 'Launch Gate Diligence.txt', ?, 'text/plain', ?)`,
+    ).bind(
+      documentId,
+      projectId,
+      founderUserId,
+      objectKey,
+      fixtureBody.length,
+    ),
+    env.DB.prepare(
+      `INSERT INTO document_access_grants
+       (id, project_id, document_id, investor_user_id, granted_by,
+        can_download, starts_at, expires_at)
+       VALUES (?, ?, ?, ?, ?, 1, datetime('now', '-1 day'), datetime('now', '+7 days'))`,
+    ).bind(
+      crypto.randomUUID(),
+      projectId,
+      documentId,
+      grantedInvestor.id,
+      founderUserId,
+    ),
+    env.DB.prepare(
+      `INSERT INTO document_access_grants
+       (id, project_id, document_id, investor_user_id, granted_by,
+        can_download, starts_at, expires_at)
+       VALUES (?, ?, ?, ?, ?, 1, datetime('now', '-10 days'), datetime('now', '-1 day'))`,
+    ).bind(
+      crypto.randomUUID(),
+      projectId,
+      documentId,
+      expiredInvestor.id,
+      founderUserId,
+    ),
+    env.DB.prepare(
+      `INSERT INTO ambassador_campaigns
+       (id, project_id, created_by, slug, title, summary, brief, deliverables,
+        compensation, application_deadline, status, campaign_kind, budget_cents,
+        currency, registration_opens_at, starts_at, ends_at)
+       VALUES (?, ?, ?, ?, 'Launch Gate IIO', 'Ownership-bound campaign fixture.',
+               'Automated launch-gate evidence only.', 'One verified test submission.',
+               'Recorded external settlement.', datetime('now', '+1 day'), 'published',
+               'iio', 100000, 'USD', datetime('now', '-2 days'),
+               datetime('now', '-1 day'), datetime('now', '+7 days'))`,
+    ).bind(campaignId, projectId, founderUserId, campaignSlug),
+    env.DB.prepare(
+      `INSERT INTO campaign_applications
+       (id, campaign_id, creator_user_id, message, status, creator_name,
+        payout_cents, final_payout_cents, deliverables_accepted)
+       VALUES (?, ?, ?, 'Accepted launch-gate Creator.', 'accepted',
+               'Launch Gate Selected Creator', 50000, 45000, 1)`,
+    ).bind(selectedApplicationId, campaignId, selectedCreator.id),
+    env.DB.prepare(
+      `INSERT INTO campaign_applications
+       (id, campaign_id, creator_user_id, message, status, creator_name)
+       VALUES (?, ?, ?, 'Unselected launch-gate Creator.', 'submitted',
+               'Launch Gate Other Creator')`,
+    ).bind(crypto.randomUUID(), campaignId, otherCreator.id),
+    env.DB.prepare(
+      `INSERT INTO campaign_settlements
+       (id, campaign_id, application_id, creator_user_id,
+        original_allocation_cents, final_amount_cents, settlement_type,
+        currency, payment_status, payment_method, internal_note)
+       VALUES (?, ?, ?, ?, 50000, 45000, 'cash', 'USD', 'approved',
+               'external', 'Automated launch-gate settlement fixture.')`,
+    ).bind(
+      crypto.randomUUID(),
+      campaignId,
+      selectedApplicationId,
+      selectedCreator.id,
+    ),
+    env.DB.prepare(
+      `INSERT INTO campaign_disputes
+       (id, campaign_id, application_id, creator_user_id, dispute_type,
+        description, status)
+       VALUES (?, ?, ?, ?, 'allocation',
+               'Automated launch-gate dispute visible only to its Creator and moderators.',
+               'open')`,
+    ).bind(
+      crypto.randomUUID(),
+      campaignId,
+      selectedApplicationId,
+      selectedCreator.id,
+    ),
+    env.DB.prepare(
+      `INSERT INTO campaign_moderators (campaign_id, user_id, assigned_by)
+       VALUES (?, ?, ?)`,
+    ).bind(campaignId, moderator.id, founderUserId),
+  ]);
+
+  return { projectSlug, documentId, campaignSlug };
 }
 
 export function loader() {
@@ -92,6 +277,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 
   const form = await request.formData();
   const createPersonaSession = form.get("session") !== "false";
+  const seedResources = form.get("seedResources") === "true";
   const env = context.get(cloudflareContext).env;
   const db = env.DB;
   const username = `launch-gate-${persona.replaceAll("_", "-")}`;
@@ -184,6 +370,11 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     ]);
   }
 
+  const resources =
+    persona === "project_owner" && seedResources
+      ? await seedLaunchGateResources(env, userId)
+      : null;
+
   let cookie: string | null = null;
   if (createPersonaSession) cookie = await createSession(db, userId, request);
   if (spec.invalidateSession)
@@ -193,7 +384,13 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       .run();
 
   return new Response(
-    JSON.stringify({ persona, userId, username, session: Boolean(cookie) }),
+    JSON.stringify({
+      persona,
+      userId,
+      username,
+      session: Boolean(cookie),
+      resources,
+    }),
     {
       status: 201,
       headers: {
