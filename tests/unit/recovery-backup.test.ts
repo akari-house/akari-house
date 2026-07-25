@@ -66,7 +66,7 @@ describe("D1 recovery tooling", () => {
       },
     });
     const changed = await readFile(encrypted);
-    changed[changed.length - 1] = changed[changed.length - 1]! ^ 0xff;
+    changed[changed.length - 1] = changed[changed.length - 1] ^ 0xff;
     await writeFile(encrypted, changed);
 
     await expect(
