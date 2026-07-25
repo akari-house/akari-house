@@ -6,12 +6,14 @@ on:
       - agent/complete-launch-gate-and-pilot
     paths:
       - scripts/patch-launch-finalization.py
+      - scripts/production-smoke.mjs
       - .github/workflows/apply-launch-finalization.yml
   pull_request:
     branches:
       - main
     paths:
       - scripts/patch-launch-finalization.py
+      - scripts/production-smoke.mjs
       - .github/workflows/apply-launch-finalization.yml
 
 permissions:
