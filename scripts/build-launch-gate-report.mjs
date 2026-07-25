@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 
-const requiredCheckKeys = [
+const previewRequiredCheckKeys = [
   "visitor",
   "applicant",
   "founder",
@@ -17,13 +17,30 @@ const requiredCheckKeys = [
   "private_media",
   "project_ownership",
   "diligence_grant",
+  "diligence_revocation",
   "campaign_ownership",
   "settlement_ownership",
   "moderator",
   "session",
+  "password_reset",
+  "status_invalidation",
   "request_security",
+  "upload_security",
   "accessibility",
+  "keyboard_accessibility",
 ];
+const productionRequiredCheckKeys = [
+  "production_config",
+  "production_smoke",
+  "visitor",
+  "private_media",
+  "request_security",
+];
+const source = process.env.LAUNCH_GATE_SOURCE ?? "automated_preview";
+const requiredCheckKeys =
+  source === "automated_production"
+    ? productionRequiredCheckKeys
+    : previewRequiredCheckKeys;
 
 const input = process.argv[2] ?? "test-results/launch-gate-playwright.json";
 const output = process.argv[3] ?? "test-results/launch-gate-report.json";
@@ -85,7 +102,7 @@ for (const checkKey of requiredCheckKeys) {
 const checks = requiredCheckKeys.map((checkKey) => consolidated.get(checkKey));
 const report = {
   schemaVersion: 1,
-  source: process.env.LAUNCH_GATE_SOURCE ?? "automated_preview",
+  source,
   environment: process.env.LAUNCH_GATE_ENV ?? "local-ci",
   commitSha: process.env.GITHUB_SHA ?? null,
   generatedAt: new Date().toISOString(),
