@@ -20,6 +20,7 @@ async function activatePersona(
   persona: string,
   session = true,
   seedResources = false,
+  reuseExisting = false,
 ) {
   await page.context().clearCookies();
   const response = await page.request.post(`/__test__/personas/${persona}`, {
@@ -27,10 +28,15 @@ async function activatePersona(
     form: {
       session: session ? "true" : "false",
       seedResources: seedResources ? "true" : "false",
+      reuseExisting: reuseExisting ? "true" : "false",
     },
   });
   expect(response.status()).toBe(201);
   return response.json() as Promise<PersonaResponse>;
+}
+
+async function useExistingPersona(page: Page, persona: string) {
+  return activatePersona(page, persona, true, false, true);
 }
 
 async function seedOwnershipScenario(page: Page) {
@@ -43,7 +49,7 @@ async function seedOwnershipScenario(page: Page) {
     "moderator",
   ])
     await activatePersona(page, persona, false);
-  const owner = await activatePersona(page, "project_owner", true, true);
+  const owner = await activatePersona(page, "project_owner", true, true, true);
   expect(owner.resources).not.toBeNull();
   return owner.resources!;
 }
@@ -196,17 +202,17 @@ test.describe("automated launch gate", () => {
     const resources = await seedOwnershipScenario(page);
     const documentUrl = `/projects/${resources.projectSlug}/documents/${resources.documentId}`;
 
-    await activatePersona(page, "investor_granted");
+    await useExistingPersona(page, "investor_granted");
     const active = await page.request.get(documentUrl);
     expect(active.status()).toBe(200);
     expect(await active.text()).toContain(
       "private launch-gate diligence document",
     );
 
-    await activatePersona(page, "investor_expired");
+    await useExistingPersona(page, "investor_expired");
     expect((await page.request.get(documentUrl)).status()).toBe(404);
 
-    await activatePersona(page, "creator_other");
+    await useExistingPersona(page, "creator_other");
     expect(
       (
         await page.goto(`/projects/${resources.projectSlug}/diligence`)
@@ -220,13 +226,13 @@ test.describe("automated launch gate", () => {
     const resources = await seedOwnershipScenario(page);
     const workspaceUrl = `/campaigns/${resources.campaignSlug}/work`;
 
-    await activatePersona(page, "creator_selected");
+    await useExistingPersona(page, "creator_selected");
     expect((await page.goto(workspaceUrl))?.status()).toBe(200);
 
-    await activatePersona(page, "creator_other");
+    await useExistingPersona(page, "creator_other");
     expect((await page.goto(workspaceUrl))?.status()).toBe(403);
 
-    await activatePersona(page, "moderator");
+    await useExistingPersona(page, "moderator");
     expect((await page.goto(workspaceUrl))?.status()).toBe(200);
   });
 
@@ -236,13 +242,13 @@ test.describe("automated launch gate", () => {
     const resources = await seedOwnershipScenario(page);
     const settlementUrl = `/campaigns/${resources.campaignSlug}/settlement`;
 
-    await activatePersona(page, "creator_selected");
+    await useExistingPersona(page, "creator_selected");
     expect((await page.goto(settlementUrl))?.status()).toBe(200);
 
-    await activatePersona(page, "creator_other");
+    await useExistingPersona(page, "creator_other");
     expect((await page.goto(settlementUrl))?.status()).toBe(403);
 
-    await activatePersona(page, "moderator");
+    await useExistingPersona(page, "moderator");
     expect((await page.goto(settlementUrl))?.status()).toBe(200);
   });
 
@@ -250,7 +256,7 @@ test.describe("automated launch gate", () => {
     page,
   }) => {
     const resources = await seedOwnershipScenario(page);
-    await activatePersona(page, "moderator");
+    await useExistingPersona(page, "moderator");
     expect(
       (await page.goto(`/campaigns/${resources.campaignSlug}/work`))?.status(),
     ).toBe(200);
