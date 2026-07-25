@@ -1,7 +1,9 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
+import { URL } from "node:url";
 
+const fetch = globalThis.fetch;
 const baseUrl = new URL(
   process.env.AKARI_PRODUCTION_URL ?? "https://akarihouse.com",
 );
