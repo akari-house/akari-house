@@ -15,7 +15,25 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.credentials.outputs.configured }}
+    steps:
+      - id: credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "${CLOUDFLARE_API_TOKEN:-}" ] && [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
   deploy:
+    needs: preflight
+    if: needs.preflight.outputs.configured == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -55,14 +73,18 @@ jobs:
             echo "::warning::The Worker is public, but akarihouse.com still requires DNS/custom-domain cutover."
           fi
       - name: Record successful public deployment
-        if: success()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh issue comment 31 --repo "$GITHUB_REPOSITORY" --body "✅ Public deployment succeeded for commit \`${GITHUB_SHA}\`. Live Worker: ${PUBLIC_WORKER_URL} — the custom domain check runs separately and may still require DNS cutover."
-      - name: Record deployment failure
-        if: failure()
+
+  missing-cloudflare-credentials:
+    needs: preflight
+    if: needs.preflight.outputs.configured != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record missing Cloudflare credentials
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment 31 --repo "$GITHUB_REPOSITORY" --body "❌ Public deployment failed for commit \`${GITHUB_SHA}\`. Review: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          gh issue comment 31 --repo "$GITHUB_REPOSITORY" --body "⚠️ Production deployment was not started for commit \`${GITHUB_SHA}\` because repository secrets \`CLOUDFLARE_API_TOKEN\` and \`CLOUDFLARE_ACCOUNT_ID\` are not configured. Add both under Settings → Secrets and variables → Actions; the next main push or manual workflow run will deploy publicly."
