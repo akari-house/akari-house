@@ -14,8 +14,8 @@
   },
   "vars": {
     "APP_ENV": "production",
-    "APP_URL": "https://akari-house.spacematesxyz.workers.dev",
-    "TURNSTILE_HOSTNAME": "akari-house.spacematesxyz.workers.dev",
+    "APP_URL": "https://akarihouse.com",
+    "TURNSTILE_HOSTNAME": "akarihouse.com",
   },
   "secrets": {
     "required": [
