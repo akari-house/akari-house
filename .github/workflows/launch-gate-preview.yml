@@ -29,25 +29,28 @@ jobs:
         id: launch-tests
         continue-on-error: true
         run: |
-          mkdir -p test-results
+          mkdir -p launch-gate-artifacts
           npx playwright test tests/e2e/launch-gate.spec.ts \
             --project=desktop-chromium \
             --project=mobile-chromium \
-            --reporter=json > test-results/launch-gate-playwright.json
+            --reporter=json > launch-gate-artifacts/playwright.json
       - name: Build machine-readable evidence
         if: always()
         env:
           LAUNCH_GATE_SOURCE: automated_preview
           LAUNCH_GATE_ENV: github-actions-preview
-        run: node scripts/build-launch-gate-report.mjs
+        run: |
+          node scripts/build-launch-gate-report.mjs \
+            launch-gate-artifacts/playwright.json \
+            launch-gate-artifacts/report.json
       - name: Upload launch-gate evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: launch-gate-evidence-${{ github.sha }}
           path: |
-            test-results/launch-gate-report.json
-            test-results/launch-gate-playwright.json
+            launch-gate-artifacts/playwright.json
+            launch-gate-artifacts/report.json
             test-results/**/trace.zip
           if-no-files-found: error
           retention-days: 30
