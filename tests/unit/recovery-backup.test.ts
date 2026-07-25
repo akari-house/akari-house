@@ -21,9 +21,9 @@ async function temporaryDirectory() {
 
 afterEach(async () => {
   await Promise.all(
-    temporaryDirectories.splice(0).map((directory) =>
-      rm(directory, { recursive: true, force: true }),
-    ),
+    temporaryDirectories
+      .splice(0)
+      .map((directory) => rm(directory, { recursive: true, force: true })),
   );
 });
 
@@ -33,7 +33,9 @@ describe("D1 recovery tooling", () => {
     const source = join(directory, "source.sql.gz");
     const encrypted = join(directory, "source.sql.gz.enc");
     const restored = join(directory, "restored.sql.gz");
-    const original = Buffer.from("AKARI recovery fixture\nwith binary \u0000 data");
+    const original = Buffer.from(
+      "AKARI recovery fixture\nwith binary \u0000 data",
+    );
     await writeFile(source, original);
 
     await run(process.execPath, [cryptoScript, "encrypt", source, encrypted], {
@@ -44,12 +46,16 @@ describe("D1 recovery tooling", () => {
     });
     expect(await readFile(encrypted)).not.toEqual(original);
 
-    await run(process.execPath, [cryptoScript, "decrypt", encrypted, restored], {
-      env: {
-        ...process.env,
-        RECOVERY_BACKUP_ENCRYPTION_KEY: encryptionKey,
+    await run(
+      process.execPath,
+      [cryptoScript, "decrypt", encrypted, restored],
+      {
+        env: {
+          ...process.env,
+          RECOVERY_BACKUP_ENCRYPTION_KEY: encryptionKey,
+        },
       },
-    });
+    );
     expect(await readFile(restored)).toEqual(original);
   });
 
