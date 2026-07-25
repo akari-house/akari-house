@@ -6,10 +6,13 @@ on:
     paths:
       - "app/**"
       - "tests/e2e/launch-gate.spec.ts"
+      - "tests/e2e/launch-gate-security.spec.ts"
       - "scripts/build-launch-gate-report.mjs"
+      - "scripts/production-smoke.mjs"
       - "migrations/**"
       - "playwright.config.ts"
       - ".github/workflows/launch-gate-preview.yml"
+      - ".github/workflows/launch-gate-production.yml"
 
 permissions:
   contents: read
@@ -25,12 +28,14 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
-      - name: Run role permission matrix
+      - name: Run role and security permission matrix
         id: launch-tests
         continue-on-error: true
         run: |
           mkdir -p launch-gate-artifacts
-          npx playwright test tests/e2e/launch-gate.spec.ts \
+          npx playwright test \
+            tests/e2e/launch-gate.spec.ts \
+            tests/e2e/launch-gate-security.spec.ts \
             --project=desktop-chromium \
             --project=mobile-chromium \
             --reporter=json > launch-gate-artifacts/playwright.json
