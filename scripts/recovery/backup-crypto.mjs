@@ -1,5 +1,7 @@
+import { Buffer } from "node:buffer";
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
+import process from "node:process";
 
 const [mode, inputPath, outputPath] = process.argv.slice(2);
 if (
