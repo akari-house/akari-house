@@ -3,11 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const fixtureHeaders = { "x-akari-test-fixture": "launch-gate-v1" };
 
-async function activatePersona(
-  page: Page,
-  persona: string,
-  session = true,
-) {
+async function activatePersona(page: Page, persona: string, session = true) {
   await page.context().clearCookies();
   const response = await page.request.post(`/__test__/personas/${persona}`, {
     headers: fixtureHeaders,

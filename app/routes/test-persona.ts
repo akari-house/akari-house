@@ -99,7 +99,8 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     .prepare("SELECT id FROM users WHERE username = ?")
     .bind(username)
     .first<{ id: string }>();
-  if (existing) await db.prepare("DELETE FROM users WHERE id = ?").bind(existing.id).run();
+  if (existing)
+    await db.prepare("DELETE FROM users WHERE id = ?").bind(existing.id).run();
 
   const userId = crypto.randomUUID();
   const passwordHash = await hashPassword("Launch-gate-test-password-2026");
@@ -117,11 +118,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
         `INSERT INTO profiles (user_id, display_name, visibility)
          VALUES (?, ?, ?)`,
       )
-      .bind(
-        userId,
-        `Launch Gate ${persona.replaceAll("_", " ")}`,
-        visibility,
-      ),
+      .bind(userId, `Launch Gate ${persona.replaceAll("_", " ")}`, visibility),
     db
       .prepare(
         `INSERT INTO profile_visibility (user_id, visibility) VALUES (?, ?)`,
@@ -178,7 +175,10 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   let cookie: string | null = null;
   if (createPersonaSession) cookie = await createSession(db, userId, request);
   if (spec.invalidateSession)
-    await db.prepare("DELETE FROM sessions WHERE user_id = ?").bind(userId).run();
+    await db
+      .prepare("DELETE FROM sessions WHERE user_id = ?")
+      .bind(userId)
+      .run();
 
   return new Response(
     JSON.stringify({ persona, userId, username, session: Boolean(cookie) }),

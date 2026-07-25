@@ -101,7 +101,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     })),
     summary: launchGateStatus(passed),
     automatedSummary: {
-      covered: automated.results.filter((row) => row.status === "passed").length,
+      covered: automated.results.filter((row) => row.status === "passed")
+        .length,
       failed: automated.results.filter((row) => row.status === "failed").length,
       total: launchGateChecks.length,
     },
@@ -138,12 +139,14 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   if (intent === "import-report") {
     const report = parseImportedReport(formText(form.get("reportJson")));
-    if (!report) return { error: "Choose a valid automated launch-gate report." };
+    if (!report)
+      return { error: "Choose a valid automated launch-gate report." };
     if (
       report.checks.some(
         (check) =>
-          !allowed.has(check.checkKey as (typeof launchGateChecks)[number][0]) ||
-          !["passed", "failed", "skipped"].includes(check.status),
+          !allowed.has(
+            check.checkKey as (typeof launchGateChecks)[number][0],
+          ) || !["passed", "failed", "skipped"].includes(check.status),
       )
     )
       return { error: "The report contains an unknown launch-gate check." };
@@ -151,43 +154,39 @@ export async function action({ request, context }: Route.ActionArgs) {
     const runId = crypto.randomUUID();
     const reportReference = formText(form.get("reportReference")).slice(0, 500);
     await env.DB.batch([
-      env.DB
-        .prepare(
-          `INSERT INTO launch_gate_runs
+      env.DB.prepare(
+        `INSERT INTO launch_gate_runs
            (id, source, environment, commit_sha, status, report_reference,
             started_at, completed_at, reviewed_by, reviewed_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
-        )
-        .bind(
-          runId,
-          report.source,
-          report.environment.slice(0, 120),
-          report.commitSha?.slice(0, 80) || null,
-          report.status,
-          reportReference || null,
-          report.generatedAt,
-          report.generatedAt,
-          user.id,
-        ),
+      ).bind(
+        runId,
+        report.source,
+        report.environment.slice(0, 120),
+        report.commitSha?.slice(0, 80) || null,
+        report.status,
+        reportReference || null,
+        report.generatedAt,
+        report.generatedAt,
+        user.id,
+      ),
       ...report.checks.map((check) =>
-        env.DB
-          .prepare(
-            `INSERT INTO launch_gate_evidence
+        env.DB.prepare(
+          `INSERT INTO launch_gate_evidence
              (id, run_id, check_key, persona, route_or_action,
               expected_result, observed_result, status, trace_reference)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          )
-          .bind(
-            crypto.randomUUID(),
-            runId,
-            check.checkKey,
-            check.persona.slice(0, 120),
-            check.routeOrAction.slice(0, 500),
-            check.expectedResult.slice(0, 1000),
-            check.observedResult.slice(0, 1000),
-            check.status,
-            check.traceReference?.slice(0, 500) || null,
-          ),
+        ).bind(
+          crypto.randomUUID(),
+          runId,
+          check.checkKey,
+          check.persona.slice(0, 120),
+          check.routeOrAction.slice(0, 500),
+          check.expectedResult.slice(0, 1000),
+          check.observedResult.slice(0, 1000),
+          check.status,
+          check.traceReference?.slice(0, 500) || null,
+        ),
       ),
     ]);
     return { imported: report.checks.length };
@@ -287,11 +286,15 @@ export default function AdminLaunchGate({
           </strong>
           <p>
             Automated preview evidence improves coverage but does not approve a
-            production launch by itself. Production checks must still be reviewed.
+            production launch by itself. Production checks must still be
+            reviewed.
           </p>
         </section>
 
-        <section className="admin-panel" aria-labelledby="automated-evidence-title">
+        <section
+          className="admin-panel"
+          aria-labelledby="automated-evidence-title"
+        >
           <span className="chapter">Automated evidence</span>
           <h2 id="automated-evidence-title">Import a reviewed CI report</h2>
           <p>
@@ -331,7 +334,7 @@ export default function AdminLaunchGate({
                 {check.automated && (
                   <div className="status-card">
                     <strong>
-                      {launchGateEvidenceLabel(check.automated.source)} · {" "}
+                      {launchGateEvidenceLabel(check.automated.source)} ·{" "}
                       {check.automated.status}
                     </strong>
                     <p>{check.automated.routeOrAction}</p>
