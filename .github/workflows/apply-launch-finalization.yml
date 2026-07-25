@@ -59,7 +59,10 @@ jobs:
             docs/operations/controlled-iio-pilot.md \
             README.md
       - run: npm run typecheck
-      - run: npm run lint
+      - name: Run lint with diagnostics
+        run: |
+          set -o pipefail
+          npm run lint 2>&1 | tee /tmp/launch-finalization-lint.log
       - run: npm run format:check
       - run: npm test
       - run: npm run build
@@ -70,3 +73,11 @@ jobs:
           git add -A
           git commit -m "Complete launch security and pilot operations"
           git push origin HEAD:agent/complete-launch-gate-and-pilot
+      - name: Upload lint diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: launch-finalization-lint
+          path: /tmp/launch-finalization-lint.log
+          if-no-files-found: ignore
+          retention-days: 1
