@@ -1,0 +1,55 @@
+name: Apply Recovery Release Push
+
+on:
+  push:
+    branches:
+      - agent/export-r2-recovery-automation
+    paths:
+      - ".github/workflows/apply-recovery-release-push.yml"
+      - "scripts/recovery/apply-integration.py"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/export-r2-recovery-automation
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Apply and validate integration edits
+        run: |
+          python3 scripts/recovery/apply-integration.py
+          npx prettier --write \
+            app/lib/delivery-outbox.server.ts \
+            app/lib/google-export-delivery.server.ts \
+            app/lib/operational-resilience-schema.server.ts \
+            app/lib/operational-resilience.server.ts \
+            app/lib/r2-lifecycle.server.ts \
+            app/lib/scheduled-jobs.ts \
+            app/routes/admin-iio-detail.tsx \
+            app/routes/admin-operations.tsx \
+            app/routes/admin-resilience.tsx \
+            app/routes/dashboard.tsx \
+            app/routes/project-edit.tsx \
+            scripts/recovery/backup-crypto.mjs \
+            scripts/recovery/validate-restore.mjs \
+            tests/unit/scheduled-jobs.test.ts \
+            worker/index.ts \
+            .github/workflows/d1-recovery-drill.yml
+          npm run typecheck
+          npm run lint
+      - name: Commit integration edits
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app scripts tests worker .github
+          git commit -m "Integrate export and R2 recovery automation"
+          git push
