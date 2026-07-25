@@ -20,30 +20,30 @@ type EmailResult =
 async function queueEmail(
   env: EmailEnvironment,
   input: {
-    recipientReference: string;
     recipient: string;
     messageType: string;
     idempotencyMaterial: string;
     subject: string;
     html: string;
     text: string;
-    createdBy?: string | null;
   },
 ): Promise<EmailResult> {
   if (!env.APP_URL)
     return { sent: false, reason: "not-configured" } as const;
-  const materialHash = await sha256(input.idempotencyMaterial);
+  const [recipientReference, materialHash] = await Promise.all([
+    sha256(input.recipient.trim().toLowerCase()),
+    sha256(input.idempotencyMaterial),
+  ]);
   const queued = await enqueueEmailDelivery(env, {
     messageType: input.messageType,
-    recipientReference: input.recipientReference,
-    idempotencyKey: `email:${input.messageType}:${input.recipientReference}:${materialHash}`,
+    recipientReference,
+    idempotencyKey: `email:${input.messageType}:${recipientReference}:${materialHash}`,
     payload: {
       recipient: input.recipient,
       subject: input.subject,
       html: input.html,
       text: input.text,
     },
-    createdBy: input.createdBy,
   });
   await processDeliveryOutbox(env, { onlyId: queued.id, limit: 1 });
   const result = await deliveryStatus(env.DB, queued.id);
@@ -54,7 +54,6 @@ async function queueEmail(
 
 export async function sendVerificationEmail(
   env: EmailEnvironment,
-  recipientReference: string,
   recipient: string,
   token: string,
 ) {
@@ -63,7 +62,6 @@ export async function sendVerificationEmail(
   const verifyUrl = new URL("/verify-email", env.APP_URL);
   verifyUrl.searchParams.set("token", token);
   return queueEmail(env, {
-    recipientReference,
     recipient,
     messageType: "membership_verification",
     idempotencyMaterial: token,
@@ -75,7 +73,6 @@ export async function sendVerificationEmail(
 
 export async function sendPasswordResetEmail(
   env: EmailEnvironment,
-  recipientReference: string,
   recipient: string,
   token: string,
 ) {
@@ -84,7 +81,6 @@ export async function sendPasswordResetEmail(
   const resetUrl = new URL("/reset-password", env.APP_URL);
   resetUrl.searchParams.set("token", token);
   return queueEmail(env, {
-    recipientReference,
     recipient,
     messageType: "password_reset",
     idempotencyMaterial: token,
@@ -96,21 +92,17 @@ export async function sendPasswordResetEmail(
 
 export async function sendApprovalEmail(
   env: EmailEnvironment,
-  recipientReference: string,
   recipient: string,
-  createdBy?: string | null,
 ) {
   if (!env.APP_URL)
     return { sent: false as const, reason: "not-configured" as const };
   const loginUrl = new URL("/login", env.APP_URL).toString();
   return queueEmail(env, {
-    recipientReference,
     recipient,
     messageType: "membership_approval",
     idempotencyMaterial: "approved",
     subject: "Your place in AKARI House is ready",
     html: `<p>Your membership request has been approved.</p><p><a href="${loginUrl}">Enter AKARI House</a></p>`,
     text: `Your membership request has been approved. Enter AKARI House: ${loginUrl}`,
-    createdBy,
   });
 }
