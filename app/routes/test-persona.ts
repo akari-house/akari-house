@@ -142,24 +142,24 @@ async function cleanupLaunchGateResources(env: FixtureEnvironment) {
            SELECT id FROM campaign_settlements WHERE campaign_id = ?
          )`,
       ).bind(campaign.id),
-      env.DB.prepare(
-        "DELETE FROM campaign_disputes WHERE campaign_id = ?",
-      ).bind(campaign.id),
-      env.DB.prepare(
-        "DELETE FROM campaign_settlements WHERE campaign_id = ?",
-      ).bind(campaign.id),
+      env.DB.prepare("DELETE FROM campaign_disputes WHERE campaign_id = ?").bind(
+        campaign.id,
+      ),
+      env.DB.prepare("DELETE FROM campaign_settlements WHERE campaign_id = ?").bind(
+        campaign.id,
+      ),
       env.DB.prepare(
         "DELETE FROM campaign_work_submissions WHERE campaign_id = ?",
       ).bind(campaign.id),
-      env.DB.prepare(
-        "DELETE FROM campaign_moderators WHERE campaign_id = ?",
-      ).bind(campaign.id),
-      env.DB.prepare(
-        "DELETE FROM campaign_final_reports WHERE campaign_id = ?",
-      ).bind(campaign.id),
-      env.DB.prepare(
-        "DELETE FROM campaign_applications WHERE campaign_id = ?",
-      ).bind(campaign.id),
+      env.DB.prepare("DELETE FROM campaign_moderators WHERE campaign_id = ?").bind(
+        campaign.id,
+      ),
+      env.DB.prepare("DELETE FROM campaign_final_reports WHERE campaign_id = ?").bind(
+        campaign.id,
+      ),
+      env.DB.prepare("DELETE FROM campaign_applications WHERE campaign_id = ?").bind(
+        campaign.id,
+      ),
       env.DB.prepare("DELETE FROM ambassador_campaigns WHERE id = ?").bind(
         campaign.id,
       ),
@@ -171,15 +171,15 @@ async function cleanupLaunchGateResources(env: FixtureEnvironment) {
     .first<{ id: string }>();
   if (project) {
     await env.DB.batch([
-      env.DB.prepare(
-        "DELETE FROM document_access_logs WHERE project_id = ?",
-      ).bind(project.id),
-      env.DB.prepare(
-        "DELETE FROM document_access_grants WHERE project_id = ?",
-      ).bind(project.id),
-      env.DB.prepare(
-        "DELETE FROM data_room_requests WHERE project_id = ?",
-      ).bind(project.id),
+      env.DB.prepare("DELETE FROM document_access_logs WHERE project_id = ?").bind(
+        project.id,
+      ),
+      env.DB.prepare("DELETE FROM document_access_grants WHERE project_id = ?").bind(
+        project.id,
+      ),
+      env.DB.prepare("DELETE FROM data_room_requests WHERE project_id = ?").bind(
+        project.id,
+      ),
       env.DB.prepare("DELETE FROM projects WHERE id = ?").bind(project.id),
     ]);
   }
@@ -344,99 +344,107 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   const form = await request.formData();
   const createPersonaSession = form.get("session") !== "false";
   const seedResources = form.get("seedResources") === "true";
+  const reuseExisting = form.get("reuseExisting") === "true";
   const env = context.get(cloudflareContext).env;
   const db = env.DB;
   const username = `launch-gate-${persona.replaceAll("_", "-")}`;
   const email = `${username}@example.test`;
 
-  if (persona === "project_owner") await cleanupLaunchGateResources(env);
+  if (persona === "project_owner" && !reuseExisting)
+    await cleanupLaunchGateResources(env);
 
   const existing = await db
     .prepare("SELECT id FROM users WHERE username = ?")
     .bind(username)
     .first<{ id: string }>();
-  if (existing)
-    await db.prepare("DELETE FROM users WHERE id = ?").bind(existing.id).run();
+  let userId: string;
+  if (existing && reuseExisting) userId = existing.id;
+  else {
+    if (existing)
+      await db.prepare("DELETE FROM users WHERE id = ?").bind(existing.id).run();
 
-  const userId = crypto.randomUUID();
-  const passwordHash = await hashPassword("Launch-gate-test-password-2026");
-  const visibility = spec.privateProfile ? "private" : "members";
-  const avatarKey = spec.privateProfile ? `launch-gate/${username}.txt` : null;
-  const statements = [
-    db
-      .prepare(
-        `INSERT INTO users
-         (id, email, username, password_hash, status, email_verified_at)
-         VALUES (?, ?, ?, ?, ?, datetime('now'))`,
-      )
-      .bind(userId, email, username, passwordHash, spec.status),
-    db
-      .prepare(
-        `INSERT INTO profiles (user_id, display_name, visibility, avatar_key)
-         VALUES (?, ?, ?, ?)`,
-      )
-      .bind(
-        userId,
-        `Launch Gate ${persona.replaceAll("_", " ")}`,
-        visibility,
-        avatarKey,
+    userId = crypto.randomUUID();
+    const passwordHash = await hashPassword("Launch-gate-test-password-2026");
+    const visibility = spec.privateProfile ? "private" : "members";
+    const avatarKey = spec.privateProfile
+      ? `launch-gate/${username}.txt`
+      : null;
+    const statements = [
+      db
+        .prepare(
+          `INSERT INTO users
+           (id, email, username, password_hash, status, email_verified_at)
+           VALUES (?, ?, ?, ?, ?, datetime('now'))`,
+        )
+        .bind(userId, email, username, passwordHash, spec.status),
+      db
+        .prepare(
+          `INSERT INTO profiles (user_id, display_name, visibility, avatar_key)
+           VALUES (?, ?, ?, ?)`,
+        )
+        .bind(
+          userId,
+          `Launch Gate ${persona.replaceAll("_", " ")}`,
+          visibility,
+          avatarKey,
+        ),
+      db
+        .prepare(
+          `INSERT INTO profile_visibility (user_id, visibility) VALUES (?, ?)`,
+        )
+        .bind(userId, visibility),
+      db
+        .prepare(
+          `INSERT INTO membership_applications
+           (id, user_id, status, applicant_note)
+           VALUES (?, ?, ?, 'Automated launch-gate fixture account.')`,
+        )
+        .bind(crypto.randomUUID(), userId, spec.membership),
+      ...spec.roles.map((role) =>
+        db
+          .prepare("INSERT INTO user_roles (user_id, role) VALUES (?, ?)")
+          .bind(userId, role),
       ),
-    db
-      .prepare(
-        `INSERT INTO profile_visibility (user_id, visibility) VALUES (?, ?)`,
-      )
-      .bind(userId, visibility),
-    db
-      .prepare(
-        `INSERT INTO membership_applications
-         (id, user_id, status, applicant_note)
-         VALUES (?, ?, ?, 'Automated launch-gate fixture account.')`,
-      )
-      .bind(crypto.randomUUID(), userId, spec.membership),
-    ...spec.roles.map((role) =>
-      db
-        .prepare("INSERT INTO user_roles (user_id, role) VALUES (?, ?)")
-        .bind(userId, role),
-    ),
-    ...spec.roles.map((role) =>
-      db
-        .prepare(
-          `INSERT INTO role_verifications
-           (user_id, role, status, reviewed_at)
-           VALUES (?, ?, 'verified', datetime('now'))`,
-        )
-        .bind(userId, role),
-    ),
-  ];
-  await db.batch(statements);
+      ...spec.roles.map((role) =>
+        db
+          .prepare(
+            `INSERT INTO role_verifications
+             (user_id, role, status, reviewed_at)
+             VALUES (?, ?, 'verified', datetime('now'))`,
+          )
+          .bind(userId, role),
+      ),
+    ];
+    await db.batch(statements);
 
-  if (avatarKey)
-    await env.MEDIA.put(avatarKey, "private launch-gate fixture", {
-      httpMetadata: { contentType: "text/plain" },
-    });
+    if (avatarKey)
+      await env.MEDIA.put(avatarKey, "private launch-gate fixture", {
+        httpMetadata: { contentType: "text/plain" },
+      });
 
-  if (spec.admin === "superadmin")
-    await db
-      .prepare(
-        `INSERT INTO admin_users (user_id, access_level)
-         VALUES (?, 'superadmin')`,
-      )
-      .bind(userId)
-      .run();
-  else if (spec.admin) {
-    await db.batch([
-      db
+    if (spec.admin === "superadmin")
+      await db
         .prepare(
-          `INSERT INTO admin_users (user_id, access_level) VALUES (?, 'admin')`,
+          `INSERT INTO admin_users (user_id, access_level)
+           VALUES (?, 'superadmin')`,
         )
-        .bind(userId),
-      db
-        .prepare(
-          `INSERT INTO admin_scopes (admin_user_id, scope, granted_by)
-           VALUES (?, ?, ?)`,
-        )
-        .bind(userId, spec.admin, userId),
-    ]);
+        .bind(userId)
+        .run();
+    else if (spec.admin) {
+      await db.batch([
+        db
+          .prepare(
+            `INSERT INTO admin_users (user_id, access_level) VALUES (?, 'admin')`,
+          )
+          .bind(userId),
+        db
+          .prepare(
+            `INSERT INTO admin_scopes (admin_user_id, scope, granted_by)
+             VALUES (?, ?, ?)`,
+          )
+          .bind(userId, spec.admin, userId),
+      ]);
+    }
   }
 
   const resources =
