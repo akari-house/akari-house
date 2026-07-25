@@ -47,7 +47,7 @@ APP_URL=https://akarihouse.com
 TURNSTILE_HOSTNAME=akarihouse.com
 ```
 
-`APP_URL` includes the protocol. `TURNSTILE_HOSTNAME` contains only the hostname.
+`APP_URL` includes the protocol. `TURNSTILE_HOSTNAME` contains only the hostname. The launch-completion release is verified after deployment when `/health` reports `release=launch-completion-2026-07-26`.
 
 ### Release order
 
