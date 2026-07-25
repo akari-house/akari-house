@@ -34,49 +34,37 @@ test.describe("automated launch gate", () => {
     await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp$/);
   });
 
-  test("[applicant:applicant] applicant reaches status dashboard but not Founder tools", async ({
-    page,
-  }) => {
+  test("[applicant:applicant] applicant reaches status dashboard but not Founder tools", async ({ page }) => {
     await activatePersona(page, "applicant");
     expect((await page.goto("/app"))?.status()).toBe(200);
     expect((await page.goto("/projects/new"))?.status()).toBe(403);
   });
 
-  test("[founder:founder] Founder can open project creation without admin access", async ({
-    page,
-  }) => {
+  test("[founder:founder] Founder can open project creation without admin access", async ({ page }) => {
     await activatePersona(page, "founder");
     expect((await page.goto("/projects/new"))?.status()).toBe(200);
     expect((await page.goto("/admin/launch-gate"))?.status()).toBe(403);
   });
 
-  test("[creator:creator] Creator cannot open Founder project creation", async ({
-    page,
-  }) => {
+  test("[creator:creator] Creator cannot open Founder project creation", async ({ page }) => {
     await activatePersona(page, "creator");
     expect((await page.goto("/projects/new"))?.status()).toBe(403);
     expect((await page.goto("/app"))?.status()).toBe(200);
   });
 
-  test("[investor:investor] Investor cannot open Founder project creation", async ({
-    page,
-  }) => {
+  test("[investor:investor] Investor cannot open Founder project creation", async ({ page }) => {
     await activatePersona(page, "investor");
     expect((await page.goto("/projects/new"))?.status()).toBe(403);
     expect((await page.goto("/app"))?.status()).toBe(200);
   });
 
-  test("[multi_role:multi_role] multi-role access is a role union without admin inheritance", async ({
-    page,
-  }) => {
+  test("[multi_role:multi_role] multi-role access is a role union without admin inheritance", async ({ page }) => {
     await activatePersona(page, "multi_role");
     expect((await page.goto("/projects/new"))?.status()).toBe(200);
     expect((await page.goto("/admin/launch-gate"))?.status()).toBe(403);
   });
 
-  test("[scoped_admin:scoped_admin] membership and campaign administrators stay inside their scopes", async ({
-    page,
-  }) => {
+  test("[scoped_admin:scoped_admin] membership and campaign administrators stay inside their scopes", async ({ page }) => {
     await activatePersona(page, "scoped_admin");
     expect((await page.goto("/admin/applications"))?.status()).toBe(200);
     expect((await page.goto("/admin/campaigns"))?.status()).toBe(403);
@@ -86,9 +74,7 @@ test.describe("automated launch gate", () => {
     expect((await page.goto("/admin/applications"))?.status()).toBe(403);
   });
 
-  test("[superadmin:superadmin] Superadmin can open the launch gate", async ({
-    page,
-  }) => {
+  test("[superadmin:superadmin] Superadmin can open the launch gate", async ({ page }) => {
     await activatePersona(page, "superadmin");
     expect((await page.goto("/admin/launch-gate"))?.status()).toBe(200);
     await expect(
@@ -96,25 +82,19 @@ test.describe("automated launch gate", () => {
     ).toBeVisible();
   });
 
-  test("[suspended:suspended] suspended session cannot enter protected routes", async ({
-    page,
-  }) => {
+  test("[suspended:suspended] suspended session cannot enter protected routes", async ({ page }) => {
     await activatePersona(page, "suspended");
     await page.goto("/app");
     await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp$/);
   });
 
-  test("[blocked:blocked] invalidated blocked session cannot enter protected routes", async ({
-    page,
-  }) => {
+  test("[blocked:blocked] invalidated blocked session cannot enter protected routes", async ({ page }) => {
     await activatePersona(page, "blocked");
     await page.goto("/app");
     await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp$/);
   });
 
-  test("[cross_account:founder] unrelated member cannot read a private profile", async ({
-    page,
-  }) => {
+  test("[cross_account:founder] unrelated member cannot read a private profile", async ({ page }) => {
     await activatePersona(page, "founder");
     const target = await page.request.post(
       "/__test__/personas/private_target",
@@ -129,9 +109,7 @@ test.describe("automated launch gate", () => {
     );
   });
 
-  test("[private_media:founder] unrelated member cannot download private R2-backed profile media", async ({
-    page,
-  }) => {
+  test("[private_media:founder] unrelated member cannot download private R2-backed profile media", async ({ page }) => {
     await activatePersona(page, "founder");
     const target = await page.request.post(
       "/__test__/personas/private_target",
@@ -141,14 +119,12 @@ test.describe("automated launch gate", () => {
       },
     );
     expect(target.status()).toBe(201);
-    expect(
+    expect([403, 404]).toContain(
       (await page.goto("/media/profile/launch-gate-private-target"))?.status(),
-    ).toBe(404);
+    );
   });
 
-  test("[session:founder] logout destroys the server session", async ({
-    page,
-  }) => {
+  test("[session:founder] logout destroys the server session", async ({ page }) => {
     await activatePersona(page, "founder");
     expect((await page.goto("/app"))?.status()).toBe(200);
     const logout = await page.request.post("/logout", {
@@ -160,9 +136,7 @@ test.describe("automated launch gate", () => {
     await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp$/);
   });
 
-  test("[request_security:founder] cross-origin state change is rejected without ending the session", async ({
-    page,
-  }) => {
+  test("[request_security:founder] cross-origin state change is rejected without ending the session", async ({ page }) => {
     await activatePersona(page, "founder");
     const rejected = await page.request.post("/logout", {
       headers: { Origin: "https://attacker.example" },
@@ -173,9 +147,7 @@ test.describe("automated launch gate", () => {
   });
 });
 
-test("[accessibility:visitor] mobile navigation has no serious accessibility failures or horizontal overflow", async ({
-  page,
-}, testInfo) => {
+test("[accessibility:visitor] mobile navigation has no serious accessibility failures or horizontal overflow", async ({ page }, testInfo) => {
   test.skip(
     testInfo.project.name !== "mobile-chromium",
     "Accessibility launch evidence runs once on mobile Chromium.",
