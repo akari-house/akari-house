@@ -39,9 +39,11 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
     background.forEach((element) => {
       element.inert = true;
     });
-    drawerRef.current
-      ?.querySelector<HTMLElement>("[data-drawer-initial-focus]")
-      ?.focus();
+    const focusFrame = window.requestAnimationFrame(() => {
+      drawerRef.current
+        ?.querySelector<HTMLElement>("[data-drawer-initial-focus]")
+        ?.focus();
+    });
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
       if (event.key !== "Tab" || !drawerRef.current) return;
@@ -63,6 +65,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
     };
     document.addEventListener("keydown", handleKey);
     return () => {
+      window.cancelAnimationFrame(focusFrame);
       document.body.style.overflow = previousOverflow;
       background.forEach((element, index) => {
         element.inert = previousInert[index];
