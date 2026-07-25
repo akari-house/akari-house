@@ -40,7 +40,6 @@ jobs:
             app/routes.ts \
             app/routes/admin-launch-gate.tsx \
             app/routes/test-persona.ts \
-            migrations/0097_launch_gate_automation.sql \
             scripts/build-launch-gate-report.mjs \
             tests/e2e/launch-gate.spec.ts \
             tests/unit/launch-gate-evidence.test.ts
@@ -49,6 +48,6 @@ jobs:
           if git diff --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app migrations scripts tests .github/workflows/launch-gate-preview.yml
+          git add app scripts tests .github/workflows/launch-gate-preview.yml
           git commit -m "Format automated launch gate release"
           git push
