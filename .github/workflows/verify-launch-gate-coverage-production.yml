@@ -1,0 +1,44 @@
+name: Verify Launch Gate Coverage Production
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/verify-launch-gate-coverage-production.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify production deployment
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 30); do
+            health_code=$(curl --silent --show-error --output health.json --write-out "%{http_code}" https://akarihouse.com/health || true)
+            if [ "$health_code" = "200" ] && node -e '
+              const fs = require("node:fs");
+              const value = JSON.parse(fs.readFileSync("health.json", "utf8"));
+              if (value.status !== "ready" || value.checks?.launchGate !== true) process.exit(1);
+            '; then
+              break
+            fi
+            if [ "$attempt" = "30" ]; then
+              cat health.json || true
+              exit 1
+            fi
+            sleep 10
+          done
+
+          admin_code=$(curl --silent --show-error --output admin.txt --dump-header admin.headers --write-out "%{http_code}" --max-redirs 0 https://akarihouse.com/admin/launch-gate || true)
+          test "$admin_code" = "302" -o "$admin_code" = "303"
+          grep -Eiq '^location: .*/login' admin.headers
+
+          fixture_code=$(curl --silent --show-error --output fixture.txt --write-out "%{http_code}" \
+            --request POST \
+            --header 'x-akari-test-fixture: launch-gate-v1' \
+            --data 'session=true' \
+            https://akarihouse.com/__test__/personas/private_target || true)
+          test "$fixture_code" = "404"
+          grep -Fxq 'Not found' fixture.txt
