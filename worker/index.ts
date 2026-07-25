@@ -5,6 +5,7 @@ import { createCampaignWorkReminders } from "../app/lib/campaign-reminders.serve
 import { cloudflareContext } from "../app/lib/cloudflare-context";
 import { runOperationalResilienceMaintenance } from "../app/lib/operational-resilience.server";
 import { withSecurityHeaders } from "../app/lib/response-security";
+import { executeScheduledPlan } from "../app/lib/scheduled-execution.server";
 import {
   scheduledJobPlan,
   type ScheduledJobName,
@@ -46,9 +47,11 @@ export default {
     return withSecurityHeaders(request, response);
   },
   scheduled(controller, env, ctx) {
-    const jobs = scheduledJobPlan(controller.cron).map((job) =>
-      runScheduledJob(job, env),
+    const plan = scheduledJobPlan(controller.cron);
+    ctx.waitUntil(
+      executeScheduledPlan(env, controller.cron, plan, (job) =>
+        runScheduledJob(job, env),
+      ).then(() => undefined),
     );
-    ctx.waitUntil(Promise.all(jobs).then(() => undefined));
   },
 } satisfies ExportedHandler<CloudflareEnvironment>;
