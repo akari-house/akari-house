@@ -142,24 +142,24 @@ async function cleanupLaunchGateResources(env: FixtureEnvironment) {
            SELECT id FROM campaign_settlements WHERE campaign_id = ?
          )`,
       ).bind(campaign.id),
-      env.DB.prepare("DELETE FROM campaign_disputes WHERE campaign_id = ?").bind(
-        campaign.id,
-      ),
-      env.DB.prepare("DELETE FROM campaign_settlements WHERE campaign_id = ?").bind(
-        campaign.id,
-      ),
+      env.DB.prepare(
+        "DELETE FROM campaign_disputes WHERE campaign_id = ?",
+      ).bind(campaign.id),
+      env.DB.prepare(
+        "DELETE FROM campaign_settlements WHERE campaign_id = ?",
+      ).bind(campaign.id),
       env.DB.prepare(
         "DELETE FROM campaign_work_submissions WHERE campaign_id = ?",
       ).bind(campaign.id),
-      env.DB.prepare("DELETE FROM campaign_moderators WHERE campaign_id = ?").bind(
-        campaign.id,
-      ),
-      env.DB.prepare("DELETE FROM campaign_final_reports WHERE campaign_id = ?").bind(
-        campaign.id,
-      ),
-      env.DB.prepare("DELETE FROM campaign_applications WHERE campaign_id = ?").bind(
-        campaign.id,
-      ),
+      env.DB.prepare(
+        "DELETE FROM campaign_moderators WHERE campaign_id = ?",
+      ).bind(campaign.id),
+      env.DB.prepare(
+        "DELETE FROM campaign_final_reports WHERE campaign_id = ?",
+      ).bind(campaign.id),
+      env.DB.prepare(
+        "DELETE FROM campaign_applications WHERE campaign_id = ?",
+      ).bind(campaign.id),
       env.DB.prepare("DELETE FROM ambassador_campaigns WHERE id = ?").bind(
         campaign.id,
       ),
@@ -171,15 +171,15 @@ async function cleanupLaunchGateResources(env: FixtureEnvironment) {
     .first<{ id: string }>();
   if (project) {
     await env.DB.batch([
-      env.DB.prepare("DELETE FROM document_access_logs WHERE project_id = ?").bind(
-        project.id,
-      ),
-      env.DB.prepare("DELETE FROM document_access_grants WHERE project_id = ?").bind(
-        project.id,
-      ),
-      env.DB.prepare("DELETE FROM data_room_requests WHERE project_id = ?").bind(
-        project.id,
-      ),
+      env.DB.prepare(
+        "DELETE FROM document_access_logs WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM document_access_grants WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM data_room_requests WHERE project_id = ?",
+      ).bind(project.id),
       env.DB.prepare("DELETE FROM projects WHERE id = ?").bind(project.id),
     ]);
   }
@@ -361,7 +361,10 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   if (existing && reuseExisting) userId = existing.id;
   else {
     if (existing)
-      await db.prepare("DELETE FROM users WHERE id = ?").bind(existing.id).run();
+      await db
+        .prepare("DELETE FROM users WHERE id = ?")
+        .bind(existing.id)
+        .run();
 
     userId = crypto.randomUUID();
     const passwordHash = await hashPassword("Launch-gate-test-password-2026");
