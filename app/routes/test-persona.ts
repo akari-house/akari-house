@@ -5,6 +5,9 @@ import type { Role } from "~/lib/domain";
 import { hashPassword } from "~/lib/security.server";
 
 const fixtureHeader = "launch-gate-v1";
+const fixtureProjectSlug = "launch-gate-owned-project";
+const fixtureCampaignSlug = "launch-gate-iio";
+const fixtureDocumentObjectKey = "launch-gate/diligence-document.txt";
 
 const personaSpecs: Record<
   string,
@@ -108,6 +111,8 @@ type SeededResources = {
   campaignSlug: string;
 };
 
+type FixtureEnvironment = { DB: D1Database; MEDIA: R2Bucket };
+
 function allowFixtureRequest(request: Request) {
   const url = new URL(request.url);
   return (
@@ -123,8 +128,66 @@ async function fixtureUserId(db: D1Database, persona: string) {
     .first<{ id: string }>();
 }
 
+async function cleanupLaunchGateResources(env: FixtureEnvironment) {
+  const campaign = await env.DB.prepare(
+    "SELECT id FROM ambassador_campaigns WHERE slug = ?",
+  )
+    .bind(fixtureCampaignSlug)
+    .first<{ id: string }>();
+  if (campaign) {
+    await env.DB.batch([
+      env.DB.prepare(
+        `DELETE FROM campaign_settlement_adjustments
+         WHERE settlement_id IN (
+           SELECT id FROM campaign_settlements WHERE campaign_id = ?
+         )`,
+      ).bind(campaign.id),
+      env.DB.prepare("DELETE FROM campaign_disputes WHERE campaign_id = ?").bind(
+        campaign.id,
+      ),
+      env.DB.prepare("DELETE FROM campaign_settlements WHERE campaign_id = ?").bind(
+        campaign.id,
+      ),
+      env.DB.prepare(
+        "DELETE FROM campaign_work_submissions WHERE campaign_id = ?",
+      ).bind(campaign.id),
+      env.DB.prepare("DELETE FROM campaign_moderators WHERE campaign_id = ?").bind(
+        campaign.id,
+      ),
+      env.DB.prepare("DELETE FROM campaign_final_reports WHERE campaign_id = ?").bind(
+        campaign.id,
+      ),
+      env.DB.prepare("DELETE FROM campaign_applications WHERE campaign_id = ?").bind(
+        campaign.id,
+      ),
+      env.DB.prepare("DELETE FROM ambassador_campaigns WHERE id = ?").bind(
+        campaign.id,
+      ),
+    ]);
+  }
+
+  const project = await env.DB.prepare("SELECT id FROM projects WHERE slug = ?")
+    .bind(fixtureProjectSlug)
+    .first<{ id: string }>();
+  if (project) {
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM document_access_logs WHERE project_id = ?").bind(
+        project.id,
+      ),
+      env.DB.prepare("DELETE FROM document_access_grants WHERE project_id = ?").bind(
+        project.id,
+      ),
+      env.DB.prepare("DELETE FROM data_room_requests WHERE project_id = ?").bind(
+        project.id,
+      ),
+      env.DB.prepare("DELETE FROM projects WHERE id = ?").bind(project.id),
+    ]);
+  }
+  await env.MEDIA.delete(fixtureDocumentObjectKey);
+}
+
 async function seedLaunchGateResources(
-  env: { DB: D1Database; MEDIA: R2Bucket },
+  env: FixtureEnvironment,
   founderUserId: string,
 ): Promise<SeededResources> {
   const [
@@ -151,19 +214,13 @@ async function seedLaunchGateResources(
       status: 409,
     });
 
-  const projectSlug = "launch-gate-owned-project";
-  const campaignSlug = "launch-gate-iio";
   const projectId = crypto.randomUUID();
   const documentId = crypto.randomUUID();
   const campaignId = crypto.randomUUID();
   const selectedApplicationId = crypto.randomUUID();
   const fixtureBody = "private launch-gate diligence document";
-  const objectKey = "launch-gate/diligence-document.txt";
 
-  await env.DB.prepare("DELETE FROM projects WHERE slug = ?")
-    .bind(projectSlug)
-    .run();
-  await env.MEDIA.put(objectKey, fixtureBody, {
+  await env.MEDIA.put(fixtureDocumentObjectKey, fixtureBody, {
     httpMetadata: { contentType: "text/plain" },
   });
 
@@ -174,12 +231,18 @@ async function seedLaunchGateResources(
        VALUES (?, ?, ?, 'Launch Gate Project', 'Permission-bound project fixture.',
                'Used only by isolated launch-gate tests.', 'prototype',
                'Test evidence only', 'published')`,
-    ).bind(projectId, founderUserId, projectSlug),
+    ).bind(projectId, founderUserId, fixtureProjectSlug),
     env.DB.prepare(
       `INSERT INTO project_documents
        (id, project_id, uploaded_by, title, object_key, content_type, byte_size)
        VALUES (?, ?, ?, 'Launch Gate Diligence.txt', ?, 'text/plain', ?)`,
-    ).bind(documentId, projectId, founderUserId, objectKey, fixtureBody.length),
+    ).bind(
+      documentId,
+      projectId,
+      founderUserId,
+      fixtureDocumentObjectKey,
+      fixtureBody.length,
+    ),
     env.DB.prepare(
       `INSERT INTO document_access_grants
        (id, project_id, document_id, investor_user_id, granted_by,
@@ -214,7 +277,7 @@ async function seedLaunchGateResources(
                'Recorded external settlement.', datetime('now', '+1 day'), 'published',
                'iio', 100000, 'USD', datetime('now', '-2 days'),
                datetime('now', '-1 day'), datetime('now', '+7 days'))`,
-    ).bind(campaignId, projectId, founderUserId, campaignSlug),
+    ).bind(campaignId, projectId, founderUserId, fixtureCampaignSlug),
     env.DB.prepare(
       `INSERT INTO campaign_applications
        (id, campaign_id, creator_user_id, message, status, creator_name,
@@ -260,7 +323,11 @@ async function seedLaunchGateResources(
     ).bind(campaignId, moderator.id, founderUserId),
   ]);
 
-  return { projectSlug, documentId, campaignSlug };
+  return {
+    projectSlug: fixtureProjectSlug,
+    documentId,
+    campaignSlug: fixtureCampaignSlug,
+  };
 }
 
 export function loader() {
@@ -281,6 +348,9 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   const db = env.DB;
   const username = `launch-gate-${persona.replaceAll("_", "-")}`;
   const email = `${username}@example.test`;
+
+  if (persona === "project_owner") await cleanupLaunchGateResources(env);
+
   const existing = await db
     .prepare("SELECT id FROM users WHERE username = ?")
     .bind(username)
