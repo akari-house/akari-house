@@ -23,9 +23,10 @@ async function requireCampaignExportAccess(db: D1Database, userId: string) {
   const access = await db
     .prepare(
       `SELECT 1 AS allowed FROM admin_users admins
+       JOIN users ON users.id = admins.user_id AND users.status = 'active'
        LEFT JOIN admin_scopes scopes
          ON scopes.admin_user_id = admins.user_id AND scopes.scope = 'campaigns'
-       WHERE admins.user_id = ? AND admins.status = 'active'
+       WHERE admins.user_id = ?
          AND (admins.access_level = 'superadmin' OR scopes.scope = 'campaigns')`,
     )
     .bind(userId)
