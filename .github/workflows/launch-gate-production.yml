@@ -1,0 +1,53 @@
+name: Launch Gate Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      production_url:
+        description: Production origin to test
+        required: true
+        default: https://akarihouse.com
+        type: string
+      expected_release:
+        description: Release identifier expected from /health
+        required: true
+        default: launch-completion-2026-07-26
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  production-smoke:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Execute approved production smoke
+        id: smoke
+        continue-on-error: true
+        env:
+          AKARI_PRODUCTION_URL: ${{ inputs.production_url }}
+          AKARI_EXPECTED_RELEASE: ${{ inputs.expected_release }}
+          AKARI_SMOKE_SESSION_COOKIE: ${{ secrets.AKARI_SMOKE_SESSION_COOKIE }}
+        run: |
+          mkdir -p launch-gate-artifacts
+          node scripts/production-smoke.mjs \
+            launch-gate-artifacts/production-report.json
+      - name: Upload production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: launch-gate-production-${{ github.sha }}
+          path: launch-gate-artifacts/production-report.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Enforce production launch gate
+        if: steps.smoke.outcome != 'success'
+        run: exit 1

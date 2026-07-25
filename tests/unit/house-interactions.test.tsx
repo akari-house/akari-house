@@ -72,7 +72,9 @@ describe("house interactions", () => {
     expect(
       screen.getByRole("dialog", { name: "Site navigation" }),
     ).toHaveAttribute("aria-modal", "true");
-    expect(screen.getByRole("button", { name: "Close menu" })).toHaveFocus();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Close menu" })).toHaveFocus(),
+    );
     await user.keyboard("{Escape}");
     expect(document.body.style.overflow).toBe("");
     expect(

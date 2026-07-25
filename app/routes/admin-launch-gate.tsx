@@ -58,7 +58,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireSuperAdmin(request, env.DB);
   await ensureLaunchGateSchema(env.DB);
 
-  const [rows, automated] = await Promise.all([
+  const [rows, automated, latestProductionRun] = await Promise.all([
     env.DB.prepare(
       `SELECT check_key AS checkKey, status, environment,
               evidence_reference AS evidenceReference, notes,
@@ -81,25 +81,54 @@ export async function loader({ request, context }: Route.LoaderArgs) {
        )
        ORDER BY e.check_key`,
     ).all<AutomatedEvidenceRow>(),
+    env.DB.prepare(
+      `SELECT commit_sha AS commitSha,
+              COALESCE(completed_at, started_at) AS completedAt
+       FROM launch_gate_runs
+       WHERE source = 'automated_production' AND status = 'passed'
+       ORDER BY COALESCE(completed_at, started_at) DESC
+       LIMIT 1`,
+    ).first<{ commitSha: string | null; completedAt: string }>(),
   ]);
 
   const byKey = new Map(rows.results.map((row) => [row.checkKey, row]));
   const automatedByKey = new Map(
     automated.results.map((row) => [row.checkKey, row]),
   );
+  const productionEvidenceTime = latestProductionRun?.completedAt
+    ? Date.parse(latestProductionRun.completedAt)
+    : 0;
+  const ageCutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const isStale = (row: LaunchGateRow | null | undefined) => {
+    if (row?.status !== "passed" || !row.testedAt) return false;
+    const testedAt = Date.parse(row.testedAt);
+    return (
+      Number.isFinite(testedAt) &&
+      ((productionEvidenceTime > 0 && testedAt < productionEvidenceTime) ||
+        testedAt < ageCutoff)
+    );
+  };
   const passed = rows.results
-    .filter((row) => row.status === "passed")
+    .filter((row) => row.status === "passed" && !isStale(row))
     .map((row) => row.checkKey);
 
   return {
     user,
-    checks: launchGateChecks.map(([key, description]) => ({
-      key,
-      description,
-      result: byKey.get(key) ?? null,
-      automated: automatedByKey.get(key) ?? null,
-    })),
-    summary: launchGateStatus(passed),
+    checks: launchGateChecks.map(([key, description]) => {
+      const result = byKey.get(key) ?? null;
+      return {
+        key,
+        description,
+        result,
+        stale: isStale(result),
+        automated: automatedByKey.get(key) ?? null,
+      };
+    }),
+    summary: {
+      ...launchGateStatus(passed),
+      stale: rows.results.filter((row) => isStale(row)).length,
+    },
+    latestProductionRun,
     automatedSummary: {
       covered: automated.results.filter((row) => row.status === "passed")
         .length,
@@ -247,9 +276,10 @@ export default function AdminLaunchGate({
             <span className="eyebrow">Commercial launch gate</span>
             <h1>Real-role permission testing</h1>
             <p>
-              {loaderData.summary.complete} of {loaderData.summary.total} checks
-              manually approved. {loaderData.automatedSummary.covered} automated
-              checks currently pass.
+              {loaderData.summary.complete} of {loaderData.summary.total}{" "}
+              current production checks approved. {loaderData.summary.stale}{" "}
+              stale. {loaderData.automatedSummary.covered} automated checks
+              currently pass.
             </p>
           </div>
           <Link className="button button-quiet" to="/admin/operations">
@@ -286,8 +316,8 @@ export default function AdminLaunchGate({
           </strong>
           <p>
             Automated preview evidence improves coverage but does not approve a
-            production launch by itself. Production checks must still be
-            reviewed.
+            production launch by itself. A newer successful production run or
+            evidence older than 30 days makes prior manual approval stale.
           </p>
         </section>
 
@@ -327,10 +357,15 @@ export default function AdminLaunchGate({
             <article className="application-card" key={check.key}>
               <div>
                 <span className="chapter">
-                  {check.result?.status ?? "pending"}
+                  {check.stale ? "stale" : (check.result?.status ?? "pending")}
                 </span>
                 <h2>{check.key.replaceAll("_", " ")}</h2>
                 <p>{check.description}</p>
+                {check.stale && (
+                  <p className="form-error">
+                    Production evidence is stale and must be reviewed again.
+                  </p>
+                )}
                 {check.automated && (
                   <div className="status-card">
                     <strong>

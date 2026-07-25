@@ -28,6 +28,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
   useEffect(() => {
     if (!open) return;
     const trigger = menuRef.current;
+    const drawer = drawerRef.current;
     const previousOverflow = document.body.style.overflow;
     const background = [
       ...document.querySelectorAll<HTMLElement>(
@@ -39,9 +40,13 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
     background.forEach((element) => {
       element.inert = true;
     });
-    drawerRef.current
-      ?.querySelector<HTMLElement>("[data-drawer-initial-focus]")
-      ?.focus();
+    const focusInitial = () => {
+      drawer
+        ?.querySelector<HTMLElement>("[data-drawer-initial-focus]")
+        ?.focus();
+    };
+    drawer?.addEventListener("transitionend", focusInitial, { once: true });
+    const focusTimer = window.setTimeout(focusInitial, 600);
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
       if (event.key !== "Tab" || !drawerRef.current) return;
@@ -63,6 +68,8 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
     };
     document.addEventListener("keydown", handleKey);
     return () => {
+      window.clearTimeout(focusTimer);
+      drawer?.removeEventListener("transitionend", focusInitial);
       document.body.style.overflow = previousOverflow;
       background.forEach((element, index) => {
         element.inert = previousInert[index];

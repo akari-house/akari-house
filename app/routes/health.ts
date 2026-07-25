@@ -42,6 +42,7 @@ export async function loader({ context }: Route.LoaderArgs) {
   return Response.json(
     {
       status: ready ? "ready" : "degraded",
+      release: "launch-completion-2026-07-26",
       checks: {
         database,
         media: Boolean(env.MEDIA),
