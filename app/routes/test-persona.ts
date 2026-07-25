@@ -92,7 +92,8 @@ export async function action({ request, params, context }: Route.ActionArgs) {
 
   const form = await request.formData();
   const createPersonaSession = form.get("session") !== "false";
-  const db = context.get(cloudflareContext).env.DB;
+  const env = context.get(cloudflareContext).env;
+  const db = env.DB;
   const username = `launch-gate-${persona.replaceAll("_", "-")}`;
   const email = `${username}@example.test`;
   const existing = await db
@@ -105,6 +106,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
   const userId = crypto.randomUUID();
   const passwordHash = await hashPassword("Launch-gate-test-password-2026");
   const visibility = spec.privateProfile ? "private" : "members";
+  const avatarKey = spec.privateProfile ? `launch-gate/${username}.txt` : null;
   const statements = [
     db
       .prepare(
@@ -115,10 +117,15 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       .bind(userId, email, username, passwordHash, spec.status),
     db
       .prepare(
-        `INSERT INTO profiles (user_id, display_name, visibility)
-         VALUES (?, ?, ?)`,
+        `INSERT INTO profiles (user_id, display_name, visibility, avatar_key)
+         VALUES (?, ?, ?, ?)`,
       )
-      .bind(userId, `Launch Gate ${persona.replaceAll("_", " ")}`, visibility),
+      .bind(
+        userId,
+        `Launch Gate ${persona.replaceAll("_", " ")}`,
+        visibility,
+        avatarKey,
+      ),
     db
       .prepare(
         `INSERT INTO profile_visibility (user_id, visibility) VALUES (?, ?)`,
@@ -147,6 +154,11 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     ),
   ];
   await db.batch(statements);
+
+  if (avatarKey)
+    await env.MEDIA.put(avatarKey, "private launch-gate fixture", {
+      httpMetadata: { contentType: "text/plain" },
+    });
 
   if (spec.admin === "superadmin")
     await db
