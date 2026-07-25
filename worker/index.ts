@@ -3,6 +3,7 @@ import { ensureAccountRightsSchema } from "../app/lib/account-rights-schema.serv
 import { processAccountRetention } from "../app/lib/account-retention.server";
 import { createCampaignWorkReminders } from "../app/lib/campaign-reminders.server";
 import { cloudflareContext } from "../app/lib/cloudflare-context";
+import { processDeliveryOutbox } from "../app/lib/delivery-outbox.server";
 import { runOperationalResilienceMaintenance } from "../app/lib/operational-resilience.server";
 import { withSecurityHeaders } from "../app/lib/response-security";
 import { executeScheduledPlan } from "../app/lib/scheduled-execution.server";
@@ -30,6 +31,8 @@ function runScheduledJob(job: ScheduledJobName, env: CloudflareEnvironment) {
       return createCampaignWorkReminders(env);
     case "telegram_notifications":
       return deliverTelegramNotifications(env);
+    case "delivery_outbox":
+      return processDeliveryOutbox(env, { limit: 100 });
     case "account_retention":
       return ensureAccountRightsSchema(env.DB).then(() =>
         processAccountRetention(env),

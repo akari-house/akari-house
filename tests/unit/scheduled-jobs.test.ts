@@ -14,6 +14,7 @@ describe("scheduled job plans", () => {
     expect(scheduledJobPlan(scheduledCrons.frequent)).toEqual([
       "campaign_reminders",
       "telegram_notifications",
+      "delivery_outbox",
     ]);
   });
 

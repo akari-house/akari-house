@@ -3,6 +3,10 @@ import type { Route } from "./+types/project-edit";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import {
+  markManagedR2ObjectDeleted,
+  registerManagedR2Object,
+} from "~/lib/r2-lifecycle.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 
@@ -194,6 +198,12 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         purpose: "project-document",
       },
     });
+    await registerManagedR2Object(db, {
+      objectKey: key,
+      sourceType: "project_document",
+      sourceId: id,
+      ownerUserId: user.id,
+    });
     try {
       await db
         .prepare(
@@ -205,6 +215,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         .run();
     } catch (error) {
       await env.MEDIA.delete(key);
+      await markManagedR2ObjectDeleted(db, key);
       throw error;
     }
     throw redirect(`/projects/${params.slug}/edit?saved=document`);
@@ -224,6 +235,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       .bind(formText(form.get("documentId")), current.id)
       .run();
     await env.MEDIA.delete(document.objectKey);
+    await markManagedR2ObjectDeleted(db, document.objectKey);
     throw redirect(`/projects/${params.slug}/edit?saved=document`);
   }
 

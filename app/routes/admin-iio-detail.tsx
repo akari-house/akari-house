@@ -2,11 +2,13 @@ import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/admin-iio-detail";
 import { SiteHeader } from "~/components/SiteHeader";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import { distributeIioBudget } from "~/lib/iio-scoring";
 import {
-  createOrRefreshIioSheet,
-  importIioSheetReviews,
-} from "~/lib/google-sheets.server";
+  deliveryStatus,
+  enqueueReferenceDelivery,
+  processDeliveryOutbox,
+} from "~/lib/delivery-outbox.server";
+import { distributeIioBudget } from "~/lib/iio-scoring";
+import { sha256 } from "~/lib/security.server";
 import { requireAdminScope } from "~/lib/membership.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
@@ -123,75 +125,58 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const form = await request.formData();
   const intent = formText(form.get("intent"));
 
-  if (intent === "google-sheet-import") {
-    if (campaign.finalizedAt)
+  if (intent === "google-sheet" || intent === "google-sheet-import") {
+    const operation = intent === "google-sheet" ? "sync" : "import";
+    if (operation === "import" && campaign.finalizedAt)
       return { error: "Finalized campaign decisions cannot be changed." };
-    try {
-      const imported = await importIioSheetReviews(
-        db,
-        admin.id,
-        campaign.id,
-        env,
-      );
-      await db
-        .prepare(
-          `INSERT INTO audit_logs
-           (id, actor_user_id, action, subject_type, subject_id, metadata_json)
-           VALUES (?, ?, 'iio.google_sheet_imported', 'campaign', ?, ?)`,
-        )
-        .bind(
-          crypto.randomUUID(),
-          admin.id,
-          campaign.id,
-          JSON.stringify({ imported }),
-        )
-        .run();
-      return { imported };
-    } catch (error) {
-      console.error("Google Sheet import failed", error);
-      return {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Google Sheet decisions could not be imported.",
-      };
-    }
-  }
-
-  if (intent === "google-sheet") {
     const applicants = await getApplicants(db, campaign.id);
-    try {
-      const sheet = await createOrRefreshIioSheet(
-        db,
-        admin.id,
-        campaign,
-        applicants,
-        env,
-      );
-      await db
-        .prepare(
-          `INSERT INTO audit_logs
-           (id, actor_user_id, action, subject_type, subject_id, metadata_json)
-           VALUES (?, ?, 'iio.google_sheet_synced', 'campaign', ?, ?)`,
-        )
-        .bind(
-          crypto.randomUUID(),
-          admin.id,
-          campaign.id,
-          JSON.stringify({ spreadsheetId: sheet.spreadsheetId }),
-        )
-        .run();
-      throw redirect(`/admin/iio/${campaign.slug}?sheet=1`);
-    } catch (error) {
-      if (error instanceof Response) throw error;
-      console.error("Google Sheet sync failed", error);
-      return {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Google Sheet could not be created.",
-      };
+    const revision =
+      operation === "sync"
+        ? await sha256(
+            JSON.stringify({
+              campaign: {
+                id: campaign.id,
+                status: campaign.status,
+                finalizedAt: campaign.finalizedAt,
+                budgetCents: campaign.budgetCents,
+                weights: [
+                  campaign.weightFollowers,
+                  campaign.weightXScore,
+                  campaign.weightSorsaScore,
+                ],
+              },
+              applicants: applicants.map((item) => ({
+                id: item.id,
+                status: item.status,
+                xFollowers: item.xFollowers,
+                xScore: item.xScore,
+                sorsaScore: item.sorsaScore,
+              })),
+            }),
+          )
+        : String(Math.floor(Date.now() / 300_000));
+    const messageType =
+      operation === "sync" ? "google_sheet_sync" : "google_sheet_import";
+    const queued = await enqueueReferenceDelivery(db, {
+      channel: "export",
+      messageType,
+      recipientReference: admin.id,
+      idempotencyKey: `export:${messageType}:${campaign.id}:${revision}`,
+      payloadReference: `google:${operation}:${campaign.id}:${admin.id}`,
+      createdBy: admin.id,
+    });
+    if (!queued) return { error: "Google export could not be queued." };
+    await processDeliveryOutbox(env, { onlyId: queued.id, limit: 1 });
+    const result = await deliveryStatus(db, queued.id);
+    if (result?.status === "delivered") {
+      if (operation === "sync")
+        throw redirect(`/admin/iio/${campaign.slug}?sheet=1`);
+      return { exportSaved: "Google Sheet decisions imported." };
     }
+    return {
+      exportQueued: true,
+      exportStatus: result?.status ?? "queued",
+    };
   }
 
   if (intent === "publish" || intent === "close") {
@@ -338,7 +323,7 @@ export default function AdminIioDetail({
 }: Route.ComponentProps) {
   const { campaign } = loaderData;
   const navigation = useNavigation();
-  const money = new Intl.NumberFormat("en-US", {
+  const money = new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: campaign.currency,
   });
@@ -365,10 +350,13 @@ export default function AdminIioDetail({
         {actionData?.saved && (
           <p className="notice success">Creator review saved.</p>
         )}
-        {typeof actionData?.imported === "number" && (
-          <p className="notice success">
-            Imported {actionData.imported} Creator review
-            {actionData.imported === 1 ? "" : "s"} from Google Sheets.
+        {actionData?.exportSaved && (
+          <p className="notice success">{actionData.exportSaved}</p>
+        )}
+        {actionData?.exportQueued && (
+          <p className="notice applicant-notice">
+            Google export is queued for automatic retry. Current status:{" "}
+            {actionData.exportStatus?.replaceAll("_", " ")}.
           </p>
         )}
         <section className="iio-command-bar">

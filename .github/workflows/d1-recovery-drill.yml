@@ -1,0 +1,180 @@
+name: D1 Recovery Drill
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 4 * * 0"
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/d1-recovery-drill.yml"
+      - "scripts/recovery/**"
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.configuration.outputs.configured }}
+    steps:
+      - id: configuration
+        name: Check recovery secret configuration
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RECOVERY_BACKUP_ENCRYPTION_KEY: ${{ secrets.RECOVERY_BACKUP_ENCRYPTION_KEY }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && \
+             [ -n "$CLOUDFLARE_ACCOUNT_ID" ] && \
+             [ -n "$RECOVERY_BACKUP_ENCRYPTION_KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "Recovery drill credentials are configured."
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Recovery drill skipped because one or more required secrets are unavailable."
+          fi
+
+  drill:
+    needs: preflight
+    if: needs.preflight.outputs.configured == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      RECOVERY_BACKUP_ENCRYPTION_KEY: ${{ secrets.RECOVERY_BACKUP_ENCRYPTION_KEY }}
+      RECOVERY_WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Export and encrypt production D1
+        id: backup
+        run: |
+          set -euo pipefail
+          mkdir -p recovery
+          timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+          backup_key="recovery-backups/${timestamp}/akari-house-db.sql.gz.enc"
+          npx wrangler d1 export akari-house-db \
+            --remote \
+            --output=recovery/akari-house-db.sql \
+            --skip-confirmation
+          gzip -9 -c recovery/akari-house-db.sql > recovery/akari-house-db.sql.gz
+          node scripts/recovery/backup-crypto.mjs encrypt \
+            recovery/akari-house-db.sql.gz \
+            recovery/akari-house-db.sql.gz.enc
+          sha256=$(sha256sum recovery/akari-house-db.sql.gz.enc | awk '{print $1}')
+          npx wrangler r2 object put "akari-house-media/${backup_key}" \
+            --file=recovery/akari-house-db.sql.gz.enc \
+            --remote
+          echo "timestamp=${timestamp}" >> "$GITHUB_OUTPUT"
+          echo "backup_key=${backup_key}" >> "$GITHUB_OUTPUT"
+          echo "sha256=${sha256}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore into isolated D1 and verify integrity
+        env:
+          RECOVERY_TIMESTAMP: ${{ steps.backup.outputs.timestamp }}
+          RECOVERY_BACKUP_KEY: ${{ steps.backup.outputs.backup_key }}
+          RECOVERY_BACKUP_SHA256: ${{ steps.backup.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          temp_database_id=""
+          cleanup() {
+            rm -f recovery/akari-house-db.sql recovery/restored.sql recovery/restored.sql.gz
+            if [ -n "$temp_database_id" ]; then
+              curl -fsS -X DELETE \
+                "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database/${temp_database_id}" \
+                -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" >/dev/null || true
+            fi
+          }
+          trap cleanup EXIT
+
+          create_response=$(curl -fsS \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data "{\"name\":\"akari-recovery-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}\",\"jurisdiction\":\"eu\"}")
+          temp_database_id=$(node -e '
+            const payload = JSON.parse(process.argv[1]);
+            if (!payload.success || !payload.result?.uuid) process.exit(1);
+            process.stdout.write(payload.result.uuid);
+          ' "$create_response")
+          export RECOVERY_TEMP_DATABASE_ID="$temp_database_id"
+
+          cat > recovery/wrangler-recovery.jsonc <<EOF
+          {
+            "name": "akari-recovery-drill",
+            "compatibility_date": "2026-07-25",
+            "d1_databases": [
+              {
+                "binding": "RECOVERY_DB",
+                "database_name": "akari-recovery-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}",
+                "database_id": "${temp_database_id}"
+              }
+            ]
+          }
+          EOF
+
+          node scripts/recovery/backup-crypto.mjs decrypt \
+            recovery/akari-house-db.sql.gz.enc \
+            recovery/restored.sql.gz
+          gunzip -c recovery/restored.sql.gz > recovery/restored.sql
+          npx wrangler d1 execute RECOVERY_DB \
+            --remote \
+            --file=recovery/restored.sql \
+            --config=recovery/wrangler-recovery.jsonc \
+            --yes
+
+          count_sql="SELECT 'users' AS tableName, COUNT(*) AS rowCount FROM users UNION ALL SELECT 'projects', COUNT(*) FROM projects UNION ALL SELECT 'ambassador_campaigns', COUNT(*) FROM ambassador_campaigns UNION ALL SELECT 'audit_logs', COUNT(*) FROM audit_logs;"
+          npx wrangler d1 execute akari-house-db \
+            --remote --command="$count_sql" --json > recovery/production-counts.json
+          npx wrangler d1 execute RECOVERY_DB \
+            --remote --command="$count_sql" --json \
+            --config=recovery/wrangler-recovery.jsonc > recovery/restored-counts.json
+          npx wrangler d1 execute RECOVERY_DB \
+            --remote --command="PRAGMA integrity_check;" --json \
+            --config=recovery/wrangler-recovery.jsonc > recovery/integrity.json
+
+          node scripts/recovery/validate-restore.mjs \
+            recovery/production-counts.json \
+            recovery/restored-counts.json \
+            recovery/integrity.json \
+            recovery/evidence.json \
+            recovery/evidence.sql
+
+          curl -fsS -X DELETE \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/d1/database/${temp_database_id}" \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" >/dev/null
+          temp_database_id=""
+
+          npx wrangler d1 execute akari-house-db \
+            --remote \
+            --file=recovery/evidence.sql \
+            --yes
+
+      - name: Upload encrypted backup and recovery evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: d1-recovery-${{ steps.backup.outputs.timestamp }}
+          path: |
+            recovery/akari-house-db.sql.gz.enc
+            recovery/evidence.json
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Remove plaintext recovery material
+        if: always()
+        run: |
+          rm -f recovery/akari-house-db.sql \
+                recovery/akari-house-db.sql.gz \
+                recovery/restored.sql \
+                recovery/restored.sql.gz \
+                recovery/evidence.sql \
+                recovery/wrangler-recovery.jsonc
