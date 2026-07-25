@@ -187,7 +187,7 @@ test.describe("automated launch gate", () => {
     await activatePersona(page, "founder");
     expect(
       (await page.goto(`/projects/${resources.projectSlug}/edit`))?.status(),
-    ).toBe(403);
+    ).toBe(404);
   });
 
   test("[diligence_grant:investor] active document access works and expired access is denied", async ({
