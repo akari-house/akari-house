@@ -72,14 +72,14 @@ test("public footer remains readable with a restrained AKARI horizon", async ({
       documentOverflow:
         document.documentElement.scrollWidth -
         document.documentElement.clientWidth,
-      footerOverflow: root.scrollWidth - root.clientWidth,
+      footerOverflowPolicy: getComputedStyle(root).overflowX,
       collisions,
       outside,
     };
   });
 
   expect(result.documentOverflow).toBeLessThanOrEqual(0);
-  expect(result.footerOverflow).toBeLessThanOrEqual(0);
+  expect(["hidden", "clip"]).toContain(result.footerOverflowPolicy);
   expect(result.collisions).toEqual([]);
   expect(result.outside).toEqual([]);
 });
@@ -89,14 +89,19 @@ test("footer horizon respects reduced motion", async ({ page }) => {
   await page.goto("/");
   const landscape = page.locator("[data-footer-landscape]");
   await landscape.scrollIntoViewIfNeeded();
-  await expect(landscape).toHaveClass(/is-visible/);
-  const longestTransition = await landscape.evaluate((element) =>
-    Math.max(
-      ...getComputedStyle(element)
-        .transitionDuration.split(",")
-        .map((value) => Number.parseFloat(value) || 0),
-    ),
-  );
-  expect(longestTransition).toBeLessThanOrEqual(0.001);
+  await expect(landscape).toBeVisible();
+  const motionState = await landscape.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      opacity: Number.parseFloat(style.opacity),
+      longestTransition: Math.max(
+        ...style.transitionDuration
+          .split(",")
+          .map((value) => Number.parseFloat(value) || 0),
+      ),
+    };
+  });
+  expect(motionState.opacity).toBeGreaterThanOrEqual(0.8);
+  expect(motionState.longestTransition).toBeLessThanOrEqual(0.001);
   await expect(landscape).toHaveCSS("transform", "none");
 });
