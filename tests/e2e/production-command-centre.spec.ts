@@ -35,7 +35,9 @@ test.describe("production and pilot command centre", () => {
     await page.getByLabel("Target participants").fill("15");
     await page
       .getByLabel("Operating notes")
-      .fill("Controlled browser evidence for the production pilot command centre.");
+      .fill(
+        "Controlled browser evidence for the production pilot command centre.",
+      );
     await page.getByRole("button", { name: "Create pilot" }).click();
 
     await expect(page.getByText("Pilot cohort created.")).toBeVisible();

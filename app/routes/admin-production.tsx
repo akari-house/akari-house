@@ -74,12 +74,7 @@ const pilotStatuses = new Set<NonNullable<PilotState>["status"]>([
   "paused",
   "completed",
 ]);
-const findingSeverities = new Set([
-  "critical",
-  "high",
-  "medium",
-  "low",
-]);
+const findingSeverities = new Set(["critical", "high", "medium", "low"]);
 
 function parseAuditChecks(value: string) {
   try {
@@ -223,23 +218,22 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         label: "Turnstile production configuration",
         ready: Boolean(
           env.TURNSTILE_SITE_KEY &&
-            env.TURNSTILE_SECRET_KEY &&
-            env.TURNSTILE_HOSTNAME === "akarihouse.com",
+          env.TURNSTILE_SECRET_KEY &&
+          env.TURNSTILE_HOSTNAME === "akarihouse.com",
         ),
       },
       {
         label: "Google OAuth and export configuration",
         ready: Boolean(
           env.GOOGLE_CLIENT_ID &&
-            env.GOOGLE_CLIENT_SECRET &&
-            env.GOOGLE_TOKEN_ENCRYPTION_KEY,
+          env.GOOGLE_CLIENT_SECRET &&
+          env.GOOGLE_TOKEN_ENCRYPTION_KEY,
         ),
       },
       {
         label: "Telegram delivery configuration",
         ready: Boolean(
-          telegramEnv.TELEGRAM_BOT_TOKEN &&
-            telegramEnv.TELEGRAM_WEBHOOK_SECRET,
+          telegramEnv.TELEGRAM_BOT_TOKEN && telegramEnv.TELEGRAM_WEBHOOK_SECRET,
         ),
       },
     ],
@@ -293,10 +287,17 @@ export async function action({ request, context }: Route.ActionArgs) {
         status,
       )
       .run();
-    await writeAudit(env.DB, user.id, "production.check.reviewed", "production_check", checkKey, {
-      status,
-      evidenceReference: evidenceReference || null,
-    });
+    await writeAudit(
+      env.DB,
+      user.id,
+      "production.check.reviewed",
+      "production_check",
+      checkKey,
+      {
+        status,
+        evidenceReference: evidenceReference || null,
+      },
+    );
     return { saved: "Production evidence updated." };
   }
 
@@ -304,8 +305,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     const name = formText(form.get("name")).slice(0, 160);
     const targetSize = Number(formText(form.get("targetSize")) || "15");
     const notes = formText(form.get("notes")).slice(0, 4000);
-    if (name.length < 3)
-      return { error: "Give the pilot a clear name." };
+    if (name.length < 3) return { error: "Give the pilot a clear name." };
     if (!Number.isInteger(targetSize) || targetSize < 1 || targetSize > 100)
       return { error: "Pilot target size must be between 1 and 100." };
     const pilotId = crypto.randomUUID();
@@ -316,16 +316,27 @@ export async function action({ request, context }: Route.ActionArgs) {
     )
       .bind(pilotId, name, targetSize, notes || null, user.id)
       .run();
-    await writeAudit(env.DB, user.id, "pilot.created", "pilot_cohort", pilotId, {
-      targetSize,
-    });
+    await writeAudit(
+      env.DB,
+      user.id,
+      "pilot.created",
+      "pilot_cohort",
+      pilotId,
+      {
+        targetSize,
+      },
+    );
     return { saved: "Pilot cohort created." };
   }
 
   if (intent === "update-pilot") {
     const pilotId = formText(form.get("pilotId"));
-    const stage = formText(form.get("stage")) as NonNullable<PilotState>["stage"];
-    const status = formText(form.get("status")) as NonNullable<PilotState>["status"];
+    const stage = formText(
+      form.get("stage"),
+    ) as NonNullable<PilotState>["stage"];
+    const status = formText(
+      form.get("status"),
+    ) as NonNullable<PilotState>["status"];
     const notes = formText(form.get("notes")).slice(0, 4000);
     if (!pilotId || !pilotStages.has(stage) || !pilotStatuses.has(status))
       throw new Response("Invalid pilot update", { status: 400 });
@@ -344,10 +355,17 @@ export async function action({ request, context }: Route.ActionArgs) {
       .bind(stage, status, notes || null, status, status, status, pilotId)
       .run();
     if (!result.meta.changes) return { error: "Pilot cohort not found." };
-    await writeAudit(env.DB, user.id, "pilot.updated", "pilot_cohort", pilotId, {
-      stage,
-      status,
-    });
+    await writeAudit(
+      env.DB,
+      user.id,
+      "pilot.updated",
+      "pilot_cohort",
+      pilotId,
+      {
+        stage,
+        status,
+      },
+    );
     return { saved: "Pilot stage updated." };
   }
 
@@ -380,16 +398,26 @@ export async function action({ request, context }: Route.ActionArgs) {
         user.id,
       )
       .run();
-    await writeAudit(env.DB, user.id, "pilot.finding.created", "pilot_finding", findingId, {
-      cohortId,
-      severity,
-    });
+    await writeAudit(
+      env.DB,
+      user.id,
+      "pilot.finding.created",
+      "pilot_finding",
+      findingId,
+      {
+        cohortId,
+        severity,
+      },
+    );
     return { saved: "Pilot finding recorded." };
   }
 
   if (intent === "resolve-finding") {
     const findingId = formText(form.get("findingId"));
-    const resolutionNotes = formText(form.get("resolutionNotes")).slice(0, 4000);
+    const resolutionNotes = formText(form.get("resolutionNotes")).slice(
+      0,
+      4000,
+    );
     if (!findingId || resolutionNotes.length < 3)
       return { error: "Resolution evidence is required." };
     const result = await env.DB.prepare(
@@ -401,7 +429,14 @@ export async function action({ request, context }: Route.ActionArgs) {
       .run();
     if (!result.meta.changes)
       return { error: "Finding was already resolved or could not be found." };
-    await writeAudit(env.DB, user.id, "pilot.finding.resolved", "pilot_finding", findingId, {});
+    await writeAudit(
+      env.DB,
+      user.id,
+      "pilot.finding.resolved",
+      "pilot_finding",
+      findingId,
+      {},
+    );
     return { saved: "Finding resolved." };
   }
 
@@ -426,7 +461,8 @@ export default function AdminProduction({
             <h1>Launch command centre</h1>
             <p>
               Sign off live integrations, review automated production evidence,
-              control the invited pilot and block expansion when findings remain.
+              control the invited pilot and block expansion when findings
+              remain.
             </p>
           </div>
           <div className="button-row">
@@ -507,7 +543,9 @@ export default function AdminProduction({
               </p>
               {loaderData.latestAudit.workflowUrl && (
                 <p>
-                  <a href={loaderData.latestAudit.workflowUrl}>Open workflow evidence</a>
+                  <a href={loaderData.latestAudit.workflowUrl}>
+                    Open workflow evidence
+                  </a>
                 </p>
               )}
               <div className="application-list">
@@ -578,7 +616,7 @@ export default function AdminProduction({
                       name="evidenceReference"
                       defaultValue={
                         "evidenceReference" in (check.record ?? {})
-                          ? (check.record as CheckRow).evidenceReference ?? ""
+                          ? ((check.record as CheckRow).evidenceReference ?? "")
                           : ""
                       }
                       placeholder="Workflow URL, audit record or internal reference"
@@ -591,7 +629,7 @@ export default function AdminProduction({
                       rows={3}
                       defaultValue={
                         "notes" in (check.record ?? {})
-                          ? (check.record as CheckRow).notes ?? ""
+                          ? ((check.record as CheckRow).notes ?? "")
                           : ""
                       }
                     />
@@ -645,14 +683,17 @@ export default function AdminProduction({
             <h2 id="pilot-cohorts-title">Pilot stage control</h2>
           </header>
           <div className="application-list">
-            {loaderData.pilots.length === 0 && <p>No pilot cohort created yet.</p>}
+            {loaderData.pilots.length === 0 && (
+              <p>No pilot cohort created yet.</p>
+            )}
             {loaderData.pilots.map((pilot) => (
               <article className="admin-panel" key={pilot.id}>
                 <span className="chapter">{pilot.status}</span>
                 <h3>{pilot.name}</h3>
                 <p>
-                  Target {pilot.targetSize} · Started {formatDate(pilot.startedAt)} ·
-                  Completed {formatDate(pilot.completedAt)}
+                  Target {pilot.targetSize} · Started{" "}
+                  {formatDate(pilot.startedAt)} · Completed{" "}
+                  {formatDate(pilot.completedAt)}
                 </p>
                 <Form method="post" className="stacked-form">
                   <input type="hidden" name="intent" value="update-pilot" />
@@ -678,7 +719,11 @@ export default function AdminProduction({
                   </label>
                   <label>
                     Notes
-                    <textarea name="notes" rows={4} defaultValue={pilot.notes ?? ""} />
+                    <textarea
+                      name="notes"
+                      rows={4}
+                      defaultValue={pilot.notes ?? ""}
+                    />
                   </label>
                   <button className="button" type="submit">
                     Update pilot
@@ -700,7 +745,11 @@ export default function AdminProduction({
                   </label>
                   <label>
                     Area
-                    <input name="area" placeholder="Settlement, onboarding, mobile…" required />
+                    <input
+                      name="area"
+                      placeholder="Settlement, onboarding, mobile…"
+                      required
+                    />
                   </label>
                   <label>
                     Finding
@@ -725,7 +774,9 @@ export default function AdminProduction({
             <h2 id="findings-title">Findings register</h2>
           </header>
           <div className="application-list">
-            {loaderData.findings.length === 0 && <p>No pilot findings recorded.</p>}
+            {loaderData.findings.length === 0 && (
+              <p>No pilot findings recorded.</p>
+            )}
             {loaderData.findings.map((finding) => (
               <article className="status-card" key={finding.id}>
                 <span className="chapter">
@@ -744,7 +795,11 @@ export default function AdminProduction({
                   </p>
                 ) : (
                   <Form method="post" className="stacked-form">
-                    <input type="hidden" name="intent" value="resolve-finding" />
+                    <input
+                      type="hidden"
+                      name="intent"
+                      value="resolve-finding"
+                    />
                     <input type="hidden" name="findingId" value={finding.id} />
                     <label>
                       Resolution evidence

@@ -3,9 +3,7 @@ import process from "node:process";
 import { URL } from "node:url";
 
 const fetch = globalThis.fetch;
-const baseUrl = new URL(
-  process.env.PRODUCTION_URL || "https://akarihouse.com",
-);
+const baseUrl = new URL(process.env.PRODUCTION_URL || "https://akarihouse.com");
 const expectedRelease = process.env.EXPECTED_RELEASE || "";
 const checks = [];
 
@@ -55,18 +53,24 @@ await record("custom_domain", "Custom domain serves AKARI", async () => {
   requireStatus(response, [200], "Homepage");
   const finalUrl = new URL(response.url);
   if (finalUrl.hostname !== baseUrl.hostname)
-    throw new Error(`Homepage resolved to unexpected host ${finalUrl.hostname}.`);
+    throw new Error(
+      `Homepage resolved to unexpected host ${finalUrl.hostname}.`,
+    );
   const body = await response.text();
   if (!body.toLowerCase().includes("akari"))
     throw new Error("Homepage does not contain the AKARI product identity.");
   return finalUrl.origin;
 });
 
-await record("login_public", "Login route remains publicly available", async () => {
-  const response = await request("/login");
-  requireStatus(response, [200], "Login route");
-  return "HTTP 200";
-});
+await record(
+  "login_public",
+  "Login route remains publicly available",
+  async () => {
+    const response = await request("/login");
+    requireStatus(response, [200], "Login route");
+    return "HTTP 200";
+  },
+);
 
 for (const [key, path, label] of [
   ["member_auth", "/app", "Member application"],
@@ -84,27 +88,35 @@ for (const [key, path, label] of [
   });
 }
 
-await record("fixtures_disabled", "Local test fixtures are disabled publicly", async () => {
-  const response = await request("/__test__/personas/superadmin", {
-    headers: { "x-akari-test-fixture": "launch-gate" },
-  });
-  requireStatus(response, [404], "Test fixture route");
-  return "HTTP 404";
-});
+await record(
+  "fixtures_disabled",
+  "Local test fixtures are disabled publicly",
+  async () => {
+    const response = await request("/__test__/personas/superadmin", {
+      headers: { "x-akari-test-fixture": "launch-gate" },
+    });
+    requireStatus(response, [404], "Test fixture route");
+    return "HTTP 404";
+  },
+);
 
-await record("security_headers", "Public responses include security headers", async () => {
-  const response = await request("/", { redirect: "follow" });
-  requireStatus(response, [200], "Homepage");
-  const required = [
-    "content-security-policy",
-    "x-content-type-options",
-    "referrer-policy",
-  ];
-  const missing = required.filter((header) => !response.headers.get(header));
-  if (missing.length > 0)
-    throw new Error(`Missing headers: ${missing.join(", ")}.`);
-  return required.join(", ");
-});
+await record(
+  "security_headers",
+  "Public responses include security headers",
+  async () => {
+    const response = await request("/", { redirect: "follow" });
+    requireStatus(response, [200], "Homepage");
+    const required = [
+      "content-security-policy",
+      "x-content-type-options",
+      "referrer-policy",
+    ];
+    const missing = required.filter((header) => !response.headers.get(header));
+    if (missing.length > 0)
+      throw new Error(`Missing headers: ${missing.join(", ")}.`);
+    return required.join(", ");
+  },
+);
 
 const failed = checks.filter((check) => check.status === "failed");
 const report = {
