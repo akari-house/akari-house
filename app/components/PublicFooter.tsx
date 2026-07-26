@@ -37,8 +37,6 @@ const footerGroups = [
   },
 ] as const;
 
-const footerPanoramaTiles = [1, 2, 3, 4, 5, 6] as const;
-
 export function PublicFooter() {
   const footerContentRef = useRef<HTMLDivElement>(null);
   const [landscapeVisible, setLandscapeVisible] = useState(false);
@@ -149,40 +147,28 @@ export function PublicFooter() {
           aria-hidden="true"
           data-footer-landscape
         >
-          <div
+          <img
             data-footer-panorama
+            src="/assets/footer/akari-footer-panorama.svg"
+            alt=""
+            loading="lazy"
+            decoding="async"
             style={{
               position: "absolute",
-              bottom: 0,
-              left: "50%",
-              display: "grid",
-              width: "max(100%, 525px)",
-              aspectRatio: "3 / 1",
-              gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
-              transform: "translateX(-50%)",
+              inset: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              objectPosition: "center bottom",
+              filter: "brightness(0.9) saturate(0.96)",
             }}
-          >
-            {footerPanoramaTiles.map((tile) => (
-              <img
-                key={tile}
-                src={`/assets/footer/akari-footer-tile-${tile}.svg`}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                style={{
-                  display: "block",
-                  width: "100%",
-                  height: "100%",
-                }}
-              />
-            ))}
-          </div>
+          />
           <div
             style={{
               position: "absolute",
               inset: 0,
               background:
-                "linear-gradient(180deg, rgba(9,11,20,0.42) 0%, rgba(9,11,20,0.1) 55%, rgba(5,7,12,0.2) 100%)",
+                "linear-gradient(180deg, rgba(9,11,20,0.56) 0%, rgba(9,11,20,0.2) 52%, rgba(5,7,12,0.38) 100%)",
             }}
           />
         </div>
