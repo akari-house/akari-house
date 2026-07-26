@@ -150,18 +150,21 @@ export function PublicFooter() {
         >
           <img
             data-footer-panorama
-            src="/assets/footer/akari-footer-panorama.svg"
+            src="/assets/optimized/arrival.webp"
             alt=""
             loading="lazy"
             decoding="async"
+            width={1672}
+            height={941}
             style={{
               position: "absolute",
               inset: 0,
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              objectPosition: "center bottom",
-              filter: "brightness(0.9) saturate(0.96)",
+              objectPosition: "center 56%",
+              filter: "brightness(0.46) saturate(0.9) contrast(1.08)",
+              transform: "scale(1.08)",
             }}
           />
           <div
@@ -169,7 +172,7 @@ export function PublicFooter() {
               position: "absolute",
               inset: 0,
               background:
-                "linear-gradient(180deg, rgba(9,11,20,0.56) 0%, rgba(9,11,20,0.2) 52%, rgba(5,7,12,0.38) 100%)",
+                "radial-gradient(circle at 78% 52%, rgba(240,79,135,0.22), transparent 28%), radial-gradient(circle at 24% 82%, rgba(255,211,61,0.12), transparent 24%), linear-gradient(180deg, rgba(9,11,20,0.72) 0%, rgba(9,11,20,0.34) 48%, rgba(5,7,12,0.78) 100%)",
             }}
           />
         </div>
