@@ -20,6 +20,23 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Correct patch sequencing
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("scripts/finalise-navigation-fix.py")
+          value = path.read_text()
+          needle = "expected = '''"
+          if "navigation_test.write_text(value)\nexpected = '''" not in value:
+              if needle not in value:
+                  raise SystemExit("Navigation test insertion point not found.")
+              value = value.replace(
+                  needle,
+                  "navigation_test.write_text(value)\nexpected = '''",
+                  1,
+              )
+          path.write_text(value)
+          PY
       - name: Apply canonical route fallback
         run: |
           set +e
