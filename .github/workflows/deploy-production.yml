@@ -49,7 +49,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run build
-      - name: Resolve production D1 binding
+      - name: Generate production Wrangler configuration
         run: |
           set -euo pipefail
           npx wrangler d1 list --json > d1-databases.json
@@ -75,16 +75,46 @@ jobs:
             );
           }
 
-          let config = fs.readFileSync("wrangler.jsonc", "utf8");
-          const databaseName = /"database_name"\s*:\s*"akari-house-db"\s*,/;
-          if (!databaseName.test(config)) {
-            throw new Error("wrangler.jsonc is missing the AKARI D1 binding.");
-          }
-          config = config.replace(
-            databaseName,
-            `"database_name": "akari-house-db",\n      "database_id": "${databaseId}",`,
+          const config = {
+            name: "akari-house",
+            main: "./worker/index.ts",
+            compatibility_date: "2026-07-23",
+            compatibility_flags: [
+              "nodejs_compat",
+              "global_fetch_strictly_public",
+            ],
+            observability: {
+              enabled: true,
+              head_sampling_rate: 1,
+            },
+            upload_source_maps: true,
+            triggers: {
+              crons: ["0 3 * * *", "*/5 * * * *"],
+            },
+            vars: {
+              APP_ENV: "production",
+              APP_URL: "https://akarihouse.com",
+              TURNSTILE_HOSTNAME: "akarihouse.com",
+            },
+            d1_databases: [
+              {
+                binding: "DB",
+                database_name: "akari-house-db",
+                database_id: databaseId,
+                migrations_dir: "migrations",
+              },
+            ],
+            r2_buckets: [
+              {
+                binding: "MEDIA",
+                bucket_name: "akari-house-media",
+              },
+            ],
+          };
+          fs.writeFileSync(
+            "wrangler.deploy.jsonc",
+            `${JSON.stringify(config, null, 2)}\n`,
           );
-          fs.writeFileSync("wrangler.deploy.jsonc", config);
           NODE
           rm -f d1-databases.json
       - name: Apply production migrations
