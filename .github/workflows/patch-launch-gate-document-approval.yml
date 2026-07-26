@@ -1,0 +1,58 @@
+name: Patch Launch Gate Document Approval
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Approve only the synthetic diligence document
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("app/routes/test-persona.ts")
+          value = path.read_text()
+          old = '''      `INSERT INTO project_documents
+       (id, project_id, uploaded_by, title, object_key, content_type, byte_size)
+       VALUES (?, ?, ?, 'Launch Gate Diligence.txt', ?, 'text/plain', ?)`,
+    ).bind(
+      documentId,
+      projectId,
+      founderUserId,
+      fixtureDocumentObjectKey,
+      fixtureBody.length,
+    ),'''
+          new = '''      `INSERT INTO project_documents
+       (id, project_id, uploaded_by, title, object_key, content_type, byte_size,
+        category, approved_at, approved_by)
+       VALUES (?, ?, ?, 'Launch Gate Diligence.txt', ?, 'text/plain', ?,
+               'financial', datetime('now'), ?)`,
+    ).bind(
+      documentId,
+      projectId,
+      founderUserId,
+      fixtureDocumentObjectKey,
+      fixtureBody.length,
+      founderUserId,
+    ),'''
+          if value.count(old) != 1:
+              raise SystemExit("Expected one synthetic project-document insert.")
+          path.write_text(value.replace(old, new, 1))
+          PY
+      - name: Commit fixture correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/routes/test-persona.ts
+          git commit -m "Approve synthetic launch-gate diligence document"
+          git push
