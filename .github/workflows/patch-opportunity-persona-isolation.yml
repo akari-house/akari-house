@@ -1,20 +1,19 @@
 name: Finalise Curated Opportunities
 
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches: [agent/curated-opportunities-foundation]
 
 permissions:
   contents: write
 
 jobs:
   finalise:
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: agent/curated-opportunities-foundation
           fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
