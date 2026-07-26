@@ -56,10 +56,16 @@ describe("navigation destinations", () => {
     }
   });
 
-  it("routes deal pages through production-safe handlers", () => {
-    expect(routeSource).toContain('route("deals", "routes/deals-safe.tsx")');
+  it("keeps schema-safe behaviour in the canonical deal routes", () => {
+    expect(routeSource).toContain('route("deals", "routes/deals.tsx")');
     expect(routeSource).toContain(
-      'route("deals/:dealSlug", "routes/deal-room-safe.tsx")',
+      'route("deals/:dealSlug", "routes/deal-room.tsx")',
+    );
+    expect(readFileSync("app/routes/deals.tsx", "utf8")).toContain(
+      "isOpportunitySchemaUnavailable",
+    );
+    expect(readFileSync("app/routes/deal-room.tsx", "utf8")).toContain(
+      "isOpportunitySchemaUnavailable",
     );
   });
 });

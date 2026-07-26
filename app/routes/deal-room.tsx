@@ -10,6 +10,7 @@ import {
   recordOpportunityAudit,
   type OpportunityAccessState,
 } from "~/lib/opportunity-access.server";
+import { isOpportunitySchemaUnavailable } from "~/lib/opportunity-schema.server";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
@@ -112,6 +113,21 @@ function accessMessage(state: OpportunityAccessState) {
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const user = await getOptionalUser(request, db);
+  try {
+    await db.prepare("SELECT 1 FROM opportunity_listings LIMIT 1").first();
+  } catch (error) {
+    if (!isOpportunitySchemaUnavailable(error)) throw error;
+    const project = await db
+      .prepare(
+        `SELECT slug FROM projects
+         WHERE slug = ? AND status = 'published'
+         LIMIT 1`,
+      )
+      .bind(params.dealSlug)
+      .first<{ slug: string }>();
+    if (project) throw redirect(`/projects/${project.slug}`);
+    throw new Response("Opportunity not found.", { status: 404 });
+  }
   const preview = await db
     .prepare(
       `SELECT pr.id AS projectId, pr.founder_user_id AS founderUserId,
@@ -308,6 +324,15 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
   const user = await requireApprovedMember(request, db);
+  try {
+    await db.prepare("SELECT 1 FROM opportunity_listings LIMIT 1").first();
+  } catch (error) {
+    if (isOpportunitySchemaUnavailable(error))
+      throw new Response("The private deal room is still being activated.", {
+        status: 503,
+      });
+    throw error;
+  }
   await requireActionRateLimit(
     db,
     request,
