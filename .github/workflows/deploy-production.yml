@@ -165,7 +165,26 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment 31 --repo "$GITHUB_REPOSITORY" --body "❌ Public deployment failed for commit \`${GITHUB_SHA}\`. Review: https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          python --input-type=module <<'PY'
+          import os
+          from pathlib import Path
+
+          diagnostic_path = Path("production-deploy-error.log")
+          diagnostic = diagnostic_path.read_text() if diagnostic_path.exists() else "No deployment diagnostic was produced."
+          for key in ("CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"):
+              value = os.environ.get(key, "")
+              if value:
+                  diagnostic = diagnostic.replace(value, f"[REDACTED_{key}]")
+          diagnostic = "\n".join(diagnostic.splitlines()[-40:])
+          body = (
+              f"❌ Public deployment failed for commit `{os.environ['GITHUB_SHA']}`. "
+              f"Review: https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}\n\n"
+              "Sanitised Cloudflare diagnostic:\n\n```text\n"
+              f"{diagnostic}\n```\n"
+          )
+          Path("deployment-failure-comment.md").write_text(body)
+          PY
+          gh issue comment 31 --repo "$GITHUB_REPOSITORY" --body-file deployment-failure-comment.md
 
   missing-cloudflare-credentials:
     needs: preflight
