@@ -31,6 +31,59 @@ const personaSpecs: Record<
     roles: ["founder"],
     membership: "approved",
   },
+  opp_owner: {
+    status: "active",
+    roles: ["founder"],
+    membership: "approved",
+  },
+  opp_founder: {
+    status: "active",
+    roles: ["founder"],
+    membership: "approved",
+  },
+  opp_creator: {
+    status: "active",
+    roles: ["creator"],
+    membership: "approved",
+  },
+  opp_investor: {
+    status: "active",
+    roles: ["investor"],
+    membership: "approved",
+  },
+  opp_granted: {
+    status: "active",
+    roles: ["investor"],
+    membership: "approved",
+  },
+  opp_expired: {
+    status: "active",
+    roles: ["investor"],
+    membership: "approved",
+  },
+  opp_suspended: {
+    status: "suspended",
+    roles: ["founder"],
+    membership: "approved",
+  },
+  opp_private_target: {
+    status: "active",
+    roles: ["founder"],
+    membership: "approved",
+    privateProfile: true,
+  },
+  opp_scoped_admin: {
+    status: "active",
+    roles: [],
+    membership: "approved",
+    admin: "membership",
+  },
+  opp_superadmin: {
+    status: "active",
+    roles: [],
+    membership: "approved",
+    admin: "superadmin",
+  },
   creator: { status: "active", roles: ["creator"], membership: "approved" },
   creator_selected: {
     status: "active",

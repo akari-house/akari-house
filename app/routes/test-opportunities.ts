@@ -88,13 +88,13 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     suspended,
     privateTarget,
   ] = await Promise.all([
-    fixtureUser(env.DB, "project_owner"),
-    fixtureUser(env.DB, "creator"),
-    fixtureUser(env.DB, "investor"),
-    fixtureUser(env.DB, "investor_granted"),
-    fixtureUser(env.DB, "investor_expired"),
-    fixtureUser(env.DB, "suspended"),
-    fixtureUser(env.DB, "private_target"),
+    fixtureUser(env.DB, "opp_owner"),
+    fixtureUser(env.DB, "opp_creator"),
+    fixtureUser(env.DB, "opp_investor"),
+    fixtureUser(env.DB, "opp_granted"),
+    fixtureUser(env.DB, "opp_expired"),
+    fixtureUser(env.DB, "opp_suspended"),
+    fixtureUser(env.DB, "opp_private_target"),
   ]);
   if (
     !founder ||

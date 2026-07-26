@@ -45,16 +45,16 @@ async function seedOpportunity(page: Page): Promise<Scenario> {
 
 async function prepareScenario(page: Page): Promise<Scenario> {
   for (const persona of [
-    "project_owner",
-    "creator",
-    "investor",
-    "investor_granted",
-    "investor_expired",
-    "suspended",
-    "private_target",
-    "founder",
-    "scoped_admin",
-    "superadmin",
+    "opp_owner",
+    "opp_creator",
+    "opp_investor",
+    "opp_granted",
+    "opp_expired",
+    "opp_suspended",
+    "opp_private_target",
+    "opp_founder",
+    "opp_scoped_admin",
+    "opp_superadmin",
   ])
     await activatePersona(page, persona, false);
   const scenario = await seedOpportunity(page);
@@ -104,12 +104,12 @@ test.describe("curated opportunity permissions", () => {
   test("Creator and claimed Investor roles do not unlock capital information", async ({
     page,
   }) => {
-    await usePersona(page, "creator");
+    await usePersona(page, "opp_creator");
     await page.goto(`/deals/${projectSlug}`);
     await expect(page.getByText("restricted", { exact: true })).toBeVisible();
     await expect(page.getByText(confidentialMarker)).toHaveCount(0);
 
-    await usePersona(page, "investor");
+    await usePersona(page, "opp_investor");
     await page.goto(`/deals/${projectSlug}`);
     await expect(
       page.getByText("verification required", { exact: true }),
@@ -121,7 +121,7 @@ test.describe("curated opportunity permissions", () => {
     page,
   }) => {
     const scenario = await seedOpportunity(page);
-    await usePersona(page, "investor_granted");
+    await usePersona(page, "opp_granted");
     await page.goto(`/deals/${projectSlug}`);
     await expect(
       page.getByRole("heading", { name: "Authorised diligence space" }),
@@ -141,12 +141,12 @@ test.describe("curated opportunity permissions", () => {
     page,
   }) => {
     const scenario = await seedOpportunity(page);
-    await usePersona(page, "investor_expired");
+    await usePersona(page, "opp_expired");
     await page.goto(`/deals/${projectSlug}`);
     await expect(page.getByText("expired", { exact: true })).toBeVisible();
     await expect(page.getByText(confidentialMarker)).toHaveCount(0);
 
-    await usePersona(page, "investor_granted");
+    await usePersona(page, "opp_granted");
     await page.goto(`/deals/${projectSlug}`);
     await expect(page.getByText(confidentialMarker)).toBeVisible();
 
@@ -178,19 +178,19 @@ test.describe("curated opportunity permissions", () => {
   test("Founder ownership and scoped administration remain deny by default", async ({
     page,
   }) => {
-    await usePersona(page, "founder");
+    await usePersona(page, "opp_founder");
     await page.goto(`/projects/${projectSlug}/opportunity`);
     await expect(
       page.getByRole("heading", { name: "This room does not exist." }),
     ).toBeVisible();
 
-    await usePersona(page, "scoped_admin");
+    await usePersona(page, "opp_scoped_admin");
     await page.goto("/admin/opportunities");
     await expect(
       page.getByRole("heading", { name: "This room is private." }),
     ).toBeVisible();
 
-    await usePersona(page, "superadmin");
+    await usePersona(page, "opp_superadmin");
     await page.goto("/admin/opportunities");
     await expect(
       page.getByRole("heading", {

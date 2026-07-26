@@ -22,13 +22,13 @@ async function activatePersona(page: Page, persona: string, session = true) {
 
 async function prepareScenario(page: Page): Promise<Scenario> {
   for (const persona of [
-    "project_owner",
-    "investor_granted",
-    "investor_expired",
-    "investor",
-    "creator",
-    "scoped_admin",
-    "superadmin",
+    "opp_owner",
+    "opp_granted",
+    "opp_expired",
+    "opp_investor",
+    "opp_creator",
+    "opp_scoped_admin",
+    "opp_superadmin",
   ])
     await activatePersona(page, persona, false);
   const response = await page.request.post("/__test__/opportunities/seed", {
@@ -77,7 +77,7 @@ test.describe("private opportunity document review", () => {
     const scenario = await prepareScenario(page);
     const documentUrl = `/projects/${projectSlug}/documents/${scenario.documentId}`;
 
-    await usePersona(page, "investor_granted");
+    await usePersona(page, "opp_granted");
     expect((await page.request.get(documentUrl)).status()).toBe(200);
 
     const unapprove = await page.request.post(
@@ -91,13 +91,13 @@ test.describe("private opportunity document review", () => {
       page.getByRole("link", { name: "Opportunity Gate Diligence.txt" }),
     ).toHaveCount(0);
 
-    await usePersona(page, "scoped_admin");
+    await usePersona(page, "opp_scoped_admin");
     await page.goto("/admin/opportunities/documents");
     await expect(
       page.getByRole("heading", { name: "This room is private." }),
     ).toBeVisible();
 
-    await usePersona(page, "superadmin");
+    await usePersona(page, "opp_superadmin");
     await page.goto("/admin/opportunities/documents");
     await expect(
       page.getByRole("heading", {
@@ -122,10 +122,10 @@ test.describe("private opportunity document review", () => {
       activeGrants: 1,
     });
 
-    await usePersona(page, "investor_granted");
+    await usePersona(page, "opp_granted");
     expect((await page.request.get(documentUrl)).status()).toBe(200);
 
-    await usePersona(page, "superadmin");
+    await usePersona(page, "opp_superadmin");
     await page.goto("/admin/opportunities/documents");
     const withdrawalCard = opportunityDocumentCard(page);
     await expect(withdrawalCard).toBeVisible();
@@ -143,7 +143,7 @@ test.describe("private opportunity document review", () => {
       activeGrants: 0,
     });
 
-    await usePersona(page, "investor_granted");
+    await usePersona(page, "opp_granted");
     expect((await page.request.get(documentUrl)).status()).toBe(404);
   });
 });

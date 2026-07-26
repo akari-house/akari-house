@@ -23,58 +23,72 @@ export const meta: Route.MetaFunction = () => [
   },
 ];
 
+export async function optionalHomepageValue<T>(
+  read: () => Promise<T>,
+): Promise<T | null> {
+  try {
+    return await read();
+  } catch {
+    return null;
+  }
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const [user, project, event] = await Promise.all([
-    getOptionalUser(request, db),
-    db
-      .prepare(
-        `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
-                p.display_name AS founderName, u.username AS founderUsername,
-                COUNT(DISTINCT pf.user_id) AS followerCount
-         FROM projects pr
-         JOIN users u ON u.id = pr.founder_user_id
-         JOIN profiles p ON p.user_id = u.id
-         LEFT JOIN project_follows pf ON pf.project_id = pr.id
-         WHERE pr.status = 'published'
-         GROUP BY pr.id
-         ORDER BY pr.updated_at DESC LIMIT 1`,
-      )
-      .first<{
-        slug: string;
-        title: string;
-        summary: string;
-        stage: string;
-        seeking: string;
-        founderName: string;
-        founderUsername: string;
-        followerCount: number;
-      }>(),
-    db
-      .prepare(
-        `SELECT e.slug, e.title, e.summary, e.format, e.venue,
-                e.starts_at AS startsAt, e.timezone, e.capacity,
-                p.display_name AS hostName,
-                COUNT(CASE WHEN er.status = 'registered' THEN 1 END)
-                  AS registeredCount
-         FROM events e
-         JOIN profiles p ON p.user_id = e.host_user_id
-         LEFT JOIN event_registrations er ON er.event_id = e.id
-         WHERE e.status = 'published' AND e.ends_at >= datetime('now')
-         GROUP BY e.id ORDER BY e.starts_at LIMIT 1`,
-      )
-      .first<{
-        slug: string;
-        title: string;
-        summary: string;
-        format: string;
-        venue: string;
-        startsAt: string;
-        timezone: string;
-        capacity: number | null;
-        hostName: string;
-        registeredCount: number;
-      }>(),
+    optionalHomepageValue(() => getOptionalUser(request, db)),
+    optionalHomepageValue(() =>
+      db
+        .prepare(
+          `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
+                  p.display_name AS founderName, u.username AS founderUsername,
+                  COUNT(DISTINCT pf.user_id) AS followerCount
+           FROM projects pr
+           JOIN users u ON u.id = pr.founder_user_id
+           JOIN profiles p ON p.user_id = u.id
+           LEFT JOIN project_follows pf ON pf.project_id = pr.id
+           WHERE pr.status = 'published'
+           GROUP BY pr.id
+           ORDER BY pr.updated_at DESC LIMIT 1`,
+        )
+        .first<{
+          slug: string;
+          title: string;
+          summary: string;
+          stage: string;
+          seeking: string;
+          founderName: string;
+          founderUsername: string;
+          followerCount: number;
+        }>(),
+    ),
+    optionalHomepageValue(() =>
+      db
+        .prepare(
+          `SELECT e.slug, e.title, e.summary, e.format, e.venue,
+                  e.starts_at AS startsAt, e.timezone, e.capacity,
+                  p.display_name AS hostName,
+                  COUNT(CASE WHEN er.status = 'registered' THEN 1 END)
+                    AS registeredCount
+           FROM events e
+           JOIN profiles p ON p.user_id = e.host_user_id
+           LEFT JOIN event_registrations er ON er.event_id = e.id
+           WHERE e.status = 'published' AND e.ends_at >= datetime('now')
+           GROUP BY e.id ORDER BY e.starts_at LIMIT 1`,
+        )
+        .first<{
+          slug: string;
+          title: string;
+          summary: string;
+          format: string;
+          venue: string;
+          startsAt: string;
+          timezone: string;
+          capacity: number | null;
+          hostName: string;
+          registeredCount: number;
+        }>(),
+    ),
   ]);
   return {
     user,
