@@ -10,10 +10,12 @@ test.describe("approved Inari homepage", () => {
     await expect(
       page.getByRole("heading", { name: "Welcome to AKARI House" }),
     ).toBeVisible();
-    await expect(page.getByText("The lantern went out unexpectedly.")).toHaveCount(
-      0,
-    );
-    await expect(page.getByRole("link", { name: "AKARI House home" })).toBeVisible();
+    await expect(
+      page.getByText("The lantern went out unexpectedly."),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: "AKARI House home" }),
+    ).toBeVisible();
     await expect(page.getByRole("contentinfo")).toBeVisible();
 
     const layout = await page.evaluate(() => {
@@ -46,7 +48,8 @@ test.describe("approved Inari homepage", () => {
 
       for (const [index, element] of blocks.entries()) {
         const rect = element.getBoundingClientRect();
-        const label = element.textContent?.trim().replace(/\s+/g, " ").slice(0, 80) ||
+        const label =
+          element.textContent?.trim().replace(/\s+/g, " ").slice(0, 80) ||
           element.tagName;
         if (
           rect.left < footerRect.left - 1 ||
