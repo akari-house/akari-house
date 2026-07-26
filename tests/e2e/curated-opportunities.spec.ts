@@ -36,7 +36,16 @@ async function activatePersona(
   }>;
 }
 
+async function seedOpportunity(page: Page): Promise<Scenario> {
+  const response = await page.request.post("/__test__/opportunities/seed", {
+    headers: fixtureHeaders,
+  });
+  expect(response.status()).toBe(200);
+  return response.json() as Promise<Scenario>;
+}
+
 async function prepareScenario(page: Page): Promise<Scenario> {
+  await activatePersona(page, "project_owner", false);
   for (const persona of [
     "creator",
     "creator_selected",
@@ -52,13 +61,10 @@ async function prepareScenario(page: Page): Promise<Scenario> {
     "superadmin",
   ])
     await activatePersona(page, persona, false);
-  await activatePersona(page, "project_owner", false, true);
-  const response = await page.request.post("/__test__/opportunities/seed", {
-    headers: fixtureHeaders,
-  });
-  expect(response.status()).toBe(200);
+  await activatePersona(page, "project_owner", false, true, true);
+  const scenario = await seedOpportunity(page);
   await page.context().clearCookies();
-  return response.json() as Promise<Scenario>;
+  return scenario;
 }
 
 async function usePersona(page: Page, persona: string) {
@@ -117,7 +123,7 @@ test.describe("curated opportunity permissions", () => {
   test("approved Investor receives only the authorised private room", async ({
     page,
   }) => {
-    const scenario = await prepareScenario(page);
+    const scenario = await seedOpportunity(page);
     await usePersona(page, "investor_granted");
     await page.goto(`/deals/${projectSlug}`);
     await expect(
@@ -137,7 +143,7 @@ test.describe("curated opportunity permissions", () => {
   test("expired and revoked access remove private content immediately", async ({
     page,
   }) => {
-    const scenario = await prepareScenario(page);
+    const scenario = await seedOpportunity(page);
     await usePersona(page, "investor_expired");
     await page.goto(`/deals/${projectSlug}`);
     await expect(page.getByText("expired", { exact: true })).toBeVisible();
