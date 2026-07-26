@@ -166,9 +166,9 @@
 .akari-footer__landscape {
   position: absolute;
   z-index: 1;
-  right: -5vw;
+  right: 0;
   bottom: -4rem;
-  left: -5vw;
+  left: 0;
   height: clamp(175px, 18vw, 245px);
   pointer-events: none;
   opacity: 0;
@@ -554,9 +554,9 @@
   }
 
   .akari-footer__landscape {
-    right: -12vw;
+    right: 0;
     bottom: -3rem;
-    left: -12vw;
+    left: 0;
     height: 175px;
   }
 

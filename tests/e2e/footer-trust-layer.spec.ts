@@ -90,6 +90,13 @@ test("footer horizon respects reduced motion", async ({ page }) => {
   const landscape = page.locator("[data-footer-landscape]");
   await landscape.scrollIntoViewIfNeeded();
   await expect(landscape).toHaveClass(/is-visible/);
-  await expect(landscape).toHaveCSS("transition-duration", "0s");
+  const longestTransition = await landscape.evaluate((element) =>
+    Math.max(
+      ...getComputedStyle(element)
+        .transitionDuration.split(",")
+        .map((value) => Number.parseFloat(value) || 0),
+    ),
+  );
+  expect(longestTransition).toBeLessThanOrEqual(0.001);
   await expect(landscape).toHaveCSS("transform", "none");
 });
