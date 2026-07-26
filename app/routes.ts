@@ -49,6 +49,10 @@ export default [
   route("admin/team", "routes/admin-team.tsx"),
   route("admin/verifications", "routes/admin-verifications.tsx"),
   route("admin/opportunities", "routes/admin-opportunities.tsx"),
+  route(
+    "admin/opportunities/documents",
+    "routes/admin-opportunity-documents.tsx",
+  ),
   route("admin/campaigns", "routes/admin-campaigns.tsx"),
   route("admin/integrations/google", "routes/admin-google-integration.tsx"),
   route("admin/iio/:slug", "routes/admin-iio-detail.tsx"),
