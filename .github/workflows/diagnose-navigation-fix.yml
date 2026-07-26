@@ -5,31 +5,35 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   diagnose:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Capture typecheck
+      - name: Apply canonical route fallback
+        run: python scripts/finalise-navigation-fix.py
+      - run: |
+          npx prettier --write \
+            app/routes.ts \
+            app/routes/deals.tsx \
+            app/routes/deal-room.tsx \
+            app/lib/opportunity-schema.server.ts \
+            tests/navigation-destinations.test.ts
+      - run: npm run typecheck
+      - name: Commit validated fix
         run: |
-          set +e
-          npm run typecheck > typecheck.log 2>&1
-          status=$?
-          echo "status=$status" >> "$GITHUB_ENV"
-          tail -n 180 typecheck.log > typecheck-tail.log
-      - name: Upload typecheck diagnostic
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: navigation-typecheck-${{ github.sha }}
-          path: typecheck-tail.log
-          retention-days: 2
-      - name: Enforce
-        run: test "$status" = "0"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Keep deal routes available during schema activation"
+          git push
