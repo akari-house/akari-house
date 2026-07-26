@@ -72,11 +72,31 @@ await record(
   },
 );
 
+await record(
+  "opportunity_catalogue_public",
+  "Approved opportunity catalogue remains publicly reachable",
+  async () => {
+    const response = await request("/deals");
+    requireStatus(response, [200], "Opportunity catalogue");
+    return "HTTP 200";
+  },
+);
+
 for (const [key, path, label] of [
   ["member_auth", "/app", "Member application"],
   ["operations_auth", "/admin/operations", "Operations administration"],
   ["production_auth", "/admin/production", "Production administration"],
   ["launch_gate_auth", "/admin/launch-gate", "Launch-gate administration"],
+  [
+    "opportunity_admin_auth",
+    "/admin/opportunities",
+    "Opportunity administration",
+  ],
+  [
+    "opportunity_documents_auth",
+    "/admin/opportunities/documents",
+    "Opportunity document administration",
+  ],
 ]) {
   await record(key, `${label} requires authentication`, async () => {
     const response = await request(path);
@@ -90,13 +110,34 @@ for (const [key, path, label] of [
 
 await record(
   "fixtures_disabled",
-  "Local test fixtures are disabled publicly",
+  "All local test fixtures are disabled publicly",
   async () => {
-    const response = await request("/__test__/personas/superadmin", {
-      headers: { "x-akari-test-fixture": "launch-gate" },
-    });
-    requireStatus(response, [404], "Test fixture route");
-    return "HTTP 404";
+    const probes = [
+      {
+        path: "/__test__/personas/superadmin",
+        method: "GET",
+      },
+      {
+        path: "/__test__/launch-security/account-state",
+        method: "POST",
+      },
+      {
+        path: "/__test__/opportunities/state",
+        method: "POST",
+      },
+      {
+        path: "/__test__/opportunity-documents/state",
+        method: "POST",
+      },
+    ];
+    for (const probe of probes) {
+      const response = await request(probe.path, {
+        method: probe.method,
+        headers: { "x-akari-test-fixture": "launch-gate-v1" },
+      });
+      requireStatus(response, [404], `Test fixture ${probe.path}`);
+    }
+    return `${probes.length} fixture families returned HTTP 404`;
   },
 );
 
