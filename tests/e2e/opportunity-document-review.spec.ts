@@ -56,6 +56,14 @@ async function documentState(page: Page) {
   }>;
 }
 
+function opportunityDocumentCard(page: Page) {
+  return page.locator("article.application-card").filter({
+    has: page.getByRole("heading", {
+      name: "Opportunity Gate Diligence.txt",
+    }),
+  });
+}
+
 test.describe("private opportunity document review", () => {
   test.describe.configure({ mode: "serial" });
 
@@ -96,15 +104,18 @@ test.describe("private opportunity document review", () => {
         name: "Approve what can enter a private room.",
       }),
     ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Opportunity Gate Diligence.txt" }),
-    ).toBeVisible();
-    await page.getByLabel("Category").selectOption("financial");
-    await page.getByLabel("Access class").selectOption("confidential");
-    await page
+    const approvalCard = opportunityDocumentCard(page);
+    await expect(approvalCard).toBeVisible();
+    await approvalCard.getByLabel("Category").selectOption("financial");
+    await approvalCard
+      .getByLabel("Access class")
+      .selectOption("confidential");
+    await approvalCard
       .getByLabel("Decision note")
       .fill("Approved for controlled automated diligence evidence.");
-    await page.getByRole("button", { name: "Approve document" }).click();
+    await approvalCard
+      .getByRole("button", { name: "Approve document" })
+      .click();
     await expect(
       page.getByText("Document approved for controlled room access."),
     ).toBeVisible();
@@ -118,10 +129,14 @@ test.describe("private opportunity document review", () => {
 
     await usePersona(page, "superadmin");
     await page.goto("/admin/opportunities/documents");
-    await page
+    const withdrawalCard = opportunityDocumentCard(page);
+    await expect(withdrawalCard).toBeVisible();
+    await withdrawalCard
       .getByLabel("Decision note")
       .fill("Withdrawing approval must revoke every active grant immediately.");
-    await page.getByRole("button", { name: "Withdraw approval" }).click();
+    await withdrawalCard
+      .getByRole("button", { name: "Withdraw approval" })
+      .click();
     await expect(
       page.getByText("Document approval withdrawn and active grants revoked."),
     ).toBeVisible();
