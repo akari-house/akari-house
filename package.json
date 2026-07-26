@@ -18,7 +18,7 @@
     "test:watch": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:migrate:local": "wrangler d1 migrations apply akari-house-db --local",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "cf:typegen": "wrangler types"
   },
   "dependencies": {
@@ -40,7 +40,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "eslint": "^10.7.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "jsdom": "^29.1.1",
     "prettier": "^3.9.6",
     "sharp": "^0.35.3",
