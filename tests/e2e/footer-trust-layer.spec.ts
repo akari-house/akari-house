@@ -1,15 +1,27 @@
 import { expect, test } from "@playwright/test";
 
-test("public footer remains readable without overflow or collisions", async ({
+test("public footer remains readable with a restrained AKARI horizon", async ({
   page,
 }) => {
   await page.goto("/");
   const footer = page.locator(".akari-footer");
   await footer.scrollIntoViewIfNeeded();
   await expect(footer).toBeVisible();
-  await expect(
-    page.getByRole("heading", { name: "Discovery is not a guarantee." }),
-  ).toBeVisible();
+
+  const disclosureHeading = page.getByRole("heading", {
+    name: "Discovery is not a guarantee.",
+  });
+  await expect(disclosureHeading).toBeVisible();
+  const headingSize = await disclosureHeading.evaluate((element) =>
+    Number.parseFloat(getComputedStyle(element).fontSize),
+  );
+  expect(headingSize).toBeLessThanOrEqual(35);
+
+  const landscape = footer.locator("[data-footer-landscape]");
+  await expect(landscape).toHaveClass(/is-visible/);
+  await expect(landscape.locator(".akari-footer__house")).toHaveCount(4);
+  await expect(landscape.locator(".akari-footer__torii")).toHaveCount(1);
+  await expect(landscape.locator(".akari-footer__grass")).toHaveCount(1);
 
   const result = await footer.evaluate((element) => {
     const root = element as HTMLElement;
@@ -70,4 +82,14 @@ test("public footer remains readable without overflow or collisions", async ({
   expect(result.footerOverflow).toBeLessThanOrEqual(0);
   expect(result.collisions).toEqual([]);
   expect(result.outside).toEqual([]);
+});
+
+test("footer horizon respects reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  const landscape = page.locator("[data-footer-landscape]");
+  await landscape.scrollIntoViewIfNeeded();
+  await expect(landscape).toHaveClass(/is-visible/);
+  await expect(landscape).toHaveCSS("transition-duration", "0s");
+  await expect(landscape).toHaveCSS("transform", "none");
 });
