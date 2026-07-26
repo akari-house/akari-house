@@ -137,3 +137,5 @@ Before admitting a controlled Investor cohort:
 ## Automated validation isolation
 
 Opportunity browser fixtures use dedicated `opp_*` personas, a dedicated project, a dedicated document and a separate R2 object so the Investor-access suite cannot mutate the existing membership, project or campaign launch-gate evidence.
+
+The final release gate must run from a human-authored head commit after the current production `main` branch has been merged and all temporary diagnostic workflows have been removed.
