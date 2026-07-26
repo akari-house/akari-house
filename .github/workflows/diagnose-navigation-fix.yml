@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   diagnose:
@@ -25,19 +24,12 @@ jobs:
           status=$?
           echo "status=$status" >> "$GITHUB_ENV"
           tail -n 180 typecheck.log > typecheck-tail.log
-      - name: Publish typecheck failure
-        if: env.status != '0'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_EVENT_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
-        run: |
-          {
-            echo "### Navigation fix typecheck diagnostic"
-            echo
-            echo '```text'
-            cat typecheck-tail.log
-            echo '```'
-          } > diagnostic.md
-          gh pr comment "$GITHUB_EVENT_PULL_REQUEST_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file diagnostic.md
+      - name: Upload typecheck diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: navigation-typecheck-${{ github.sha }}
+          path: typecheck-tail.log
+          retention-days: 2
       - name: Enforce
         run: test "$status" = "0"
