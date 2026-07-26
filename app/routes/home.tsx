@@ -7,14 +7,12 @@ import { PetalField } from "~/components/house/PetalField";
 import { StoryProgress } from "~/components/house/StoryProgress";
 import { BlossomJourney } from "~/components/house/BlossomJourney";
 import { MembershipDesk } from "~/components/membership/MembershipDesk";
-import { PublicCommunityProof } from "~/components/PublicCommunityProof";
 import { SiteHeader } from "~/components/SiteHeader";
 import { PublicFooter } from "~/components/PublicFooter";
 import { ScrollTo } from "~/components/ScrollTo";
 import { caseStudies } from "~/data/case-studies";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import { loadPublicCommunityProof } from "~/lib/public-community.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "AKARI House | A private Web3 professional network" },
@@ -27,7 +25,7 @@ export const meta: Route.MetaFunction = () => [
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
-  const [user, project, event, communityProof] = await Promise.all([
+  const [user, project, event] = await Promise.all([
     getOptionalUser(request, db),
     db
       .prepare(
@@ -77,13 +75,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         hostName: string;
         registeredCount: number;
       }>(),
-    loadPublicCommunityProof(db),
   ]);
   return {
     user,
     project: project ?? null,
     event: event ?? null,
-    communityProof,
   };
 }
 
@@ -212,8 +208,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </div>
           <FeaturedArchiveCarousel />
         </section>
-
-        <PublicCommunityProof groups={loaderData.communityProof} />
 
         <MembershipDesk />
 
