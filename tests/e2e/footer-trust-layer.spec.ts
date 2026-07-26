@@ -19,9 +19,13 @@ test("public footer remains readable with a restrained AKARI horizon", async ({
 
   const landscape = footer.locator("[data-footer-landscape]");
   await expect(landscape).toHaveClass(/is-visible/);
-  await expect(landscape.locator(".akari-footer__house")).toHaveCount(4);
-  await expect(landscape.locator(".akari-footer__torii")).toHaveCount(1);
-  await expect(landscape.locator(".akari-footer__grass")).toHaveCount(1);
+  const panorama = landscape.locator("img");
+  await expect(panorama).toHaveCount(1);
+  await expect(panorama).toHaveAttribute(
+    "src",
+    "/assets/footer/akari-footer-panorama.svg",
+  );
+  await expect(panorama).toHaveAttribute("alt", "");
 
   const result = await footer.evaluate((element) => {
     const root = element as HTMLElement;
