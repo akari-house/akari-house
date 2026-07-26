@@ -14,7 +14,7 @@ export function isOpportunitySchemaUnavailable(error: unknown) {
       ? error.message
       : typeof error === "string"
         ? error
-        : JSON.stringify(error);
+        : (JSON.stringify(error) ?? String(error));
   const normalised = message.toLowerCase();
   const missingDatabaseObject =
     normalised.includes("no such table") ||
