@@ -165,7 +165,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python --input-type=module <<'PY'
+          python - <<'PY'
           import os
           from pathlib import Path
 
