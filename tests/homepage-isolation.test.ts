@@ -24,9 +24,7 @@ describe("public Inari homepage isolation", () => {
   });
 
   it("keeps the production footer isolated from opportunity data", () => {
-    expect(footerSource).toContain(
-      'className="site-footer akari-footer"',
-    );
+    expect(footerSource).toContain('className="site-footer akari-footer"');
     expect(footerSource).toContain("akari-footer-panorama.svg");
     expect(footerSource).not.toContain("opportunity_listings");
     expect(footerSource).not.toContain("investor_profiles");
