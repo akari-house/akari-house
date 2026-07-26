@@ -1,13 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const previewConfig = JSON.parse(readFileSync("wrangler.jsonc", "utf8")) as {
-  name: string;
-  vars: Record<string, string>;
-  triggers?: unknown;
-  d1_databases: Array<{ database_name: string }>;
-  r2_buckets: Array<{ bucket_name: string }>;
-};
+const previewConfig = readFileSync("wrangler.jsonc", "utf8");
 const productionWorkflow = readFileSync(
   ".github/workflows/deploy-production.yml",
   "utf8",
@@ -15,15 +9,17 @@ const productionWorkflow = readFileSync(
 
 describe("Cloudflare deployment isolation", () => {
   it("keeps the checked-in Wrangler configuration outside production", () => {
-    expect(previewConfig.name).toBe("akari-house-preview");
-    expect(previewConfig.vars.APP_ENV).toBe("preview");
-    expect(previewConfig.vars.APP_URL).not.toBe("https://akarihouse.com");
-    expect(previewConfig.triggers).toBeUndefined();
-    expect(previewConfig.d1_databases[0]?.database_name).toBe(
-      "akari-house-preview-db",
+    expect(previewConfig).toContain('"name": "akari-house-preview"');
+    expect(previewConfig).toContain('"APP_ENV": "preview"');
+    expect(previewConfig).toContain('"APP_URL": "http://localhost:5173"');
+    expect(previewConfig).not.toContain('"APP_ENV": "production"');
+    expect(previewConfig).not.toContain('"APP_URL": "https://akarihouse.com"');
+    expect(previewConfig).not.toContain('"triggers"');
+    expect(previewConfig).toContain(
+      '"database_name": "akari-house-preview-db"',
     );
-    expect(previewConfig.r2_buckets[0]?.bucket_name).toBe(
-      "akari-house-preview-media",
+    expect(previewConfig).toContain(
+      '"bucket_name": "akari-house-preview-media"',
     );
   });
 
