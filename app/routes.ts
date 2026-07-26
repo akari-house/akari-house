@@ -35,6 +35,7 @@ export default [
   route("membership/check-email", "routes/membership-check-email.tsx"),
   route("verify-email", "routes/verify-email.tsx"),
   route("admin/operations", "routes/admin-operations.tsx"),
+  route("admin/production", "routes/admin-production.tsx"),
   route("admin/resilience", "routes/admin-resilience.tsx"),
   route("admin/campaign-operations", "routes/admin-campaign-operations.tsx"),
   route("admin/launch-gate", "routes/admin-launch-gate.tsx"),
