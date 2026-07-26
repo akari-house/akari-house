@@ -37,8 +37,6 @@ const footerGroups = [
   },
 ] as const;
 
-const villageHouses = ["one", "two", "three", "four"] as const;
-
 export function PublicFooter() {
   const footerContentRef = useRef<HTMLDivElement>(null);
   const [landscapeVisible, setLandscapeVisible] = useState(false);
@@ -149,29 +147,12 @@ export function PublicFooter() {
           aria-hidden="true"
           data-footer-landscape
         >
-          <div className="akari-footer__sky-glow" />
-          <div className="akari-footer__mountain akari-footer__mountain--far" />
-          <div className="akari-footer__mountain akari-footer__mountain--near" />
-          <div className="akari-footer__village">
-            {villageHouses.map((house) => (
-              <span
-                className={`akari-footer__house akari-footer__house--${house}`}
-                key={house}
-              >
-                <span className="akari-footer__roof" />
-                <span className="akari-footer__walls">
-                  <span className="akari-footer__window" />
-                </span>
-              </span>
-            ))}
-            <span className="akari-footer__torii">
-              <span />
-            </span>
-          </div>
-          <div className="akari-footer__grass" />
-          <span className="akari-footer__petal akari-footer__petal--one" />
-          <span className="akari-footer__petal akari-footer__petal--two" />
-          <span className="akari-footer__petal akari-footer__petal--three" />
+          <img
+            src="/assets/footer/akari-footer-panorama.svg"
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
         </div>
 
         <div className="akari-footer__bottom">
