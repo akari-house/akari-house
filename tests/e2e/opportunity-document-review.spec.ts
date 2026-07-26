@@ -107,9 +107,7 @@ test.describe("private opportunity document review", () => {
     const approvalCard = opportunityDocumentCard(page);
     await expect(approvalCard).toBeVisible();
     await approvalCard.getByLabel("Category").selectOption("financial");
-    await approvalCard
-      .getByLabel("Access class")
-      .selectOption("confidential");
+    await approvalCard.getByLabel("Access class").selectOption("confidential");
     await approvalCard
       .getByLabel("Decision note")
       .fill("Approved for controlled automated diligence evidence.");
