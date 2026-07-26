@@ -68,17 +68,11 @@ type QuestionRow = {
   createdAt: string;
 };
 
-export const meta: Route.MetaFunction = ({ data }) => [
-  {
-    title: data?.preview
-      ? `${data.preview.title} | AKARI House`
-      : "Opportunity | AKARI House",
-  },
+export const meta: Route.MetaFunction = () => [
+  { title: "Selected opportunity | AKARI House" },
   {
     name: "description",
-    content:
-      data?.preview?.publicSummary ||
-      "An approved opportunity preview inside AKARI House.",
+    content: "An approved opportunity preview inside AKARI House.",
   },
 ];
 
