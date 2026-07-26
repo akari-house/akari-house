@@ -1,0 +1,54 @@
+name: Format Curated Opportunities
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Format release files
+        run: |
+          npx prettier --write \
+            app/components/PublicCommunityProof.tsx \
+            app/components/PublicFooter.tsx \
+            app/components/SiteHeader.tsx \
+            app/lib/opportunity-access.server.ts \
+            app/lib/public-community.server.ts \
+            app/root.tsx \
+            app/routes.ts \
+            app/routes/admin-opportunities.tsx \
+            app/routes/deal-room.tsx \
+            app/routes/deals.tsx \
+            app/routes/home.tsx \
+            app/routes/investor-settings.tsx \
+            app/routes/project-manage.tsx \
+            app/routes/project-opportunity.tsx \
+            app/routes/test-opportunities.ts \
+            app/styles/opportunities.css \
+            tests/e2e/curated-opportunities.spec.ts \
+            tests/unit/opportunity-access.test.ts
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --cached --quiet; then
+            echo "Formatting already clean."
+            exit 0
+          fi
+          git commit -m "Format curated opportunity release"
+          git push
