@@ -1,0 +1,49 @@
+name: Opportunity E2E Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - name: Capture browser failure
+        run: |
+          set +e
+          npm run test:e2e > playwright.log 2>&1
+          status=$?
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          text = re.sub(r"\x1b\[[0-9;]*m", "", Path("playwright.log").read_text(errors="replace"))
+          lines = text.splitlines()
+          selected = []
+          for i, line in enumerate(lines):
+              if re.search(r"\d+\) \[|Error:|failed$", line):
+                  selected.extend(lines[max(0, i-8):min(len(lines), i+45)])
+          body = "\n".join(dict.fromkeys(selected)) or "\n".join(lines[-220:])
+          Path("diagnostic.md").write_text(
+              "Temporary diagnostic for PR #44.\n\n```text\n" + body[:18000] + "\n```\n"
+          )
+          PY
+          echo "status=$status" >> "$GITHUB_ENV"
+      - name: Publish failure
+        if: env.status != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue create --repo "$GITHUB_REPOSITORY" --title "Temporary opportunity browser diagnostic ${GITHUB_SHA:0:7}" --body-file diagnostic.md
+      - name: Enforce
+        run: test "$status" = "0"
