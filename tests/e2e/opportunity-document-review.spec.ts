@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const fixtureHeaders = { "x-akari-test-fixture": "launch-gate-v1" };
-const projectSlug = "launch-gate-owned-project";
+const projectSlug = "opportunity-gate-project";
 
 type Scenario = {
   documentId: string;
@@ -11,24 +11,22 @@ async function activatePersona(
   page: Page,
   persona: string,
   session = true,
-  seedResources = false,
-  reuseExisting = false,
 ) {
   await page.context().clearCookies();
   const response = await page.request.post(`/__test__/personas/${persona}`, {
     headers: fixtureHeaders,
     form: {
       session: session ? "true" : "false",
-      seedResources: seedResources ? "true" : "false",
-      reuseExisting: reuseExisting ? "true" : "false",
+      seedResources: "false",
+      reuseExisting: "true",
     },
   });
   expect(response.status()).toBe(201);
 }
 
 async function prepareScenario(page: Page): Promise<Scenario> {
-  await activatePersona(page, "project_owner", false);
   for (const persona of [
+    "project_owner",
     "investor_granted",
     "investor_expired",
     "investor",
@@ -37,7 +35,6 @@ async function prepareScenario(page: Page): Promise<Scenario> {
     "superadmin",
   ])
     await activatePersona(page, persona, false);
-  await activatePersona(page, "project_owner", false, true, true);
   const response = await page.request.post("/__test__/opportunities/seed", {
     headers: fixtureHeaders,
   });
@@ -47,7 +44,7 @@ async function prepareScenario(page: Page): Promise<Scenario> {
 }
 
 async function usePersona(page: Page, persona: string) {
-  await activatePersona(page, persona, true, false, true);
+  await activatePersona(page, persona, true);
 }
 
 async function documentState(page: Page) {
@@ -87,7 +84,7 @@ test.describe("private opportunity document review", () => {
     expect((await page.request.get(documentUrl)).status()).toBe(404);
     await page.goto(`/deals/${projectSlug}`);
     await expect(
-      page.getByRole("link", { name: "Launch Gate Diligence.txt" }),
+      page.getByRole("link", { name: "Opportunity Gate Diligence.txt" }),
     ).toHaveCount(0);
 
     await usePersona(page, "scoped_admin");
@@ -104,7 +101,7 @@ test.describe("private opportunity document review", () => {
       }),
     ).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Launch Gate Diligence.txt" }),
+      page.getByRole("heading", { name: "Opportunity Gate Diligence.txt" }),
     ).toBeVisible();
     await page.getByLabel("Category").selectOption("financial");
     await page.getByLabel("Access class").selectOption("confidential");
