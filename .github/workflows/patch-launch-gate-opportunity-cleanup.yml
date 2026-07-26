@@ -1,0 +1,86 @@
+name: Patch Launch Gate Opportunity Cleanup
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Add opportunity cleanup before project deletion
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("app/routes/test-persona.ts")
+          value = path.read_text()
+          old = '''    await env.DB.batch([
+      env.DB.prepare(
+        "DELETE FROM document_access_logs WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM document_access_grants WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM data_room_requests WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare("DELETE FROM projects WHERE id = ?").bind(project.id),
+    ]);'''
+          new = '''    await env.DB.batch([
+      env.DB.prepare(
+        "DELETE FROM opportunity_questions WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM opportunity_updates WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM introduction_requests WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM opportunity_user_states WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM project_interests WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM document_access_logs WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM document_access_grants WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM data_room_requests WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM opportunity_listings WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM project_documents WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare("DELETE FROM projects WHERE id = ?").bind(project.id),
+    ]);'''
+          if value.count(old) != 1:
+              raise SystemExit("Expected one launch-gate project cleanup block.")
+          path.write_text(value.replace(old, new, 1))
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write app/routes/test-persona.ts
+      - name: Commit cleanup patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/routes/test-persona.ts
+          git commit -m "Clean opportunity records from launch-gate fixtures"
+          git push
