@@ -1,0 +1,229 @@
+.akari-footer {
+  display: block;
+  padding: clamp(3rem, 6vw, 5.5rem) max(1rem, calc((100vw - 1380px) / 2));
+  border-top: 1px solid var(--hair);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(240, 79, 135, 0.08), transparent 30%),
+    #070a11;
+  color: var(--muted);
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.akari-footer__inner {
+  width: min(1380px, 100%);
+  margin: 0 auto;
+}
+
+.akari-footer__navigation {
+  display: grid;
+  grid-template-columns: minmax(250px, 1.15fr) minmax(0, 2.85fr);
+  gap: clamp(2.5rem, 7vw, 7rem);
+  align-items: start;
+}
+
+.akari-footer__brand {
+  min-width: 0;
+}
+
+.akari-footer .footer-brand {
+  justify-content: flex-start;
+}
+
+.akari-footer .footer-brand img {
+  width: 142px;
+}
+
+.akari-footer__brand > p {
+  max-width: 38ch;
+  margin: 1.25rem 0;
+  color: #c7cad3;
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.akari-footer__principle {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid rgba(255, 211, 61, 0.28);
+  border-radius: 999px;
+  color: var(--yellow);
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.akari-footer .akari-footer__links {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(130px, 1fr));
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  min-width: 0;
+}
+
+.akari-footer__group {
+  min-width: 0;
+}
+
+.akari-footer__group h3 {
+  margin: 0 0 1rem;
+  color: var(--yellow);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.akari-footer__group ul {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.akari-footer__group a {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  color: #c7cad3;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  transition: color 160ms ease;
+}
+
+.akari-footer__group a:hover,
+.akari-footer__group a:focus-visible {
+  color: #fff;
+}
+
+.akari-footer__disclosure {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 3.2fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  margin-top: clamp(3rem, 6vw, 5rem);
+  padding-top: clamp(2rem, 4vw, 3rem);
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.akari-footer__disclosure header > span {
+  color: var(--pink);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.akari-footer__disclosure h2 {
+  max-width: 9ch;
+  margin: 0.65rem 0 0;
+  color: #fff;
+  font-size: clamp(1.75rem, 3vw, 3rem);
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 1.02;
+}
+
+.akari-footer__disclosure-copy {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem clamp(1.5rem, 4vw, 3rem);
+  min-width: 0;
+}
+
+.akari-footer .akari-footer__disclosure-copy p {
+  max-width: none;
+  margin: 0;
+  color: #aeb2bd;
+  font-size: 0.76rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.akari-footer__bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: #818692;
+}
+
+.akari-footer__bottom small:last-child {
+  max-width: 62ch;
+  text-align: right;
+  line-height: 1.55;
+}
+
+@media (max-width: 1050px) {
+  .akari-footer__navigation {
+    grid-template-columns: 1fr;
+    gap: 2.75rem;
+  }
+
+  .akari-footer__brand > p {
+    max-width: 55ch;
+  }
+
+  .akari-footer__disclosure {
+    grid-template-columns: 1fr;
+    gap: 1.75rem;
+  }
+
+  .akari-footer__disclosure h2 {
+    max-width: 14ch;
+  }
+}
+
+@media (max-width: 760px) {
+  .akari-footer {
+    padding: 3.25rem 1rem 2rem;
+    text-align: left;
+  }
+
+  .akari-footer .footer-brand {
+    justify-content: flex-start;
+  }
+
+  .akari-footer .akari-footer__links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2rem 1.25rem;
+  }
+
+  .akari-footer__disclosure-copy {
+    grid-template-columns: 1fr;
+  }
+
+  .akari-footer__bottom {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .akari-footer__bottom small:last-child {
+    max-width: none;
+    text-align: left;
+  }
+}
+
+@media (max-width: 430px) {
+  .akari-footer .akari-footer__links {
+    grid-template-columns: 1fr;
+  }
+
+  .akari-footer__group {
+    padding-top: 1.1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .akari-footer__group:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .akari-footer__disclosure h2 {
+    font-size: 2rem;
+  }
+}
