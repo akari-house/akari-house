@@ -21,7 +21,11 @@ test("public footer remains readable without overflow or collisions", async ({
     ).filter((node) => {
       const style = getComputedStyle(node);
       const rect = node.getBoundingClientRect();
-      return style.visibility !== "hidden" && style.display !== "none" && rect.width > 0;
+      return (
+        style.visibility !== "hidden" &&
+        style.display !== "none" &&
+        rect.width > 0
+      );
     });
 
     const collisions: string[] = [];
@@ -33,8 +37,12 @@ test("public footer remains readable without overflow or collisions", async ({
       ) {
         const first = nodes[firstIndex].getBoundingClientRect();
         const second = nodes[secondIndex].getBoundingClientRect();
-        const horizontal = Math.min(first.right, second.right) - Math.max(first.left, second.left);
-        const vertical = Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top);
+        const horizontal =
+          Math.min(first.right, second.right) -
+          Math.max(first.left, second.left);
+        const vertical =
+          Math.min(first.bottom, second.bottom) -
+          Math.max(first.top, second.top);
         if (horizontal > 1 && vertical > 1)
           collisions.push(`${firstIndex}:${secondIndex}`);
       }
@@ -50,7 +58,8 @@ test("public footer remains readable without overflow or collisions", async ({
 
     return {
       documentOverflow:
-        document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        document.documentElement.scrollWidth -
+        document.documentElement.clientWidth,
       footerOverflow: root.scrollWidth - root.clientWidth,
       collisions,
       outside,

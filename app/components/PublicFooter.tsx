@@ -41,7 +41,10 @@ export function PublicFooter() {
     <footer className="site-footer akari-footer" aria-labelledby="footer-title">
       <div className="akari-footer__inner">
         <div className="akari-footer__navigation">
-          <section className="akari-footer__brand" aria-labelledby="footer-title">
+          <section
+            className="akari-footer__brand"
+            aria-labelledby="footer-title"
+          >
             <h2 id="footer-title" className="sr-only">
               AKARI House information
             </h2>
@@ -87,15 +90,13 @@ export function PublicFooter() {
         >
           <header>
             <span>Important information</span>
-            <h2 id="footer-disclosure-title">
-              Discovery is not a guarantee.
-            </h2>
+            <h2 id="footer-disclosure-title">Discovery is not a guarantee.</h2>
           </header>
           <div className="akari-footer__disclosure-copy">
             <p>
               AKARI House is a professional networking, discovery and
-              collaboration platform. It does not provide investment,
-              financial, legal or tax advice.
+              collaboration platform. It does not provide investment, financial,
+              legal or tax advice.
             </p>
             <p>
               Project review, member verification or access approval is not an

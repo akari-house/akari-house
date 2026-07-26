@@ -123,7 +123,9 @@ describe("public discovery surfaces", () => {
       screen.getByRole("heading", { name: "Discovery is not a guarantee." }),
     ).toBeVisible();
     expect(
-      screen.getByText(/does not provide investment, financial, legal or tax advice/i),
+      screen.getByText(
+        /does not provide investment, financial, legal or tax advice/i,
+      ),
     ).toBeVisible();
     expect(screen.getByText(/subject to final legal review/i)).toBeVisible();
   });
