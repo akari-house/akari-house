@@ -22,29 +22,34 @@ jobs:
 
           css_path = Path("app/styles/footer.css")
           css = css_path.read_text()
-          replacements = [
-              ("  right: -5vw;\n  bottom: -4rem;\n  left: -5vw;", "  right: 0;\n  bottom: -4rem;\n  left: 0;"),
-              ("    right: -12vw;\n    bottom: -3rem;\n    left: -12vw;", "    right: 0;\n    bottom: -3rem;\n    left: 0;"),
-          ]
-          for old, new in replacements:
+          for old, new in [
+              ("  right: -5vw;", "  right: 0;"),
+              ("  left: -5vw;", "  left: 0;"),
+              ("    right: -12vw;", "    right: 0;"),
+              ("    left: -12vw;", "    left: 0;"),
+          ]:
               if css.count(old) != 1:
-                  raise SystemExit(f"Expected one CSS block: {old!r}")
+                  raise SystemExit(f"Expected one CSS value: {old!r}")
               css = css.replace(old, new, 1)
           css_path.write_text(css)
 
           test_path = Path("tests/e2e/footer-trust-layer.spec.ts")
           test = test_path.read_text()
-          old = '''  await expect(landscape).toHaveCSS("transition-duration", "0s");
-          await expect(landscape).toHaveCSS("transform", "none");'''
-          new = '''  const longestTransition = await landscape.evaluate((element) =>
-            Math.max(
-              ...getComputedStyle(element)
-                .transitionDuration.split(",")
-                .map((value) => Number.parseFloat(value) || 0),
-            ),
-          );
-          expect(longestTransition).toBeLessThanOrEqual(0.001);
-          await expect(landscape).toHaveCSS("transform", "none");'''
+          old = (
+              '  await expect(landscape).toHaveCSS("transition-duration", "0s");\n'
+              '  await expect(landscape).toHaveCSS("transform", "none");'
+          )
+          new = (
+              '  const longestTransition = await landscape.evaluate((element) =>\n'
+              '    Math.max(\n'
+              '      ...getComputedStyle(element)\n'
+              '        .transitionDuration.split(",")\n'
+              '        .map((value) => Number.parseFloat(value) || 0),\n'
+              '    ),\n'
+              '  );\n'
+              '  expect(longestTransition).toBeLessThanOrEqual(0.001);\n'
+              '  await expect(landscape).toHaveCSS("transform", "none");'
+          )
           if test.count(old) != 1:
               raise SystemExit("Expected one reduced-motion assertion block.")
           test_path.write_text(test.replace(old, new, 1))
