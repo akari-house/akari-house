@@ -18,17 +18,20 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium firefox webkit
       - name: Run focused browser journeys
         run: |
           set +e
           npx playwright test \
             tests/e2e/curated-opportunities.spec.ts \
             tests/e2e/opportunity-document-review.spec.ts \
-            tests/e2e/inari-homepage-regression.spec.ts \
             --project=desktop-chromium \
-            --reporter=line > focused.log 2>&1
-          desktop_status=$?
+            --reporter=line > opportunity.log 2>&1
+          opportunity_status=$?
+          npx playwright test \
+            tests/e2e/inari-homepage-regression.spec.ts \
+            --reporter=line > inari.log 2>&1
+          inari_status=$?
           npx playwright test \
             tests/e2e/public-journey.spec.ts \
             --project=tablet-chromium \
@@ -39,12 +42,16 @@ jobs:
           import re
 
           parts = []
-          for label, file in [("Desktop opportunity journeys", "focused.log"), ("Tablet public journey", "tablet.log")]:
+          for label, file in [
+              ("Desktop opportunity journeys", "opportunity.log"),
+              ("Inari homepage across all projects", "inari.log"),
+              ("Tablet public journey", "tablet.log"),
+          ]:
               text = re.sub(r"\x1b\[[0-9;]*m", "", Path(file).read_text(errors="replace"))
               parts.append(f"## {label}\n\n```text\n" + "\n".join(text.splitlines()[-220:]) + "\n```")
           Path("diagnostic.md").write_text("Temporary diagnostic for PR #44.\n\n" + "\n\n".join(parts))
           PY
-          if [ "$desktop_status" -ne 0 ] || [ "$tablet_status" -ne 0 ]; then
+          if [ "$opportunity_status" -ne 0 ] || [ "$inari_status" -ne 0 ] || [ "$tablet_status" -ne 0 ]; then
             echo "failed=true" >> "$GITHUB_ENV"
             exit 0
           fi
