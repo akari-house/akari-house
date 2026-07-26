@@ -8,7 +8,7 @@
     "dev": "react-router dev",
     "preview": "npm run build && vite preview",
     "deploy": "npm run build && wrangler deploy",
-    "typecheck": "wrangler types && react-router typegen && tsc -b",
+    "typecheck": "wrangler types --strict-vars false && react-router typegen && tsc -b",
     "lint": "eslint .",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
@@ -18,8 +18,8 @@
     "test:watch": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "db:migrate:local": "wrangler d1 migrations apply akari-house-db --local",
-    "cf:typegen": "wrangler types"
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "cf:typegen": "wrangler types --strict-vars false"
   },
   "dependencies": {
     "isbot": "^5.1.36",
@@ -40,7 +40,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "eslint": "^10.7.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
     "jsdom": "^29.1.1",
     "prettier": "^3.9.6",
     "sharp": "^0.35.3",
