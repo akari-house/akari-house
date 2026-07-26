@@ -21,7 +21,21 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Apply canonical route fallback
-        run: python scripts/finalise-navigation-fix.py
+        run: |
+          set +e
+          python scripts/finalise-navigation-fix.py > patch.log 2>&1
+          status=$?
+          echo "patch_status=$status" >> "$GITHUB_ENV"
+          cat patch.log
+      - name: Upload patch diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: navigation-patch-${{ github.sha }}
+          path: patch.log
+          retention-days: 2
+      - name: Enforce patch
+        run: test "$patch_status" = "0"
       - run: |
           npx prettier --write \
             app/routes.ts \
