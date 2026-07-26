@@ -1,0 +1,36 @@
+.akari-footer__landscape {
+  bottom: -2.5rem;
+  height: clamp(230px, 27vw, 380px);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.5) 18%,
+    #000 44%,
+    #000 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(0, 0, 0, 0.5) 18%,
+    #000 44%,
+    #000 100%
+  );
+}
+
+.akari-footer__landscape.is-visible {
+  opacity: 0.82;
+}
+
+@media (max-width: 760px) {
+  .akari-footer__landscape {
+    bottom: -1rem;
+    height: 230px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .akari-footer__landscape,
+  .akari-footer__landscape.is-visible {
+    opacity: 0.82;
+  }
+}

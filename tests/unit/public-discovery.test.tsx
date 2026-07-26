@@ -132,10 +132,7 @@ describe("public discovery surfaces", () => {
     const landscape = container.querySelector("[data-footer-landscape]");
     expect(landscape).toHaveAttribute("aria-hidden", "true");
     const panorama = landscape?.querySelector("[data-footer-panorama]");
-    expect(panorama).toHaveAttribute(
-      "src",
-      "/assets/footer/akari-footer-panorama.svg",
-    );
+    expect(panorama).toHaveAttribute("src", "/assets/optimized/arrival.webp");
     expect(panorama).toHaveAttribute("alt", "");
   });
 });

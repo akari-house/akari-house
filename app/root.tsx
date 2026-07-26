@@ -12,6 +12,7 @@ import { productionSecurityHeaders } from "~/lib/production-security.server";
 import "./styles/app.css";
 import "./styles/project-needs.css";
 import "./styles/footer.css";
+import "./styles/footer-theme-fix.css";
 import "./styles/opportunities.css";
 
 export const headers: Route.HeadersFunction = () => productionSecurityHeaders();
@@ -81,7 +82,9 @@ export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
       ? "This room does not exist."
       : status === 403
         ? "This room is private."
-        : "The lantern went out unexpectedly.";
+        : status === 503
+          ? "This room is being prepared."
+          : "The lantern went out unexpectedly.";
 
   return (
     <main className="error-page">

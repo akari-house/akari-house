@@ -30,9 +30,8 @@ async function request(path, init = {}) {
 }
 
 function requireStatus(response, allowed, label) {
-  if (!allowed.includes(response.status)) {
+  if (!allowed.includes(response.status))
     throw new Error(`${label} returned HTTP ${response.status}.`);
-  }
 }
 
 await record("health", "Health endpoint and release identity", async () => {
@@ -62,28 +61,44 @@ await record("custom_domain", "Custom domain serves AKARI", async () => {
   return finalUrl.origin;
 });
 
-await record(
-  "login_public",
-  "Login route remains publicly available",
-  async () => {
-    const response = await request("/login");
-    requireStatus(response, [200], "Login route");
-    return "HTTP 200";
-  },
-);
+const publicMenuRoutes = [
+  ["projects", "/projects", "Projects"],
+  ["deals", "/deals", "Investor deals"],
+  ["campaigns", "/campaigns", "Creator campaigns"],
+  ["events", "/events", "Events"],
+  ["archive", "/archive", "Archive"],
+  ["membership", "/membership", "Membership"],
+  ["community_guidelines", "/community-guidelines", "Community guidelines"],
+  ["contact", "/contact", "Contact"],
+  ["privacy", "/privacy", "Privacy"],
+  ["terms", "/terms", "Terms"],
+  ["login", "/login", "Login"],
+  ["register", "/register", "Registration"],
+];
 
-await record(
-  "opportunity_catalogue_public",
-  "Approved opportunity catalogue remains publicly reachable",
-  async () => {
-    const response = await request("/deals");
-    requireStatus(response, [200], "Opportunity catalogue");
-    return "HTTP 200";
-  },
-);
+for (const [key, path, label] of publicMenuRoutes) {
+  await record(
+    `public_${key}`,
+    `${label} remains publicly reachable`,
+    async () => {
+      const response = await request(path, { redirect: "follow" });
+      requireStatus(response, [200], label);
+      const body = await response.text();
+      if (!body.toLowerCase().includes("akari"))
+        throw new Error(`${label} did not render the AKARI application shell.`);
+      return `HTTP ${response.status}`;
+    },
+  );
+}
 
-for (const [key, path, label] of [
-  ["member_auth", "/app", "Member application"],
+const protectedRoutes = [
+  ["member_auth", "/app", "Member dashboard"],
+  ["members_auth", "/members", "Member directory"],
+  ["connections_auth", "/connections", "Connections"],
+  ["notifications_auth", "/notifications", "Notifications"],
+  ["account_auth", "/settings/account", "Account settings"],
+  ["telegram_auth", "/settings/telegram", "Telegram settings"],
+  ["investor_settings_auth", "/settings/investor", "Investor preferences"],
   ["operations_auth", "/admin/operations", "Operations administration"],
   ["production_auth", "/admin/production", "Production administration"],
   ["launch_gate_auth", "/admin/launch-gate", "Launch-gate administration"],
@@ -97,7 +112,9 @@ for (const [key, path, label] of [
     "/admin/opportunities/documents",
     "Opportunity document administration",
   ],
-]) {
+];
+
+for (const [key, path, label] of protectedRoutes) {
   await record(key, `${label} requires authentication`, async () => {
     const response = await request(path);
     requireStatus(response, [302, 303, 307, 308], label);
@@ -113,22 +130,10 @@ await record(
   "All local test fixtures are disabled publicly",
   async () => {
     const probes = [
-      {
-        path: "/__test__/personas/superadmin",
-        method: "GET",
-      },
-      {
-        path: "/__test__/launch-security/account-state",
-        method: "POST",
-      },
-      {
-        path: "/__test__/opportunities/state",
-        method: "POST",
-      },
-      {
-        path: "/__test__/opportunity-documents/state",
-        method: "POST",
-      },
+      { path: "/__test__/personas/superadmin", method: "GET" },
+      { path: "/__test__/launch-security/account-state", method: "POST" },
+      { path: "/__test__/opportunities/state", method: "POST" },
+      { path: "/__test__/opportunity-documents/state", method: "POST" },
     ];
     for (const probe of probes) {
       const response = await request(probe.path, {
@@ -161,7 +166,7 @@ await record(
 
 const failed = checks.filter((check) => check.status === "failed");
 const report = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   environment: "production",
   baseUrl: baseUrl.origin,
   commitSha: process.env.GITHUB_SHA || null,
