@@ -27,12 +27,30 @@ type InvestorEligibilityRow = {
   roleStatus: string;
 };
 
-type ListingAccessRow = {
+export type ListingAccessSnapshot = {
   accessMode: "verified_investors" | "approved_only";
   listingStatus: string;
   requestStatus: string | null;
   expiresAt: string | null;
 };
+
+export function resolveOpportunityListingAccess(
+  row: ListingAccessSnapshot | null,
+  now = Date.now(),
+): OpportunityAccessState {
+  if (!row || row.listingStatus !== "published") return "restricted";
+  if (row.accessMode === "verified_investors") return "approved";
+  if (!row.requestStatus) return "request_required";
+  if (row.requestStatus === "approved") {
+    if (row.expiresAt && Date.parse(row.expiresAt) <= now) return "expired";
+    return "approved";
+  }
+  if (row.requestStatus === "pending") return "requested";
+  if (row.requestStatus === "declined") return "declined";
+  if (row.requestStatus === "revoked") return "revoked";
+  if (row.requestStatus === "expired") return "expired";
+  return "request_required";
+}
 
 export async function investorEligibility(
   db: D1Database,
@@ -92,20 +110,9 @@ export async function opportunityAccessState(
        WHERE ol.project_id = ?`,
     )
     .bind(user.id, projectId)
-    .first<ListingAccessRow>();
+    .first<ListingAccessSnapshot>();
 
-  if (!row || row.listingStatus !== "published") return "restricted";
-  if (row.accessMode === "verified_investors") return "approved";
-  if (!row.requestStatus) return "request_required";
-  if (row.requestStatus === "approved") {
-    if (row.expiresAt && Date.parse(row.expiresAt) <= Date.now()) return "expired";
-    return "approved";
-  }
-  if (row.requestStatus === "pending") return "requested";
-  if (row.requestStatus === "declined") return "declined";
-  if (row.requestStatus === "revoked") return "revoked";
-  if (row.requestStatus === "expired") return "expired";
-  return "request_required";
+  return resolveOpportunityListingAccess(row);
 }
 
 export async function requireOpportunityAccess(
