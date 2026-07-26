@@ -1,0 +1,26 @@
+name: Export Footer Source
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package current footer files
+        run: |
+          mkdir -p footer-source/app/components footer-source/app/styles footer-source/tests/e2e footer-source/tests/unit
+          cp app/components/PublicFooter.tsx footer-source/app/components/
+          cp app/styles/footer.css footer-source/app/styles/
+          cp tests/e2e/footer-trust-layer.spec.ts footer-source/tests/e2e/ || true
+          cp tests/unit/public-discovery.test.tsx footer-source/tests/unit/ || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: footer-source
+          path: footer-source
+          retention-days: 1
