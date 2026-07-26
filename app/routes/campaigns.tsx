@@ -5,11 +5,20 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  const db = context.get(cloudflareContext).env.DB;
-  const [user, campaigns] = await Promise.all([
-    getOptionalUser(request, db),
-    db
+type PublicCampaignRow = {
+  slug: string;
+  title: string;
+  summary: string;
+  compensation: string;
+  campaignKind: string;
+  applicationDeadline: string | null;
+  projectSlug: string;
+  projectTitle: string;
+};
+
+async function readPublishedCampaigns(db: D1Database) {
+  try {
+    const campaigns = await db
       .prepare(
         `SELECT c.slug, c.title, c.summary, c.compensation,
                 c.campaign_kind AS campaignKind,
@@ -20,18 +29,39 @@ export async function loader({ request, context }: Route.LoaderArgs) {
          WHERE c.status = 'published' AND p.status = 'published'
          ORDER BY c.updated_at DESC`,
       )
-      .all<{
-        slug: string;
-        title: string;
-        summary: string;
-        compensation: string;
-        campaignKind: string;
-        applicationDeadline: string | null;
-        projectSlug: string;
-        projectTitle: string;
-      }>(),
+      .all<PublicCampaignRow>();
+    return campaigns.results;
+  } catch (error) {
+    console.error("Campaign directory enhanced query failed.", error);
+  }
+
+  try {
+    const campaigns = await db
+      .prepare(
+        `SELECT c.slug, c.title, c.summary, c.compensation,
+                'campaign' AS campaignKind,
+                c.application_deadline AS applicationDeadline,
+                p.slug AS projectSlug, p.title AS projectTitle
+         FROM ambassador_campaigns c
+         JOIN projects p ON p.id = c.project_id
+         WHERE c.status = 'published' AND p.status = 'published'
+         ORDER BY c.created_at DESC`,
+      )
+      .all<PublicCampaignRow>();
+    return campaigns.results;
+  } catch (error) {
+    console.error("Campaign directory fallback query failed.", error);
+    return [] as PublicCampaignRow[];
+  }
+}
+
+export async function loader({ request, context }: Route.LoaderArgs) {
+  const db = context.get(cloudflareContext).env.DB;
+  const [user, campaigns] = await Promise.all([
+    getOptionalUser(request, db),
+    readPublishedCampaigns(db),
   ]);
-  return { user, campaigns: campaigns.results };
+  return { user, campaigns };
 }
 
 export default function Campaigns({ loaderData }: Route.ComponentProps) {
