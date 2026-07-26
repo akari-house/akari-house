@@ -1,0 +1,46 @@
+name: Footer Horizon Final Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  footer-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - name: Run corrected footer tests
+        run: |
+          set +e
+          npx playwright test tests/e2e/footer-trust-layer.spec.ts --reporter=list > footer-final.log 2>&1
+          status=$?
+          tail -n 260 footer-final.log > footer-final-tail.log
+          echo "status=$status" >> "$GITHUB_ENV"
+      - name: Publish failure details
+        if: env.status != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo 'Final focused browser diagnostic for PR #68.'
+            echo
+            echo '```text'
+            cat footer-final-tail.log
+            echo '```'
+          } > footer-final-issue.md
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Temporary final footer diagnostic ${GITHUB_SHA:0:7}" \
+            --body-file footer-final-issue.md
+      - name: Enforce focused result
+        run: test "$status" = "0"
