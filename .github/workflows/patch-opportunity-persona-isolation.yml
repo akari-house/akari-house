@@ -1,0 +1,232 @@
+name: Patch Opportunity Persona Isolation
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Add opportunity-only personas and update fixtures
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: Path, old: str, new: str):
+              value = path.read_text()
+              count = value.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, found {count}: {old[:100]!r}")
+              path.write_text(value.replace(old, new, 1))
+
+          persona = Path("app/routes/test-persona.ts")
+          replace_once(
+              persona,
+              '''  project_owner: {
+              status: "active",
+              roles: ["founder"],
+              membership: "approved",
+            },''',
+              '''  project_owner: {
+              status: "active",
+              roles: ["founder"],
+              membership: "approved",
+            },
+            opp_owner: {
+              status: "active",
+              roles: ["founder"],
+              membership: "approved",
+            },
+            opp_founder: {
+              status: "active",
+              roles: ["founder"],
+              membership: "approved",
+            },
+            opp_creator: {
+              status: "active",
+              roles: ["creator"],
+              membership: "approved",
+            },
+            opp_investor: {
+              status: "active",
+              roles: ["investor"],
+              membership: "approved",
+            },
+            opp_granted: {
+              status: "active",
+              roles: ["investor"],
+              membership: "approved",
+            },
+            opp_expired: {
+              status: "active",
+              roles: ["investor"],
+              membership: "approved",
+            },
+            opp_scoped_admin: {
+              status: "active",
+              roles: [],
+              membership: "approved",
+              admin: "membership",
+            },
+            opp_superadmin: {
+              status: "active",
+              roles: [],
+              membership: "approved",
+              admin: "superadmin",
+            },''',
+          )
+
+          fixture = Path("app/routes/test-opportunities.ts")
+          replace_once(
+              fixture,
+              '''  const [
+                founder,
+                creator,
+                claimed,
+                granted,
+                expired,
+                suspended,
+                privateTarget,
+              ] = await Promise.all([
+                fixtureUser(env.DB, "project_owner"),
+                fixtureUser(env.DB, "creator"),
+                fixtureUser(env.DB, "investor"),
+                fixtureUser(env.DB, "investor_granted"),
+                fixtureUser(env.DB, "investor_expired"),
+                fixtureUser(env.DB, "suspended"),
+                fixtureUser(env.DB, "private_target"),
+              ]);
+              if (
+                !founder ||
+                !creator ||
+                !claimed ||
+                !granted ||
+                !expired ||
+                !suspended ||
+                !privateTarget
+              )''',
+              '''  const [founder, creator, claimed, granted, expired] = await Promise.all([
+                fixtureUser(env.DB, "opp_owner"),
+                fixtureUser(env.DB, "opp_creator"),
+                fixtureUser(env.DB, "opp_investor"),
+                fixtureUser(env.DB, "opp_granted"),
+                fixtureUser(env.DB, "opp_expired"),
+              ]);
+              if (!founder || !creator || !claimed || !granted || !expired)''',
+          )
+          replace_once(
+              fixture,
+              '''      env.DB.prepare(
+                `UPDATE profile_visibility SET visibility = 'public'
+                   WHERE user_id IN (?, ?, ?, ?)`,
+              ).bind(founder.id, creator.id, granted.id, suspended.id),
+              env.DB.prepare(
+                `UPDATE profiles SET visibility = 'public'
+                   WHERE user_id IN (?, ?, ?, ?)`,
+              ).bind(founder.id, creator.id, granted.id, suspended.id),
+              env.DB.prepare(
+                `UPDATE profile_visibility SET visibility = 'private' WHERE user_id = ?`,
+              ).bind(privateTarget.id),
+              env.DB.prepare(
+                `UPDATE profiles SET visibility = 'private' WHERE user_id = ?`,
+              ).bind(privateTarget.id),
+            ''',
+              '''''',
+          )
+
+          curated = Path("tests/e2e/curated-opportunities.spec.ts")
+          replace_once(
+              curated,
+              '''  for (const persona of [
+                "project_owner",
+                "creator",
+                "investor",
+                "investor_granted",
+                "investor_expired",
+                "suspended",
+                "private_target",
+                "founder",
+                "scoped_admin",
+                "superadmin",
+              ])''',
+              '''  for (const persona of [
+                "opp_owner",
+                "opp_creator",
+                "opp_investor",
+                "opp_granted",
+                "opp_expired",
+                "opp_founder",
+                "opp_scoped_admin",
+                "opp_superadmin",
+              ])''',
+          )
+          value = curated.read_text()
+          for old, new in {
+              'usePersona(page, "creator")': 'usePersona(page, "opp_creator")',
+              'usePersona(page, "investor")': 'usePersona(page, "opp_investor")',
+              'usePersona(page, "investor_granted")': 'usePersona(page, "opp_granted")',
+              'usePersona(page, "investor_expired")': 'usePersona(page, "opp_expired")',
+              'usePersona(page, "founder")': 'usePersona(page, "opp_founder")',
+              'usePersona(page, "scoped_admin")': 'usePersona(page, "opp_scoped_admin")',
+              'usePersona(page, "superadmin")': 'usePersona(page, "opp_superadmin")',
+          }.items():
+              value = value.replace(old, new)
+          curated.write_text(value)
+
+          review = Path("tests/e2e/opportunity-document-review.spec.ts")
+          replace_once(
+              review,
+              '''  for (const persona of [
+                "project_owner",
+                "investor_granted",
+                "investor_expired",
+                "investor",
+                "creator",
+                "scoped_admin",
+                "superadmin",
+              ])''',
+              '''  for (const persona of [
+                "opp_owner",
+                "opp_granted",
+                "opp_expired",
+                "opp_investor",
+                "opp_creator",
+                "opp_scoped_admin",
+                "opp_superadmin",
+              ])''',
+          )
+          value = review.read_text()
+          for old, new in {
+              'usePersona(page, "investor_granted")': 'usePersona(page, "opp_granted")',
+              'usePersona(page, "scoped_admin")': 'usePersona(page, "opp_scoped_admin")',
+              'usePersona(page, "superadmin")': 'usePersona(page, "opp_superadmin")',
+          }.items():
+              value = value.replace(old, new)
+          review.write_text(value)
+          PY
+      - run: |
+          npx prettier --write \
+            app/routes/test-persona.ts \
+            app/routes/test-opportunities.ts \
+            tests/e2e/curated-opportunities.spec.ts \
+            tests/e2e/opportunity-document-review.spec.ts
+      - name: Commit persona isolation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/routes/test-persona.ts app/routes/test-opportunities.ts tests/e2e/curated-opportunities.spec.ts tests/e2e/opportunity-document-review.spec.ts
+          git commit -m "Isolate opportunity test personas"
+          git push
