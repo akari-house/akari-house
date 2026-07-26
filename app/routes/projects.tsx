@@ -11,6 +11,17 @@ import {
   type ProjectNeed,
 } from "~/lib/project-needs";
 
+type PublicProjectRow = {
+  slug: string;
+  title: string;
+  summary: string;
+  stage: string;
+  seeking: string;
+  founderName: string;
+  founderUsername: string;
+  followerCount: number;
+};
+
 export const meta: Route.MetaFunction = () => [
   { title: "Project Lanterns | AKARI House" },
   {
@@ -19,6 +30,48 @@ export const meta: Route.MetaFunction = () => [
       "Explore approved Founder projects seeking thoughtful collaborators and considered investment inside AKARI House.",
   },
 ];
+
+async function readPublishedProjects(db: D1Database) {
+  try {
+    const projects = await db
+      .prepare(
+        `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
+                p.display_name AS founderName, u.username AS founderUsername,
+                COUNT(DISTINCT pf.user_id) AS followerCount
+         FROM projects pr
+         JOIN users u ON u.id = pr.founder_user_id
+         LEFT JOIN profiles p ON p.user_id = u.id
+         LEFT JOIN project_follows pf ON pf.project_id = pr.id
+         WHERE pr.status = 'published'
+         GROUP BY pr.id
+         ORDER BY pr.updated_at DESC`,
+      )
+      .all<PublicProjectRow>();
+    return projects.results;
+  } catch (error) {
+    console.error("Project directory enhanced query failed.", error);
+  }
+
+  try {
+    const projects = await db
+      .prepare(
+        `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
+                COALESCE(p.display_name, u.username, 'AKARI Founder') AS founderName,
+                u.username AS founderUsername,
+                0 AS followerCount
+         FROM projects pr
+         JOIN users u ON u.id = pr.founder_user_id
+         LEFT JOIN profiles p ON p.user_id = u.id
+         WHERE pr.status = 'published'
+         ORDER BY pr.updated_at DESC`,
+      )
+      .all<PublicProjectRow>();
+    return projects.results;
+  } catch (error) {
+    console.error("Project directory fallback query failed.", error);
+    return [] as PublicProjectRow[];
+  }
+}
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -29,37 +82,15 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   )
     ? (requestedNeed as ProjectNeed)
     : "";
-  const projects = await db
-    .prepare(
-      `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
-              p.display_name AS founderName, u.username AS founderUsername,
-              COUNT(DISTINCT pf.user_id) AS followerCount
-       FROM projects pr
-       JOIN users u ON u.id = pr.founder_user_id
-       JOIN profiles p ON p.user_id = u.id
-       LEFT JOIN project_follows pf ON pf.project_id = pr.id
-       WHERE pr.status = 'published'
-       GROUP BY pr.id
-       ORDER BY pr.updated_at DESC`,
-    )
-    .all<{
-      slug: string;
-      title: string;
-      summary: string;
-      stage: string;
-      seeking: string;
-      founderName: string;
-      founderUsername: string;
-      followerCount: number;
-    }>();
+  const projects = await readPublishedProjects(db);
   return {
     user,
     selectedNeed,
     projects: selectedNeed
-      ? projects.results.filter((project) =>
+      ? projects.filter((project) =>
           projectHasNeed(project.seeking, selectedNeed),
         )
-      : projects.results,
+      : projects,
   };
 }
 
