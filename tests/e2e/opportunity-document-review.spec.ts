@@ -66,16 +66,13 @@ async function documentState(page: Page) {
 test.describe("private opportunity document review", () => {
   test.describe.configure({ mode: "serial" });
 
-  test.beforeEach(async ({ page }, testInfo) => {
+  test("approval controls delivery and withdrawal revokes active grants", async ({
+    page,
+  }, testInfo) => {
     test.skip(
       testInfo.project.name !== "desktop-chromium",
       "Private document mutation evidence runs once on desktop Chromium.",
     );
-  });
-
-  test("approval controls delivery and withdrawal revokes active grants", async ({
-    page,
-  }) => {
     const scenario = await prepareScenario(page);
     const documentUrl = `/projects/${projectSlug}/documents/${scenario.documentId}`;
 
