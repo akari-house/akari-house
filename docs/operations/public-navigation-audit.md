@@ -50,3 +50,4 @@ Before merge or production promotion:
 - the production public audit confirms every menu destination
 - test fixture routes return HTTP 404 publicly
 - protected routes retain authentication enforcement
+- footer artwork reuses approved AKARI visual assets
