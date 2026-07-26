@@ -8,6 +8,20 @@ import { cloudflareContext } from "~/lib/cloudflare-context";
 import { canHostEvents } from "~/lib/events.server";
 import { AkariMotif } from "~/components/AkariMotif";
 
+type PublicEventRow = {
+  slug: string;
+  title: string;
+  summary: string;
+  format: string;
+  venue: string;
+  startsAt: string;
+  endsAt: string;
+  timezone: string;
+  capacity: number | null;
+  hostName: string;
+  registeredCount: number;
+};
+
 export const meta: Route.MetaFunction = () => [
   { title: "Gatherings | AKARI House" },
   {
@@ -17,39 +31,61 @@ export const meta: Route.MetaFunction = () => [
   },
 ];
 
+async function readPublishedEvents(db: D1Database) {
+  try {
+    const events = await db
+      .prepare(
+        `SELECT e.slug, e.title, e.summary, e.format, e.venue,
+                e.starts_at AS startsAt, e.ends_at AS endsAt,
+                e.timezone, e.capacity,
+                COALESCE(p.display_name, 'AKARI Host') AS hostName,
+                COUNT(CASE WHEN er.status = 'registered' THEN 1 END) AS registeredCount
+         FROM events e
+         LEFT JOIN profiles p ON p.user_id = e.host_user_id
+         LEFT JOIN event_registrations er ON er.event_id = e.id
+         WHERE e.status = 'published' AND e.ends_at >= datetime('now')
+         GROUP BY e.id ORDER BY e.starts_at`,
+      )
+      .all<PublicEventRow>();
+    return events.results;
+  } catch (error) {
+    console.error("Event directory enhanced query failed.", error);
+  }
+
+  try {
+    const events = await db
+      .prepare(
+        `SELECT e.slug, e.title, e.summary, e.format, e.venue,
+                e.starts_at AS startsAt, e.ends_at AS endsAt,
+                e.timezone, NULL AS capacity,
+                COALESCE(p.display_name, 'AKARI Host') AS hostName,
+                0 AS registeredCount
+         FROM events e
+         LEFT JOIN profiles p ON p.user_id = e.host_user_id
+         WHERE e.status = 'published' AND e.ends_at >= datetime('now')
+         ORDER BY e.starts_at`,
+      )
+      .all<PublicEventRow>();
+    return events.results;
+  } catch (error) {
+    console.error("Event directory fallback query failed.", error);
+    return [] as PublicEventRow[];
+  }
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const user = await getOptionalUser(request, db);
-  const events = await db
-    .prepare(
-      `SELECT e.slug, e.title, e.summary, e.format, e.venue,
-              e.starts_at AS startsAt, e.ends_at AS endsAt,
-              e.timezone, e.capacity, p.display_name AS hostName,
-              COUNT(CASE WHEN er.status = 'registered' THEN 1 END) AS registeredCount
-       FROM events e
-       JOIN profiles p ON p.user_id = e.host_user_id
-       LEFT JOIN event_registrations er ON er.event_id = e.id
-       WHERE e.status = 'published' AND e.ends_at >= datetime('now')
-       GROUP BY e.id ORDER BY e.starts_at`,
-    )
-    .all<{
-      slug: string;
-      title: string;
-      summary: string;
-      format: string;
-      venue: string;
-      startsAt: string;
-      endsAt: string;
-      timezone: string;
-      capacity: number | null;
-      hostName: string;
-      registeredCount: number;
-    }>();
-  return {
-    user,
-    events: events.results,
-    canHost: user ? await canHostEvents(db, user.id) : false,
-  };
+  const [events, canHost] = await Promise.all([
+    readPublishedEvents(db),
+    user
+      ? canHostEvents(db, user.id).catch((error) => {
+          console.error("Event host eligibility query failed.", error);
+          return false;
+        })
+      : Promise.resolve(false),
+  ]);
+  return { user, events, canHost };
 }
 
 export default function Events({ loaderData }: Route.ComponentProps) {
