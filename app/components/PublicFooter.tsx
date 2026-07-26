@@ -40,12 +40,12 @@ const footerGroups = [
 const villageHouses = ["one", "two", "three", "four"] as const;
 
 export function PublicFooter() {
-  const landscapeRef = useRef<HTMLDivElement>(null);
+  const footerContentRef = useRef<HTMLDivElement>(null);
   const [landscapeVisible, setLandscapeVisible] = useState(false);
 
   useEffect(() => {
-    const landscape = landscapeRef.current;
-    if (!landscape || typeof IntersectionObserver === "undefined") {
+    const footerContent = footerContentRef.current;
+    if (!footerContent || typeof IntersectionObserver === "undefined") {
       setLandscapeVisible(true);
       return;
     }
@@ -56,15 +56,15 @@ export function PublicFooter() {
         setLandscapeVisible(true);
         observer.disconnect();
       },
-      { rootMargin: "0px 0px -8%", threshold: 0.12 },
+      { threshold: 0.01 },
     );
-    observer.observe(landscape);
+    observer.observe(footerContent);
     return () => observer.disconnect();
   }, []);
 
   return (
     <footer className="site-footer akari-footer" aria-labelledby="footer-title">
-      <div className="akari-footer__inner">
+      <div ref={footerContentRef} className="akari-footer__inner">
         <div className="akari-footer__navigation">
           <section
             className="akari-footer__brand"
@@ -145,7 +145,6 @@ export function PublicFooter() {
         </section>
 
         <div
-          ref={landscapeRef}
           className={`akari-footer__landscape${landscapeVisible ? " is-visible" : ""}`}
           aria-hidden="true"
           data-footer-landscape
