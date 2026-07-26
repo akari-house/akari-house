@@ -177,14 +177,14 @@ jobs:
                   diagnostic = diagnostic.replace(value, f"[REDACTED_{key}]")
           diagnostic = "\n".join(diagnostic.splitlines()[-40:])
           body = (
-              f"❌ Public deployment failed for commit `{os.environ['GITHUB_SHA']}`. "
-              f"Review: https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}\n\n"
+              f"Deployment commit: `{os.environ['GITHUB_SHA']}`\n\n"
+              f"Workflow: https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}\n\n"
               "Sanitised Cloudflare diagnostic:\n\n```text\n"
               f"{diagnostic}\n```\n"
           )
           Path("deployment-failure-comment.md").write_text(body)
           PY
-          gh issue comment 31 --repo "$GITHUB_REPOSITORY" --body-file deployment-failure-comment.md
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "Production deploy diagnostic ${GITHUB_SHA:0:7}" --body-file deployment-failure-comment.md
 
   missing-cloudflare-credentials:
     needs: preflight
