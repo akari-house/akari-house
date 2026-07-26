@@ -18,19 +18,36 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Capture test output
+      - name: Capture failed tests only
         run: |
           set +e
           npm test -- --reporter=verbose > test-diagnostic.log 2>&1
           status=$?
-          tail -n 180 test-diagnostic.log > test-diagnostic-tail.log
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          value = Path("test-diagnostic.log").read_text(errors="replace")
+          value = re.sub(r"\x1b\[[0-9;]*m", "", value)
+          marker = "Failed Tests"
+          if marker in value:
+              value = value[value.index(marker):]
+          else:
+              lines = value.splitlines()
+              matched = []
+              for index, line in enumerate(lines):
+                  if "FAIL" in line or "AssertionError" in line or "Test Files" in line:
+                      matched.extend(lines[max(0, index - 8):min(len(lines), index + 35)])
+              value = "\n".join(matched or lines[-120:])
+          Path("test-diagnostic-tail.log").write_text("\n".join(value.splitlines()[:220]))
+          PY
           echo "status=$status" >> "$GITHUB_ENV"
       - name: Comment diagnostic
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           {
-            echo '### Opportunity test diagnostic'
+            echo '### Opportunity failed-test diagnostic'
             echo
             echo '```text'
             cat test-diagnostic-tail.log
