@@ -1,8 +1,8 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const fixtureHeaders = { "x-akari-test-fixture": "launch-gate-v1" };
 
-async function activateSuperadmin(page: Parameters<typeof test>[0]["page"]) {
+async function activateSuperadmin(page: Page) {
   await page.context().clearCookies();
   const response = await page.request.post("/__test__/personas/superadmin", {
     headers: fixtureHeaders,
