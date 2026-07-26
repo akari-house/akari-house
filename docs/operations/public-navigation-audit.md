@@ -4,6 +4,8 @@
 
 Every destination exposed in the public header or footer must render a valid AKARI House page in production. A newly released feature must not return HTTP 500 when its database migration and Worker deployment arrive at different times.
 
+This runbook and the automated route list must be updated whenever a public menu destination is added, renamed or removed.
+
 ## Public destinations
 
 The production gate checks these routes for HTTP 200 and the AKARI application shell:
