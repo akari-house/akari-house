@@ -28,7 +28,6 @@ jobs:
             app/lib/production-readiness.ts \
             app/routes/admin-production.tsx \
             app/routes.ts \
-            migrations/0100_production_pilot_command.sql \
             scripts/production-public-audit.mjs \
             tests/e2e/production-command-centre.spec.ts \
             tests/unit/production-readiness.test.ts
