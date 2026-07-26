@@ -40,6 +40,8 @@ jobs:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       PUBLIC_WORKER_URL: https://akari-house.spacematesxyz.workers.dev
+      PRODUCTION_URL: https://akarihouse.com
+      EXPECTED_RELEASE: launch-completion-2026-07-26
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -155,18 +157,45 @@ jobs:
           done
           echo "The Worker deployment did not return the expected public release."
           exit 1
-      - name: Check custom domain
+      - name: Run public production audit
+        run: node scripts/production-public-audit.mjs
+      - name: Persist production audit in D1
         run: |
-          if response=$(curl -fsS --max-time 20 https://akarihouse.com/health); then
-            echo "$response"
-          else
-            echo "::warning::The Worker is public, but akarihouse.com still requires DNS/custom-domain cutover."
-          fi
+          node --input-type=module <<'NODE'
+          import { randomUUID } from "node:crypto";
+          import fs from "node:fs";
+
+          const report = JSON.parse(fs.readFileSync("production-audit.json", "utf8"));
+          const sqlValue = (value) =>
+            value == null ? "NULL" : `'${String(value).replaceAll("'", "''")}'`;
+          const sql = `INSERT INTO production_audit_runs
+            (id, commit_sha, environment, status, checks_json, workflow_url, completed_at)
+            VALUES (
+              ${sqlValue(randomUUID())},
+              ${sqlValue(report.commitSha)},
+              ${sqlValue(report.environment)},
+              ${sqlValue(report.status)},
+              ${sqlValue(JSON.stringify(report.checks))},
+              ${sqlValue(report.workflowUrl)},
+              ${sqlValue(report.completedAt)}
+            );\n`;
+          fs.writeFileSync("production-audit.sql", sql);
+          NODE
+          npx wrangler d1 execute DB --remote --config wrangler.production.jsonc --file production-audit.sql
+      - name: Upload public production audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-public-audit-${{ github.sha }}
+          path: production-audit.json
+          retention-days: 90
+      - name: Enforce public production audit
+        run: |
+          node -e 'const fs=require("fs"); const report=JSON.parse(fs.readFileSync("production-audit.json","utf8")); if(report.status!=="passed") { console.error(JSON.stringify(report,null,2)); process.exit(1); }'
       - name: Record successful public deployment
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment 31 --repo "$GITHUB_REPOSITORY" --body "✅ Public deployment succeeded for commit \`${GITHUB_SHA}\`. Live Worker: ${PUBLIC_WORKER_URL} — the custom domain check runs separately and may still require DNS cutover."
+          gh issue comment 31 --repo "$GITHUB_REPOSITORY" --body "✅ Public deployment and custom-domain audit succeeded for commit \`${GITHUB_SHA}\`. Live product: ${PRODUCTION_URL}. Audit evidence was persisted in D1 and uploaded as a 90-day workflow artifact."
       - name: Record deployment failure
         if: failure()
         env:
@@ -177,16 +206,22 @@ jobs:
           from pathlib import Path
 
           diagnostic_path = Path("production-deploy-error.log")
-          diagnostic = diagnostic_path.read_text() if diagnostic_path.exists() else "No deployment diagnostic was produced."
+          audit_path = Path("production-audit.json")
+          if diagnostic_path.exists():
+              diagnostic = diagnostic_path.read_text()
+          elif audit_path.exists():
+              diagnostic = audit_path.read_text()
+          else:
+              diagnostic = "No deployment diagnostic was produced."
           for key in ("CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"):
               value = os.environ.get(key, "")
               if value:
                   diagnostic = diagnostic.replace(value, f"[REDACTED_{key}]")
-          diagnostic = "\n".join(diagnostic.splitlines()[-40:])
+          diagnostic = "\n".join(diagnostic.splitlines()[-60:])
           body = (
               f"Deployment commit: `{os.environ['GITHUB_SHA']}`\n\n"
               f"Workflow: https://github.com/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}\n\n"
-              "Sanitised Cloudflare diagnostic:\n\n```text\n"
+              "Sanitised production diagnostic:\n\n```text\n"
               f"{diagnostic}\n```\n"
           )
           Path("deployment-failure-comment.md").write_text(body)
