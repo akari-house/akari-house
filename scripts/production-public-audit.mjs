@@ -1,6 +1,8 @@
 import { writeFile } from "node:fs/promises";
 import process from "node:process";
+import { URL } from "node:url";
 
+const fetch = globalThis.fetch;
 const baseUrl = new URL(
   process.env.PRODUCTION_URL || "https://akarihouse.com",
 );
@@ -24,7 +26,7 @@ async function record(key, label, run) {
 async function request(path, init = {}) {
   return fetch(new URL(path, baseUrl), {
     redirect: "manual",
-    signal: AbortSignal.timeout(20_000),
+    signal: globalThis.AbortSignal.timeout(20_000),
     ...init,
   });
 }
