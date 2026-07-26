@@ -133,3 +133,7 @@ Before admitting a controlled Investor cohort:
 - public community totals have been sampled for privacy
 - no critical or high-severity finding remains open
 - provisional legal and risk copy has received final counsel review
+
+## Automated validation isolation
+
+Opportunity browser fixtures use dedicated `opp_*` personas, a dedicated project, a dedicated document and a separate R2 object so the Investor-access suite cannot mutate the existing membership, project or campaign launch-gate evidence.
