@@ -100,8 +100,14 @@ describe("public discovery surfaces", () => {
     expect(screen.getByText("From the Archive")).toBeVisible();
   });
 
-  it("keeps trust and policy links available in the public footer", () => {
+  it("organises working destinations and original risk information in the public footer", () => {
     renderWithRouter(<PublicFooter />);
+    for (const heading of ["Network", "Opportunities", "Resources", "Legal"])
+      expect(screen.getByRole("heading", { name: heading })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Projects" })).toHaveAttribute(
+      "href",
+      "/projects",
+    );
     expect(screen.getByRole("link", { name: "Privacy" })).toHaveAttribute(
       "href",
       "/privacy",
@@ -113,5 +119,12 @@ describe("public discovery surfaces", () => {
     expect(
       screen.getByRole("link", { name: "Community guidelines" }),
     ).toHaveAttribute("href", "/community-guidelines");
+    expect(
+      screen.getByRole("heading", { name: "Discovery is not a guarantee." }),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/does not provide investment, financial, legal or tax advice/i),
+    ).toBeVisible();
+    expect(screen.getByText(/subject to final legal review/i)).toBeVisible();
   });
 });
