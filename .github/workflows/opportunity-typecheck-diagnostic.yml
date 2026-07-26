@@ -1,0 +1,42 @@
+name: Opportunity Typecheck Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  typecheck-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Capture typecheck output
+        run: |
+          set +e
+          npm run typecheck > typecheck-diagnostic.log 2>&1
+          status=$?
+          grep -E "error TS[0-9]+:" typecheck-diagnostic.log > typecheck-errors.log || true
+          tail -n 120 typecheck-errors.log > typecheck-errors-tail.log
+          echo "status=$status" >> "$GITHUB_ENV"
+      - name: Comment diagnostic
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo '### Opportunity typecheck diagnostic'
+            echo
+            echo '```text'
+            cat typecheck-errors-tail.log
+            echo '```'
+          } > typecheck-comment.md
+          gh pr comment 44 --repo "$GITHUB_REPOSITORY" --body-file typecheck-comment.md
+      - name: Enforce result
+        run: test "$status" = "0"
