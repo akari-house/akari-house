@@ -1,0 +1,41 @@
+name: Opportunity Test Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  test-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Capture test output
+        run: |
+          set +e
+          npm test -- --reporter=verbose > test-diagnostic.log 2>&1
+          status=$?
+          tail -n 180 test-diagnostic.log > test-diagnostic-tail.log
+          echo "status=$status" >> "$GITHUB_ENV"
+      - name: Comment diagnostic
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo '### Opportunity test diagnostic'
+            echo
+            echo '```text'
+            cat test-diagnostic-tail.log
+            echo '```'
+          } > test-comment.md
+          gh pr comment 44 --repo "$GITHUB_REPOSITORY" --body-file test-comment.md
+      - name: Enforce result
+        run: test "$status" = "0"
