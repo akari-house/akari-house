@@ -7,11 +7,7 @@ type Scenario = {
   documentId: string;
 };
 
-async function activatePersona(
-  page: Page,
-  persona: string,
-  session = true,
-) {
+async function activatePersona(page: Page, persona: string, session = true) {
   await page.context().clearCookies();
   const response = await page.request.post(`/__test__/personas/${persona}`, {
     headers: fixtureHeaders,
