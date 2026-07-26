@@ -1,0 +1,49 @@
+name: Full Browser Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - name: Capture full browser failure
+        run: |
+          set +e
+          npx playwright test --reporter=line > browser.log 2>&1
+          status=$?
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          text = re.sub(r"\x1b\[[0-9;]*m", "", Path("browser.log").read_text(errors="replace"))
+          lines = text.splitlines()
+          selected = []
+          for index, line in enumerate(lines):
+              if re.match(r"\s*\d+\) \[", line) or "Error Context:" in line or re.match(r"\s*\d+ failed", line) or re.match(r"\s*\d+ flaky", line):
+                  selected.extend(lines[max(0, index - 8):min(len(lines), index + 55)])
+          body = "\n".join(dict.fromkeys(selected)) or "\n".join(lines[-350:])
+          Path("diagnostic.md").write_text(
+              "Temporary full-browser diagnostic for PR #44.\n\n```text\n" + body[:28000] + "\n```\n"
+          )
+          PY
+          echo "status=$status" >> "$GITHUB_ENV"
+      - name: Publish failure
+        if: env.status != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue create --repo "$GITHUB_REPOSITORY" --title "Temporary full browser diagnostic ${GITHUB_SHA:0:7}" --body-file diagnostic.md
+      - name: Enforce
+        run: test "$status" = "0"
