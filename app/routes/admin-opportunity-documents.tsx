@@ -129,13 +129,7 @@ export async function action({ request, context }: Route.ActionArgs) {
                approved_by = ?
            WHERE id = ? AND project_id = ?`,
         )
-        .bind(
-          category,
-          visibility,
-          admin.id,
-          document.id,
-          document.projectId,
-        ),
+        .bind(category, visibility, admin.id, document.id, document.projectId),
       db
         .prepare(
           `INSERT INTO notifications
@@ -271,7 +265,8 @@ export default function AdminOpportunityDocuments({
                     </p>
                     {document.approvedAt && (
                       <small>
-                        Approved {new Date(document.approvedAt).toLocaleString()}
+                        Approved{" "}
+                        {new Date(document.approvedAt).toLocaleString()}
                       </small>
                     )}
                   </div>
@@ -293,7 +288,10 @@ export default function AdminOpportunityDocuments({
                     </label>
                     <label>
                       Access class
-                      <select name="visibility" defaultValue={document.visibility}>
+                      <select
+                        name="visibility"
+                        defaultValue={document.visibility}
+                      >
                         <option value="confidential">Confidential</option>
                         <option value="restricted">Restricted</option>
                       </select>

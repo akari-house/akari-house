@@ -133,9 +133,7 @@ test.describe("private opportunity document review", () => {
       .fill("Withdrawing approval must revoke every active grant immediately.");
     await page.getByRole("button", { name: "Withdraw approval" }).click();
     await expect(
-      page.getByText(
-        "Document approval withdrawn and active grants revoked.",
-      ),
+      page.getByText("Document approval withdrawn and active grants revoked."),
     ).toBeVisible();
     await expect(documentState(page)).resolves.toMatchObject({
       approved: false,

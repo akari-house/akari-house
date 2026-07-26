@@ -49,7 +49,9 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
         document.id,
         user.id,
         JSON.stringify({
-          reason: document.approvedAt ? "no_active_grant" : "document_not_approved",
+          reason: document.approvedAt
+            ? "no_active_grant"
+            : "document_not_approved",
         }),
       )
       .run();
