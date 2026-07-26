@@ -88,7 +88,7 @@ jobs:
           NODE
           rm -f d1-databases.json
       - name: Apply production migrations
-        run: npx wrangler d1 migrations apply DB --remote --yes --config wrangler.deploy.jsonc
+        run: npx wrangler d1 migrations apply DB --remote --config wrangler.deploy.jsonc
       - name: Deploy production Worker
         run: npx wrangler deploy --keep-vars --config wrangler.deploy.jsonc
       - name: Confirm public Workers release
