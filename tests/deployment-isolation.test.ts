@@ -1,9 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const previewConfig = JSON.parse(
-  readFileSync("wrangler.jsonc", "utf8"),
-) as {
+const previewConfig = JSON.parse(readFileSync("wrangler.jsonc", "utf8")) as {
   name: string;
   vars: Record<string, string>;
   triggers?: unknown;
@@ -33,12 +31,8 @@ describe("Cloudflare deployment isolation", () => {
     expect(productionWorkflow).toContain("branches:\n      - main");
     expect(productionWorkflow).toContain('name: "akari-house"');
     expect(productionWorkflow).toContain('APP_ENV: "production"');
-    expect(productionWorkflow).toContain(
-      'APP_URL: "https://akarihouse.com"',
-    );
+    expect(productionWorkflow).toContain('APP_URL: "https://akarihouse.com"');
     expect(productionWorkflow).toContain('database_name: "akari-house-db"');
-    expect(productionWorkflow).toContain(
-      'bucket_name: "akari-house-media"',
-    );
+    expect(productionWorkflow).toContain('bucket_name: "akari-house-media"');
   });
 });
