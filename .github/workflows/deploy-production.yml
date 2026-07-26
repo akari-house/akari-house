@@ -48,8 +48,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
-      - run: npm run build
-      - name: Generate production Wrangler configuration
+      - name: Generate production Wrangler input configuration
         run: |
           set -euo pipefail
           npx wrangler d1 list --json > d1-databases.json
@@ -112,17 +111,25 @@ jobs:
             ],
           };
           fs.writeFileSync(
-            "wrangler.deploy.jsonc",
+            "wrangler.production.jsonc",
             `${JSON.stringify(config, null, 2)}\n`,
           );
           NODE
           rm -f d1-databases.json
+      - name: Build production Worker and assets
+        env:
+          CLOUDFLARE_VITE_WRANGLER_CONFIG_PATH: wrangler.production.jsonc
+        run: npm run build
+      - name: Verify generated deployment configuration
+        run: |
+          test -f .wrangler/deploy/config.json
+          node -e 'const fs=require("fs"); const value=JSON.parse(fs.readFileSync(".wrangler/deploy/config.json","utf8")); if(!value.configPath) process.exit(1); console.log("Generated deployment configuration is ready.")'
       - name: Apply production migrations
-        run: npx wrangler d1 migrations apply DB --remote --config wrangler.deploy.jsonc
+        run: npx wrangler d1 migrations apply DB --remote --config wrangler.production.jsonc
       - name: Deploy production Worker
         run: |
           set +e
-          npx wrangler deploy --keep-vars --config wrangler.deploy.jsonc 2>&1 | tee production-deploy.log
+          npx wrangler deploy --keep-vars 2>&1 | tee production-deploy.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             tail -n 80 production-deploy.log > production-deploy-error.log
