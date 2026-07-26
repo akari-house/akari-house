@@ -131,8 +131,16 @@ describe("public discovery surfaces", () => {
 
     const landscape = container.querySelector("[data-footer-landscape]");
     expect(landscape).toHaveAttribute("aria-hidden", "true");
-    expect(landscape?.querySelectorAll(".akari-footer__house")).toHaveLength(4);
-    expect(landscape?.querySelector(".akari-footer__torii")).toBeTruthy();
-    expect(landscape?.querySelector(".akari-footer__grass")).toBeTruthy();
+    const panorama = landscape?.querySelector("[data-footer-panorama]");
+    const tiles = panorama?.querySelectorAll("img");
+    expect(tiles).toHaveLength(6);
+    expect(tiles?.[0]).toHaveAttribute(
+      "src",
+      "/assets/footer/akari-footer-tile-1.svg",
+    );
+    expect(tiles?.[5]).toHaveAttribute(
+      "src",
+      "/assets/footer/akari-footer-tile-6.svg",
+    );
   });
 });

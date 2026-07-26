@@ -37,7 +37,7 @@ const footerGroups = [
   },
 ] as const;
 
-const villageHouses = ["one", "two", "three", "four"] as const;
+const footerPanoramaTiles = [1, 2, 3, 4, 5, 6] as const;
 
 export function PublicFooter() {
   const footerContentRef = useRef<HTMLDivElement>(null);
@@ -149,29 +149,42 @@ export function PublicFooter() {
           aria-hidden="true"
           data-footer-landscape
         >
-          <div className="akari-footer__sky-glow" />
-          <div className="akari-footer__mountain akari-footer__mountain--far" />
-          <div className="akari-footer__mountain akari-footer__mountain--near" />
-          <div className="akari-footer__village">
-            {villageHouses.map((house) => (
-              <span
-                className={`akari-footer__house akari-footer__house--${house}`}
-                key={house}
-              >
-                <span className="akari-footer__roof" />
-                <span className="akari-footer__walls">
-                  <span className="akari-footer__window" />
-                </span>
-              </span>
+          <div
+            data-footer-panorama
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: "50%",
+              display: "grid",
+              width: "max(100%, 525px)",
+              aspectRatio: "3 / 1",
+              gridTemplateColumns: "repeat(6, minmax(0, 1fr))",
+              transform: "translateX(-50%)",
+            }}
+          >
+            {footerPanoramaTiles.map((tile) => (
+              <img
+                key={tile}
+                src={`/assets/footer/akari-footer-tile-${tile}.svg`}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                style={{
+                  display: "block",
+                  width: "100%",
+                  height: "100%",
+                }}
+              />
             ))}
-            <span className="akari-footer__torii">
-              <span />
-            </span>
           </div>
-          <div className="akari-footer__grass" />
-          <span className="akari-footer__petal akari-footer__petal--one" />
-          <span className="akari-footer__petal akari-footer__petal--two" />
-          <span className="akari-footer__petal akari-footer__petal--three" />
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background:
+                "linear-gradient(180deg, rgba(9,11,20,0.42) 0%, rgba(9,11,20,0.1) 55%, rgba(5,7,12,0.2) 100%)",
+            }}
+          />
         </div>
 
         <div className="akari-footer__bottom">
