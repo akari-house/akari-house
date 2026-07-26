@@ -1,0 +1,217 @@
+name: Finalise Navigation Fix
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  finalise:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Move schema fallback into canonical deal routes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path: Path, old: str, new: str):
+              value = path.read_text()
+              count = value.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, found {count}: {old[:120]!r}")
+              path.write_text(value.replace(old, new, 1))
+
+          routes = Path("app/routes.ts")
+          value = routes.read_text()
+          value = value.replace('route("deals", "routes/deals-safe.tsx")', 'route("deals", "routes/deals.tsx")')
+          value = value.replace('route("deals/:dealSlug", "routes/deal-room-safe.tsx")', 'route("deals/:dealSlug", "routes/deal-room.tsx")')
+          routes.write_text(value)
+
+          deals = Path("app/routes/deals.tsx")
+          replace_once(
+              deals,
+              '} from "~/lib/opportunity-access.server";\n',
+              '} from "~/lib/opportunity-access.server";\nimport { isOpportunitySchemaUnavailable } from "~/lib/opportunity-schema.server";\n',
+          )
+          replace_once(
+              deals,
+              '  const userId = user?.id ?? "";\n\n',
+              '''  const userId = user?.id ?? "";
+
+  try {
+    await db.prepare("SELECT 1 FROM opportunity_listings LIMIT 1").first();
+  } catch (error) {
+    if (!isOpportunitySchemaUnavailable(error)) throw error;
+    const projects = await db
+      .prepare(
+        `SELECT pr.id AS projectId, pr.slug, pr.title, pr.summary, pr.stage,
+                pr.seeking, p.display_name AS founderName,
+                pr.updated_at AS updatedAt
+         FROM projects pr
+         JOIN profiles p ON p.user_id = pr.founder_user_id
+         WHERE pr.status = 'published'
+         ORDER BY pr.updated_at DESC
+         LIMIT 100`,
+      )
+      .all<{
+        projectId: string;
+        slug: string;
+        title: string;
+        summary: string;
+        stage: string;
+        seeking: string;
+        founderName: string;
+        updatedAt: string;
+      }>();
+    return {
+      user,
+      verifiedInvestor: false,
+      opportunities: projects.results.map((project) => ({
+        projectId: project.projectId,
+        slug: project.slug,
+        title: project.title,
+        summary: project.summary,
+        publicSummary: project.summary,
+        stage: project.stage,
+        sector: "Public project profile",
+        geography: "",
+        fundingInstrument: "introduction",
+        raiseMinimum: null,
+        raiseMaximum: null,
+        raiseCurrency: "USD",
+        minimumParticipation: null,
+        closingAt: null,
+        founderName: project.founderName,
+        updatedAt: project.updatedAt,
+        savedAt: null,
+        passedAt: null,
+        requestStatus: null,
+      } satisfies OpportunityRow)),
+      view,
+      filters: { sector, stage, geography, instrument },
+      options: { sectors: [], geographies: [], instruments: [] },
+    };
+  }
+
+''',
+          )
+          replace_once(
+              deals,
+              '  const user = await requireApprovedMember(request, db);\n  if (!(await isVerifiedInvestor(db, user)))\n',
+              '''  const user = await requireApprovedMember(request, db);
+  try {
+    await db.prepare("SELECT 1 FROM opportunity_listings LIMIT 1").first();
+  } catch (error) {
+    if (isOpportunitySchemaUnavailable(error))
+      throw new Response("The Deals Room is still being activated.", {
+        status: 503,
+      });
+    throw error;
+  }
+  if (!(await isVerifiedInvestor(db, user)))
+''',
+          )
+
+          room = Path("app/routes/deal-room.tsx")
+          replace_once(
+              room,
+              '} from "~/lib/opportunity-access.server";\n',
+              '} from "~/lib/opportunity-access.server";\nimport { isOpportunitySchemaUnavailable } from "~/lib/opportunity-schema.server";\n',
+          )
+          replace_once(
+              room,
+              '  const user = await getOptionalUser(request, db);\n  const preview = await db\n',
+              '''  const user = await getOptionalUser(request, db);
+  try {
+    await db.prepare("SELECT 1 FROM opportunity_listings LIMIT 1").first();
+  } catch (error) {
+    if (!isOpportunitySchemaUnavailable(error)) throw error;
+    const project = await db
+      .prepare(
+        `SELECT slug FROM projects
+         WHERE slug = ? AND status = 'published'
+         LIMIT 1`,
+      )
+      .bind(params.dealSlug)
+      .first<{ slug: string }>();
+    if (project) throw redirect(`/projects/${project.slug}`);
+    throw new Response("Opportunity not found.", { status: 404 });
+  }
+  const preview = await db
+''',
+          )
+          replace_once(
+              room,
+              '  const user = await requireApprovedMember(request, db);\n  await requireActionRateLimit(\n',
+              '''  const user = await requireApprovedMember(request, db);
+  try {
+    await db.prepare("SELECT 1 FROM opportunity_listings LIMIT 1").first();
+  } catch (error) {
+    if (isOpportunitySchemaUnavailable(error))
+      throw new Response("The private deal room is still being activated.", {
+        status: 503,
+      });
+    throw error;
+  }
+  await requireActionRateLimit(
+''',
+          )
+
+          navigation_test = Path("tests/navigation-destinations.test.ts")
+          value = navigation_test.read_text()
+          value = value.replace('route("deals", "routes/deals-safe.tsx")', 'route("deals", "routes/deals.tsx")')
+          value = value.replace('route("deals/:dealSlug", "routes/deal-room-safe.tsx")', 'route("deals/:dealSlug", "routes/deal-room.tsx")')
+          value = value.replace(
+              '  it("routes deal pages through production-safe handlers", () => {\n',
+              '  it("keeps schema-safe behaviour in the canonical deal routes", () => {\n',
+          )
+          value = value.replace(
+              '    expect(routeSource).toContain(\'route("deals", "routes/deals.tsx")\');\n    expect(routeSource).toContain(\n      \'route("deals/:dealSlug", "routes/deal-room.tsx")\',\n    );\n',
+              '''    expect(routeSource).toContain('route("deals", "routes/deals.tsx")');
+    expect(routeSource).toContain(
+      'route("deals/:dealSlug", "routes/deal-room.tsx")',
+    );
+    expect(readFileSync("app/routes/deals.tsx", "utf8")).toContain(
+      "isOpportunitySchemaUnavailable",
+    );
+    expect(readFileSync("app/routes/deal-room.tsx", "utf8")).toContain(
+      "isOpportunitySchemaUnavailable",
+    );
+''',
+          )
+          navigation_test.write_text(value)
+
+          for filename in [
+              "app/routes/deals-safe.tsx",
+              "app/routes/deal-room-safe.tsx",
+              ".github/workflows/diagnose-navigation-fix.yml",
+              ".github/workflows/finalise-navigation-fix.yml",
+          ]:
+              Path(filename).unlink(missing_ok=True)
+          PY
+      - run: |
+          npx prettier --write \
+            app/routes.ts \
+            app/routes/deals.tsx \
+            app/routes/deal-room.tsx \
+            app/lib/opportunity-schema.server.ts \
+            tests/navigation-destinations.test.ts
+      - run: npm run typecheck
+      - name: Commit canonical production fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Keep deal routes available during schema activation"
+          git push
