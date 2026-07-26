@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 
 const footerGroups = [
@@ -36,7 +37,31 @@ const footerGroups = [
   },
 ] as const;
 
+const villageHouses = ["one", "two", "three", "four"] as const;
+
 export function PublicFooter() {
+  const landscapeRef = useRef<HTMLDivElement>(null);
+  const [landscapeVisible, setLandscapeVisible] = useState(false);
+
+  useEffect(() => {
+    const landscape = landscapeRef.current;
+    if (!landscape || typeof IntersectionObserver === "undefined") {
+      setLandscapeVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) return;
+        setLandscapeVisible(true);
+        observer.disconnect();
+      },
+      { rootMargin: "0px 0px -8%", threshold: 0.12 },
+    );
+    observer.observe(landscape);
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <footer className="site-footer akari-footer" aria-labelledby="footer-title">
       <div className="akari-footer__inner">
@@ -118,6 +143,37 @@ export function PublicFooter() {
             </p>
           </div>
         </section>
+
+        <div
+          ref={landscapeRef}
+          className={`akari-footer__landscape${landscapeVisible ? " is-visible" : ""}`}
+          aria-hidden="true"
+          data-footer-landscape
+        >
+          <div className="akari-footer__sky-glow" />
+          <div className="akari-footer__mountain akari-footer__mountain--far" />
+          <div className="akari-footer__mountain akari-footer__mountain--near" />
+          <div className="akari-footer__village">
+            {villageHouses.map((house) => (
+              <span
+                className={`akari-footer__house akari-footer__house--${house}`}
+                key={house}
+              >
+                <span className="akari-footer__roof" />
+                <span className="akari-footer__walls">
+                  <span className="akari-footer__window" />
+                </span>
+              </span>
+            ))}
+            <span className="akari-footer__torii">
+              <span />
+            </span>
+          </div>
+          <div className="akari-footer__grass" />
+          <span className="akari-footer__petal akari-footer__petal--one" />
+          <span className="akari-footer__petal akari-footer__petal--two" />
+          <span className="akari-footer__petal akari-footer__petal--three" />
+        </div>
 
         <div className="akari-footer__bottom">
           <small>© 2026 AKARI House. All rights reserved.</small>
