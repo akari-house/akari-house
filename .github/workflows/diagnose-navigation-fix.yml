@@ -29,6 +29,7 @@ jobs:
         if: env.status != '0'
         env:
           GH_TOKEN: ${{ github.token }}
+          GITHUB_EVENT_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           {
             echo "### Navigation fix typecheck diagnostic"
@@ -38,8 +39,5 @@ jobs:
             echo '```'
           } > diagnostic.md
           gh pr comment "$GITHUB_EVENT_PULL_REQUEST_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file diagnostic.md
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GITHUB_EVENT_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
       - name: Enforce
         run: test "$status" = "0"
