@@ -91,61 +91,92 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const userId = user?.id ?? "";
 
   try {
-    await db.prepare("SELECT 1 FROM opportunity_listings LIMIT 1").first();
+    await db
+      .prepare(
+        `SELECT ol.project_id, ol.status, ol.reviewed_at, ol.closing_at,
+                ol.sector, ol.geography, ol.funding_instrument,
+                ol.raise_minimum, ol.raise_maximum, ol.raise_currency,
+                ol.minimum_participation, ol.public_summary, ol.updated_at,
+                ous.saved_at, ous.passed_at,
+                drr.status AS requestStatus, drr.expires_at
+         FROM opportunity_listings ol
+         LEFT JOIN opportunity_user_states ous
+           ON ous.project_id = ol.project_id
+         LEFT JOIN data_room_requests drr
+           ON drr.project_id = ol.project_id
+         LIMIT 1`,
+      )
+      .first();
   } catch (error) {
     if (!isOpportunitySchemaUnavailable(error)) throw error;
-    const projects = await db
-      .prepare(
-        `SELECT pr.id AS projectId, pr.slug, pr.title, pr.summary, pr.stage,
-                pr.seeking, p.display_name AS founderName,
+    try {
+      const projects = await db
+        .prepare(
+          `SELECT pr.id AS projectId, pr.slug, pr.title, pr.summary, pr.stage,
+                pr.seeking,
+                COALESCE(p.display_name, 'AKARI Founder') AS founderName,
                 pr.updated_at AS updatedAt
          FROM projects pr
-         JOIN profiles p ON p.user_id = pr.founder_user_id
+         LEFT JOIN profiles p ON p.user_id = pr.founder_user_id
          WHERE pr.status = 'published'
          ORDER BY pr.updated_at DESC
          LIMIT 100`,
-      )
-      .all<{
-        projectId: string;
-        slug: string;
-        title: string;
-        summary: string;
-        stage: string;
-        seeking: string;
-        founderName: string;
-        updatedAt: string;
-      }>();
-    return {
-      user,
-      verifiedInvestor: false,
-      opportunities: projects.results.map(
-        (project) =>
-          ({
-            projectId: project.projectId,
-            slug: project.slug,
-            title: project.title,
-            summary: project.summary,
-            publicSummary: project.summary,
-            stage: project.stage,
-            sector: "Public project profile",
-            geography: "",
-            fundingInstrument: "introduction",
-            raiseMinimum: null,
-            raiseMaximum: null,
-            raiseCurrency: "USD",
-            minimumParticipation: null,
-            closingAt: null,
-            founderName: project.founderName,
-            updatedAt: project.updatedAt,
-            savedAt: null,
-            passedAt: null,
-            requestStatus: null,
-          }) satisfies OpportunityRow,
-      ),
-      view,
-      filters: { sector, stage, geography, instrument },
-      options: { sectors: [], geographies: [], instruments: [] },
-    };
+        )
+        .all<{
+          projectId: string;
+          slug: string;
+          title: string;
+          summary: string;
+          stage: string;
+          seeking: string;
+          founderName: string;
+          updatedAt: string;
+        }>();
+      return {
+        user,
+        verifiedInvestor: false,
+        opportunities: projects.results.map(
+          (project) =>
+            ({
+              projectId: project.projectId,
+              slug: project.slug,
+              title: project.title,
+              summary: project.summary,
+              publicSummary: project.summary,
+              stage: project.stage,
+              sector: "Public project profile",
+              geography: "",
+              fundingInstrument: "introduction",
+              raiseMinimum: null,
+              raiseMaximum: null,
+              raiseCurrency: "USD",
+              minimumParticipation: null,
+              closingAt: null,
+              founderName: project.founderName,
+              updatedAt: project.updatedAt,
+              savedAt: null,
+              passedAt: null,
+              requestStatus: null,
+            }) satisfies OpportunityRow,
+        ),
+        view,
+        filters: { sector, stage, geography, instrument },
+        options: { sectors: [], geographies: [], instruments: [] },
+      };
+    } catch (fallbackError) {
+      console.error(
+        "Deals public project fallback query failed.",
+        fallbackError,
+      );
+      return {
+        user,
+        verifiedInvestor: false,
+        opportunities: [] as OpportunityRow[],
+        view,
+        filters: { sector, stage, geography, instrument },
+        options: { sectors: [], geographies: [], instruments: [] },
+      };
+    }
   }
 
   const conditions = ["ol.status = 'published'", "pr.status = 'published'"];

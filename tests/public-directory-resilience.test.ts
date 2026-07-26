@@ -10,8 +10,12 @@ const sources = {
 
 describe("public directory resilience", () => {
   it("keeps project, campaign and event directories available after enhanced query failures", () => {
-    expect(sources.projects).toContain("Project directory fallback query failed");
-    expect(sources.campaigns).toContain("Campaign directory fallback query failed");
+    expect(sources.projects).toContain(
+      "Project directory fallback query failed",
+    );
+    expect(sources.campaigns).toContain(
+      "Campaign directory fallback query failed",
+    );
     expect(sources.events).toContain("Event directory fallback query failed");
   });
 
