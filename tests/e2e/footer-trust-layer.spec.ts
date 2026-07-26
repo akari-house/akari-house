@@ -23,7 +23,7 @@ test("public footer remains readable with a restrained AKARI horizon", async ({
   await expect(panorama).toHaveCount(1);
   await expect(panorama).toHaveAttribute(
     "src",
-    "/assets/footer/akari-footer-panorama.svg",
+    "/assets/optimized/arrival.webp",
   );
   await expect(panorama).toHaveAttribute("alt", "");
 
