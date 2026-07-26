@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 const fixtureHeaders = { "x-akari-test-fixture": "launch-gate-v1" };
-const projectSlug = "launch-gate-owned-project";
+const projectSlug = "opportunity-gate-project";
 const confidentialMarker = "CONFIDENTIAL-AKARI-ROOM-EVIDENCE";
 
 type Scenario = {
@@ -15,15 +15,14 @@ async function activatePersona(
   page: Page,
   persona: string,
   session = true,
-  seedResources = false,
-  reuseExisting = false,
+  reuseExisting = true,
 ) {
   await page.context().clearCookies();
   const response = await page.request.post(`/__test__/personas/${persona}`, {
     headers: fixtureHeaders,
     form: {
       session: session ? "true" : "false",
-      seedResources: seedResources ? "true" : "false",
+      seedResources: "false",
       reuseExisting: reuseExisting ? "true" : "false",
     },
   });
@@ -45,15 +44,12 @@ async function seedOpportunity(page: Page): Promise<Scenario> {
 }
 
 async function prepareScenario(page: Page): Promise<Scenario> {
-  await activatePersona(page, "project_owner", false);
   for (const persona of [
+    "project_owner",
     "creator",
-    "creator_selected",
-    "creator_other",
     "investor",
     "investor_granted",
     "investor_expired",
-    "moderator",
     "suspended",
     "private_target",
     "founder",
@@ -61,14 +57,13 @@ async function prepareScenario(page: Page): Promise<Scenario> {
     "superadmin",
   ])
     await activatePersona(page, persona, false);
-  await activatePersona(page, "project_owner", false, true, true);
   const scenario = await seedOpportunity(page);
   await page.context().clearCookies();
   return scenario;
 }
 
 async function usePersona(page: Page, persona: string) {
-  return activatePersona(page, persona, true, false, true);
+  return activatePersona(page, persona, true);
 }
 
 test.describe("curated opportunity permissions", () => {
@@ -133,7 +128,7 @@ test.describe("curated opportunity permissions", () => {
     ).toBeVisible();
     await expect(page.getByText(confidentialMarker)).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Launch Gate Diligence.txt" }),
+      page.getByRole("link", { name: "Opportunity Gate Diligence.txt" }),
     ).toBeVisible();
 
     const documentResponse = await page.request.get(
