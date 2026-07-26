@@ -131,11 +131,16 @@ describe("public discovery surfaces", () => {
 
     const landscape = container.querySelector("[data-footer-landscape]");
     expect(landscape).toHaveAttribute("aria-hidden", "true");
-    const panorama = landscape?.querySelector("img");
-    expect(panorama).toHaveAttribute(
+    const panorama = landscape?.querySelector("[data-footer-panorama]");
+    const tiles = panorama?.querySelectorAll("img");
+    expect(tiles).toHaveLength(6);
+    expect(tiles?.[0]).toHaveAttribute(
       "src",
-      "/assets/footer/akari-footer-panorama.svg",
+      "/assets/footer/akari-footer-tile-1.svg",
     );
-    expect(panorama).toHaveAttribute("alt", "");
+    expect(tiles?.[5]).toHaveAttribute(
+      "src",
+      "/assets/footer/akari-footer-tile-6.svg",
+    );
   });
 });
