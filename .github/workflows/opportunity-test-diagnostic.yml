@@ -6,7 +6,7 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
+  issues: write
 
 jobs:
   test-diagnostic:
@@ -39,20 +39,21 @@ jobs:
                   if "FAIL" in line or "AssertionError" in line or "Test Files" in line:
                       matched.extend(lines[max(0, index - 8):min(len(lines), index + 35)])
               value = "\n".join(matched or lines[-120:])
-          Path("test-diagnostic-tail.log").write_text("\n".join(value.splitlines()[:220]))
+          concise = "\n".join(value.splitlines()[:180])
+          Path("test-diagnostic-tail.log").write_text(concise)
+          Path("test-diagnostic-issue.md").write_text(
+              "Temporary diagnostic for PR #44.\n\n```text\n" + concise + "\n```\n"
+          )
           PY
           echo "status=$status" >> "$GITHUB_ENV"
-      - name: Comment diagnostic
+      - name: Create temporary diagnostic issue
+        if: env.status != '0'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          {
-            echo '### Opportunity failed-test diagnostic'
-            echo
-            echo '```text'
-            cat test-diagnostic-tail.log
-            echo '```'
-          } > test-comment.md
-          gh pr comment 44 --repo "$GITHUB_REPOSITORY" --body-file test-comment.md
+          gh issue create \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Temporary opportunity test diagnostic ${GITHUB_SHA:0:7}" \
+            --body-file test-diagnostic-issue.md
       - name: Enforce result
         run: test "$status" = "0"
