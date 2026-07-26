@@ -101,7 +101,7 @@ describe("public discovery surfaces", () => {
   });
 
   it("organises working destinations and original risk information in the public footer", () => {
-    renderWithRouter(<PublicFooter />);
+    const { container } = renderWithRouter(<PublicFooter />);
     for (const heading of ["Network", "Opportunities", "Resources", "Legal"])
       expect(screen.getByRole("heading", { name: heading })).toBeVisible();
     expect(screen.getByRole("link", { name: "Projects" })).toHaveAttribute(
@@ -128,5 +128,13 @@ describe("public discovery surfaces", () => {
       ),
     ).toBeVisible();
     expect(screen.getByText(/subject to final legal review/i)).toBeVisible();
+
+    const landscape = container.querySelector("[data-footer-landscape]");
+    expect(landscape).toHaveAttribute("aria-hidden", "true");
+    expect(
+      landscape?.querySelectorAll(".akari-footer__house"),
+    ).toHaveLength(4);
+    expect(landscape?.querySelector(".akari-footer__torii")).toBeTruthy();
+    expect(landscape?.querySelector(".akari-footer__grass")).toBeTruthy();
   });
 });
