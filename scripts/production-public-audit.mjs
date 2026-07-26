@@ -127,4 +127,4 @@ await writeFile(
   process.env.PRODUCTION_AUDIT_PATH || "production-audit.json",
   `${JSON.stringify(report, null, 2)}\n`,
 );
-console.log(JSON.stringify(report, null, 2));
+process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
