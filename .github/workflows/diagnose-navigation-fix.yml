@@ -1,0 +1,45 @@
+name: Diagnose Navigation Fix
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Capture typecheck
+        run: |
+          set +e
+          npm run typecheck > typecheck.log 2>&1
+          status=$?
+          echo "status=$status" >> "$GITHUB_ENV"
+          tail -n 180 typecheck.log > typecheck-tail.log
+      - name: Publish typecheck failure
+        if: env.status != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "### Navigation fix typecheck diagnostic"
+            echo
+            echo '```text'
+            cat typecheck-tail.log
+            echo '```'
+          } > diagnostic.md
+          gh pr comment "$GITHUB_EVENT_PULL_REQUEST_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file diagnostic.md
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_EVENT_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+      - name: Enforce
+        run: test "$status" = "0"
