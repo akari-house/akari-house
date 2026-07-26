@@ -1,0 +1,41 @@
+name: Production Command Lint Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  lint-diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Capture lint output
+        run: |
+          set +e
+          npm run lint > lint-diagnostic.log 2>&1
+          status=$?
+          tail -n 100 lint-diagnostic.log > lint-diagnostic-tail.log
+          echo "status=$status" >> "$GITHUB_ENV"
+      - name: Comment diagnostic
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo '### Lint diagnostic'
+            echo
+            echo '```text'
+            cat lint-diagnostic-tail.log
+            echo '```'
+          } > lint-comment.md
+          gh pr comment 43 --repo "$GITHUB_REPOSITORY" --body-file lint-comment.md
+      - name: Enforce result
+        run: test "$status" = "0"
