@@ -120,7 +120,22 @@ jobs:
       - name: Apply production migrations
         run: npx wrangler d1 migrations apply DB --remote --config wrangler.deploy.jsonc
       - name: Deploy production Worker
-        run: npx wrangler deploy --keep-vars --config wrangler.deploy.jsonc
+        run: |
+          set +e
+          npx wrangler deploy --keep-vars --config wrangler.deploy.jsonc 2>&1 | tee production-deploy.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            tail -n 80 production-deploy.log > production-deploy-error.log
+            exit "$status"
+          fi
+      - name: Upload deployment diagnostic
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-deploy-diagnostic-${{ github.sha }}
+          path: production-deploy-error.log
+          retention-days: 7
+          if-no-files-found: ignore
       - name: Confirm public Workers release
         run: |
           for attempt in $(seq 1 18); do
