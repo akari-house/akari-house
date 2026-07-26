@@ -10,6 +10,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const document = await env.DB.prepare(
     `SELECT pd.id, pd.project_id AS projectId, pd.object_key AS objectKey,
             pd.content_type AS contentType, pd.title,
+            pd.approved_at AS approvedAt,
             pr.founder_user_id AS founderUserId,
             dag.id AS grantId, COALESCE(dag.can_download, 0) AS canDownload
      FROM project_documents pd
@@ -27,6 +28,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       objectKey: string;
       contentType: string;
       title: string;
+      approvedAt: string | null;
       founderUserId: string;
       grantId: string | null;
       canDownload: number;
@@ -34,7 +36,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
   if (!document) throw new Response("Document not found.", { status: 404 });
   const owner = document.founderUserId === user.id;
-  const granted = Boolean(document.grantId);
+  const granted = Boolean(document.grantId && document.approvedAt);
   if (!owner && !granted) {
     await env.DB.prepare(
       `INSERT INTO document_access_logs
@@ -46,7 +48,9 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
         document.projectId,
         document.id,
         user.id,
-        JSON.stringify({ reason: "no_active_grant" }),
+        JSON.stringify({
+          reason: document.approvedAt ? "no_active_grant" : "document_not_approved",
+        }),
       )
       .run();
     throw new Response("Document not found.", { status: 404 });
