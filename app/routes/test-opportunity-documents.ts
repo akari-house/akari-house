@@ -2,7 +2,7 @@ import type { Route } from "./+types/test-opportunity-documents";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 
 const fixtureHeader = "launch-gate-v1";
-const projectSlug = "launch-gate-owned-project";
+const projectSlug = "opportunity-gate-project";
 
 function allowFixtureRequest(request: Request) {
   const url = new URL(request.url);
