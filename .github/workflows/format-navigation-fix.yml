@@ -1,0 +1,51 @@
+name: Format Navigation Fix
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Format navigation and footer patch
+        run: |
+          npx prettier --write \
+            app/components/PublicFooter.tsx \
+            app/lib/opportunity-schema.server.ts \
+            app/root.tsx \
+            app/routes.ts \
+            app/routes/deal-room.tsx \
+            app/routes/deals.tsx \
+            app/styles/footer-theme-fix.css \
+            docs/operations/public-navigation-audit.md \
+            scripts/production-public-audit.mjs \
+            tests/e2e/footer-trust-layer.spec.ts \
+            tests/homepage-isolation.test.ts \
+            tests/navigation-destinations.test.ts \
+            tests/unit/public-discovery.test.tsx
+      - run: npm run format:check
+      - run: npm run typecheck
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No formatting changes required."
+          else
+            git commit -m "Format navigation and footer production fix"
+            git push
+          fi
