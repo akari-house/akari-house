@@ -1,0 +1,45 @@
+name: Format Production Command
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Format release files
+        run: |
+          npx prettier --write \
+            .github/workflows/deploy-production.yml \
+            app/lib/production-pilot-schema.server.ts \
+            app/lib/production-readiness.ts \
+            app/routes/admin-production.tsx \
+            app/routes.ts \
+            migrations/0100_production_pilot_command.sql \
+            scripts/production-public-audit.mjs \
+            tests/e2e/production-command-centre.spec.ts \
+            tests/unit/production-readiness.test.ts
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          if git diff --cached --quiet; then
+            echo "Formatting already clean."
+            exit 0
+          fi
+          git commit -m "Format production command centre release"
+          git push
