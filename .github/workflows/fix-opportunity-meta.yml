@@ -1,0 +1,50 @@
+name: Fix Opportunity Meta
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Apply typed meta correction
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("app/routes/deal-room.tsx")
+          value = path.read_text()
+          replacement = '''export const meta: Route.MetaFunction = () => [
+            { title: "Selected opportunity | AKARI House" },
+            {
+              name: "description",
+              content: "An approved opportunity preview inside AKARI House.",
+            },
+          ];'''
+          updated, count = re.subn(
+              r'export const meta: Route\.MetaFunction = \(\{ data \}\) => \[.*?\n\];',
+              replacement,
+              value,
+              count=1,
+              flags=re.S,
+          )
+          if count != 1:
+              raise SystemExit("Expected dynamic meta block was not found.")
+          path.write_text(updated)
+          PY
+      - name: Commit correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/routes/deal-room.tsx
+          git commit -m "Fix opportunity room meta typing"
+          git push
