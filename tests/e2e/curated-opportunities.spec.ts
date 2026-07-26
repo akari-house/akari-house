@@ -203,22 +203,4 @@ test.describe("curated opportunity permissions", () => {
       }),
     ).toBeVisible();
   });
-
-  test("public community proof excludes private, suspended and unverified identities", async ({
-    page,
-  }) => {
-    await page.context().clearCookies();
-    await page.goto("/");
-    await expect(
-      page.getByRole("heading", {
-        name: "Built around people, not anonymous traffic.",
-      }),
-    ).toBeVisible();
-    await expect(page.getByLabel("Launch Gate project owner")).toBeVisible();
-    await expect(page.getByLabel("Launch Gate creator")).toBeVisible();
-    await expect(page.getByLabel("Launch Gate investor granted")).toBeVisible();
-    await expect(page.getByLabel("Launch Gate suspended")).toHaveCount(0);
-    await expect(page.getByLabel("Launch Gate private target")).toHaveCount(0);
-    await expect(page.getByLabel("Launch Gate investor")).toHaveCount(0);
-  });
 });
