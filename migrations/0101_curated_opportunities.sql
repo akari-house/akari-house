@@ -41,6 +41,63 @@ WHERE ur.role = 'investor';
 CREATE INDEX idx_investor_profiles_status
   ON investor_profiles(status, updated_at DESC);
 
+CREATE TRIGGER sync_investor_profile_after_role_insert
+AFTER INSERT ON role_verifications
+WHEN NEW.role = 'investor'
+BEGIN
+  INSERT INTO investor_profiles
+    (user_id, status, reviewed_by, reviewed_at, decision_note, updated_at)
+  VALUES (
+    NEW.user_id,
+    CASE NEW.status
+      WHEN 'verified' THEN 'verified'
+      WHEN 'pending' THEN 'verification_pending'
+      WHEN 'revoked' THEN 'restricted'
+      WHEN 'declined' THEN 'rejected'
+      ELSE 'claimed'
+    END,
+    NEW.reviewed_by,
+    NEW.reviewed_at,
+    COALESCE(NEW.decision_note, ''),
+    datetime('now')
+  )
+  ON CONFLICT(user_id) DO UPDATE SET
+    status = excluded.status,
+    reviewed_by = excluded.reviewed_by,
+    reviewed_at = excluded.reviewed_at,
+    decision_note = excluded.decision_note,
+    updated_at = datetime('now');
+END;
+
+CREATE TRIGGER sync_investor_profile_after_role_update
+AFTER UPDATE OF status, reviewed_by, reviewed_at, decision_note
+ON role_verifications
+WHEN NEW.role = 'investor'
+BEGIN
+  INSERT INTO investor_profiles
+    (user_id, status, reviewed_by, reviewed_at, decision_note, updated_at)
+  VALUES (
+    NEW.user_id,
+    CASE NEW.status
+      WHEN 'verified' THEN 'verified'
+      WHEN 'pending' THEN 'verification_pending'
+      WHEN 'revoked' THEN 'restricted'
+      WHEN 'declined' THEN 'rejected'
+      ELSE 'claimed'
+    END,
+    NEW.reviewed_by,
+    NEW.reviewed_at,
+    COALESCE(NEW.decision_note, ''),
+    datetime('now')
+  )
+  ON CONFLICT(user_id) DO UPDATE SET
+    status = excluded.status,
+    reviewed_by = excluded.reviewed_by,
+    reviewed_at = excluded.reviewed_at,
+    decision_note = excluded.decision_note,
+    updated_at = datetime('now');
+END;
+
 CREATE TABLE opportunity_listings (
   project_id TEXT PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
   sector TEXT NOT NULL DEFAULT '',
