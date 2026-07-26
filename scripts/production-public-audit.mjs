@@ -52,7 +52,9 @@ await record("custom_domain", "Custom domain serves AKARI", async () => {
   requireStatus(response, [200], "Homepage");
   const finalUrl = new URL(response.url);
   if (finalUrl.hostname !== baseUrl.hostname)
-    throw new Error(`Homepage resolved to unexpected host ${finalUrl.hostname}.`);
+    throw new Error(
+      `Homepage resolved to unexpected host ${finalUrl.hostname}.`,
+    );
   const body = await response.text();
   if (!body.toLowerCase().includes("akari"))
     throw new Error("Homepage does not contain the AKARI product identity.");
@@ -75,14 +77,18 @@ const publicMenuRoutes = [
 ];
 
 for (const [key, path, label] of publicMenuRoutes) {
-  await record(`public_${key}`, `${label} remains publicly reachable`, async () => {
-    const response = await request(path, { redirect: "follow" });
-    requireStatus(response, [200], label);
-    const body = await response.text();
-    if (!body.toLowerCase().includes("akari"))
-      throw new Error(`${label} did not render the AKARI application shell.`);
-    return `HTTP ${response.status}`;
-  });
+  await record(
+    `public_${key}`,
+    `${label} remains publicly reachable`,
+    async () => {
+      const response = await request(path, { redirect: "follow" });
+      requireStatus(response, [200], label);
+      const body = await response.text();
+      if (!body.toLowerCase().includes("akari"))
+        throw new Error(`${label} did not render the AKARI application shell.`);
+      return `HTTP ${response.status}`;
+    },
+  );
 }
 
 const protectedRoutes = [
@@ -96,7 +102,11 @@ const protectedRoutes = [
   ["operations_auth", "/admin/operations", "Operations administration"],
   ["production_auth", "/admin/production", "Production administration"],
   ["launch_gate_auth", "/admin/launch-gate", "Launch-gate administration"],
-  ["opportunity_admin_auth", "/admin/opportunities", "Opportunity administration"],
+  [
+    "opportunity_admin_auth",
+    "/admin/opportunities",
+    "Opportunity administration",
+  ],
   [
     "opportunity_documents_auth",
     "/admin/opportunities/documents",
