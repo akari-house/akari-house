@@ -2,7 +2,8 @@ import type { Route } from "./+types/test-opportunities";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 
 const fixtureHeader = "launch-gate-v1";
-const projectSlug = "launch-gate-owned-project";
+const projectSlug = "opportunity-gate-project";
+const documentObjectKey = "opportunity-gate/diligence-document.txt";
 const confidentialMarker = "CONFIDENTIAL-AKARI-ROOM-EVIDENCE";
 
 function allowFixtureRequest(request: Request) {
@@ -27,6 +28,51 @@ async function fixtureUser(db: D1Database, persona: string) {
     .first<{ id: string }>();
 }
 
+async function cleanupOpportunityProject(
+  db: D1Database,
+  media: R2Bucket,
+) {
+  const project = await db
+    .prepare("SELECT id FROM projects WHERE slug = ?")
+    .bind(projectSlug)
+    .first<{ id: string }>();
+  if (project)
+    await db.batch([
+      db
+        .prepare("DELETE FROM opportunity_questions WHERE project_id = ?")
+        .bind(project.id),
+      db
+        .prepare("DELETE FROM opportunity_updates WHERE project_id = ?")
+        .bind(project.id),
+      db
+        .prepare("DELETE FROM introduction_requests WHERE project_id = ?")
+        .bind(project.id),
+      db
+        .prepare("DELETE FROM opportunity_user_states WHERE project_id = ?")
+        .bind(project.id),
+      db
+        .prepare("DELETE FROM project_interests WHERE project_id = ?")
+        .bind(project.id),
+      db
+        .prepare("DELETE FROM document_access_logs WHERE project_id = ?")
+        .bind(project.id),
+      db
+        .prepare("DELETE FROM document_access_grants WHERE project_id = ?")
+        .bind(project.id),
+      db
+        .prepare("DELETE FROM data_room_requests WHERE project_id = ?")
+        .bind(project.id),
+      db
+        .prepare("DELETE FROM opportunity_listings WHERE project_id = ?")
+        .bind(project.id),
+      db
+        .prepare("DELETE FROM project_documents WHERE project_id = ?")
+        .bind(project.id),
+      db.prepare("DELETE FROM projects WHERE id = ?").bind(project.id),
+    ]);
+  await media.delete(documentObjectKey);
+}
+
 export function loader() {
   throw new Response("Not found", { status: 404 });
 }
@@ -36,18 +82,9 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     throw new Response("Not found", { status: 404 });
   const env = context.get(cloudflareContext).env;
   const action = params.action ?? "";
-  const project = await env.DB.prepare(
-    "SELECT id, founder_user_id AS founderUserId FROM projects WHERE slug = ?",
-  )
-    .bind(projectSlug)
-    .first<{ id: string; founderUserId: string }>();
-  if (!project)
-    throw new Response("Create the launch-gate project first.", {
-      status: 409,
-    });
-
-  const [creator, claimed, granted, expired, suspended, privateTarget] =
+  const [founder, creator, claimed, granted, expired, suspended, privateTarget] =
     await Promise.all([
+      fixtureUser(env.DB, "project_owner"),
       fixtureUser(env.DB, "creator"),
       fixtureUser(env.DB, "investor"),
       fixtureUser(env.DB, "investor_granted"),
@@ -56,6 +93,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       fixtureUser(env.DB, "private_target"),
     ]);
   if (
+    !founder ||
     !creator ||
     !claimed ||
     !granted ||
@@ -68,215 +106,268 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     });
 
   if (action === "seed") {
-    const document = await env.DB.prepare(
-      "SELECT id FROM project_documents WHERE project_id = ? LIMIT 1",
-    )
-      .bind(project.id)
-      .first<{ id: string }>();
-    if (!document)
-      throw new Response("Create the diligence fixture first.", {
-        status: 409,
-      });
+    await cleanupOpportunityProject(env.DB, env.MEDIA);
+    const projectId = crypto.randomUUID();
+    const documentId = crypto.randomUUID();
+    const documentBody = "private opportunity-gate diligence document";
+    await env.MEDIA.put(documentObjectKey, documentBody, {
+      httpMetadata: { contentType: "text/plain" },
+    });
 
     await env.DB.batch([
-      env.DB.prepare(
-        "DELETE FROM opportunity_updates WHERE project_id = ?",
-      ).bind(project.id),
-      env.DB.prepare(
-        "DELETE FROM opportunity_questions WHERE project_id = ?",
-      ).bind(project.id),
-      env.DB.prepare(
-        "DELETE FROM introduction_requests WHERE project_id = ?",
-      ).bind(project.id),
-      env.DB.prepare(
-        "DELETE FROM opportunity_user_states WHERE project_id = ?",
-      ).bind(project.id),
-      env.DB.prepare(
-        "DELETE FROM data_room_requests WHERE project_id = ?",
-      ).bind(project.id),
-      env.DB.prepare(
-        `INSERT INTO investor_profiles
+      env.DB
+        .prepare(
+          `INSERT INTO projects
+           (id, founder_user_id, slug, title, summary, description, stage, seeking, status)
+           VALUES (?, ?, ?, 'Opportunity Gate Project',
+                   'Permission-safe opportunity fixture.',
+                   'Used only by isolated opportunity permission tests.',
+                   'prototype', 'Test evidence only', 'published')`,
+        )
+        .bind(projectId, founder.id, projectSlug),
+      env.DB
+        .prepare(
+          `INSERT INTO project_documents
+           (id, project_id, uploaded_by, title, object_key, content_type,
+            byte_size, category, visibility, approved_at, approved_by)
+           VALUES (?, ?, ?, 'Opportunity Gate Diligence.txt', ?, 'text/plain', ?,
+                   'financial', 'confidential', datetime('now'), ?)`,
+        )
+        .bind(
+          documentId,
+          projectId,
+          founder.id,
+          documentObjectKey,
+          documentBody.length,
+          founder.id,
+        ),
+      env.DB
+        .prepare(
+          `INSERT INTO document_access_grants
+           (id, project_id, document_id, investor_user_id, granted_by,
+            can_download, starts_at, expires_at)
+           VALUES (?, ?, ?, ?, ?, 1, datetime('now', '-1 day'),
+                   datetime('now', '+7 days'))`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          projectId,
+          documentId,
+          granted.id,
+          founder.id,
+        ),
+      env.DB
+        .prepare(
+          `INSERT INTO document_access_grants
+           (id, project_id, document_id, investor_user_id, granted_by,
+            can_download, starts_at, expires_at)
+           VALUES (?, ?, ?, ?, ?, 1, datetime('now', '-10 days'),
+                   datetime('now', '-1 day'))`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          projectId,
+          documentId,
+          expired.id,
+          founder.id,
+        ),
+      env.DB
+        .prepare(
+          `INSERT INTO investor_profiles
            (user_id, status, sectors_json, stages_json, geographies_json,
             eligibility_note, reviewed_at, updated_at)
-         VALUES (?, 'claimed', '["Infrastructure"]', '["Prototype"]',
-                 '["Europe"]', 'Claimed Investor fixture without eligibility approval.',
-                 NULL, datetime('now'))
-         ON CONFLICT(user_id) DO UPDATE SET
-           status = 'claimed', reviewed_at = NULL, updated_at = datetime('now')`,
-      ).bind(claimed.id),
-      env.DB.prepare(
-        `INSERT INTO investor_profiles
+           VALUES (?, 'claimed', '["Infrastructure"]', '["Prototype"]',
+                   '["Europe"]',
+                   'Claimed Investor fixture without eligibility approval.',
+                   NULL, datetime('now'))
+           ON CONFLICT(user_id) DO UPDATE SET
+             status = 'claimed', reviewed_at = NULL, updated_at = datetime('now')`,
+        )
+        .bind(claimed.id),
+      env.DB
+        .prepare(
+          `INSERT INTO investor_profiles
            (user_id, status, sectors_json, stages_json, geographies_json,
             eligibility_note, reviewed_at, updated_at)
-         VALUES (?, 'verified', '["Infrastructure"]', '["Prototype"]',
-                 '["Europe"]', 'Verified Investor fixture with approved room access.',
-                 datetime('now'), datetime('now'))
-         ON CONFLICT(user_id) DO UPDATE SET
-           status = 'verified', reviewed_at = datetime('now'),
-           updated_at = datetime('now')`,
-      ).bind(granted.id),
-      env.DB.prepare(
-        `INSERT INTO investor_profiles
+           VALUES (?, 'verified', '["Infrastructure"]', '["Prototype"]',
+                   '["Europe"]',
+                   'Verified Investor fixture with approved room access.',
+                   datetime('now'), datetime('now'))
+           ON CONFLICT(user_id) DO UPDATE SET
+             status = 'verified', reviewed_at = datetime('now'),
+             updated_at = datetime('now')`,
+        )
+        .bind(granted.id),
+      env.DB
+        .prepare(
+          `INSERT INTO investor_profiles
            (user_id, status, sectors_json, stages_json, geographies_json,
             eligibility_note, reviewed_at, updated_at)
-         VALUES (?, 'verified', '["Infrastructure"]', '["Prototype"]',
-                 '["Europe"]', 'Verified Investor fixture with expired room access.',
-                 datetime('now'), datetime('now'))
-         ON CONFLICT(user_id) DO UPDATE SET
-           status = 'verified', reviewed_at = datetime('now'),
-           updated_at = datetime('now')`,
-      ).bind(expired.id),
-      env.DB.prepare(
-        `INSERT INTO opportunity_listings
+           VALUES (?, 'verified', '["Infrastructure"]', '["Prototype"]',
+                   '["Europe"]',
+                   'Verified Investor fixture with expired room access.',
+                   datetime('now'), datetime('now'))
+           ON CONFLICT(user_id) DO UPDATE SET
+             status = 'verified', reviewed_at = datetime('now'),
+             updated_at = datetime('now')`,
+        )
+        .bind(expired.id),
+      env.DB
+        .prepare(
+          `INSERT INTO opportunity_listings
            (project_id, sector, geography, funding_instrument,
             raise_minimum, raise_maximum, raise_currency,
             minimum_participation, traction_stage, closing_at,
             access_mode, public_summary, public_highlights, risk_summary,
             status, submitted_at, reviewed_by, reviewed_at,
             decision_note, created_by, updated_at)
-         VALUES (?, 'Infrastructure', 'Europe', 'safe', 500000, 1000000,
-                 'USD', 25000, 'Prototype validated', datetime('now', '+21 days'),
-                 'approved_only', 'A permission-safe public opportunity preview.',
-                 'Public information contains no private diligence content.',
-                 'Early-stage participation can result in total loss and illiquidity.',
-                 'published', datetime('now', '-1 day'), ?, datetime('now'),
-                 'Approved only for automated permission evidence.', ?, datetime('now'))
-         ON CONFLICT(project_id) DO UPDATE SET
-           status = 'published', access_mode = 'approved_only',
-           public_summary = excluded.public_summary,
-           public_highlights = excluded.public_highlights,
-           risk_summary = excluded.risk_summary,
-           reviewed_by = excluded.reviewed_by,
-           reviewed_at = datetime('now'), updated_at = datetime('now')`,
-      ).bind(project.id, project.founderUserId, project.founderUserId),
-      env.DB.prepare(
-        `UPDATE project_documents
-         SET approved_at = datetime('now'), approved_by = ?,
-             category = 'financial', visibility = 'confidential'
-         WHERE id = ?`,
-      ).bind(project.founderUserId, document.id),
-      env.DB.prepare(
-        `INSERT INTO data_room_requests
+           VALUES (?, 'Infrastructure', 'Europe', 'safe', 500000, 1000000,
+                   'USD', 25000, 'Prototype validated', datetime('now', '+21 days'),
+                   'approved_only',
+                   'A permission-safe public opportunity preview.',
+                   'Public information contains no private diligence content.',
+                   'Early-stage participation can result in total loss and illiquidity.',
+                   'published', datetime('now', '-1 day'), ?, datetime('now'),
+                   'Approved only for automated permission evidence.', ?, datetime('now'))`,
+        )
+        .bind(projectId, founder.id, founder.id),
+      env.DB
+        .prepare(
+          `INSERT INTO data_room_requests
            (id, project_id, investor_user_id, reason, status,
             reviewed_by, reviewed_at, decision_note, expires_at, updated_at)
-         VALUES (?, ?, ?, 'Approved automated Investor access.', 'approved',
-                 ?, datetime('now'), 'Approved fixture.',
-                 datetime('now', '+7 days'), datetime('now'))`,
-      ).bind(
-        crypto.randomUUID(),
-        project.id,
-        granted.id,
-        project.founderUserId,
-      ),
-      env.DB.prepare(
-        `INSERT INTO data_room_requests
+           VALUES (?, ?, ?, 'Approved automated Investor access.', 'approved',
+                   ?, datetime('now'), 'Approved fixture.',
+                   datetime('now', '+7 days'), datetime('now'))`,
+        )
+        .bind(crypto.randomUUID(), projectId, granted.id, founder.id),
+      env.DB
+        .prepare(
+          `INSERT INTO data_room_requests
            (id, project_id, investor_user_id, reason, status,
             reviewed_by, reviewed_at, decision_note, expires_at, updated_at)
-         VALUES (?, ?, ?, 'Expired automated Investor access.', 'approved',
-                 ?, datetime('now', '-10 days'), 'Expired fixture.',
-                 datetime('now', '-1 day'), datetime('now'))`,
-      ).bind(
-        crypto.randomUUID(),
-        project.id,
-        expired.id,
-        project.founderUserId,
-      ),
-      env.DB.prepare(
-        `INSERT INTO opportunity_updates
+           VALUES (?, ?, ?, 'Expired automated Investor access.', 'approved',
+                   ?, datetime('now', '-10 days'), 'Expired fixture.',
+                   datetime('now', '-1 day'), datetime('now'))`,
+        )
+        .bind(crypto.randomUUID(), projectId, expired.id, founder.id),
+      env.DB
+        .prepare(
+          `INSERT INTO opportunity_updates
            (id, project_id, title, body, visibility, status,
             created_by, reviewed_by, reviewed_at, published_at)
-         VALUES (?, ?, 'Private evidence update', ?, 'confidential', 'published',
-                 ?, ?, datetime('now'), datetime('now'))`,
-      ).bind(
-        crypto.randomUUID(),
-        project.id,
-        confidentialMarker,
-        project.founderUserId,
-        project.founderUserId,
-      ),
-      env.DB.prepare(
-        `INSERT INTO opportunity_updates
+           VALUES (?, ?, 'Private evidence update', ?, 'confidential', 'published',
+                   ?, ?, datetime('now'), datetime('now'))`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          projectId,
+          confidentialMarker,
+          founder.id,
+          founder.id,
+        ),
+      env.DB
+        .prepare(
+          `INSERT INTO opportunity_updates
            (id, project_id, title, body, visibility, status,
             created_by, reviewed_by, reviewed_at, published_at)
-         VALUES (?, ?, 'Public evidence update',
-                 'PUBLIC-AKARI-OPPORTUNITY-EVIDENCE', 'public', 'published',
-                 ?, ?, datetime('now'), datetime('now'))`,
-      ).bind(
-        crypto.randomUUID(),
-        project.id,
-        project.founderUserId,
-        project.founderUserId,
-      ),
-      env.DB.prepare(
-        `UPDATE profile_visibility SET visibility = 'public'
-         WHERE user_id IN (?, ?, ?, ?)`,
-      ).bind(project.founderUserId, creator.id, granted.id, suspended.id),
-      env.DB.prepare(
-        `UPDATE profiles SET visibility = 'public'
-         WHERE user_id IN (?, ?, ?, ?)`,
-      ).bind(project.founderUserId, creator.id, granted.id, suspended.id),
-      env.DB.prepare(
-        `UPDATE profile_visibility SET visibility = 'private' WHERE user_id = ?`,
-      ).bind(privateTarget.id),
-      env.DB.prepare(
-        `UPDATE profiles SET visibility = 'private' WHERE user_id = ?`,
-      ).bind(privateTarget.id),
+           VALUES (?, ?, 'Public evidence update',
+                   'PUBLIC-AKARI-OPPORTUNITY-EVIDENCE', 'public', 'published',
+                   ?, ?, datetime('now'), datetime('now'))`,
+        )
+        .bind(crypto.randomUUID(), projectId, founder.id, founder.id),
+      env.DB
+        .prepare(
+          `UPDATE profile_visibility SET visibility = 'public'
+           WHERE user_id IN (?, ?, ?, ?)`,
+        )
+        .bind(founder.id, creator.id, granted.id, suspended.id),
+      env.DB
+        .prepare(
+          `UPDATE profiles SET visibility = 'public'
+           WHERE user_id IN (?, ?, ?, ?)`,
+        )
+        .bind(founder.id, creator.id, granted.id, suspended.id),
+      env.DB
+        .prepare(
+          `UPDATE profile_visibility SET visibility = 'private' WHERE user_id = ?`,
+        )
+        .bind(privateTarget.id),
+      env.DB
+        .prepare(`UPDATE profiles SET visibility = 'private' WHERE user_id = ?`)
+        .bind(privateTarget.id),
     ]);
+
     return json({
       projectSlug,
-      projectId: project.id,
-      documentId: document.id,
+      projectId,
+      documentId,
       confidentialMarker,
     });
   }
 
+  const project = await env.DB
+    .prepare(
+      "SELECT id, founder_user_id AS founderUserId FROM projects WHERE slug = ?",
+    )
+    .bind(projectSlug)
+    .first<{ id: string; founderUserId: string }>();
+  if (!project)
+    throw new Response("Create the opportunity fixture first.", { status: 409 });
+
   if (action === "revoke") {
     await env.DB.batch([
-      env.DB.prepare(
-        `UPDATE data_room_requests
-         SET status = 'revoked', reviewed_by = ?, reviewed_at = datetime('now'),
-             decision_note = 'Automated immediate revocation evidence.',
-             updated_at = datetime('now')
-         WHERE project_id = ? AND investor_user_id = ? AND status = 'approved'`,
-      ).bind(project.founderUserId, project.id, granted.id),
-      env.DB.prepare(
-        `UPDATE document_access_grants
-         SET revoked_at = datetime('now'), revoked_by = ?, updated_at = datetime('now')
-         WHERE project_id = ? AND investor_user_id = ? AND revoked_at IS NULL`,
-      ).bind(project.founderUserId, project.id, granted.id),
-      env.DB.prepare(
-        `INSERT INTO audit_logs
+      env.DB
+        .prepare(
+          `UPDATE data_room_requests
+           SET status = 'revoked', reviewed_by = ?, reviewed_at = datetime('now'),
+               decision_note = 'Automated immediate revocation evidence.',
+               updated_at = datetime('now')
+           WHERE project_id = ? AND investor_user_id = ? AND status = 'approved'`,
+        )
+        .bind(project.founderUserId, project.id, granted.id),
+      env.DB
+        .prepare(
+          `UPDATE document_access_grants
+           SET revoked_at = datetime('now'), revoked_by = ?, updated_at = datetime('now')
+           WHERE project_id = ? AND investor_user_id = ? AND revoked_at IS NULL`,
+        )
+        .bind(project.founderUserId, project.id, granted.id),
+      env.DB
+        .prepare(
+          `INSERT INTO audit_logs
            (id, actor_user_id, action, subject_type, subject_id, metadata_json)
-         VALUES (?, ?, 'opportunity.access_revoked', 'opportunity', ?, ?)`,
-      ).bind(
-        crypto.randomUUID(),
-        project.founderUserId,
-        project.id,
-        JSON.stringify({ investorUserId: granted.id, fixture: true }),
-      ),
+           VALUES (?, ?, 'opportunity.access_revoked', 'opportunity', ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          project.founderUserId,
+          project.id,
+          JSON.stringify({ investorUserId: granted.id, fixture: true }),
+        ),
     ]);
     return json({ revoked: true });
   }
 
   if (action === "state") {
     const [listing, access, audit] = await Promise.all([
-      env.DB.prepare(
-        "SELECT status FROM opportunity_listings WHERE project_id = ?",
-      )
+      env.DB
+        .prepare("SELECT status FROM opportunity_listings WHERE project_id = ?")
         .bind(project.id)
         .first<{ status: string }>(),
-      env.DB.prepare(
-        `SELECT status, expires_at AS expiresAt FROM data_room_requests
-         WHERE project_id = ? AND investor_user_id = ?
-         ORDER BY created_at DESC LIMIT 1`,
-      )
+      env.DB
+        .prepare(
+          `SELECT status, expires_at AS expiresAt FROM data_room_requests
+           WHERE project_id = ? AND investor_user_id = ?
+           ORDER BY created_at DESC LIMIT 1`,
+        )
         .bind(project.id, granted.id)
         .first<{ status: string; expiresAt: string | null }>(),
-      env.DB.prepare(
-        `SELECT COUNT(*) AS count FROM audit_logs
-         WHERE action = 'opportunity.access_revoked'
-           AND subject_id = ?`,
-      )
+      env.DB
+        .prepare(
+          `SELECT COUNT(*) AS count FROM audit_logs
+           WHERE action = 'opportunity.access_revoked' AND subject_id = ?`,
+        )
         .bind(project.id)
         .first<{ count: number }>(),
     ]);
