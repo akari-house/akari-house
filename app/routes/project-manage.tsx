@@ -10,10 +10,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireApprovedMember(request, db);
   const projects = await db
     .prepare(
-      `SELECT slug, title, summary, status, stage, seeking,
-              updated_at AS updatedAt
-       FROM projects WHERE founder_user_id = ?
-       ORDER BY updated_at DESC`,
+      `SELECT pr.slug, pr.title, pr.summary, pr.status, pr.stage, pr.seeking,
+              pr.updated_at AS updatedAt,
+              ol.status AS opportunityStatus
+       FROM projects pr
+       LEFT JOIN opportunity_listings ol ON ol.project_id = pr.id
+       WHERE pr.founder_user_id = ?
+       ORDER BY pr.updated_at DESC`,
     )
     .bind(user.id)
     .all<{
@@ -24,6 +27,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       stage: string;
       seeking: string;
       updatedAt: string;
+      opportunityStatus: string | null;
     }>();
   return { user, projects: projects.results };
 }
@@ -52,12 +56,18 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
                 <h2>{project.title}</h2>
                 <p>{project.summary}</p>
                 <ProjectNeedChips value={project.seeking} compact />
+                {project.opportunityStatus && (
+                  <small>
+                    Opportunity review: {project.opportunityStatus.replaceAll("_", " ")}
+                  </small>
+                )}
                 <footer>
                   <Link to={`/projects/${project.slug}`}>View</Link>
-                  <Link to={`/projects/${project.slug}/edit`}>
-                    Edit project
-                  </Link>
+                  <Link to={`/projects/${project.slug}/edit`}>Edit project</Link>
                   <Link to={`/projects/${project.slug}/needs`}>Edit needs</Link>
+                  <Link to={`/projects/${project.slug}/opportunity`}>
+                    Opportunity submission
+                  </Link>
                   <Link to={`/projects/${project.slug}/diligence`}>
                     Diligence room
                   </Link>
