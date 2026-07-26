@@ -146,7 +146,9 @@ export async function action({ request, context }: Route.ActionArgs) {
       }>();
     if (!listing) throw new Response("Opportunity not found.", { status: 404 });
     if (intent === "publish" && listing.projectStatus !== "published")
-      return { error: "Publish the underlying project before its opportunity." };
+      return {
+        error: "Publish the underlying project before its opportunity.",
+      };
     const nextStatus =
       intent === "publish"
         ? "published"
@@ -190,7 +192,9 @@ export async function action({ request, context }: Route.ActionArgs) {
     return { saved: `Opportunity marked ${nextStatus}.` };
   }
 
-  if (["verify-investor", "restrict-investor", "reject-investor"].includes(intent)) {
+  if (
+    ["verify-investor", "restrict-investor", "reject-investor"].includes(intent)
+  ) {
     const admin = await requireAdminScope(request, db, "verification");
     const userId = formText(form.get("userId"));
     const evidenceCategory = formText(form.get("evidenceCategory"));
@@ -314,8 +318,8 @@ export default function AdminOpportunities({
             <span className="eyebrow">Curated opportunity operations</span>
             <h1>Review listings and Investor eligibility.</h1>
             <p>
-              Publication and verification are separate decisions. Neither can be
-              bypassed by selecting a role or changing a URL.
+              Publication and verification are separate decisions. Neither can
+              be bypassed by selecting a role or changing a URL.
             </p>
           </div>
           <Link className="button button-quiet" to="/admin/operations">
@@ -358,10 +362,16 @@ export default function AdminOpportunities({
                         <strong>Submitted risk information</strong>
                         <p>{listing.riskSummary}</p>
                       </aside>
-                      <Link to={`/projects/${listing.slug}`}>Review project</Link>
+                      <Link to={`/projects/${listing.slug}`}>
+                        Review project
+                      </Link>
                     </div>
                     <Form method="post" className="application-actions">
-                      <input type="hidden" name="projectId" value={listing.projectId} />
+                      <input
+                        type="hidden"
+                        name="projectId"
+                        value={listing.projectId}
+                      />
                       <label>
                         Decision note
                         <textarea
@@ -406,7 +416,9 @@ export default function AdminOpportunities({
                   </article>
                 ))
               ) : (
-                <p className="empty-state">No opportunity submissions need review.</p>
+                <p className="empty-state">
+                  No opportunity submissions need review.
+                </p>
               )}
             </div>
           </section>
@@ -431,22 +443,39 @@ export default function AdminOpportunities({
                       <p>{investor.eligibilityNote}</p>
                       <p>
                         <strong>Sectors:</strong>{" "}
-                        {(JSON.parse(investor.sectorsJson) as string[]).join(", ")}
+                        {(JSON.parse(investor.sectorsJson) as string[]).join(
+                          ", ",
+                        )}
                         <br />
                         <strong>Stages:</strong>{" "}
-                        {(JSON.parse(investor.stagesJson) as string[]).join(", ")}
+                        {(JSON.parse(investor.stagesJson) as string[]).join(
+                          ", ",
+                        )}
                         <br />
                         <strong>Geographies:</strong>{" "}
-                        {(JSON.parse(investor.geographiesJson) as string[]).join(", ")}
+                        {(
+                          JSON.parse(investor.geographiesJson) as string[]
+                        ).join(", ")}
                       </p>
                     </div>
                     <Form method="post" className="application-actions">
-                      <input type="hidden" name="userId" value={investor.userId} />
+                      <input
+                        type="hidden"
+                        name="userId"
+                        value={investor.userId}
+                      />
                       <label>
                         Evidence category
-                        <select name="evidenceCategory" defaultValue="investment_activity">
-                          <option value="identity_and_profile">Identity and profile</option>
-                          <option value="investment_activity">Investment activity</option>
+                        <select
+                          name="evidenceCategory"
+                          defaultValue="investment_activity"
+                        >
+                          <option value="identity_and_profile">
+                            Identity and profile
+                          </option>
+                          <option value="investment_activity">
+                            Investment activity
+                          </option>
                           <option value="professional_references">
                             Professional references
                           </option>

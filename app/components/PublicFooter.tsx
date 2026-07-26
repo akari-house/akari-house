@@ -67,7 +67,10 @@ export function PublicFooter() {
         ))}
       </div>
 
-      <section className="footer-risk-information" aria-labelledby="footer-risk-title">
+      <section
+        className="footer-risk-information"
+        aria-labelledby="footer-risk-title"
+      >
         <div>
           <span className="eyebrow">Important information</span>
           <h2 id="footer-risk-title">Discovery is not a guarantee.</h2>
@@ -86,11 +89,11 @@ export function PublicFooter() {
             changing legal or regulatory requirements.
           </p>
           <p>
-            Members must conduct independent due diligence and obtain appropriate
-            professional advice. Access may be limited by membership status,
-            verification, jurisdiction, eligibility and per-opportunity approval.
-            AKARI records introductions and collaboration workflows; it does not
-            hold member investment funds through this product.
+            Members must conduct independent due diligence and obtain
+            appropriate professional advice. Access may be limited by membership
+            status, verification, jurisdiction, eligibility and per-opportunity
+            approval. AKARI records introductions and collaboration workflows;
+            it does not hold member investment funds through this product.
           </p>
         </div>
         <small>Provisional information — final legal review required.</small>
@@ -98,7 +101,9 @@ export function PublicFooter() {
 
       <div className="footer-baseline">
         <small>© 2026 AKARI House. All rights reserved.</small>
-        <small>Private network · Permission-based access · Independent decisions</small>
+        <small>
+          Private network · Permission-based access · Independent decisions
+        </small>
       </div>
     </footer>
   );

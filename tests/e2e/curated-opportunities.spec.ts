@@ -91,13 +91,15 @@ test.describe("curated opportunity permissions", () => {
         name: "Considered opportunities, opened with context.",
       }),
     ).toBeVisible();
-    await expect(page.getByText("A permission-safe public opportunity preview."))
-      .toBeVisible();
+    await expect(
+      page.getByText("A permission-safe public opportunity preview."),
+    ).toBeVisible();
     await expect(page.getByText(confidentialMarker)).toHaveCount(0);
 
     await page.goto(`/deals/${projectSlug}`);
-    await expect(page.getByText("PUBLIC-AKARI-OPPORTUNITY-EVIDENCE"))
-      .toBeVisible();
+    await expect(
+      page.getByText("PUBLIC-AKARI-OPPORTUNITY-EVIDENCE"),
+    ).toBeVisible();
     await expect(page.getByText(confidentialMarker)).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Authorised diligence space" }),

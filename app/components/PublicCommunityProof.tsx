@@ -48,7 +48,8 @@ export function PublicCommunityProof({
                       aria-label={member.displayName}
                     >
                       <span aria-hidden="true">
-                        {member.displayName.trim().charAt(0).toUpperCase() || "A"}
+                        {member.displayName.trim().charAt(0).toUpperCase() ||
+                          "A"}
                       </span>
                       {member.hasAvatar && (
                         <img
@@ -79,7 +80,9 @@ export function PublicCommunityProof({
                     height={60}
                     loading="lazy"
                   />
-                  <span>Public profiles will appear here as members opt in.</span>
+                  <span>
+                    Public profiles will appear here as members opt in.
+                  </span>
                 </div>
               )}
             </article>

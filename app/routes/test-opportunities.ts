@@ -42,7 +42,9 @@ export async function action({ request, params, context }: Route.ActionArgs) {
     .bind(projectSlug)
     .first<{ id: string; founderUserId: string }>();
   if (!project)
-    throw new Response("Create the launch-gate project first.", { status: 409 });
+    throw new Response("Create the launch-gate project first.", {
+      status: 409,
+    });
 
   const [creator, claimed, granted, expired, suspended, privateTarget] =
     await Promise.all([
@@ -53,8 +55,17 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       fixtureUser(env.DB, "suspended"),
       fixtureUser(env.DB, "private_target"),
     ]);
-  if (!creator || !claimed || !granted || !expired || !suspended || !privateTarget)
-    throw new Response("Create all opportunity personas first.", { status: 409 });
+  if (
+    !creator ||
+    !claimed ||
+    !granted ||
+    !expired ||
+    !suspended ||
+    !privateTarget
+  )
+    throw new Response("Create all opportunity personas first.", {
+      status: 409,
+    });
 
   if (action === "seed") {
     const document = await env.DB.prepare(
@@ -63,24 +74,26 @@ export async function action({ request, params, context }: Route.ActionArgs) {
       .bind(project.id)
       .first<{ id: string }>();
     if (!document)
-      throw new Response("Create the diligence fixture first.", { status: 409 });
+      throw new Response("Create the diligence fixture first.", {
+        status: 409,
+      });
 
     await env.DB.batch([
-      env.DB.prepare("DELETE FROM opportunity_updates WHERE project_id = ?").bind(
-        project.id,
-      ),
-      env.DB.prepare("DELETE FROM opportunity_questions WHERE project_id = ?").bind(
-        project.id,
-      ),
-      env.DB.prepare("DELETE FROM introduction_requests WHERE project_id = ?").bind(
-        project.id,
-      ),
-      env.DB.prepare("DELETE FROM opportunity_user_states WHERE project_id = ?").bind(
-        project.id,
-      ),
-      env.DB.prepare("DELETE FROM data_room_requests WHERE project_id = ?").bind(
-        project.id,
-      ),
+      env.DB.prepare(
+        "DELETE FROM opportunity_updates WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM opportunity_questions WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM introduction_requests WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM opportunity_user_states WHERE project_id = ?",
+      ).bind(project.id),
+      env.DB.prepare(
+        "DELETE FROM data_room_requests WHERE project_id = ?",
+      ).bind(project.id),
       env.DB.prepare(
         `INSERT INTO investor_profiles
            (user_id, status, sectors_json, stages_json, geographies_json,

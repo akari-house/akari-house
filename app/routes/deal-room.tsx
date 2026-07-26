@@ -2,10 +2,7 @@ import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/deal-room";
 import { PublicFooter } from "~/components/PublicFooter";
 import { SiteHeader } from "~/components/SiteHeader";
-import {
-  getOptionalUser,
-  requireApprovedMember,
-} from "~/lib/auth.server";
+import { getOptionalUser, requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import {
   isVerifiedInvestor,
@@ -154,9 +151,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       )
     : false;
   const founder = user?.id === preview.founderUserId;
-  const investorState = founder || admin
-    ? "approved"
-    : await opportunityAccessState(db, preview.projectId, user);
+  const investorState =
+    founder || admin
+      ? "approved"
+      : await opportunityAccessState(db, preview.projectId, user);
   const fullAccess = investorState === "approved";
 
   const publicUpdates = await db
@@ -174,20 +172,21 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   let privateUpdates: UpdateRow[] = [];
   let questions: QuestionRow[] = [];
   if (fullAccess && user) {
-    const documentResult = founder || admin
-      ? await db
-          .prepare(
-            `SELECT id, title, category, content_type AS contentType,
+    const documentResult =
+      founder || admin
+        ? await db
+            .prepare(
+              `SELECT id, title, category, content_type AS contentType,
                     byte_size AS byteSize
              FROM project_documents
              WHERE project_id = ? AND approved_at IS NOT NULL
              ORDER BY created_at DESC`,
-          )
-          .bind(preview.projectId)
-          .all<DocumentRow>()
-      : await db
-          .prepare(
-            `SELECT pd.id, pd.title, pd.category,
+            )
+            .bind(preview.projectId)
+            .all<DocumentRow>()
+        : await db
+            .prepare(
+              `SELECT pd.id, pd.title, pd.category,
                     pd.content_type AS contentType, pd.byte_size AS byteSize
              FROM project_documents pd
              JOIN document_access_grants dag
@@ -198,9 +197,9 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
               AND dag.expires_at > datetime('now')
              WHERE pd.project_id = ? AND pd.approved_at IS NOT NULL
              ORDER BY pd.created_at DESC`,
-          )
-          .bind(user.id, preview.projectId)
-          .all<DocumentRow>();
+            )
+            .bind(user.id, preview.projectId)
+            .all<DocumentRow>();
     documents = documentResult.results;
 
     const updateResult = await db
@@ -216,10 +215,11 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       .all<UpdateRow>();
     privateUpdates = updateResult.results;
 
-    const questionResult = founder || admin
-      ? await db
-          .prepare(
-            `SELECT oq.id, oq.question, oq.answer, oq.status,
+    const questionResult =
+      founder || admin
+        ? await db
+            .prepare(
+              `SELECT oq.id, oq.question, oq.answer, oq.status,
                     oq.asked_by AS askedBy,
                     p.display_name AS askerName,
                     oq.created_at AS createdAt
@@ -227,12 +227,12 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
              JOIN profiles p ON p.user_id = oq.asked_by
              WHERE oq.project_id = ? AND oq.status <> 'withdrawn'
              ORDER BY oq.created_at DESC`,
-          )
-          .bind(preview.projectId)
-          .all<QuestionRow>()
-      : await db
-          .prepare(
-            `SELECT oq.id, oq.question, oq.answer, oq.status,
+            )
+            .bind(preview.projectId)
+            .all<QuestionRow>()
+        : await db
+            .prepare(
+              `SELECT oq.id, oq.question, oq.answer, oq.status,
                     oq.asked_by AS askedBy,
                     p.display_name AS askerName,
                     oq.created_at AS createdAt
@@ -241,9 +241,9 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
              WHERE oq.project_id = ? AND oq.asked_by = ?
                AND oq.status <> 'withdrawn'
              ORDER BY oq.created_at DESC`,
-          )
-          .bind(preview.projectId, user.id)
-          .all<QuestionRow>();
+            )
+            .bind(preview.projectId, user.id)
+            .all<QuestionRow>();
     questions = questionResult.results;
 
     await db
@@ -389,7 +389,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         status: 400,
       });
     if (listing.accessMode !== "approved_only")
-      throw new Response("A separate request is not required.", { status: 400 });
+      throw new Response("A separate request is not required.", {
+        status: 400,
+      });
     const reason = formText(form.get("reason")).trim();
     if (reason.length < 20 || reason.length > 1200)
       return { error: "Add an access reason between 20 and 1,200 characters." };
@@ -474,7 +476,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     }
     const message = formText(form.get("message")).trim();
     if (message.length < 10 || message.length > 800)
-      return { error: "Add a non-binding interest note between 10 and 800 characters." };
+      return {
+        error: "Add a non-binding interest note between 10 and 800 characters.",
+      };
     await db.batch([
       db
         .prepare(
@@ -511,11 +515,15 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   if (intent === "request-introduction") {
     if (!verifiedInvestor)
       throw new Response("Verified Investor access required.", { status: 403 });
-    if ((await opportunityAccessState(db, listing.projectId, user)) !== "approved")
+    if (
+      (await opportunityAccessState(db, listing.projectId, user)) !== "approved"
+    )
       throw new Response("Private room approval required.", { status: 404 });
     const message = formText(form.get("message")).trim();
     if (message.length < 10 || message.length > 800)
-      return { error: "Add an introduction note between 10 and 800 characters." };
+      return {
+        error: "Add an introduction note between 10 and 800 characters.",
+      };
     await db
       .prepare(
         `INSERT INTO introduction_requests
@@ -536,7 +544,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   if (intent === "ask-question") {
     if (!verifiedInvestor)
       throw new Response("Verified Investor access required.", { status: 403 });
-    if ((await opportunityAccessState(db, listing.projectId, user)) !== "approved")
+    if (
+      (await opportunityAccessState(db, listing.projectId, user)) !== "approved"
+    )
       throw new Response("Private room approval required.", { status: 404 });
     const question = formText(form.get("question")).trim();
     if (question.length < 10 || question.length > 1200)
@@ -591,7 +601,10 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   throw new Response("Unsupported action.", { status: 400 });
 }
 
-export default function DealRoom({ loaderData, actionData }: Route.ComponentProps) {
+export default function DealRoom({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   const { preview } = loaderData;
   const navigation = useNavigation();
   const range = [
@@ -599,7 +612,8 @@ export default function DealRoom({ loaderData, actionData }: Route.ComponentProp
     money(preview.raiseMaximum, preview.raiseCurrency),
   ].filter(Boolean);
   const accessRequestable =
-    loaderData.verifiedInvestor && loaderData.accessState === "request_required";
+    loaderData.verifiedInvestor &&
+    loaderData.accessState === "request_required";
 
   return (
     <div className="site-shell">
@@ -627,7 +641,12 @@ export default function DealRoom({ loaderData, actionData }: Route.ComponentProp
               <Form method="post" className="form-stack">
                 <label>
                   Why is private access relevant?
-                  <textarea name="reason" minLength={20} maxLength={1200} required />
+                  <textarea
+                    name="reason"
+                    minLength={20}
+                    maxLength={1200}
+                    required
+                  />
                 </label>
                 <button
                   className="button button-primary"
@@ -641,7 +660,11 @@ export default function DealRoom({ loaderData, actionData }: Route.ComponentProp
             )}
             {loaderData.accessState === "requested" && (
               <Form method="post">
-                <button className="text-button" name="intent" value="withdraw-access">
+                <button
+                  className="text-button"
+                  name="intent"
+                  value="withdraw-access"
+                >
                   Withdraw request
                 </button>
               </Form>
@@ -663,7 +686,10 @@ export default function DealRoom({ loaderData, actionData }: Route.ComponentProp
           </p>
         )}
 
-        <section className="deal-preview-grid" aria-label="Opportunity overview">
+        <section
+          className="deal-preview-grid"
+          aria-label="Opportunity overview"
+        >
           <article>
             <span className="eyebrow">Sector</span>
             <strong>{preview.sector || "Not specified"}</strong>
@@ -727,9 +753,9 @@ export default function DealRoom({ loaderData, actionData }: Route.ComponentProp
                 <h3>{update.title}</h3>
                 <p>{update.body}</p>
                 <small>
-                  {new Date(update.publishedAt || update.createdAt).toLocaleDateString(
-                    "en-GB",
-                  )}
+                  {new Date(
+                    update.publishedAt || update.createdAt,
+                  ).toLocaleDateString("en-GB")}
                 </small>
               </article>
             ))}
@@ -756,7 +782,9 @@ export default function DealRoom({ loaderData, actionData }: Route.ComponentProp
                 <button
                   className="button button-quiet"
                   name="intent"
-                  value={loaderData.userState?.passedAt ? "clear-state" : "pass"}
+                  value={
+                    loaderData.userState?.passedAt ? "clear-state" : "pass"
+                  }
                 >
                   {loaderData.userState?.passedAt ? "Passed" : "Pass for now"}
                 </button>
@@ -765,9 +793,18 @@ export default function DealRoom({ loaderData, actionData }: Route.ComponentProp
             <Form method="post" className="form-stack">
               <label>
                 Non-binding interest note
-                <textarea name="message" minLength={10} maxLength={800} required />
+                <textarea
+                  name="message"
+                  minLength={10}
+                  maxLength={800}
+                  required
+                />
               </label>
-              <button className="button button-primary" name="intent" value="interest">
+              <button
+                className="button button-primary"
+                name="intent"
+                value="interest"
+              >
                 {loaderData.ownInterest?.status === "active"
                   ? "Update non-binding interest"
                   : "Register non-binding interest"}
@@ -786,13 +823,17 @@ export default function DealRoom({ loaderData, actionData }: Route.ComponentProp
         )}
 
         {loaderData.fullAccess && (
-          <section className="private-deal-room" aria-labelledby="private-room-title">
+          <section
+            className="private-deal-room"
+            aria-labelledby="private-room-title"
+          >
             <header>
               <span className="chapter">Private room</span>
               <h2 id="private-room-title">Authorised diligence space</h2>
               <p>
-                Content in this section is returned only after server-side access
-                checks. Links remain private and access can be revoked immediately.
+                Content in this section is returned only after server-side
+                access checks. Links remain private and access can be revoked
+                immediately.
               </p>
             </header>
 
@@ -837,7 +878,12 @@ export default function DealRoom({ loaderData, actionData }: Route.ComponentProp
                 <Form method="post" className="form-stack">
                   <label>
                     Ask the Founder a question
-                    <textarea name="question" minLength={10} maxLength={1200} required />
+                    <textarea
+                      name="question"
+                      minLength={10}
+                      maxLength={1200}
+                      required
+                    />
                   </label>
                   <button
                     className="button button-primary"
@@ -850,7 +896,12 @@ export default function DealRoom({ loaderData, actionData }: Route.ComponentProp
                 <Form method="post" className="form-stack">
                   <label>
                     Founder introduction note
-                    <textarea name="message" minLength={10} maxLength={800} required />
+                    <textarea
+                      name="message"
+                      minLength={10}
+                      maxLength={800}
+                      required
+                    />
                   </label>
                   <button
                     className="button button-quiet"
@@ -877,10 +928,19 @@ export default function DealRoom({ loaderData, actionData }: Route.ComponentProp
                       <blockquote>{question.answer}</blockquote>
                     ) : loaderData.founder || loaderData.admin ? (
                       <Form method="post" className="form-stack">
-                        <input type="hidden" name="questionId" value={question.id} />
+                        <input
+                          type="hidden"
+                          name="questionId"
+                          value={question.id}
+                        />
                         <label>
                           Answer
-                          <textarea name="answer" minLength={10} maxLength={2400} required />
+                          <textarea
+                            name="answer"
+                            minLength={10}
+                            maxLength={2400}
+                            required
+                          />
                         </label>
                         <button
                           className="button button-primary"
@@ -904,9 +964,9 @@ export default function DealRoom({ loaderData, actionData }: Route.ComponentProp
           <strong>Important</strong>
           <p>
             AKARI does not provide investment, financial, legal or tax advice.
-            Review and verification do not constitute endorsement. Early-stage and
-            digital-asset opportunities can involve substantial loss, illiquidity
-            and regulatory risk.
+            Review and verification do not constitute endorsement. Early-stage
+            and digital-asset opportunities can involve substantial loss,
+            illiquidity and regulatory risk.
           </p>
         </aside>
       </main>

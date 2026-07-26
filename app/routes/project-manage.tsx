@@ -58,12 +58,15 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
                 <ProjectNeedChips value={project.seeking} compact />
                 {project.opportunityStatus && (
                   <small>
-                    Opportunity review: {project.opportunityStatus.replaceAll("_", " ")}
+                    Opportunity review:{" "}
+                    {project.opportunityStatus.replaceAll("_", " ")}
                   </small>
                 )}
                 <footer>
                   <Link to={`/projects/${project.slug}`}>View</Link>
-                  <Link to={`/projects/${project.slug}/edit`}>Edit project</Link>
+                  <Link to={`/projects/${project.slug}/edit`}>
+                    Edit project
+                  </Link>
                   <Link to={`/projects/${project.slug}/needs`}>Edit needs</Link>
                   <Link to={`/projects/${project.slug}/opportunity`}>
                     Opportunity submission

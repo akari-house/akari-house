@@ -76,11 +76,7 @@ export async function isVerifiedInvestor(
   db: D1Database,
   user: SessionUser | null,
 ) {
-  if (
-    !user ||
-    user.accessTier !== "member" ||
-    !user.roles.includes("investor")
-  )
+  if (!user || user.accessTier !== "member" || !user.roles.includes("investor"))
     return false;
   const eligibility = await investorEligibility(db, user.id);
   return (

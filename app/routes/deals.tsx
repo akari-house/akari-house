@@ -89,10 +89,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     .slice(0, 40);
   const userId = user?.id ?? "";
 
-  const conditions = [
-    "ol.status = 'published'",
-    "pr.status = 'published'",
-  ];
+  const conditions = ["ol.status = 'published'", "pr.status = 'published'"];
   const values: Array<string> = [userId, userId];
   if (sector) {
     conditions.push("ol.sector = ?");
@@ -179,13 +176,19 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     view,
     filters: { sector, stage, geography, instrument },
     options: {
-      sectors: [...new Set(filterRows.results.map((row) => row.sector).filter(Boolean))],
+      sectors: [
+        ...new Set(filterRows.results.map((row) => row.sector).filter(Boolean)),
+      ],
       geographies: [
-        ...new Set(filterRows.results.map((row) => row.geography).filter(Boolean)),
+        ...new Set(
+          filterRows.results.map((row) => row.geography).filter(Boolean),
+        ),
       ],
       instruments: [
         ...new Set(
-          filterRows.results.map((row) => row.fundingInstrument).filter(Boolean),
+          filterRows.results
+            .map((row) => row.fundingInstrument)
+            .filter(Boolean),
         ),
       ],
     },
@@ -295,12 +298,14 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
           </aside>
         </header>
 
-        {!loaderData.verifiedInvestor && loaderData.user?.roles.includes("investor") && (
-          <p className="notice applicant-notice">
-            Your Investor role is not yet verified. You can review approved public
-            previews, while saved lists and private rooms remain unavailable.
-          </p>
-        )}
+        {!loaderData.verifiedInvestor &&
+          loaderData.user?.roles.includes("investor") && (
+            <p className="notice applicant-notice">
+              Your Investor role is not yet verified. You can review approved
+              public previews, while saved lists and private rooms remain
+              unavailable.
+            </p>
+          )}
 
         <section className="deals-controls" aria-labelledby="deal-filter-title">
           <div>
@@ -339,7 +344,10 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
             </label>
             <label>
               Geography
-              <select name="geography" defaultValue={loaderData.filters.geography}>
+              <select
+                name="geography"
+                defaultValue={loaderData.filters.geography}
+              >
                 <option value="">All geographies</option>
                 {loaderData.options.geographies.map((value) => (
                   <option key={value}>{value}</option>
@@ -348,7 +356,10 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
             </label>
             <label>
               Instrument
-              <select name="instrument" defaultValue={loaderData.filters.instrument}>
+              <select
+                name="instrument"
+                defaultValue={loaderData.filters.instrument}
+              >
                 <option value="">All instruments</option>
                 {loaderData.options.instruments.map((value) => (
                   <option key={value} value={value}>
@@ -411,19 +422,30 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                       <div>
                         <dt>Timeline</dt>
                         <dd>
-                          {new Date(opportunity.closingAt).toLocaleDateString("en-GB")}
+                          {new Date(opportunity.closingAt).toLocaleDateString(
+                            "en-GB",
+                          )}
                         </dd>
                       </div>
                     )}
                   </dl>
-                  <p className="deal-founder">Shared by {opportunity.founderName}</p>
+                  <p className="deal-founder">
+                    Shared by {opportunity.founderName}
+                  </p>
                   <div className="deal-card-actions">
-                    <Link className="button button-primary" to={`/deals/${opportunity.slug}`}>
+                    <Link
+                      className="button button-primary"
+                      to={`/deals/${opportunity.slug}`}
+                    >
                       Review preview
                     </Link>
                     {loaderData.verifiedInvestor && (
                       <Form method="post">
-                        <input type="hidden" name="projectId" value={opportunity.projectId} />
+                        <input
+                          type="hidden"
+                          name="projectId"
+                          value={opportunity.projectId}
+                        />
                         <input type="hidden" name="returnTo" value={returnTo} />
                         <button
                           className="button button-quiet"

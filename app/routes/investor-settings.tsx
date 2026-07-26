@@ -25,8 +25,14 @@ type InvestorProfileRow = {
 };
 
 function listValue(value: string) {
-  return [...new Set(value.split(",").map((item) => item.trim()).filter(Boolean))]
-    .slice(0, 20);
+  return [
+    ...new Set(
+      value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  ].slice(0, 20);
 }
 
 function optionalAmount(value: FormDataEntryValue | null) {
@@ -61,7 +67,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     )
     .bind(user.id)
     .first<InvestorProfileRow>();
-  if (!profile) throw new Response("Investor profile unavailable.", { status: 500 });
+  if (!profile)
+    throw new Response("Investor profile unavailable.", { status: 500 });
   return {
     user,
     profile,
@@ -105,9 +112,18 @@ export async function action({ request, context }: Route.ActionArgs) {
   const eligibilityNote = formText(form.get("eligibilityNote")).trim();
 
   if (!sectors.length || !stages.length || !geographies.length)
-    return { error: "Add at least one sector, stage and geography preference." };
-  if (![minimumTicket, maximumTicket].every((value) => value === null || Number.isFinite(value)))
-    return { error: "Ticket amounts must be whole numbers greater than or equal to zero." };
+    return {
+      error: "Add at least one sector, stage and geography preference.",
+    };
+  if (
+    ![minimumTicket, maximumTicket].every(
+      (value) => value === null || Number.isFinite(value),
+    )
+  )
+    return {
+      error:
+        "Ticket amounts must be whole numbers greater than or equal to zero.",
+    };
   if (
     minimumTicket !== null &&
     maximumTicket !== null &&
@@ -123,9 +139,11 @@ export async function action({ request, context }: Route.ActionArgs) {
     };
 
   const protectedStatus = current?.status
-    ? new Set<InvestorProfileStatus>(["verified", "restricted", "rejected"]).has(
-        current.status,
-      )
+    ? new Set<InvestorProfileStatus>([
+        "verified",
+        "restricted",
+        "rejected",
+      ]).has(current.status)
     : false;
   const nextStatus: InvestorProfileStatus = protectedStatus
     ? current!.status
@@ -299,10 +317,16 @@ export default function InvestorSettings({
             />
           </label>
           <div className="deal-action-row">
-            <button className="button button-quiet" name="intent" value="save-profile">
+            <button
+              className="button button-quiet"
+              name="intent"
+              value="save-profile"
+            >
               Save preferences
             </button>
-            {!new Set(["verified", "restricted", "rejected"]).has(profile.status) && (
+            {!new Set(["verified", "restricted", "rejected"]).has(
+              profile.status,
+            ) && (
               <button
                 className="button button-primary"
                 name="intent"

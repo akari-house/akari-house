@@ -111,7 +111,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     .trim()
     .toUpperCase()
     .slice(0, 3);
-  const tractionStage = formText(form.get("tractionStage")).trim().slice(0, 120);
+  const tractionStage = formText(form.get("tractionStage"))
+    .trim()
+    .slice(0, 120);
   const closingAt = formText(form.get("closingAt")).trim() || null;
   const accessMode = formText(form.get("accessMode"));
   const publicSummary = formText(form.get("publicSummary")).trim();
@@ -122,8 +124,14 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     return { error: "Add both a sector and primary geography." };
   if (!instruments.includes(fundingInstrument as (typeof instruments)[number]))
     return { error: "Choose a supported funding instrument." };
-  if (![raiseMinimum, raiseMaximum, minimumParticipation].every((value) => value === null || Number.isFinite(value)))
-    return { error: "Amounts must be whole numbers greater than or equal to zero." };
+  if (
+    ![raiseMinimum, raiseMaximum, minimumParticipation].every(
+      (value) => value === null || Number.isFinite(value),
+    )
+  )
+    return {
+      error: "Amounts must be whole numbers greater than or equal to zero.",
+    };
   if (
     raiseMinimum !== null &&
     raiseMaximum !== null &&
@@ -135,11 +143,15 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   if (!new Set(["verified_investors", "approved_only"]).has(accessMode))
     return { error: "Choose a valid private-room access policy." };
   if (publicSummary.length < 20 || publicSummary.length > 1000)
-    return { error: "The approved preview must be between 20 and 1,000 characters." };
+    return {
+      error: "The approved preview must be between 20 and 1,000 characters.",
+    };
   if (publicHighlights.length < 20 || publicHighlights.length > 3000)
     return { error: "Highlights must be between 20 and 3,000 characters." };
   if (riskSummary.length < 20 || riskSummary.length > 2000)
-    return { error: "Risk information must be between 20 and 2,000 characters." };
+    return {
+      error: "Risk information must be between 20 and 2,000 characters.",
+    };
   if (intent === "submit" && project.status !== "published")
     return {
       error:
@@ -226,7 +238,10 @@ export default function ProjectOpportunity({
               Submissions remain unavailable to Investors until AKARI review.
             </p>
           </div>
-          <Link className="button button-quiet" to={`/projects/${loaderData.project.slug}`}>
+          <Link
+            className="button button-quiet"
+            to={`/projects/${loaderData.project.slug}`}
+          >
             Return to project
           </Link>
         </header>
@@ -247,7 +262,12 @@ export default function ProjectOpportunity({
           <div className="form-grid">
             <label>
               Sector
-              <input name="sector" defaultValue={listing?.sector} maxLength={80} required />
+              <input
+                name="sector"
+                defaultValue={listing?.sector}
+                maxLength={80}
+                required
+              />
             </label>
             <label>
               Primary geography
@@ -334,7 +354,9 @@ export default function ProjectOpportunity({
                 defaultValue={listing?.accessMode || "approved_only"}
               >
                 <option value="approved_only">Per-opportunity approval</option>
-                <option value="verified_investors">All verified Investors</option>
+                <option value="verified_investors">
+                  All verified Investors
+                </option>
               </select>
             </label>
           </div>
@@ -374,10 +396,18 @@ export default function ProjectOpportunity({
           </label>
 
           <div className="deal-action-row">
-            <button className="button button-quiet" name="intent" value="save-draft">
+            <button
+              className="button button-quiet"
+              name="intent"
+              value="save-draft"
+            >
               Save private draft
             </button>
-            <button className="button button-primary" name="intent" value="submit">
+            <button
+              className="button button-primary"
+              name="intent"
+              value="submit"
+            >
               Submit for AKARI review
             </button>
           </div>
