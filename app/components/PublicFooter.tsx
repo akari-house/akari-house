@@ -15,6 +15,7 @@ const footerGroups = [
     title: "Opportunities",
     links: [
       { label: "Projects", to: "/projects" },
+      { label: "Investor deals", to: "/deals" },
       { label: "Creator campaigns", to: "/campaigns" },
       { label: "Events", to: "/events" },
     ],

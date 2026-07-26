@@ -76,17 +76,21 @@ await run(
 await run(
   "visitor",
   "visitor",
-  "Public home works and /app redirects to login",
+  "Public home and opportunity catalogue work while /app redirects to login",
   async () => {
     const home = await fetch(baseUrl, { redirect: "manual" });
     assert(home.status === 200, `Home returned ${home.status}`);
+    const deals = await fetch(new URL("/deals", baseUrl), {
+      redirect: "manual",
+    });
+    assert(deals.status === 200, `/deals returned ${deals.status}`);
     const app = await fetch(new URL("/app", baseUrl), { redirect: "manual" });
     assert(app.status === 302, `/app returned ${app.status}`);
     assert(
       (app.headers.get("location") ?? "").startsWith("/login"),
       "Protected route did not redirect to login",
     );
-    return "home 200; protected route redirected";
+    return "home and opportunities 200; protected route redirected";
   },
 );
 
@@ -130,42 +134,58 @@ await run(
   "superadmin",
   "Production-only test routes stay closed and approved smoke session reaches protected consoles",
   async () => {
-    const fixture = await fetch(
-      new URL("/__test__/personas/founder", baseUrl),
-      { redirect: "manual" },
-    );
-    assert(fixture.status === 404, `Fixture route returned ${fixture.status}`);
-    const securityFixture = await fetch(
-      new URL("/__test__/launch-security/account-state", baseUrl),
+    const fixtureProbes = [
       {
+        path: "/__test__/personas/founder",
+        method: "GET",
+      },
+      {
+        path: "/__test__/launch-security/account-state",
         method: "POST",
+      },
+      {
+        path: "/__test__/opportunities/state",
+        method: "POST",
+      },
+      {
+        path: "/__test__/opportunity-documents/state",
+        method: "POST",
+      },
+    ];
+    for (const probe of fixtureProbes) {
+      const response = await fetch(new URL(probe.path, baseUrl), {
+        method: probe.method,
         redirect: "manual",
         headers: { "x-akari-test-fixture": "launch-gate-v1" },
-      },
-    );
-    assert(
-      securityFixture.status === 404,
-      `Security fixture returned ${securityFixture.status}`,
-    );
+      });
+      assert(
+        response.status === 404,
+        `${probe.path} fixture returned ${response.status}`,
+      );
+    }
+
     assert(
       sessionCookie,
       "AKARI_SMOKE_SESSION_COOKIE is required for authenticated production evidence",
     );
     const headers = { Cookie: sessionCookie };
-    const app = await fetch(new URL("/app", baseUrl), {
-      redirect: "manual",
-      headers,
-    });
-    assert(app.status === 200, `Authenticated /app returned ${app.status}`);
-    const gate = await fetch(new URL("/admin/launch-gate", baseUrl), {
-      redirect: "manual",
-      headers,
-    });
-    assert(
-      gate.status === 200,
-      `Authenticated /admin/launch-gate returned ${gate.status}`,
-    );
-    return "test fixtures closed; member and Superadmin consoles reachable";
+    const protectedRoutes = [
+      "/app",
+      "/admin/launch-gate",
+      "/admin/opportunities",
+      "/admin/opportunities/documents",
+    ];
+    for (const route of protectedRoutes) {
+      const response = await fetch(new URL(route, baseUrl), {
+        redirect: "manual",
+        headers,
+      });
+      assert(
+        response.status === 200,
+        `Authenticated ${route} returned ${response.status}`,
+      );
+    }
+    return `${fixtureProbes.length} fixture families closed; ${protectedRoutes.length} member and Superadmin consoles reachable`;
   },
 );
 
