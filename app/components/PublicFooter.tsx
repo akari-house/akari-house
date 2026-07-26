@@ -96,7 +96,7 @@ export function PublicFooter() {
             it does not hold member investment funds through this product.
           </p>
         </div>
-        <small>Provisional information — final legal review required.</small>
+        <small>Provisional information - final legal review required.</small>
       </section>
 
       <div className="footer-baseline">

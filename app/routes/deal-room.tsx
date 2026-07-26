@@ -709,7 +709,7 @@ export default function DealRoom({
           {range.length > 0 && (
             <article>
               <span className="eyebrow">Raise range</span>
-              <strong>{range.join(" – ")}</strong>
+              <strong>{range.join(" - ")}</strong>
             </article>
           )}
           {preview.minimumParticipation !== null && (

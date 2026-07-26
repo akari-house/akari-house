@@ -415,7 +415,7 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                     {range.length > 0 && (
                       <div>
                         <dt>Raise</dt>
-                        <dd>{range.join(" – ")}</dd>
+                        <dd>{range.join(" - ")}</dd>
                       </div>
                     )}
                     {opportunity.closingAt && (
