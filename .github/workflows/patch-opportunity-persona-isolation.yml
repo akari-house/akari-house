@@ -24,6 +24,10 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          from textwrap import dedent
+
+          def block(value: str) -> str:
+              return dedent(value).strip("\n")
 
           def replace_once(path: Path, old: str, new: str):
               value = path.read_text()
@@ -35,143 +39,156 @@ jobs:
           persona = Path("app/routes/test-persona.ts")
           replace_once(
               persona,
-              '''  project_owner: {
-              status: "active",
-              roles: ["founder"],
-              membership: "approved",
-            },''',
-              '''  project_owner: {
-              status: "active",
-              roles: ["founder"],
-              membership: "approved",
-            },
-            opp_owner: {
-              status: "active",
-              roles: ["founder"],
-              membership: "approved",
-            },
-            opp_founder: {
-              status: "active",
-              roles: ["founder"],
-              membership: "approved",
-            },
-            opp_creator: {
-              status: "active",
-              roles: ["creator"],
-              membership: "approved",
-            },
-            opp_investor: {
-              status: "active",
-              roles: ["investor"],
-              membership: "approved",
-            },
-            opp_granted: {
-              status: "active",
-              roles: ["investor"],
-              membership: "approved",
-            },
-            opp_expired: {
-              status: "active",
-              roles: ["investor"],
-              membership: "approved",
-            },
-            opp_scoped_admin: {
-              status: "active",
-              roles: [],
-              membership: "approved",
-              admin: "membership",
-            },
-            opp_superadmin: {
-              status: "active",
-              roles: [],
-              membership: "approved",
-              admin: "superadmin",
-            },''',
+              block('''
+                project_owner: {
+                  status: "active",
+                  roles: ["founder"],
+                  membership: "approved",
+                },
+              '''),
+              block('''
+                project_owner: {
+                  status: "active",
+                  roles: ["founder"],
+                  membership: "approved",
+                },
+                opp_owner: {
+                  status: "active",
+                  roles: ["founder"],
+                  membership: "approved",
+                },
+                opp_founder: {
+                  status: "active",
+                  roles: ["founder"],
+                  membership: "approved",
+                },
+                opp_creator: {
+                  status: "active",
+                  roles: ["creator"],
+                  membership: "approved",
+                },
+                opp_investor: {
+                  status: "active",
+                  roles: ["investor"],
+                  membership: "approved",
+                },
+                opp_granted: {
+                  status: "active",
+                  roles: ["investor"],
+                  membership: "approved",
+                },
+                opp_expired: {
+                  status: "active",
+                  roles: ["investor"],
+                  membership: "approved",
+                },
+                opp_scoped_admin: {
+                  status: "active",
+                  roles: [],
+                  membership: "approved",
+                  admin: "membership",
+                },
+                opp_superadmin: {
+                  status: "active",
+                  roles: [],
+                  membership: "approved",
+                  admin: "superadmin",
+                },
+              '''),
           )
 
           fixture = Path("app/routes/test-opportunities.ts")
           replace_once(
               fixture,
-              '''  const [
-                founder,
-                creator,
-                claimed,
-                granted,
-                expired,
-                suspended,
-                privateTarget,
-              ] = await Promise.all([
-                fixtureUser(env.DB, "project_owner"),
-                fixtureUser(env.DB, "creator"),
-                fixtureUser(env.DB, "investor"),
-                fixtureUser(env.DB, "investor_granted"),
-                fixtureUser(env.DB, "investor_expired"),
-                fixtureUser(env.DB, "suspended"),
-                fixtureUser(env.DB, "private_target"),
-              ]);
-              if (
-                !founder ||
-                !creator ||
-                !claimed ||
-                !granted ||
-                !expired ||
-                !suspended ||
-                !privateTarget
-              )''',
-              '''  const [founder, creator, claimed, granted, expired] = await Promise.all([
-                fixtureUser(env.DB, "opp_owner"),
-                fixtureUser(env.DB, "opp_creator"),
-                fixtureUser(env.DB, "opp_investor"),
-                fixtureUser(env.DB, "opp_granted"),
-                fixtureUser(env.DB, "opp_expired"),
-              ]);
-              if (!founder || !creator || !claimed || !granted || !expired)''',
+              block('''
+                const [
+                  founder,
+                  creator,
+                  claimed,
+                  granted,
+                  expired,
+                  suspended,
+                  privateTarget,
+                ] = await Promise.all([
+                  fixtureUser(env.DB, "project_owner"),
+                  fixtureUser(env.DB, "creator"),
+                  fixtureUser(env.DB, "investor"),
+                  fixtureUser(env.DB, "investor_granted"),
+                  fixtureUser(env.DB, "investor_expired"),
+                  fixtureUser(env.DB, "suspended"),
+                  fixtureUser(env.DB, "private_target"),
+                ]);
+                if (
+                  !founder ||
+                  !creator ||
+                  !claimed ||
+                  !granted ||
+                  !expired ||
+                  !suspended ||
+                  !privateTarget
+                )
+              '''),
+              block('''
+                const [founder, creator, claimed, granted, expired] = await Promise.all([
+                  fixtureUser(env.DB, "opp_owner"),
+                  fixtureUser(env.DB, "opp_creator"),
+                  fixtureUser(env.DB, "opp_investor"),
+                  fixtureUser(env.DB, "opp_granted"),
+                  fixtureUser(env.DB, "opp_expired"),
+                ]);
+                if (!founder || !creator || !claimed || !granted || !expired)
+              '''),
           )
           replace_once(
               fixture,
-              '''      env.DB.prepare(
-                `UPDATE profile_visibility SET visibility = 'public'
-                   WHERE user_id IN (?, ?, ?, ?)`,
-              ).bind(founder.id, creator.id, granted.id, suspended.id),
-              env.DB.prepare(
-                `UPDATE profiles SET visibility = 'public'
-                   WHERE user_id IN (?, ?, ?, ?)`,
-              ).bind(founder.id, creator.id, granted.id, suspended.id),
-              env.DB.prepare(
-                `UPDATE profile_visibility SET visibility = 'private' WHERE user_id = ?`,
-              ).bind(privateTarget.id),
-              env.DB.prepare(
-                `UPDATE profiles SET visibility = 'private' WHERE user_id = ?`,
-              ).bind(privateTarget.id),
-            ''',
-              '''''',
+              block('''
+                    env.DB.prepare(
+                      `UPDATE profile_visibility SET visibility = 'public'
+                         WHERE user_id IN (?, ?, ?, ?)`,
+                    ).bind(founder.id, creator.id, granted.id, suspended.id),
+                    env.DB.prepare(
+                      `UPDATE profiles SET visibility = 'public'
+                         WHERE user_id IN (?, ?, ?, ?)`,
+                    ).bind(founder.id, creator.id, granted.id, suspended.id),
+                    env.DB.prepare(
+                      `UPDATE profile_visibility SET visibility = 'private' WHERE user_id = ?`,
+                    ).bind(privateTarget.id),
+                    env.DB.prepare(
+                      `UPDATE profiles SET visibility = 'private' WHERE user_id = ?`,
+                    ).bind(privateTarget.id),
+              '''),
+              "",
           )
 
           curated = Path("tests/e2e/curated-opportunities.spec.ts")
           replace_once(
               curated,
-              '''  for (const persona of [
-                "project_owner",
-                "creator",
-                "investor",
-                "investor_granted",
-                "investor_expired",
-                "suspended",
-                "private_target",
-                "founder",
-                "scoped_admin",
-                "superadmin",
-              ])''',
-              '''  for (const persona of [
-                "opp_owner",
-                "opp_creator",
-                "opp_investor",
-                "opp_granted",
-                "opp_expired",
-                "opp_founder",
-                "opp_scoped_admin",
-                "opp_superadmin",
-              ])''',
+              block('''
+                for (const persona of [
+                  "project_owner",
+                  "creator",
+                  "investor",
+                  "investor_granted",
+                  "investor_expired",
+                  "suspended",
+                  "private_target",
+                  "founder",
+                  "scoped_admin",
+                  "superadmin",
+                ])
+              '''),
+              block('''
+                for (const persona of [
+                  "opp_owner",
+                  "opp_creator",
+                  "opp_investor",
+                  "opp_granted",
+                  "opp_expired",
+                  "opp_founder",
+                  "opp_scoped_admin",
+                  "opp_superadmin",
+                ])
+              '''),
           )
           value = curated.read_text()
           for old, new in {
@@ -189,24 +206,28 @@ jobs:
           review = Path("tests/e2e/opportunity-document-review.spec.ts")
           replace_once(
               review,
-              '''  for (const persona of [
-                "project_owner",
-                "investor_granted",
-                "investor_expired",
-                "investor",
-                "creator",
-                "scoped_admin",
-                "superadmin",
-              ])''',
-              '''  for (const persona of [
-                "opp_owner",
-                "opp_granted",
-                "opp_expired",
-                "opp_investor",
-                "opp_creator",
-                "opp_scoped_admin",
-                "opp_superadmin",
-              ])''',
+              block('''
+                for (const persona of [
+                  "project_owner",
+                  "investor_granted",
+                  "investor_expired",
+                  "investor",
+                  "creator",
+                  "scoped_admin",
+                  "superadmin",
+                ])
+              '''),
+              block('''
+                for (const persona of [
+                  "opp_owner",
+                  "opp_granted",
+                  "opp_expired",
+                  "opp_investor",
+                  "opp_creator",
+                  "opp_scoped_admin",
+                  "opp_superadmin",
+                ])
+              '''),
           )
           value = review.read_text()
           for old, new in {
