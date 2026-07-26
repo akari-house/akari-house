@@ -12,9 +12,13 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
             pd.content_type AS contentType, pd.title,
             pd.approved_at AS approvedAt,
             pr.founder_user_id AS founderUserId,
+            ol.project_id AS opportunityProjectId,
             dag.id AS grantId, COALESCE(dag.can_download, 0) AS canDownload
      FROM project_documents pd
      JOIN projects pr ON pr.id = pd.project_id
+     LEFT JOIN opportunity_listings ol
+       ON ol.project_id = pr.id
+      AND ol.status IN ('submitted', 'published', 'paused')
      LEFT JOIN document_access_grants dag
        ON dag.project_id = pr.id AND dag.document_id = pd.id
       AND dag.investor_user_id = ? AND dag.revoked_at IS NULL
@@ -30,13 +34,16 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       title: string;
       approvedAt: string | null;
       founderUserId: string;
+      opportunityProjectId: string | null;
       grantId: string | null;
       canDownload: number;
     }>();
 
   if (!document) throw new Response("Document not found.", { status: 404 });
   const owner = document.founderUserId === user.id;
-  const granted = Boolean(document.grantId && document.approvedAt);
+  const approvalRequired = Boolean(document.opportunityProjectId);
+  const documentEligible = !approvalRequired || Boolean(document.approvedAt);
+  const granted = Boolean(document.grantId && documentEligible);
   if (!owner && !granted) {
     await env.DB.prepare(
       `INSERT INTO document_access_logs
@@ -49,9 +56,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
         document.id,
         user.id,
         JSON.stringify({
-          reason: document.approvedAt
-            ? "no_active_grant"
-            : "document_not_approved",
+          reason:
+            approvalRequired && !document.approvedAt
+              ? "document_not_approved"
+              : "no_active_grant",
         }),
       )
       .run();
