@@ -1,0 +1,48 @@
+name: Verify Live POST Login Handler
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for merged production deployment and verify login GET/POST
+        run: |
+          set -euo pipefail
+          base='https://akarihouse.com'
+          passed=0
+          for attempt in $(seq 1 20); do
+            echo "Attempt $attempt"
+            curl -fsS -D get-headers.txt -o get-body.html "$base/login" || true
+            curl -sS -D post-headers.txt -o post-body.html \
+              -X POST "$base/login" \
+              -H 'Origin: https://akarihouse.com' \
+              -H 'Content-Type: application/x-www-form-urlencoded' \
+              --data 'email=live-verification%40example.com&password=not-a-real-password' || true
+
+            get_fallback=$(tr -d '\r' < get-headers.txt | awk -F': ' 'tolower($1)=="x-akari-login-fallback" {print tolower($2)}' | tail -1)
+            post_result=$(tr -d '\r' < post-headers.txt | awk -F': ' 'tolower($1)=="x-akari-login-result" {print tolower($2)}' | tail -1)
+
+            if [ "$get_fallback" = 'worker' ] \
+              && grep -q 'name="email"' get-body.html \
+              && grep -q 'name="password"' get-body.html \
+              && [ "$post_result" = 'error' ] \
+              && grep -q 'Complete the security check and try again.' post-body.html \
+              && ! grep -q 'The lantern went out unexpectedly' post-body.html; then
+              passed=1
+              break
+            fi
+
+            sleep 15
+          done
+
+          echo '--- GET headers ---'
+          cat get-headers.txt
+          echo '--- POST headers ---'
+          cat post-headers.txt
+          echo '--- POST relevant body ---'
+          grep -E 'Complete the security check|not recognised|Membership Desk|lantern went out' post-body.html || true
+
+          test "$passed" -eq 1
