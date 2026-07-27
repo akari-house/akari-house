@@ -13,9 +13,7 @@ describe("Cloudflare deployment isolation", () => {
   it("keeps the connected AKARI Worker on production storage", () => {
     expect(defaultConfig).toContain('"name": "akari-house"');
     expect(defaultConfig).toContain('"APP_ENV": "production"');
-    expect(defaultConfig).toContain(
-      '"APP_URL": "https://akarihouse.com"',
-    );
+    expect(defaultConfig).toContain('"APP_URL": "https://akarihouse.com"');
     expect(defaultConfig).toContain('"TURNSTILE_HOSTNAME": "akarihouse.com"');
     expect(defaultConfig).toContain('"database_name": "akari-house-db"');
     expect(defaultConfig).toContain(`"database_id": "${productionDatabaseId}"`);
