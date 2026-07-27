@@ -510,7 +510,15 @@ export default function Dashboard({
             </>
           )}
           {loaderData.adminAccess?.accessLevel === "superadmin" && (
-            <Link to="/admin/team">Admin team</Link>
+            <>
+              <span className="dashboard-nav-section-label">Superadmin</span>
+              <Link className="dashboard-nav-admin" to="/admin/house-directory">
+                People &amp; Partners
+              </Link>
+              <Link className="dashboard-nav-admin" to="/admin/team">
+                Admin team
+              </Link>
+            </>
           )}
         </nav>
         <section className="dashboard-content">
