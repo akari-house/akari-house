@@ -73,6 +73,36 @@
   text-transform: uppercase;
 }
 
+ .akari-footer__socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.akari-footer__socials a {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  gap: 0.3rem;
+  color: #8d929d;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.akari-footer__socials a > span {
+  color: var(--pink);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.akari-footer__socials a:hover,
+.akari-footer__socials a:focus-visible {
+  color: #fff;
+}
+
 .akari-footer .akari-footer__links {
   display: grid;
   grid-template-columns: repeat(4, minmax(130px, 1fr));
