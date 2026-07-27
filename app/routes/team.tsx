@@ -1,4 +1,3 @@
-npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
 import { Link } from "react-router";
 import type { Route } from "./+types/team";
 import { PeopleCard, PartnerStrip } from "~/components/HouseDirectory";
@@ -284,8 +283,3 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
     </div>
   );
 }
-npm notice
-npm notice New minor version of npm available! 11.9.0 -> 11.18.0
-npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.18.0
-npm notice To update run: npm install -g npm@11.18.0
-npm notice
