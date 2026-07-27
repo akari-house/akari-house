@@ -1,0 +1,223 @@
+.opportunity-operations-main {
+  width: min(1240px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: clamp(7.5rem, 12vw, 10rem) 0 clamp(5rem, 9vw, 8rem);
+}
+
+.opportunity-operations-main .admin-heading {
+  align-items: flex-end;
+  gap: 2rem;
+}
+
+.opportunity-operations-main .admin-heading > div:first-child {
+  max-width: 760px;
+}
+
+.opportunity-operations-main > section,
+.opportunity-operations-main > .admin-panel {
+  margin-top: clamp(2rem, 5vw, 4rem);
+}
+
+.opportunity-section-form {
+  margin-top: 1.5rem;
+}
+
+.deal-section-editor {
+  display: grid;
+  grid-template-columns: minmax(0, 0.34fr) minmax(0, 0.66fr);
+  gap: 0.9rem 1.25rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.deal-section-editor legend {
+  padding: 0 0.35rem;
+  color: var(--paper);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.deal-section-editor > p,
+.deal-section-editor > small {
+  grid-column: 1;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.deal-section-editor label {
+  min-width: 0;
+}
+
+.deal-section-editor label:last-child {
+  grid-column: 2;
+  grid-row: 1 / span 4;
+}
+
+.deal-section-editor textarea {
+  min-height: 190px;
+  resize: vertical;
+}
+
+.opportunity-operations-main select,
+.opportunity-operations-main input,
+.opportunity-operations-main textarea {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--text);
+  padding: 0.78rem 0.85rem;
+}
+
+.opportunity-operations-main textarea {
+  min-height: 112px;
+  resize: vertical;
+}
+
+.opportunity-operations-main .application-card {
+  align-items: start;
+}
+
+.opportunity-operations-main .application-card > div {
+  min-width: 0;
+}
+
+.opportunity-operations-main .application-actions {
+  width: min(360px, 100%);
+}
+
+.opportunity-operations-main blockquote {
+  margin: 1rem 0 0;
+  padding: 0.9rem 1rem;
+  border-left: 3px solid var(--pink);
+  background: rgba(240, 79, 135, 0.055);
+  color: var(--muted);
+}
+
+.danger-zone {
+  border-color: rgba(240, 79, 135, 0.34);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(240, 79, 135, 0.08), transparent 32%),
+    rgba(17, 21, 34, 0.78);
+}
+
+.deal-room-sections {
+  margin-top: clamp(2.5rem, 6vw, 5rem);
+  padding: clamp(1.3rem, 4vw, 2.6rem);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 211, 61, 0.06), transparent 28%),
+    rgba(17, 21, 34, 0.72);
+}
+
+.deal-room-sections > header {
+  display: grid;
+  grid-template-columns: minmax(200px, 0.4fr) minmax(0, 0.6fr);
+  gap: 1rem 2rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
+}
+
+.deal-room-sections > header .chapter {
+  grid-column: 1;
+}
+
+.deal-room-sections > header h2 {
+  grid-column: 1;
+  margin: 0;
+  font-size: clamp(1.7rem, 4vw, 3.2rem);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+}
+
+.deal-room-sections > header p {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.deal-section-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.deal-section-grid article {
+  min-width: 0;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid rgba(255, 255, 255, 0.085);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.deal-section-grid h3 {
+  margin: 1rem 0 0.65rem;
+  font-size: clamp(1.15rem, 2.5vw, 1.55rem);
+}
+
+.deal-section-grid p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.72;
+  white-space: pre-wrap;
+}
+
+.audit-list .application-card {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 840px) {
+  .deal-section-editor,
+  .deal-room-sections > header,
+  .deal-section-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .deal-section-editor > p,
+  .deal-section-editor > small,
+  .deal-section-editor label:last-child,
+  .deal-room-sections > header .chapter,
+  .deal-room-sections > header h2,
+  .deal-room-sections > header p {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .opportunity-operations-main .application-card {
+    grid-template-columns: 1fr;
+  }
+
+  .opportunity-operations-main .application-actions {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .opportunity-operations-main {
+    width: min(100% - 1rem, 1240px);
+  }
+
+  .deal-section-editor,
+  .deal-room-sections {
+    border-radius: 16px;
+  }
+
+  .deal-action-row .button,
+  .deal-action-row form,
+  .deal-action-row form .button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deal-section-editor,
+  .deal-section-grid article {
+    scroll-behavior: auto;
+  }
+}
