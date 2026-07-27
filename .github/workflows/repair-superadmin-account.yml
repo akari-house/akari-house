@@ -1,0 +1,150 @@
+name: Repair Production Superadmin Account
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  repair:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TARGET_EMAIL: mmxinthi@gmail.com
+      GH_TOKEN: ${{ github.token }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Resolve production D1 configuration
+        run: |
+          set -euo pipefail
+          test -n "${CLOUDFLARE_API_TOKEN:-}"
+          test -n "${CLOUDFLARE_ACCOUNT_ID:-}"
+          npx wrangler d1 list --json > d1-databases.json
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          const payload = JSON.parse(fs.readFileSync("d1-databases.json", "utf8"));
+          const databases = Array.isArray(payload) ? payload : (payload.result ?? []);
+          const database = databases.find((entry) =>
+            (entry.name ?? entry.database_name) === "akari-house-db"
+          );
+          const databaseId = database?.uuid ?? database?.database_id ?? database?.id;
+          if (!databaseId) throw new Error("Production D1 database was not found.");
+          fs.writeFileSync("wrangler.account-repair.jsonc", JSON.stringify({
+            name: "akari-house-account-repair",
+            compatibility_date: "2026-07-23",
+            d1_databases: [{
+              binding: "DB",
+              database_name: "akari-house-db",
+              database_id: databaseId,
+              migrations_dir: "migrations"
+            }]
+          }, null, 2));
+          NODE
+          rm -f d1-databases.json
+
+      - name: Ensure production schema is current
+        run: npx wrangler d1 migrations apply DB --remote --config wrangler.account-repair.jsonc
+
+      - name: Inspect account safely before repair
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.account-repair.jsonc --json --command "SELECT u.id, u.status, u.email_verified_at, u.onboarding_started_at, u.password_hash, (SELECT status FROM membership_applications ma WHERE ma.user_id=u.id) AS membership_status, (SELECT access_level FROM admin_users au WHERE au.user_id=u.id) AS admin_access FROM users u WHERE lower(u.email)=lower('${TARGET_EMAIL}') LIMIT 1;" > account-before.json
+
+      - name: Repair production superadmin state
+        run: |
+          cat > account-repair.sql <<'SQL'
+          UPDATE users
+          SET status = 'active',
+              email_verified_at = COALESCE(email_verified_at, datetime('now')),
+              updated_at = datetime('now')
+          WHERE lower(email) = lower('mmxinthi@gmail.com');
+
+          INSERT INTO membership_applications
+            (id, user_id, status, reviewed_at, decision_note, updated_at)
+          SELECT lower(hex(randomblob(16))), id, 'approved', datetime('now'),
+                 'Restored canonical owner superadmin access.', datetime('now')
+          FROM users
+          WHERE lower(email) = lower('mmxinthi@gmail.com')
+          ON CONFLICT(user_id) DO UPDATE SET
+            status = 'approved',
+            reviewed_at = COALESCE(membership_applications.reviewed_at, datetime('now')),
+            decision_note = 'Restored canonical owner superadmin access.',
+            updated_at = datetime('now');
+
+          INSERT INTO admin_users (user_id, access_level)
+          SELECT id, 'superadmin'
+          FROM users
+          WHERE lower(email) = lower('mmxinthi@gmail.com')
+          ON CONFLICT(user_id) DO UPDATE SET access_level = 'superadmin';
+          SQL
+          npx wrangler d1 execute DB --remote --config wrangler.account-repair.jsonc --file account-repair.sql
+
+      - name: Verify account and publish sanitised result
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.account-repair.jsonc --json --command "SELECT u.id, u.status, u.email_verified_at, u.onboarding_started_at, u.password_hash, (SELECT status FROM membership_applications ma WHERE ma.user_id=u.id) AS membership_status, (SELECT access_level FROM admin_users au WHERE au.user_id=u.id) AS admin_access FROM users u WHERE lower(u.email)=lower('${TARGET_EMAIL}') LIMIT 1;" > account-after.json
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+
+          function rowFrom(path) {
+            const payload = JSON.parse(fs.readFileSync(path, "utf8"));
+            const blocks = Array.isArray(payload) ? payload : [payload];
+            for (const block of blocks) {
+              const results = block?.results ?? block?.result?.[0]?.results ?? block?.result?.results;
+              if (Array.isArray(results) && results[0]) return results[0];
+            }
+            return null;
+          }
+
+          function hashHealth(value) {
+            if (typeof value !== "string") return { valid: false, algorithm: "missing", segmentCount: 0 };
+            const parts = value.split("$");
+            const validPrefix = parts.length === 6 && parts[0] === "scrypt" && parts[1] === "16384" && parts[2] === "8" && parts[3] === "1";
+            let validBase64 = false;
+            try {
+              validBase64 = Buffer.from(parts[4] ?? "", "base64").length === 16 && Buffer.from(parts[5] ?? "", "base64").length === 32;
+            } catch {}
+            return { valid: validPrefix && validBase64, algorithm: parts[0] || "missing", segmentCount: parts.length };
+          }
+
+          const before = rowFrom("account-before.json");
+          const after = rowFrom("account-after.json");
+          if (!after) throw new Error("The requested production account does not exist.");
+          const beforeHash = hashHealth(before?.password_hash);
+          const afterHash = hashHealth(after.password_hash);
+          const passed = after.status === "active" && Boolean(after.email_verified_at) && after.membership_status === "approved" && after.admin_access === "superadmin";
+          const body = [
+            "## Production superadmin account repair",
+            "",
+            `- Account exists: **${after ? "yes" : "no"}**`,
+            `- Status: **${after.status}**`,
+            `- Email verified: **${after.email_verified_at ? "yes" : "no"}**`,
+            `- Membership: **${after.membership_status ?? "missing"}**`,
+            `- Admin access: **${after.admin_access ?? "missing"}**`,
+            `- Password hash format: **${afterHash.valid ? "healthy" : `needs reset (${afterHash.algorithm}, ${afterHash.segmentCount} segments)`}**`,
+            "",
+            `Before repair: status=${before?.status ?? "missing"}, membership=${before?.membership_status ?? "missing"}, admin=${before?.admin_access ?? "missing"}, hash=${beforeHash.valid ? "healthy" : "unhealthy"}.`,
+            "",
+            passed ? "✅ Canonical owner superadmin state is verified in production D1." : "❌ The production superadmin state did not verify."
+          ].join("\n");
+          fs.writeFileSync("account-repair-comment.md", body);
+          if (!passed) process.exitCode = 1;
+          NODE
+          gh pr comment "$PR_NUMBER" --body-file account-repair-comment.md
+
+      - name: Remove sensitive local diagnostics
+        if: always()
+        run: rm -f account-before.json account-after.json account-repair.sql wrangler.account-repair.jsonc account-repair-comment.md
