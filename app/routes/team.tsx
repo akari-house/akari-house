@@ -87,7 +87,6 @@ const sections = [
   },
 ] as const;
 
-
 export default function TeamPage({ loaderData }: Route.ComponentProps) {
   const partnerEntries = loaderData.entries.filter(
     (entry) => entry.category === "partner" || entry.category === "provider",
@@ -219,7 +218,6 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
             Explore all published projects →
           </Link>
         </section>
-
       </main>
       <PublicFooter />
     </div>
