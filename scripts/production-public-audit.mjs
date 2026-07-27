@@ -6,6 +6,7 @@ const fetch = globalThis.fetch;
 const baseUrl = new URL(process.env.PRODUCTION_URL || "https://akarihouse.com");
 const expectedRelease = process.env.EXPECTED_RELEASE || "";
 const checks = [];
+const genericErrorCopy = "the lantern went out unexpectedly";
 
 async function record(key, label, run) {
   try {
@@ -38,9 +39,26 @@ async function requireAkariPage(path, label, init = {}) {
   const response = await request(path, { redirect: "follow", ...init });
   requireStatus(response, [200], label);
   const body = await response.text();
-  if (!body.toLowerCase().includes("akari"))
+  const normalized = body.toLowerCase();
+  if (!normalized.includes("akari"))
     throw new Error(`${label} did not render the AKARI application shell.`);
+  if (normalized.includes(genericErrorCopy))
+    throw new Error(`${label} rendered the generic AKARI error boundary.`);
   return `HTTP ${response.status}`;
+}
+
+async function requireLoginForm(init = {}) {
+  const response = await request("/login", { redirect: "follow", ...init });
+  requireStatus(response, [200], "Login");
+  const body = await response.text();
+  const normalized = body.toLowerCase();
+  if (normalized.includes(genericErrorCopy))
+    throw new Error("Login rendered the generic AKARI error boundary.");
+  if (!body.includes("Return to the House"))
+    throw new Error("Login heading was not rendered.");
+  if (!body.includes('name="email"') || !body.includes('name="password"'))
+    throw new Error("Login email and password controls were not rendered.");
+  return `HTTP ${response.status} · login form rendered`;
 }
 
 await record("health", "Health endpoint and release identity", async () => {
@@ -91,6 +109,10 @@ for (const [key, path, label] of publicMenuRoutes) {
   );
 }
 
+await record("login_form", "Login renders the actual authentication form", () =>
+  requireLoginForm(),
+);
+
 const sessionFaultProfiles = [
   ["stale", "akari_session=stale-session-token"],
   ["malformed", "akari_session=%E0%A4%A"],
@@ -107,6 +129,11 @@ for (const [profile, cookie] of sessionFaultProfiles) {
         }),
     );
   }
+  await record(
+    `login_form_${profile}_session`,
+    `Login form renders with a ${profile} session cookie`,
+    () => requireLoginForm({ headers: { Cookie: cookie } }),
+  );
 }
 
 const protectedRoutes = [
@@ -184,7 +211,7 @@ await record(
 
 const failed = checks.filter((check) => check.status === "failed");
 const report = {
-  schemaVersion: 3,
+  schemaVersion: 4,
   environment: "production",
   baseUrl: baseUrl.origin,
   commitSha: process.env.GITHUB_SHA || null,
