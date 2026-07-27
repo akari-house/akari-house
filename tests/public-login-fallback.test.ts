@@ -45,7 +45,7 @@ describe("Worker-level public login", () => {
       new Request("https://akarihouse.com/login"),
       "test-site-key",
       {
-        error: 'The email or password was not recognised. <retry>',
+        error: "The email or password was not recognised. <retry>",
         email: 'member+test@example.com" autofocus',
         status: 401,
       },
@@ -58,9 +58,7 @@ describe("Worker-level public login", () => {
     expect(body).toContain(
       "The email or password was not recognised. &lt;retry&gt;",
     );
-    expect(body).toContain(
-      'value="member+test@example.com&quot; autofocus"',
-    );
+    expect(body).toContain('value="member+test@example.com&quot; autofocus"');
     expect(body).not.toContain("<retry>");
   });
 });
