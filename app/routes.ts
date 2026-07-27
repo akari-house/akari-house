@@ -36,6 +36,7 @@ export default [
   route("events/:slug/edit", "routes/event-edit.tsx"),
   route("events/:slug", "routes/event-detail.tsx"),
   route("login", "routes/login.tsx"),
+  route("signin", "routes/signin.tsx"),
   route("forgot-password", "routes/forgot-password.tsx"),
   route("reset-password", "routes/reset-password.tsx"),
   route("register", "routes/register.tsx"),
@@ -78,7 +79,6 @@ export default [
   route("media/profile/:username", "routes/profile-photo.ts"),
   route("privacy", "routes/legal.tsx"),
   route("terms", "routes/terms.tsx"),
-  route("community-guidelines", "routes/community-guidelines.tsx"),
   route("contact", "routes/contact.tsx"),
-  route("admin/contact", "routes/admin-contact.tsx"),
+  route("community-guidelines", "routes/community-guidelines.tsx"),
 ] satisfies RouteConfig;
