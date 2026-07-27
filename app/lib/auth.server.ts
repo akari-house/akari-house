@@ -9,7 +9,12 @@ function parseCookie(request: Request) {
   const cookies = request.headers.get("Cookie") ?? "";
   for (const part of cookies.split(";")) {
     const [name, ...value] = part.trim().split("=");
-    if (name === cookieName) return decodeURIComponent(value.join("="));
+    if (name !== cookieName) continue;
+    try {
+      return decodeURIComponent(value.join("=")) || null;
+    } catch {
+      return null;
+    }
   }
   return null;
 }
@@ -38,32 +43,41 @@ export async function getOptionalUser(
 ): Promise<SessionUser | null> {
   const token = parseCookie(request);
   if (!token) return null;
-  const tokenHash = await sha256(token);
-  const row = await db
-    .prepare(
-      `SELECT u.id, u.username, u.status,
-              p.display_name AS displayName
-     FROM sessions s
-     JOIN users u ON u.id = s.user_id
-     JOIN profiles p ON p.user_id = u.id
-     WHERE s.token_hash = ? AND s.expires_at > datetime('now')
-       AND u.status IN ('active', 'restricted')
-       AND u.email_verified_at IS NOT NULL`,
-    )
-    .bind(tokenHash)
-    .first<{
-      id: string;
-      username: string;
-      displayName: string;
-      status: "active" | "restricted";
-    }>();
-  if (!row) return null;
-  const { status, ...identity } = row;
-  return {
-    ...identity,
-    accessTier: status === "active" ? "member" : "applicant",
-    roles: await loadRoles(db, row.id),
-  };
+
+  try {
+    const tokenHash = await sha256(token);
+    const row = await db
+      .prepare(
+        `SELECT u.id, u.username, u.status,
+                p.display_name AS displayName
+       FROM sessions s
+       JOIN users u ON u.id = s.user_id
+       JOIN profiles p ON p.user_id = u.id
+       WHERE s.token_hash = ? AND s.expires_at > datetime('now')
+         AND u.status IN ('active', 'restricted')
+         AND u.email_verified_at IS NOT NULL`,
+      )
+      .bind(tokenHash)
+      .first<{
+        id: string;
+        username: string;
+        displayName: string;
+        status: "active" | "restricted";
+      }>();
+    if (!row) return null;
+    const { status, ...identity } = row;
+    return {
+      ...identity,
+      accessTier: status === "active" ? "member" : "applicant",
+      roles: await loadRoles(db, row.id),
+    };
+  } catch (error) {
+    console.error(
+      "Optional session lookup failed; treating the request as signed out.",
+      error,
+    );
+    return null;
+  }
 }
 
 export async function requireApprovedMember(request: Request, db: D1Database) {
