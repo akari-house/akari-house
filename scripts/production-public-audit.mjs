@@ -86,10 +86,8 @@ const publicMenuRoutes = [
 ];
 
 for (const [key, path, label] of publicMenuRoutes) {
-  await record(
-    `public_${key}`,
-    `${label} remains publicly reachable`,
-    () => requireAkariPage(path, label),
+  await record(`public_${key}`, `${label} remains publicly reachable`, () =>
+    requireAkariPage(path, label),
   );
 }
 

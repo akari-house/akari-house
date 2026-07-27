@@ -27,16 +27,15 @@ describe("optional session resilience", () => {
     const db = { prepare } as unknown as D1Database;
 
     await expect(
-      getOptionalUser(
-        requestWithCookie("akari_session=%E0%A4%A"),
-        db,
-      ),
+      getOptionalUser(requestWithCookie("akari_session=%E0%A4%A"), db),
     ).resolves.toBeNull();
     expect(prepare).not.toHaveBeenCalled();
   });
 
   it("keeps public requests signed out when an optional session lookup fails", async () => {
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
 
     await expect(
       getOptionalUser(
