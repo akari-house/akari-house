@@ -43,28 +43,4 @@ replace(
   "revocation action",
 );
 
-replace(
-  `                    {!grant.revokedAt && (\n                      <Form method="post">`,
-  `                    {!grant.revokedAt && (\n                      <Form method="post">`,
-  "stable grant form marker",
-);
-
-replace(
-  `              {loaderData.requests.map((item) => (\n                <article className="application-card" key={item.id}>`,
-  `              {loaderData.requests.map((item) => (\n                <article className="application-card" key={item.id}>`,
-  "stable request marker",
-);
-
-replace(
-  `                    {item.status === "pending" && (\n                      <Form method="post" className="application-actions">`,
-  `                    {item.status === "pending" && (\n                      <Form method="post" className="application-actions">`,
-  "stable pending request form",
-);
-
-replace(
-  `                    )}\n                  </article>\n                ))}`,
-  `                    )}\n                    {item.status === "approved" && (\n                      <Form method="post" className="application-actions">\n                        <input type="hidden" name="requestId" value={item.id} />\n                        <label>\n                          Revocation note\n                          <textarea\n                            name="decisionNote"\n                            minLength={5}\n                            maxLength={500}\n                            required\n                          />\n                        </label>\n                        <button\n                          className="button button-quiet"\n                          name="intent"\n                          value="revoke-data-room"\n                          disabled={pending}\n                        >\n                          Revoke Deal Room access\n                        </button>\n                      </Form>\n                    )}\n                  </article>\n                ))}`,
-  "approved request revoke UI",
-);
-
 fs.writeFileSync(path, source);
