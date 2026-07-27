@@ -3,6 +3,7 @@ import fs from "node:fs";
 const path = "app/routes/project-diligence.tsx";
 let source = fs.readFileSync(path, "utf8");
 function replace(search, replacement, label) {
+  console.log(`Applying ${label}`);
   if (!source.includes(search)) throw new Error(`Missing ${label}`);
   source = source.replace(search, replacement);
 }
