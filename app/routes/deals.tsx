@@ -1,18 +1,3 @@
-npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
-npm error code ENOENT
-npm error syscall mkdir
-npm error path /root/.npm
-npm error errno ENOENT
-npm error enoent Invalid response body while trying to fetch https://registry.npmjs.org/prettier: ENOENT: no such file or directory, mkdir '/root/.npm'
-npm error enoent This is related to npm not being able to find a file.
-npm error enoent
-npm notice
-npm notice New minor version of npm available! 11.9.0 -> 11.18.0
-npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.18.0
-npm notice To update run: npm install -g npm@11.18.0
-npm notice
-npm error Log files were not written due to an error writing to the directory: /root/.npm/_logs
-npm error You can rerun the command with `--loglevel=verbose` to see the logs in your terminal
 import { Form, Link, redirect } from "react-router";
 import type { Route } from "./+types/deals";
 import { PublicFooter } from "~/components/PublicFooter";
@@ -174,7 +159,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const values: Array<string | number> = [userId, userId];
 
   if (filters.search) {
-    conditions.push("(pr.title LIKE ? OR ol.public_summary LIKE ? OR ol.sector LIKE ?)");
+    conditions.push(
+      "(pr.title LIKE ? OR ol.public_summary LIKE ? OR ol.sector LIKE ?)",
+    );
     const searchTerm = `%${filters.search}%`;
     values.push(searchTerm, searchTerm, searchTerm);
   }
@@ -438,25 +425,56 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
       <main id="main-content" className="deals-main">
         <nav className="investor-workspace-nav" aria-label="Investor workspace">
           <Link className="investor-workspace-brand" to="/deals">
-            <span className="workspace-flower" aria-hidden="true">✦</span>
-            <span><strong>AKARI</strong><small>Investor House</small></span>
+            <span className="workspace-flower" aria-hidden="true">
+              ✦
+            </span>
+            <span>
+              <strong>AKARI</strong>
+              <small>Investor House</small>
+            </span>
           </Link>
           <div className="investor-workspace-links">
-            <Link className={loaderData.view === "available" ? "is-active" : ""} to="/deals">Discover</Link>
-            <Link className={loaderData.view === "saved" ? "is-active" : ""} to="/deals?view=saved">Saved</Link>
-            <Link className={loaderData.view === "requested" ? "is-active" : ""} to="/deals?view=requested">Requests</Link>
-            <Link className={loaderData.view === "approved" ? "is-active" : ""} to="/deals?view=approved">My Deal Rooms</Link>
+            <Link
+              className={loaderData.view === "available" ? "is-active" : ""}
+              to="/deals"
+            >
+              Discover
+            </Link>
+            <Link
+              className={loaderData.view === "saved" ? "is-active" : ""}
+              to="/deals?view=saved"
+            >
+              Saved
+            </Link>
+            <Link
+              className={loaderData.view === "requested" ? "is-active" : ""}
+              to="/deals?view=requested"
+            >
+              Requests
+            </Link>
+            <Link
+              className={loaderData.view === "approved" ? "is-active" : ""}
+              to="/deals?view=approved"
+            >
+              My Deal Rooms
+            </Link>
             <Link to="/settings/investor">Investor profile</Link>
           </div>
-          <Link className="workspace-notifications" to="/notifications" aria-label="Notifications">Updates</Link>
+          <Link
+            className="workspace-notifications"
+            to="/notifications"
+            aria-label="Notifications"
+          >
+            Updates
+          </Link>
         </nav>
         <header className="deals-hero">
           <div>
             <span className="chapter">Investor and Angel Deal Rooms</span>
             <h1>Private opportunities. Clearer conviction.</h1>
             <p>
-              Discover reviewed early-stage opportunities, compare the essentials,
-              and enter secure Deal Rooms when access is approved.
+              Discover reviewed early-stage opportunities, compare the
+              essentials, and enter secure Deal Rooms when access is approved.
             </p>
           </div>
           <aside>
@@ -489,12 +507,20 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
           <div>
             <span className="eyebrow">Catalogue</span>
             <h2 id="deal-filter-title">Discover opportunities</h2>
-            <p>{loaderData.opportunities.length} reviewed deal{loaderData.opportunities.length === 1 ? "" : "s"} in this view</p>
+            <p>
+              {loaderData.opportunities.length} reviewed deal
+              {loaderData.opportunities.length === 1 ? "" : "s"} in this view
+            </p>
           </div>
           <Form method="get" className="deal-filter-form">
             <label className="deal-search-field">
               Search
-              <input name="search" type="search" defaultValue={loaderData.filters.search} placeholder="Project, sector or thesis" />
+              <input
+                name="search"
+                type="search"
+                defaultValue={loaderData.filters.search}
+                placeholder="Project, sector or thesis"
+              />
             </label>
             <label>
               Sort
@@ -629,7 +655,9 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
               return (
                 <article className="deal-card" key={opportunity.projectId}>
                   <div className="deal-card-art" aria-hidden="true">
-                    <span>{opportunity.sector?.slice(0, 2).toUpperCase() || "AK"}</span>
+                    <span>
+                      {opportunity.sector?.slice(0, 2).toUpperCase() || "AK"}
+                    </span>
                     <i />
                     <b>AKARI REVIEWED</b>
                   </div>
