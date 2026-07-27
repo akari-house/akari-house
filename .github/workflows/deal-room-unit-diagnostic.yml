@@ -1,0 +1,32 @@
+name: Deal Room Unit Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Run unit suite with captured output
+        run: |
+          set +e
+          npm test 2>&1 | tee deal-room-unit.log
+          status=${PIPESTATUS[0]}
+          exit "$status"
+      - name: Upload unit diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deal-room-unit-${{ github.sha }}
+          path: deal-room-unit.log
+          retention-days: 7
