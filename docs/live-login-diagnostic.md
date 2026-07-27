@@ -1,0 +1,1 @@
+Temporary diagnostic branch for reproducing the production `/login` failure in a real Chromium browser. This file exists only to ensure the pull request carries a non-workflow change and must not be merged.
