@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { calculateAkariPercentile } from "~/lib/profile-percentile";
 
-const verified = (following: number, sorsaScore = following, xScore = following) => ({
+const verified = (
+  following: number,
+  sorsaScore = following,
+  xScore = following,
+) => ({
   following,
   sorsaScore,
   xScore,
@@ -12,7 +16,13 @@ const verified = (following: number, sorsaScore = following, xScore = following)
 
 describe("AKARI percentile", () => {
   it("ranks a member across the three weighted signals", () => {
-    const population = [verified(10), verified(20), verified(30), verified(40), verified(50)];
+    const population = [
+      verified(10),
+      verified(20),
+      verified(30),
+      verified(40),
+      verified(50),
+    ];
     expect(calculateAkariPercentile(population[4], population)).toEqual({
       topPercent: 1,
       confidence: "verified",
@@ -28,7 +38,9 @@ describe("AKARI percentile", () => {
       sorsaSource: "unavailable" as const,
       xScoreSource: "unavailable" as const,
     }));
-    expect(calculateAkariPercentile(population[2], population).confidence).toBe("provisional");
+    expect(calculateAkariPercentile(population[2], population).confidence).toBe(
+      "provisional",
+    );
   });
 
   it("does not invent a percentile without a meaningful population", () => {
