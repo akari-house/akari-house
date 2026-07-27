@@ -13,6 +13,8 @@ import {
 } from "~/lib/opportunity-access.server";
 import { hasAdminScope } from "~/lib/membership.server";
 import { isOpportunitySchemaUnavailable } from "~/lib/opportunity-schema.server";
+import { loadOpportunitySections } from "~/lib/opportunity-sections.server";
+import { getVisibleProfile } from "~/lib/profile.server";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
@@ -38,7 +40,7 @@ type PreviewRow = {
   closingAt: string | null;
   accessMode: "verified_investors" | "approved_only";
   founderName: string;
-  founderUsername: string;
+  founderUsername: string | null;
 };
 
 type DocumentRow = {
@@ -119,16 +121,9 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     await db.prepare("SELECT 1 FROM opportunity_listings LIMIT 1").first();
   } catch (error) {
     if (!isOpportunitySchemaUnavailable(error)) throw error;
-    const project = await db
-      .prepare(
-        `SELECT slug FROM projects
-         WHERE slug = ? AND status = 'published'
-         LIMIT 1`,
-      )
-      .bind(params.dealSlug)
-      .first<{ slug: string }>();
-    if (project) throw redirect(`/projects/${project.slug}`);
-    throw new Response("Opportunity not found.", { status: 404 });
+    throw new Response("The secure Deal Room is temporarily unavailable.", {
+      status: 503,
+    });
   }
   const preview = await db
     .prepare(
@@ -160,6 +155,27 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     .first<PreviewRow>();
   if (!preview) throw new Response("Opportunity not found.", { status: 404 });
 
+  let visibleFounder: { displayName: string; username: string } | null = null;
+  try {
+    const profile = await getVisibleProfile(
+      db,
+      preview.founderUsername,
+      user?.id ?? null,
+    );
+    if (profile)
+      visibleFounder = {
+        displayName: profile.displayName,
+        username: profile.username,
+      };
+  } catch (error) {
+    if (!(error instanceof Response) || error.status !== 403) throw error;
+  }
+  const safePreview: PreviewRow = {
+    ...preview,
+    founderName: visibleFounder?.displayName ?? "AKARI Founder",
+    founderUsername: visibleFounder?.username ?? null,
+  };
+
   const admin = user ? await hasAdminScope(db, user.id, "projects") : false;
   const founder = user?.id === preview.founderUserId;
   const investorState =
@@ -167,6 +183,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       ? "approved"
       : await opportunityAccessState(db, preview.projectId, user);
   const fullAccess = investorState === "approved";
+
+  const sections = await loadOpportunitySections(db, preview.projectId, {
+    includeConfidential: fullAccess,
+  });
 
   const publicUpdates = await db
     .prepare(
@@ -290,7 +310,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
   return {
     user,
-    preview,
+    preview: safePreview,
+    sections,
     admin,
     founder,
     verifiedInvestor: await isVerifiedInvestor(db, user),
@@ -686,9 +707,13 @@ export default function DealRoom({
             <p>{preview.publicSummary || preview.summary}</p>
             <p>
               Shared by{" "}
-              <Link to={`/profiles/${preview.founderUsername}`}>
-                {preview.founderName}
-              </Link>
+              {preview.founderUsername ? (
+                <Link to={`/profiles/${preview.founderUsername}`}>
+                  {preview.founderName}
+                </Link>
+              ) : (
+                preview.founderName
+              )}
             </p>
           </div>
           <aside className="deal-access-card">
@@ -730,12 +755,20 @@ export default function DealRoom({
               </Form>
             )}
             {loaderData.founder && (
-              <Link
-                className="button button-quiet"
-                to={`/projects/${preview.slug}/diligence`}
-              >
-                Manage room access
-              </Link>
+              <div className="deal-action-row">
+                <Link
+                  className="button button-primary"
+                  to={`/projects/${preview.slug}/opportunity/manage`}
+                >
+                  Deal Room operations
+                </Link>
+                <Link
+                  className="button button-quiet"
+                  to={`/projects/${preview.slug}/diligence`}
+                >
+                  Manage private documents
+                </Link>
+              </div>
             )}
           </aside>
         </header>
@@ -803,6 +836,36 @@ export default function DealRoom({
             </aside>
           )}
         </section>
+
+        {loaderData.sections.length > 0 && (
+          <section
+            className="deal-room-sections"
+            aria-labelledby="deal-sections-title"
+          >
+            <header>
+              <span className="chapter">Reviewed Deal Room</span>
+              <h2 id="deal-sections-title">Opportunity information</h2>
+              <p>
+                Public sections are visible in the approved preview.
+                Confidential sections are returned only after the current
+                server-side access check.
+              </p>
+            </header>
+            <div className="deal-section-grid">
+              {loaderData.sections.map((section) => (
+                <article key={section.id}>
+                  <span className="status-pill">
+                    {section.visibility === "confidential"
+                      ? "Authorised room"
+                      : "Approved preview"}
+                  </span>
+                  <h3>{section.title}</h3>
+                  <p>{section.body}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         {loaderData.publicUpdates.length > 0 && (
           <section className="deal-updates">
