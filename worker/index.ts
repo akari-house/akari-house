@@ -5,6 +5,10 @@ import { createCampaignWorkReminders } from "../app/lib/campaign-reminders.serve
 import { cloudflareContext } from "../app/lib/cloudflare-context";
 import { processDeliveryOutbox } from "../app/lib/delivery-outbox.server";
 import { runOperationalResilienceMaintenance } from "../app/lib/operational-resilience.server";
+import {
+  publicLoginFallbackResponse,
+  shouldServePublicLoginFallback,
+} from "../app/lib/public-login-fallback.server";
 import { withSecurityHeaders } from "../app/lib/response-security";
 import { executeScheduledPlan } from "../app/lib/scheduled-execution.server";
 import {
@@ -44,6 +48,13 @@ function runScheduledJob(job: ScheduledJobName, env: CloudflareEnvironment) {
 
 export default {
   async fetch(request, env, ctx) {
+    if (shouldServePublicLoginFallback(request)) {
+      return withSecurityHeaders(
+        request,
+        publicLoginFallbackResponse(request, env.TURNSTILE_SITE_KEY),
+      );
+    }
+
     const context = new RouterContextProvider();
     context.set(cloudflareContext, { env, ctx });
     const response = await requestHandler(request, context);
