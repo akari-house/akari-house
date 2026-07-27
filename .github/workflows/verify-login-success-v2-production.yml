@@ -1,0 +1,56 @@
+name: Verify Login Success V2 Production
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Verify exact Worker login release on custom domain
+        run: |
+          set -euo pipefail
+          expected="worker-login-2026-07-27-success-v2"
+          base="https://akarihouse.com"
+
+          for attempt in $(seq 1 48); do
+            headers=$(mktemp)
+            body=$(mktemp)
+            status=$(curl -sS --max-time 20 -D "$headers" -o "$body" -w '%{http_code}' "$base/login" || true)
+            release=$(awk 'BEGIN{IGNORECASE=1} /^x-akari-login-release:/ {gsub("\r",""); sub(/^[^:]+:[[:space:]]*/,""); print; exit}' "$headers")
+            result=$(awk 'BEGIN{IGNORECASE=1} /^x-akari-login-result:/ {gsub("\r",""); sub(/^[^:]+:[[:space:]]*/,""); print; exit}' "$headers")
+            if [ "$status" = "200" ] && [ "$release" = "$expected" ] && [ "$result" = "form" ] && grep -q 'Return to the House' "$body" && ! grep -qi 'The lantern went out unexpectedly' "$body"; then
+              rm -f "$headers" "$body"
+              break
+            fi
+            rm -f "$headers" "$body"
+            if [ "$attempt" = "48" ]; then
+              echo "Custom domain did not serve the expected login release. status=$status release=$release result=$result"
+              exit 1
+            fi
+            sleep 10
+          done
+
+          headers=$(mktemp)
+          body=$(mktemp)
+          status=$(curl -sS --max-time 20 -D "$headers" -o "$body" -w '%{http_code}' \
+            -X POST "$base/login" \
+            -H "Origin: $base" \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data 'email=login-audit%40example.com&password=not-a-real-password')
+          release=$(awk 'BEGIN{IGNORECASE=1} /^x-akari-login-release:/ {gsub("\r",""); sub(/^[^:]+:[[:space:]]*/,""); print; exit}' "$headers")
+          result=$(awk 'BEGIN{IGNORECASE=1} /^x-akari-login-result:/ {gsub("\r",""); sub(/^[^:]+:[[:space:]]*/,""); print; exit}' "$headers")
+          stage=$(awk 'BEGIN{IGNORECASE=1} /^x-akari-login-stage:/ {gsub("\r",""); sub(/^[^:]+:[[:space:]]*/,""); print; exit}' "$headers")
+
+          test "$release" = "$expected"
+          test "$result" = "error"
+          test "$stage" = "security"
+          test "$status" = "403"
+          ! grep -qi 'The lantern went out unexpectedly' "$body"
+          echo "Verified custom-domain GET and POST /login use release $expected."
+          rm -f "$headers" "$body"
