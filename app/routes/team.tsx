@@ -87,27 +87,6 @@ const sections = [
   },
 ] as const;
 
-const houseSocials = [
-  {
-    label: "AKARI on X",
-    handle: "@house_akari",
-    href: "https://x.com/house_akari",
-    mark: "𝕏",
-  },
-  {
-    label: "DCC on X",
-    handle: "@DesiCryptoClub",
-    href: "https://x.com/DesiCryptoClub",
-    mark: "𝕏",
-  },
-  {
-    label: "DCC Community",
-    handle: "Join the Discord",
-    href: "https://discord.gg/f6DEBDZbr",
-    mark: "D",
-  },
-] as const;
-
 export default function TeamPage({ loaderData }: Route.ComponentProps) {
   const partnerEntries = loaderData.entries.filter(
     (entry) => entry.category === "partner" || entry.category === "provider",
@@ -132,7 +111,6 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
               <a href="#team">People</a>
               <a href="#partners">Partners</a>
               <a href="#ecosystem">Ecosystem</a>
-              <a href="#house-socials">Socials</a>
             </nav>
           </div>
           <div className="people-house-hero__scene" aria-hidden="true">
@@ -239,44 +217,6 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
           <Link className="quiet-link" to="/projects">
             Explore all published projects →
           </Link>
-        </section>
-
-        <section
-          className="house-socials chapter-section"
-          id="house-socials"
-          aria-labelledby="house-socials-title"
-        >
-          <div className="section-intro">
-            <div>
-              <span className="chapter">
-                Epilogue · Stay close to the House
-              </span>
-              <h2 id="house-socials-title">
-                Follow AKARI and the DCC community.
-              </h2>
-            </div>
-            <p>
-              Join the public channels where House updates, conversations and
-              community opportunities are shared.
-            </p>
-          </div>
-          <div className="house-socials__grid">
-            {houseSocials.map((social) => (
-              <a
-                href={social.href}
-                key={social.label}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <span aria-hidden="true">{social.mark}</span>
-                <div>
-                  <strong>{social.label}</strong>
-                  <small>{social.handle}</small>
-                </div>
-                <b aria-hidden="true">↗</b>
-              </a>
-            ))}
-          </div>
         </section>
       </main>
       <PublicFooter />
