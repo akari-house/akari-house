@@ -127,16 +127,56 @@ jobs:
         env:
           CLOUDFLARE_VITE_WRANGLER_CONFIG_PATH: wrangler.production.jsonc
         run: npm run build
-      - name: Verify generated deployment configuration
+      - name: Verify generated deployment configuration and bindings
         run: |
+          set -euo pipefail
           test -f .wrangler/deploy/config.json
-          node -e 'const fs=require("fs"); const value=JSON.parse(fs.readFileSync(".wrangler/deploy/config.json","utf8")); if(!value.configPath) process.exit(1); console.log("Generated deployment configuration is ready.")'
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          import path from "node:path";
+
+          const redirectPath = path.resolve(".wrangler/deploy/config.json");
+          const redirect = JSON.parse(fs.readFileSync(redirectPath, "utf8"));
+          if (!redirect.configPath)
+            throw new Error("Generated deployment redirect has no configPath.");
+
+          const generatedPath = path.resolve(
+            path.dirname(redirectPath),
+            redirect.configPath,
+          );
+          const generated = JSON.parse(fs.readFileSync(generatedPath, "utf8"));
+          const db = generated.d1_databases?.find(
+            (binding) => binding.binding === "DB",
+          );
+          const media = generated.r2_buckets?.find(
+            (binding) => binding.binding === "MEDIA",
+          );
+
+          if (generated.name !== "akari-house")
+            throw new Error(`Generated Worker name is ${generated.name}.`);
+          if (db?.database_id !== process.env.PRODUCTION_DB_ID)
+            throw new Error(
+              `Generated DB binding is ${db?.database_id ?? "missing"}, expected production D1.`,
+            );
+          if (media?.bucket_name !== "akari-house-media")
+            throw new Error(
+              `Generated MEDIA binding is ${media?.bucket_name ?? "missing"}.`,
+            );
+          if (generated.vars?.APP_ENV !== "production")
+            throw new Error("Generated Worker is not in production mode.");
+          if (generated.vars?.APP_URL !== "https://akarihouse.com")
+            throw new Error("Generated Worker has the wrong APP_URL.");
+
+          console.log(
+            `Generated deployment is production-safe: ${generated.name}, DB ${db.database_id}, R2 ${media.bucket_name}.`,
+          );
+          NODE
       - name: Apply production migrations
         run: npx wrangler d1 migrations apply DB --remote --config wrangler.production.jsonc
-      - name: Deploy production Worker with explicit production bindings
+      - name: Deploy production Worker from generated production configuration
         run: |
           set +e
-          npx wrangler deploy --config wrangler.production.jsonc --keep-vars 2>&1 | tee production-deploy.log
+          npx wrangler deploy --keep-vars 2>&1 | tee production-deploy.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             tail -n 80 production-deploy.log > production-deploy-error.log
