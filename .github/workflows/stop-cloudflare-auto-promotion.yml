@@ -1,0 +1,110 @@
+name: Stop Cloudflare Auto Promotion
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Locate AKARI Worker build triggers
+        run: |
+          set -euo pipefail
+          curl -fsS \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/workers/scripts" \
+            > workers.json
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+
+          const payload = JSON.parse(fs.readFileSync("workers.json", "utf8"));
+          if (!payload.success) throw new Error(JSON.stringify(payload.errors));
+          const workers = Array.isArray(payload.result) ? payload.result : [];
+          const worker = workers.find(
+            (entry) => entry.id === "akari-house" || entry.name === "akari-house",
+          );
+          if (!worker) throw new Error("AKARI Worker was not found.");
+          const tag =
+            worker.tag ??
+            worker["workers/tag"] ??
+            worker.metadata?.tag ??
+            worker.annotations?.["workers/tag"];
+          if (!tag) {
+            throw new Error(
+              `AKARI Worker tag was not returned. Available keys: ${Object.keys(worker).join(", ")}`,
+            );
+          }
+          fs.writeFileSync("worker-tag.txt", tag);
+          NODE
+          worker_tag=$(cat worker-tag.txt)
+          curl -fsS \
+            -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+            "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/builds/workers/${worker_tag}/triggers" \
+            > triggers.json
+      - name: Change every Git trigger to version upload only
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+
+          const payload = JSON.parse(fs.readFileSync("triggers.json", "utf8"));
+          if (!payload.success) throw new Error(JSON.stringify(payload.errors));
+          const triggers = Array.isArray(payload.result) ? payload.result : [];
+          if (triggers.length === 0)
+            throw new Error("No Workers Builds trigger was found for AKARI.");
+          fs.writeFileSync(
+            "trigger-ids.txt",
+            `${triggers.map((trigger) => trigger.trigger_uuid).join("\n")}\n`,
+          );
+          fs.writeFileSync(
+            "trigger-before.json",
+            `${JSON.stringify(
+              triggers.map((trigger) => ({
+                triggerUuid: trigger.trigger_uuid,
+                triggerName: trigger.trigger_name,
+                branchIncludes: trigger.branch_includes,
+                branchExcludes: trigger.branch_excludes,
+                deployCommand: trigger.deploy_command,
+              })),
+              null,
+              2,
+            )}\n`,
+          );
+          NODE
+
+          while IFS= read -r trigger_id; do
+            [ -n "$trigger_id" ] || continue
+            curl -fsS \
+              -X PATCH \
+              -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data '{"deploy_command":"npx wrangler versions upload"}' \
+              "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/builds/triggers/${trigger_id}" \
+              > "trigger-${trigger_id}.json"
+            node --input-type=module "${trigger_id}" <<'NODE'
+          import fs from "node:fs";
+          const id = process.argv[2];
+          const payload = JSON.parse(fs.readFileSync(`trigger-${id}.json`, "utf8"));
+          if (!payload.success) throw new Error(JSON.stringify(payload.errors));
+          if (payload.result?.deploy_command !== "npx wrangler versions upload")
+            throw new Error(`Trigger ${id} retained an unsafe deploy command.`);
+          NODE
+          done < trigger-ids.txt
+
+          echo "Cloudflare Git builds now upload versions without promoting them."
+      - name: Upload sanitised trigger evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-build-trigger-safety-${{ github.sha }}
+          path: trigger-before.json
+          retention-days: 30
+          if-no-files-found: ignore
