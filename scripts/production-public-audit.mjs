@@ -34,6 +34,15 @@ function requireStatus(response, allowed, label) {
     throw new Error(`${label} returned HTTP ${response.status}.`);
 }
 
+async function requireAkariPage(path, label, init = {}) {
+  const response = await request(path, { redirect: "follow", ...init });
+  requireStatus(response, [200], label);
+  const body = await response.text();
+  if (!body.toLowerCase().includes("akari"))
+    throw new Error(`${label} did not render the AKARI application shell.`);
+  return `HTTP ${response.status}`;
+}
+
 await record("health", "Health endpoint and release identity", async () => {
   const response = await request("/health", { redirect: "follow" });
   requireStatus(response, [200], "Health endpoint");
@@ -80,15 +89,26 @@ for (const [key, path, label] of publicMenuRoutes) {
   await record(
     `public_${key}`,
     `${label} remains publicly reachable`,
-    async () => {
-      const response = await request(path, { redirect: "follow" });
-      requireStatus(response, [200], label);
-      const body = await response.text();
-      if (!body.toLowerCase().includes("akari"))
-        throw new Error(`${label} did not render the AKARI application shell.`);
-      return `HTTP ${response.status}`;
-    },
+    () => requireAkariPage(path, label),
   );
+}
+
+const sessionFaultProfiles = [
+  ["stale", "akari_session=stale-session-token"],
+  ["malformed", "akari_session=%E0%A4%A"],
+];
+
+for (const [profile, cookie] of sessionFaultProfiles) {
+  for (const [key, path, label] of publicMenuRoutes) {
+    await record(
+      `public_${key}_${profile}_session`,
+      `${label} remains available with a ${profile} session cookie`,
+      () =>
+        requireAkariPage(path, label, {
+          headers: { Cookie: cookie },
+        }),
+    );
+  }
 }
 
 const protectedRoutes = [
@@ -166,7 +186,7 @@ await record(
 
 const failed = checks.filter((check) => check.status === "failed");
 const report = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   environment: "production",
   baseUrl: baseUrl.origin,
   commitSha: process.env.GITHUB_SHA || null,
