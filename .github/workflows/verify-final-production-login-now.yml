@@ -1,0 +1,51 @@
+name: Verify Final Production Login Now
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify exact GET and POST login handler on custom domain
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          expected="worker-login-2026-07-27-final"
+          base="https://akarihouse.com"
+
+          headers=$(mktemp)
+          body=$(mktemp)
+          status=$(curl -sS --max-time 30 -D "$headers" -o "$body" -w '%{http_code}' "$base/login")
+          release=$(awk 'BEGIN{IGNORECASE=1} /^x-akari-login-release:/ {gsub("\r",""); sub(/^[^:]+:[[:space:]]*/,""); print; exit}' "$headers")
+          test "$status" = "200"
+          test "$release" = "$expected"
+          grep -q 'Return to the House' "$body"
+          ! grep -qi 'The lantern went out unexpectedly' "$body"
+
+          post_headers=$(mktemp)
+          post_body=$(mktemp)
+          post_status=$(curl -sS --max-time 30 -D "$post_headers" -o "$post_body" -w '%{http_code}' \
+            -X POST "$base/login" \
+            -H "Origin: $base" \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data 'email=login-audit%40example.com&password=not-a-real-password')
+          post_release=$(awk 'BEGIN{IGNORECASE=1} /^x-akari-login-release:/ {gsub("\r",""); sub(/^[^:]+:[[:space:]]*/,""); print; exit}' "$post_headers")
+          post_result=$(awk 'BEGIN{IGNORECASE=1} /^x-akari-login-result:/ {gsub("\r",""); sub(/^[^:]+:[[:space:]]*/,""); print; exit}' "$post_headers")
+          post_stage=$(awk 'BEGIN{IGNORECASE=1} /^x-akari-login-stage:/ {gsub("\r",""); sub(/^[^:]+:[[:space:]]*/,""); print; exit}' "$post_headers")
+          test "$post_status" = "403"
+          test "$post_release" = "$expected"
+          test "$post_result" = "error"
+          test "$post_stage" = "security"
+          grep -q 'Complete the security check and try again.' "$post_body"
+          ! grep -qi 'The lantern went out unexpectedly' "$post_body"
+
+          gh pr comment "$PR_NUMBER" --body "✅ Final production login verified on the custom domain. GET and POST both use release \`$expected\`; POST no longer reaches the generic AKARI 500 boundary."
+          rm -f "$headers" "$body" "$post_headers" "$post_body"
