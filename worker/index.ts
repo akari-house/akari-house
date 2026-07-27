@@ -5,6 +5,7 @@ import { createCampaignWorkReminders } from "../app/lib/campaign-reminders.serve
 import { cloudflareContext } from "../app/lib/cloudflare-context";
 import { processDeliveryOutbox } from "../app/lib/delivery-outbox.server";
 import { runOperationalResilienceMaintenance } from "../app/lib/operational-resilience.server";
+import { publicLoginFallbackResponse } from "../app/lib/public-login-fallback.server";
 import {
   handlePublicLoginRequest,
   isPublicLoginRequest,
@@ -49,10 +50,21 @@ function runScheduledJob(job: ScheduledJobName, env: CloudflareEnvironment) {
 export default {
   async fetch(request, env, ctx) {
     if (isPublicLoginRequest(request)) {
-      return withSecurityHeaders(
-        request,
-        await handlePublicLoginRequest(request, env),
-      );
+      try {
+        return await handlePublicLoginRequest(request, env);
+      } catch (error) {
+        console.error("Login escaped the Worker authentication boundary.", error);
+        return publicLoginFallbackResponse(
+          request,
+          env.TURNSTILE_SITE_KEY,
+          {
+            error:
+              "Sign-in could not be completed safely. Refresh the page and try again.",
+            status: 503,
+            stage: "edge-boundary",
+          },
+        );
+      }
     }
 
     const context = new RouterContextProvider();
