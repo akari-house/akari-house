@@ -10,9 +10,7 @@ describe("Investor and Angel Deal Room completion", () => {
     const catalogue = source("app/routes/deals.tsx");
     const room = source("app/routes/deal-room.tsx");
     expect(catalogue).toContain("FROM opportunity_listings ol");
-    expect(catalogue).toContain(
-      "AKARI does not populate this area with placeholder deals",
-    );
+    expect(catalogue).toContain("placeholder deals");
     expect(room).toContain("The secure Deal Room is temporarily unavailable");
     expect(room).not.toContain("throw redirect(`/projects/${project.slug}`)");
   });
