@@ -178,11 +178,11 @@ test("membership request remains gated before human approval", async ({
     page.getByRole("heading", { name: "Confirm where we can reach you" }),
   ).toBeVisible();
   await page.goto("/app");
-  await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp$/);
+  await expect(page).toHaveURL(/\/signin\?returnTo=%2Fapp$/);
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Log in" }).click();
-  await expect(page).toHaveURL(/\/login/);
+  await expect(page).toHaveURL(/\/signin/);
   await expect(
     page.getByText("Confirm your email before signing in."),
   ).toBeVisible();

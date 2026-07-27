@@ -14,7 +14,7 @@ async function activateSuperadmin(page: Page) {
 test.describe("production and pilot command centre", () => {
   test("redirects visitors to login", async ({ page }) => {
     await page.goto("/admin/production");
-    await expect(page).toHaveURL(/\/login\?returnTo=%2Fadmin%2Fproduction$/);
+    await expect(page).toHaveURL(/\/signin\?returnTo=%2Fadmin%2Fproduction$/);
   });
 
   test("lets a Superadmin open the command centre and create a pilot", async ({
