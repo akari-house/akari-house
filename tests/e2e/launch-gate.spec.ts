@@ -67,7 +67,7 @@ test.describe("automated launch gate", () => {
 
   test("[visitor:visitor] GET /app redirects to login", async ({ page }) => {
     await page.goto("/app");
-    await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp$/);
+    await expect(page).toHaveURL(/\/signin\?returnTo=%2Fapp$/);
   });
 
   test("[applicant:applicant] applicant reaches status dashboard but not Founder tools", async ({
@@ -137,7 +137,7 @@ test.describe("automated launch gate", () => {
   }) => {
     await activatePersona(page, "suspended");
     await page.goto("/app");
-    await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp$/);
+    await expect(page).toHaveURL(/\/signin\?returnTo=%2Fapp$/);
   });
 
   test("[blocked:blocked] invalidated blocked session cannot enter protected routes", async ({
@@ -145,7 +145,7 @@ test.describe("automated launch gate", () => {
   }) => {
     await activatePersona(page, "blocked");
     await page.goto("/app");
-    await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp$/);
+    await expect(page).toHaveURL(/\/signin\?returnTo=%2Fapp$/);
   });
 
   test("[cross_account:founder] unrelated member cannot read a private profile", async ({
@@ -279,7 +279,7 @@ test.describe("automated launch gate", () => {
     });
     expect(logout.status()).toBe(302);
     await page.goto("/app");
-    await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp$/);
+    await expect(page).toHaveURL(/\/signin\?returnTo=%2Fapp$/);
   });
 
   test("[request_security:founder] cross-origin state change is rejected without ending the session", async ({

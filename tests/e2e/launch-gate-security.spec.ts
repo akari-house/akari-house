@@ -109,7 +109,7 @@ test.describe("launch-gate security completion", () => {
     expect(reset.status()).toBe(200);
 
     await page.goto("/app");
-    await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp$/);
+    await expect(page).toHaveURL(/\/signin\?returnTo=%2Fapp$/);
     const after = await securityAction<{
       sessions: number;
       activeResetTokens: number;
@@ -162,7 +162,7 @@ test.describe("launch-gate security completion", () => {
     await page.context().clearCookies();
     await page.context().addCookies([targetCookie!]);
     await page.goto("/app");
-    await expect(page).toHaveURL(/\/login\?returnTo=%2Fapp$/);
+    await expect(page).toHaveURL(/\/signin\?returnTo=%2Fapp$/);
 
     const state = await securityAction<{
       status: string;
