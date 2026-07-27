@@ -507,7 +507,7 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
               <select name="raise" defaultValue={loaderData.filters.raise}>
                 <option value="">Any raise range</option>
                 <option value="under_1m">Under 1 million</option>
-                <option value="1m_5m">1–5 million</option>
+                <option value="1m_5m">1 to 5 million</option>
                 <option value="5m_plus">Over 5 million</option>
               </select>
             </label>
@@ -516,7 +516,7 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
               <select name="minimum" defaultValue={loaderData.filters.minimum}>
                 <option value="">Any minimum</option>
                 <option value="under_25k">Under 25,000</option>
-                <option value="25k_100k">25,000–100,000</option>
+                <option value="25k_100k">25,000 to 100,000</option>
                 <option value="100k_plus">Over 100,000</option>
               </select>
             </label>
@@ -596,7 +596,7 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                     {range.length > 0 && (
                       <div>
                         <dt>Raise</dt>
-                        <dd>{range.join(" – ")}</dd>
+                        <dd>{range.join(" to ")}</dd>
                       </div>
                     )}
                     {opportunity.minimumParticipation !== null && (
