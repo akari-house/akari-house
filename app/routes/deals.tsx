@@ -27,12 +27,14 @@ type OpportunityRow = {
   raiseMaximum: number | null;
   raiseCurrency: string;
   minimumParticipation: number | null;
+  tractionStage: string;
   closingAt: string | null;
   founderName: string;
   updatedAt: string;
   savedAt: string | null;
   passedAt: string | null;
   requestStatus: string | null;
+  listingStatus: string;
 };
 
 const views = [
@@ -43,16 +45,28 @@ const views = [
   "requested",
   "approved",
   "passed",
+  "archived",
 ] as const;
 
 type CatalogueView = (typeof views)[number];
 
+type CatalogueFilters = {
+  sector: string;
+  stage: string;
+  geography: string;
+  instrument: string;
+  raise: string;
+  minimum: string;
+  traction: string;
+  timeline: string;
+};
+
 export const meta: Route.MetaFunction = () => [
-  { title: "Selected opportunities | AKARI House" },
+  { title: "Selected Deal Rooms | AKARI House" },
   {
     name: "description",
     content:
-      "Review approved opportunity previews and request controlled access through AKARI House.",
+      "Review approved opportunity previews and request controlled Deal Room access through AKARI House.",
   },
 ];
 
@@ -60,6 +74,10 @@ function safeView(value: string | null): CatalogueView {
   return views.includes(value as CatalogueView)
     ? (value as CatalogueView)
     : "available";
+}
+
+function safeFilter(value: string | null, maxLength: number) {
+  return (value ?? "").trim().slice(0, maxLength);
 }
 
 function money(value: number | null, currency: string) {
@@ -80,14 +98,16 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await getOptionalUser(request, db);
   const url = new URL(request.url);
   const view = safeView(url.searchParams.get("view"));
-  const sector = (url.searchParams.get("sector") ?? "").trim().slice(0, 80);
-  const stage = (url.searchParams.get("stage") ?? "").trim().slice(0, 80);
-  const geography = (url.searchParams.get("geography") ?? "")
-    .trim()
-    .slice(0, 80);
-  const instrument = (url.searchParams.get("instrument") ?? "")
-    .trim()
-    .slice(0, 40);
+  const filters: CatalogueFilters = {
+    sector: safeFilter(url.searchParams.get("sector"), 80),
+    stage: safeFilter(url.searchParams.get("stage"), 80),
+    geography: safeFilter(url.searchParams.get("geography"), 80),
+    instrument: safeFilter(url.searchParams.get("instrument"), 40),
+    raise: safeFilter(url.searchParams.get("raise"), 30),
+    minimum: safeFilter(url.searchParams.get("minimum"), 30),
+    traction: safeFilter(url.searchParams.get("traction"), 120),
+    timeline: safeFilter(url.searchParams.get("timeline"), 10),
+  };
   const userId = user?.id ?? "";
 
   try {
@@ -96,7 +116,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         `SELECT ol.project_id, ol.status, ol.reviewed_at, ol.closing_at,
                 ol.sector, ol.geography, ol.funding_instrument,
                 ol.raise_minimum, ol.raise_maximum, ol.raise_currency,
-                ol.minimum_participation, ol.public_summary, ol.updated_at,
+                ol.minimum_participation, ol.traction_stage,
+                ol.public_summary, ol.updated_at,
                 ous.saved_at, ous.passed_at,
                 drr.status AS requestStatus, drr.expires_at
          FROM opportunity_listings ol
@@ -109,93 +130,69 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       .first();
   } catch (error) {
     if (!isOpportunitySchemaUnavailable(error)) throw error;
-    try {
-      const projects = await db
-        .prepare(
-          `SELECT pr.id AS projectId, pr.slug, pr.title, pr.summary, pr.stage,
-                pr.seeking,
-                COALESCE(p.display_name, 'AKARI Founder') AS founderName,
-                pr.updated_at AS updatedAt
-         FROM projects pr
-         LEFT JOIN profiles p ON p.user_id = pr.founder_user_id
-         WHERE pr.status = 'published'
-         ORDER BY pr.updated_at DESC
-         LIMIT 100`,
-        )
-        .all<{
-          projectId: string;
-          slug: string;
-          title: string;
-          summary: string;
-          stage: string;
-          seeking: string;
-          founderName: string;
-          updatedAt: string;
-        }>();
-      return {
-        user,
-        verifiedInvestor: false,
-        opportunities: projects.results.map(
-          (project) =>
-            ({
-              projectId: project.projectId,
-              slug: project.slug,
-              title: project.title,
-              summary: project.summary,
-              publicSummary: project.summary,
-              stage: project.stage,
-              sector: "Public project profile",
-              geography: "",
-              fundingInstrument: "introduction",
-              raiseMinimum: null,
-              raiseMaximum: null,
-              raiseCurrency: "USD",
-              minimumParticipation: null,
-              closingAt: null,
-              founderName: project.founderName,
-              updatedAt: project.updatedAt,
-              savedAt: null,
-              passedAt: null,
-              requestStatus: null,
-            }) satisfies OpportunityRow,
-        ),
-        view,
-        filters: { sector, stage, geography, instrument },
-        options: { sectors: [], geographies: [], instruments: [] },
-      };
-    } catch (fallbackError) {
-      console.error(
-        "Deals public project fallback query failed.",
-        fallbackError,
-      );
-      return {
-        user,
-        verifiedInvestor: false,
-        opportunities: [] as OpportunityRow[],
-        view,
-        filters: { sector, stage, geography, instrument },
-        options: { sectors: [], geographies: [], instruments: [] },
-      };
-    }
+    return {
+      user,
+      verifiedInvestor: false,
+      schemaReady: false,
+      opportunities: [] as OpportunityRow[],
+      view,
+      filters,
+      options: {
+        sectors: [] as string[],
+        geographies: [] as string[],
+        instruments: [] as string[],
+        tractionStages: [] as string[],
+      },
+    };
   }
 
-  const conditions = ["ol.status = 'published'", "pr.status = 'published'"];
-  const values: Array<string> = [userId, userId];
-  if (sector) {
+  const verifiedInvestor = await isVerifiedInvestor(db, user);
+  const archived = view === "archived";
+  const conditions = [archived ? "ol.status = 'archived'" : "ol.status = 'published'"];
+  if (!archived) conditions.push("pr.status = 'published'");
+  const values: Array<string | number> = [userId, userId];
+
+  if (filters.sector) {
     conditions.push("ol.sector = ?");
-    values.push(sector);
+    values.push(filters.sector);
   }
-  if (stage) {
+  if (filters.stage) {
     conditions.push("pr.stage = ?");
-    values.push(stage);
+    values.push(filters.stage);
   }
-  if (geography) {
+  if (filters.geography) {
     conditions.push("ol.geography = ?");
-    values.push(geography);
+    values.push(filters.geography);
   }
-  if (instrument) {
+  if (filters.instrument) {
     conditions.push("ol.funding_instrument = ?");
-    values.push(instrument);
+    values.push(filters.instrument);
+  }
+  if (filters.traction) {
+    conditions.push("ol.traction_stage = ?");
+    values.push(filters.traction);
+  }
+  if (filters.raise === "under_1m")
+    conditions.push("COALESCE(ol.raise_maximum, ol.raise_minimum, 0) < 1000000");
+  if (filters.raise === "1m_5m")
+    conditions.push(
+      "COALESCE(ol.raise_maximum, ol.raise_minimum, 0) >= 1000000 AND COALESCE(ol.raise_minimum, ol.raise_maximum, 0) <= 5000000",
+    );
+  if (filters.raise === "5m_plus")
+    conditions.push("COALESCE(ol.raise_maximum, ol.raise_minimum, 0) > 5000000");
+  if (filters.minimum === "under_25k")
+    conditions.push("COALESCE(ol.minimum_participation, 0) < 25000");
+  if (filters.minimum === "25k_100k")
+    conditions.push(
+      "ol.minimum_participation >= 25000 AND ol.minimum_participation <= 100000",
+    );
+  if (filters.minimum === "100k_plus")
+    conditions.push("ol.minimum_participation > 100000");
+  if (["30", "60", "90"].includes(filters.timeline)) {
+    conditions.push(
+      "ol.closing_at IS NOT NULL AND ol.closing_at > datetime('now') AND ol.closing_at <= datetime('now', ?)",
+    );
+    values.push(`+${filters.timeline} days`);
   }
   if (view === "recent")
     conditions.push("ol.reviewed_at >= datetime('now', '-30 days')");
@@ -210,7 +207,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     conditions.push(
       "drr.status = 'approved' AND (drr.expires_at IS NULL OR drr.expires_at > datetime('now'))",
     );
-  if (["saved", "passed", "requested", "approved"].includes(view) && !user)
+  if (
+    ["saved", "passed", "requested", "approved", "archived"].includes(view) &&
+    !verifiedInvestor
+  )
     conditions.push("1 = 0");
 
   const result = await db
@@ -222,18 +222,31 @@ export async function loader({ request, context }: Route.LoaderArgs) {
               ol.raise_maximum AS raiseMaximum,
               ol.raise_currency AS raiseCurrency,
               ol.minimum_participation AS minimumParticipation,
+              ol.traction_stage AS tractionStage,
               ol.closing_at AS closingAt,
-              p.display_name AS founderName,
+              CASE
+                WHEN COALESCE(pv.visibility, p.visibility) = 'public'
+                  THEN p.display_name
+                ELSE 'AKARI Founder'
+              END AS founderName,
               ol.updated_at AS updatedAt,
               ous.saved_at AS savedAt, ous.passed_at AS passedAt,
-              drr.status AS requestStatus
+              drr.status AS requestStatus, ol.status AS listingStatus
        FROM opportunity_listings ol
        JOIN projects pr ON pr.id = ol.project_id
        JOIN profiles p ON p.user_id = pr.founder_user_id
+       LEFT JOIN profile_visibility pv ON pv.user_id = pr.founder_user_id
        LEFT JOIN opportunity_user_states ous
          ON ous.project_id = pr.id AND ous.user_id = ?
        LEFT JOIN data_room_requests drr
-         ON drr.project_id = pr.id AND drr.investor_user_id = ?
+         ON drr.id = (
+           SELECT request.id
+           FROM data_room_requests request
+           WHERE request.project_id = pr.id
+             AND request.investor_user_id = ?
+           ORDER BY request.created_at DESC, request.id DESC
+           LIMIT 1
+         )
        WHERE ${conditions.join(" AND ")}
        ORDER BY
          CASE WHEN ol.closing_at IS NULL THEN 1 ELSE 0 END,
@@ -247,24 +260,27 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const filterRows = await db
     .prepare(
       `SELECT DISTINCT ol.sector, ol.geography,
-              ol.funding_instrument AS fundingInstrument
+              ol.funding_instrument AS fundingInstrument,
+              ol.traction_stage AS tractionStage
        FROM opportunity_listings ol
        JOIN projects pr ON pr.id = ol.project_id
        WHERE ol.status = 'published' AND pr.status = 'published'
-       ORDER BY ol.sector, ol.geography`,
+       ORDER BY ol.sector, ol.geography, ol.traction_stage`,
     )
     .all<{
       sector: string;
       geography: string;
       fundingInstrument: string;
+      tractionStage: string;
     }>();
 
   return {
     user,
-    verifiedInvestor: await isVerifiedInvestor(db, user),
+    verifiedInvestor,
+    schemaReady: true,
     opportunities: result.results,
     view,
-    filters: { sector, stage, geography, instrument },
+    filters,
     options: {
       sectors: [
         ...new Set(filterRows.results.map((row) => row.sector).filter(Boolean)),
@@ -281,6 +297,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
             .filter(Boolean),
         ),
       ],
+      tractionStages: [
+        ...new Set(
+          filterRows.results.map((row) => row.tractionStage).filter(Boolean),
+        ),
+      ],
     },
   };
 }
@@ -293,7 +314,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     await db.prepare("SELECT 1 FROM opportunity_listings LIMIT 1").first();
   } catch (error) {
     if (isOpportunitySchemaUnavailable(error))
-      throw new Response("The Deals Room is still being activated.", {
+      throw new Response("The Deal Rooms are still being activated.", {
         status: 503,
       });
     throw error;
@@ -381,28 +402,36 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
       <main id="main-content" className="deals-main">
         <header className="deals-hero">
           <div>
-            <span className="chapter">Selected opportunities</span>
+            <span className="chapter">Investor and Angel Deal Rooms</span>
             <h1>Considered opportunities, opened with context.</h1>
             <p>
-              Explore approved previews. Confidential information remains closed
-              until eligibility and access are confirmed.
+              Explore AKARI-reviewed public previews. Confidential information
+              remains closed until eligibility and per-opportunity access are
+              confirmed.
             </p>
           </div>
           <aside>
             <strong>Discovery is not endorsement.</strong>
             <p>
               AKARI supports professional discovery and introductions. Members
-              remain responsible for independent due diligence.
+              remain responsible for independent due diligence and professional
+              advice.
             </p>
           </aside>
         </header>
 
+        {!loaderData.schemaReady && (
+          <p className="notice applicant-notice" role="status">
+            Deal Rooms are temporarily unavailable while the secure catalogue is
+            activated. AKARI will not substitute ordinary projects or mock data.
+          </p>
+        )}
         {!loaderData.verifiedInvestor &&
           loaderData.user?.roles.includes("investor") && (
             <p className="notice applicant-notice">
               Your Investor role is not yet verified. You can review approved
-              public previews, while saved lists and private rooms remain
-              unavailable.
+              public previews, while saved lists, archived records and private
+              Deal Rooms remain unavailable.
             </p>
           )}
 
@@ -415,9 +444,9 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
             <label>
               View
               <select name="view" defaultValue={loaderData.view}>
-                {views.map((view) => (
-                  <option key={view} value={view}>
-                    {view.replace("_", " ")}
+                {views.map((value) => (
+                  <option key={value} value={value}>
+                    {value.replaceAll("_", " ")}
                   </option>
                 ))}
               </select>
@@ -462,9 +491,45 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                 <option value="">All instruments</option>
                 {loaderData.options.instruments.map((value) => (
                   <option key={value} value={value}>
-                    {value.replace("_", " ")}
+                    {value.replaceAll("_", " ")}
                   </option>
                 ))}
+              </select>
+            </label>
+            <label>
+              Raise range
+              <select name="raise" defaultValue={loaderData.filters.raise}>
+                <option value="">Any raise range</option>
+                <option value="under_1m">Under 1 million</option>
+                <option value="1m_5m">1–5 million</option>
+                <option value="5m_plus">Over 5 million</option>
+              </select>
+            </label>
+            <label>
+              Minimum participation
+              <select name="minimum" defaultValue={loaderData.filters.minimum}>
+                <option value="">Any minimum</option>
+                <option value="under_25k">Under 25,000</option>
+                <option value="25k_100k">25,000–100,000</option>
+                <option value="100k_plus">Over 100,000</option>
+              </select>
+            </label>
+            <label>
+              Traction stage
+              <select name="traction" defaultValue={loaderData.filters.traction}>
+                <option value="">Any traction stage</option>
+                {loaderData.options.tractionStages.map((value) => (
+                  <option key={value}>{value}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Closing timeline
+              <select name="timeline" defaultValue={loaderData.filters.timeline}>
+                <option value="">Any timeline</option>
+                <option value="30">Within 30 days</option>
+                <option value="60">Within 60 days</option>
+                <option value="90">Within 90 days</option>
               </select>
             </label>
             <button className="button button-primary" type="submit">
@@ -476,8 +541,11 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
         <section className="deal-card-grid" aria-label="Opportunity catalogue">
           {loaderData.opportunities.length === 0 ? (
             <article className="empty-state">
-              <h2>No opportunities match this view.</h2>
-              <p>Adjust the filters or return to the available catalogue.</p>
+              <h2>No approved opportunities match this view.</h2>
+              <p>
+                Adjust the filters or return to the available catalogue. AKARI
+                does not populate this area with placeholder deals.
+              </p>
               <Link className="button button-quiet" to="/deals">
                 Clear filters
               </Link>
@@ -492,7 +560,7 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                 <article className="deal-card" key={opportunity.projectId}>
                   <div className="deal-card-topline">
                     <span>{opportunity.sector || "Selected opportunity"}</span>
-                    <span>{opportunity.stage.replace("_", " ")}</span>
+                    <span>{opportunity.stage.replaceAll("_", " ")}</span>
                   </div>
                   <h2>
                     <Link to={`/deals/${opportunity.slug}`}>
@@ -509,17 +577,34 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                     )}
                     <div>
                       <dt>Instrument</dt>
-                      <dd>{opportunity.fundingInstrument.replace("_", " ")}</dd>
+                      <dd>{opportunity.fundingInstrument.replaceAll("_", " ")}</dd>
                     </div>
                     {range.length > 0 && (
                       <div>
                         <dt>Raise</dt>
-                        <dd>{range.join(" - ")}</dd>
+                        <dd>{range.join(" – ")}</dd>
+                      </div>
+                    )}
+                    {opportunity.minimumParticipation !== null && (
+                      <div>
+                        <dt>Minimum</dt>
+                        <dd>
+                          {money(
+                            opportunity.minimumParticipation,
+                            opportunity.raiseCurrency,
+                          )}
+                        </dd>
+                      </div>
+                    )}
+                    {opportunity.tractionStage && (
+                      <div>
+                        <dt>Traction</dt>
+                        <dd>{opportunity.tractionStage}</dd>
                       </div>
                     )}
                     {opportunity.closingAt && (
                       <div>
-                        <dt>Timeline</dt>
+                        <dt>Closing</dt>
                         <dd>
                           {new Date(opportunity.closingAt).toLocaleDateString(
                             "en-GB",
@@ -536,28 +621,33 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                       className="button button-primary"
                       to={`/deals/${opportunity.slug}`}
                     >
-                      Review preview
+                      {opportunity.requestStatus === "approved"
+                        ? "Enter Deal Room"
+                        : "Review preview"}
                     </Link>
-                    {loaderData.verifiedInvestor && (
-                      <Form method="post">
-                        <input
-                          type="hidden"
-                          name="projectId"
-                          value={opportunity.projectId}
-                        />
-                        <input type="hidden" name="returnTo" value={returnTo} />
-                        <button
-                          className="button button-quiet"
-                          name="intent"
-                          value={opportunity.savedAt ? "clear-state" : "save"}
-                        >
-                          {opportunity.savedAt ? "Saved" : "Save"}
-                        </button>
-                      </Form>
-                    )}
+                    {loaderData.verifiedInvestor &&
+                      opportunity.listingStatus === "published" && (
+                        <Form method="post">
+                          <input
+                            type="hidden"
+                            name="projectId"
+                            value={opportunity.projectId}
+                          />
+                          <input type="hidden" name="returnTo" value={returnTo} />
+                          <button
+                            className="button button-quiet"
+                            name="intent"
+                            value={opportunity.savedAt ? "clear-state" : "save"}
+                          >
+                            {opportunity.savedAt ? "Saved" : "Save"}
+                          </button>
+                        </Form>
+                      )}
                   </div>
                   {opportunity.requestStatus && (
-                    <small>Room access: {opportunity.requestStatus}</small>
+                    <small>
+                      Deal Room access: {opportunity.requestStatus.replaceAll("_", " ")}
+                    </small>
                   )}
                 </article>
               );
