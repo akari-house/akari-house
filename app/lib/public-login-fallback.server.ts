@@ -72,7 +72,7 @@ export function publicLoginFallbackResponse(
         <label>Password<input name="password" type="password" autocomplete="current-password" maxlength="128" required></label>
         <div class="assist"><a href="/forgot-password">Forgot password?</a></div>
         ${turnstile}
-        <button type="submit"${safeSiteKey ? "" : " disabled"}>Log in</button>
+        <button type="submit">Log in</button>
       </form>
       <p class="footer">New to AKARI? <a href="/register">Request membership</a></p>
     </section>
