@@ -48,17 +48,31 @@ async function requireAkariPage(path, label, init = {}) {
 }
 
 async function requireLoginForm(init = {}) {
-  const response = await request("/login", { redirect: "follow", ...init });
-  requireStatus(response, [200], "Login");
+  const response = await request("/signin", { redirect: "follow", ...init });
+  requireStatus(response, [200], "Sign in");
   const body = await response.text();
   const normalized = body.toLowerCase();
   if (normalized.includes(genericErrorCopy))
-    throw new Error("Login rendered the generic AKARI error boundary.");
+    throw new Error("Sign in rendered the generic AKARI error boundary.");
   if (!body.includes("Return to the House"))
-    throw new Error("Login heading was not rendered.");
+    throw new Error("Sign-in heading was not rendered.");
   if (!body.includes('name="email"') || !body.includes('name="password"'))
-    throw new Error("Login email and password controls were not rendered.");
+    throw new Error("Sign-in email and password controls were not rendered.");
   return `HTTP ${response.status} · login form rendered`;
+}
+
+async function requireLoginEdgeFallback(init = {}) {
+  const response = await request("/login?returnTo=%2Fdeals", init);
+  requireStatus(response, [302], "Login edge fallback");
+  const location = response.headers.get("location") || "";
+  const destination = new URL(location, baseUrl);
+  if (destination.pathname !== "/signin")
+    throw new Error(`Login redirected to ${destination.pathname || "no path"}.`);
+  if (destination.searchParams.get("returnTo") !== "/deals")
+    throw new Error("Login fallback did not preserve returnTo.");
+  if (response.headers.get("x-akari-login-fallback") !== "signin-v1")
+    throw new Error("Login fallback version header is missing.");
+  return `HTTP ${response.status} · ${destination.pathname}${destination.search}`;
 }
 
 await record("health", "Health endpoint and release identity", async () => {
@@ -100,6 +114,7 @@ const publicMenuRoutes = [
   ["privacy", "/privacy", "Privacy"],
   ["terms", "/terms", "Terms"],
   ["login", "/login", "Login"],
+  ["signin", "/signin", "Sign in"],
   ["register", "/register", "Registration"],
 ];
 
@@ -109,7 +124,12 @@ for (const [key, path, label] of publicMenuRoutes) {
   );
 }
 
-await record("login_form", "Login renders the actual authentication form", () =>
+await record(
+  "login_edge_fallback",
+  "Login uses the versioned edge fallback",
+  () => requireLoginEdgeFallback(),
+);
+await record("login_form", "Sign in renders the actual authentication form", () =>
   requireLoginForm(),
 );
 
@@ -130,8 +150,13 @@ for (const [profile, cookie] of sessionFaultProfiles) {
     );
   }
   await record(
+    `login_edge_fallback_${profile}_session`,
+    `Login fallback works with a ${profile} session cookie`,
+    () => requireLoginEdgeFallback({ headers: { Cookie: cookie } }),
+  );
+  await record(
     `login_form_${profile}_session`,
-    `Login form renders with a ${profile} session cookie`,
+    `Sign-in form renders with a ${profile} session cookie`,
     () => requireLoginForm({ headers: { Cookie: cookie } }),
   );
 }
@@ -211,7 +236,7 @@ await record(
 
 const failed = checks.filter((check) => check.status === "failed");
 const report = {
-  schemaVersion: 4,
+  schemaVersion: 5,
   environment: "production",
   baseUrl: baseUrl.origin,
   commitSha: process.env.GITHUB_SHA || null,
