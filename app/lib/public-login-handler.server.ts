@@ -138,14 +138,12 @@ export async function handlePublicLoginRequest(
       );
     }
 
-    let row:
-      | {
-          id: string;
-          passwordHash: string;
-          status: string;
-          emailVerifiedAt: string | null;
-        }
-      | null;
+    let row: {
+      id: string;
+      passwordHash: string;
+      status: string;
+      emailVerifiedAt: string | null;
+    } | null;
     try {
       row = await db
         .prepare(
