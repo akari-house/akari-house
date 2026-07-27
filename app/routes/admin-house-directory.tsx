@@ -1,9 +1,12 @@
-import { Form, Link, useNavigation } from "react-router";
+import { Link, useNavigation } from "react-router";
 import type { Route } from "./+types/admin-house-directory";
+import { HouseDirectoryAdminForm } from "~/components/HouseDirectoryAdminForm";
 import { SiteHeader } from "~/components/SiteHeader";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import {
   houseDirectoryCategories,
+  houseDirectoryCategoryLabels,
+  isHouseDirectoryOrganization,
   type HouseDirectoryCategory,
 } from "~/lib/house-directory";
 import {
@@ -14,14 +17,6 @@ import { requireSuperAdmin } from "~/lib/membership.server";
 import { validateProfilePhoto } from "~/lib/profile-photo.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
-
-const categoryLabels: Record<HouseDirectoryCategory, string> = {
-  team: "AKARI Team",
-  advisor: "Advisor",
-  supporter: "Supporter",
-  partner: "Partner",
-  provider: "Value-Added Provider",
-};
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -57,9 +52,14 @@ export async function action({ request, context }: Route.ActionArgs) {
     throw new Response("Unsupported action.", { status: 400 });
 
   const category = formText(form.get("category")) as HouseDirectoryCategory;
+  const isOrganization = houseDirectoryCategories.includes(category)
+    ? isHouseDirectoryOrganization(category)
+    : false;
   const name = formText(form.get("name")).trim();
-  const title = formText(form.get("title")).trim();
-  const biography = formText(form.get("biography")).trim();
+  const title = isOrganization ? "" : formText(form.get("title")).trim();
+  const biography = isOrganization
+    ? ""
+    : formText(form.get("biography")).trim();
   const status = formText(form.get("status"));
   const displayOrder = Number.parseInt(formText(form.get("displayOrder")), 10);
   if (!houseDirectoryCategories.includes(category) || !name)
@@ -77,9 +77,12 @@ export async function action({ request, context }: Route.ActionArgs) {
     "telegramUrl",
   ] as const;
   const urls = Object.fromEntries(
-    urlNames.map((field) => [field, safeExternalUrl(form.get(field))]),
+    urlNames.map((field) => [
+      field,
+      isOrganization ? null : safeExternalUrl(form.get(field)),
+    ]),
   ) as Record<(typeof urlNames)[number], string | null>;
-  for (const field of urlNames) {
+  for (const field of isOrganization ? [] : urlNames) {
     if (formText(form.get(field)).trim() && !urls[field])
       return { error: "Social and website links must be valid HTTPS URLs." };
   }
@@ -99,6 +102,8 @@ export async function action({ request, context }: Route.ActionArgs) {
       httpMetadata: { contentType: valid.contentType },
     });
   }
+  if (isOrganization && status === "published" && !imageKey)
+    return { error: "Add a logo before publishing an organization." };
 
   await env.DB.batch([
     env.DB.prepare(
@@ -150,116 +155,6 @@ export async function action({ request, context }: Route.ActionArgs) {
   return { saved: "House directory entry saved." };
 }
 
-function EntryForm({
-  entry,
-}: {
-  entry?: Awaited<ReturnType<typeof getAllHouseDirectory>>[number];
-}) {
-  return (
-    <Form
-      method="post"
-      encType="multipart/form-data"
-      className="directory-admin-form"
-    >
-      {entry && <input type="hidden" name="id" value={entry.id} />}
-      <div className="directory-admin-form__identity">
-        {entry?.imageKey && (
-          <img
-            src={`/media/house-directory/${entry.id}`}
-            alt=""
-            width={96}
-            height={96}
-          />
-        )}
-        <label>
-          Name
-          <input name="name" required defaultValue={entry?.name ?? ""} />
-        </label>
-        <label>
-          Category
-          <select name="category" defaultValue={entry?.category ?? "team"}>
-            {houseDirectoryCategories.map((category) => (
-              <option value={category} key={category}>
-                {categoryLabels[category]}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
-      <div className="directory-admin-form__grid">
-        <label>
-          Title or relationship
-          <input name="title" defaultValue={entry?.title ?? ""} />
-        </label>
-        <label>
-          Display order
-          <input
-            name="displayOrder"
-            type="number"
-            defaultValue={entry?.displayOrder ?? 0}
-          />
-        </label>
-        <label>
-          Publication
-          <select name="status" defaultValue={entry?.status ?? "draft"}>
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-          </select>
-        </label>
-        <label>
-          Image or logo
-          <input
-            name="image"
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-          />
-        </label>
-      </div>
-      <label>
-        Short biography or partner description
-        <textarea
-          name="biography"
-          rows={3}
-          defaultValue={entry?.biography ?? ""}
-        />
-      </label>
-      <div className="directory-admin-form__grid directory-admin-form__links">
-        {(
-          [
-            ["websiteUrl", "Website", entry?.websiteUrl],
-            ["xUrl", "X", entry?.xUrl],
-            ["linkedinUrl", "LinkedIn", entry?.linkedinUrl],
-            ["instagramUrl", "Instagram", entry?.instagramUrl],
-            ["tiktokUrl", "TikTok", entry?.tiktokUrl],
-            ["youtubeUrl", "YouTube", entry?.youtubeUrl],
-            ["telegramUrl", "Telegram", entry?.telegramUrl],
-          ] as const
-        ).map(([name, label, value]) => (
-          <label key={name}>
-            {label}
-            <input
-              name={name}
-              type="url"
-              defaultValue={value ?? ""}
-              placeholder="https://"
-            />
-          </label>
-        ))}
-      </div>
-      <div className="directory-admin-form__actions">
-        <button className="button button-primary" name="intent" value="save">
-          {entry ? "Save changes" : "Add entry"}
-        </button>
-        {entry && (
-          <button className="button button-quiet" name="intent" value="archive">
-            Archive
-          </button>
-        )}
-      </div>
-    </Form>
-  );
-}
-
 export default function AdminHouseDirectory({
   loaderData,
   actionData,
@@ -293,7 +188,7 @@ export default function AdminHouseDirectory({
         {navigation.state !== "idle" && <p className="notice">Saving…</p>}
         <section className="status-card">
           <h2>Add a person or organization</h2>
-          <EntryForm />
+          <HouseDirectoryAdminForm />
         </section>
         <section
           className="directory-admin-list"
@@ -302,11 +197,11 @@ export default function AdminHouseDirectory({
           {loaderData.entries.map((entry) => (
             <details className="status-card" key={entry.id}>
               <summary>
-                <span>{categoryLabels[entry.category]}</span>
+                <span>{houseDirectoryCategoryLabels[entry.category]}</span>
                 <strong>{entry.name}</strong>
                 <em>{entry.status}</em>
               </summary>
-              <EntryForm entry={entry} />
+              <HouseDirectoryAdminForm entry={entry} />
             </details>
           ))}
         </section>

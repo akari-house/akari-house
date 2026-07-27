@@ -8,6 +8,21 @@ export const houseDirectoryCategories = [
 
 export type HouseDirectoryCategory = (typeof houseDirectoryCategories)[number];
 
+export const houseDirectoryCategoryLabels: Record<
+  HouseDirectoryCategory,
+  string
+> = {
+  team: "AKARI Team",
+  advisor: "Advisor",
+  supporter: "Supporter",
+  partner: "Partner",
+  provider: "Value-Added / Solution Provider",
+};
+
+export function isHouseDirectoryOrganization(category: HouseDirectoryCategory) {
+  return category === "partner" || category === "provider";
+}
+
 export type HouseDirectoryEntry = {
   id: string;
   category: HouseDirectoryCategory;
