@@ -1,0 +1,35 @@
+name: Capture Login Fallback Typecheck
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Capture typecheck
+        run: |
+          set +e
+          npm run typecheck > typecheck.log 2>&1
+          status=$?
+          echo "$status" > typecheck.status
+          exit 0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: login-fallback-typecheck
+          path: |
+            typecheck.log
+            typecheck.status
+          retention-days: 3
+      - name: Enforce typecheck
+        run: test "$(cat typecheck.status)" = "0"
