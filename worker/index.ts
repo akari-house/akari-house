@@ -53,17 +53,16 @@ export default {
       try {
         return await handlePublicLoginRequest(request, env);
       } catch (error) {
-        console.error("Login escaped the Worker authentication boundary.", error);
-        return publicLoginFallbackResponse(
-          request,
-          env.TURNSTILE_SITE_KEY,
-          {
-            error:
-              "Sign-in could not be completed safely. Refresh the page and try again.",
-            status: 503,
-            stage: "edge-boundary",
-          },
+        console.error(
+          "Login escaped the Worker authentication boundary.",
+          error,
         );
+        return publicLoginFallbackResponse(request, env.TURNSTILE_SITE_KEY, {
+          error:
+            "Sign-in could not be completed safely. Refresh the page and try again.",
+          status: 503,
+          stage: "edge-boundary",
+        });
       }
     }
 

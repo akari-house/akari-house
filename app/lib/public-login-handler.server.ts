@@ -249,11 +249,7 @@ export async function handlePublicLoginRequest(
       console.error("Non-blocking onboarding marker update failed.", error);
     }
 
-    return publicLoginSuccessResponse(
-      request,
-      cookie,
-      safeReturnTo(request),
-    );
+    return publicLoginSuccessResponse(request, cookie, safeReturnTo(request));
   } catch (error) {
     console.error("Unexpected public login failure.", error);
     return loginResponse(
