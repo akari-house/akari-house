@@ -1,0 +1,27 @@
+name: Verify Live Worker Login Fallback
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify live login fallback response
+        run: |
+          set -euo pipefail
+          headers=$(mktemp)
+          body=$(mktemp)
+          curl --fail --silent --show-error \
+            --dump-header "$headers" \
+            --output "$body" \
+            https://akarihouse.com/login
+          grep -qi '^x-akari-login-fallback: worker' "$headers"
+          grep -q 'Return to the House' "$body"
+          grep -q 'name="email"' "$body"
+          grep -q 'name="password"' "$body"
+          if grep -q 'The lantern went out unexpectedly' "$body"; then
+            echo 'Generic error boundary still rendered.' >&2
+            exit 1
+          fi
