@@ -1,9 +1,9 @@
 name: Source Export Helper
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/profile-sharing-launch-readiness
+      - main
   workflow_dispatch:
 
 permissions:
