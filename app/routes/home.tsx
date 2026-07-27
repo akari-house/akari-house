@@ -11,10 +11,15 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { PublicFooter } from "~/components/PublicFooter";
 import { ScrollTo } from "~/components/ScrollTo";
 import { PartnerStrip } from "~/components/HouseDirectory";
+import {
+  HouseMemberPresence,
+  type HouseRolePresence,
+} from "~/components/HouseMemberPresence";
 import { caseStudies } from "~/data/case-studies";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { getPublishedHouseDirectory } from "~/lib/house-directory.server";
+import type { Role } from "~/lib/domain";
 
 export const meta: Route.MetaFunction = () => [
   { title: "AKARI House | A private Web3 professional network" },
@@ -35,14 +40,62 @@ export async function optionalHomepageValue<T>(
   }
 }
 
+interface HomepageMemberRow {
+  username: string;
+  displayName: string;
+  avatarKey: string;
+  totalCount: number;
+}
+
+export async function loadHomepageRolePresence(
+  db: D1Database,
+  role: Extract<Role, "creator" | "investor">,
+): Promise<HouseRolePresence> {
+  const rows = await db
+    .prepare(
+      `WITH visible_members AS (
+         SELECT u.username, p.display_name AS displayName,
+                COALESCE(p.avatar_key, '') AS avatarKey,
+                p.updated_at AS updatedAt
+         FROM users u
+         JOIN membership_applications ma
+           ON ma.user_id = u.id AND ma.status = 'approved'
+         JOIN profiles p ON p.user_id = u.id
+         LEFT JOIN profile_visibility pv ON pv.user_id = u.id
+         JOIN user_roles ur ON ur.user_id = u.id
+         WHERE u.status = 'active'
+           AND ur.role = ?
+           AND COALESCE(pv.visibility, p.visibility) = 'public'
+       )
+       SELECT username, displayName, avatarKey,
+              COUNT(*) OVER() AS totalCount
+       FROM visible_members
+       ORDER BY CASE WHEN avatarKey = '' THEN 1 ELSE 0 END,
+                updatedAt DESC, displayName COLLATE NOCASE
+       LIMIT 10`,
+    )
+    .bind(role)
+    .all<HomepageMemberRow>();
+
+  return {
+    totalCount: rows.results[0]?.totalCount ?? 0,
+    members: rows.results.map((member) => ({
+      username: member.username,
+      displayName: member.displayName,
+      hasAvatar: Boolean(member.avatarKey),
+    })),
+  };
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
-  const [user, project, event, directory] = await Promise.all([
-    optionalHomepageValue(() => getOptionalUser(request, db)),
-    optionalHomepageValue(() =>
-      db
-        .prepare(
-          `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
+  const [user, project, event, directory, creators, investors] =
+    await Promise.all([
+      optionalHomepageValue(() => getOptionalUser(request, db)),
+      optionalHomepageValue(() =>
+        db
+          .prepare(
+            `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
                   p.display_name AS founderName, u.username AS founderUsername,
                   COUNT(DISTINCT pf.user_id) AS followerCount
            FROM projects pr
@@ -52,22 +105,22 @@ export async function loader({ request, context }: Route.LoaderArgs) {
            WHERE pr.status = 'published'
            GROUP BY pr.id
            ORDER BY pr.updated_at DESC LIMIT 1`,
-        )
-        .first<{
-          slug: string;
-          title: string;
-          summary: string;
-          stage: string;
-          seeking: string;
-          founderName: string;
-          founderUsername: string;
-          followerCount: number;
-        }>(),
-    ),
-    optionalHomepageValue(() =>
-      db
-        .prepare(
-          `SELECT e.slug, e.title, e.summary, e.format, e.venue,
+          )
+          .first<{
+            slug: string;
+            title: string;
+            summary: string;
+            stage: string;
+            seeking: string;
+            founderName: string;
+            founderUsername: string;
+            followerCount: number;
+          }>(),
+      ),
+      optionalHomepageValue(() =>
+        db
+          .prepare(
+            `SELECT e.slug, e.title, e.summary, e.format, e.venue,
                   e.starts_at AS startsAt, e.timezone, e.capacity,
                   p.display_name AS hostName,
                   COUNT(CASE WHEN er.status = 'registered' THEN 1 END)
@@ -77,22 +130,25 @@ export async function loader({ request, context }: Route.LoaderArgs) {
            LEFT JOIN event_registrations er ON er.event_id = e.id
            WHERE e.status = 'published' AND e.ends_at >= datetime('now')
            GROUP BY e.id ORDER BY e.starts_at LIMIT 1`,
-        )
-        .first<{
-          slug: string;
-          title: string;
-          summary: string;
-          format: string;
-          venue: string;
-          startsAt: string;
-          timezone: string;
-          capacity: number | null;
-          hostName: string;
-          registeredCount: number;
-        }>(),
-    ),
-    optionalHomepageValue(() => getPublishedHouseDirectory(db)),
-  ]);
+          )
+          .first<{
+            slug: string;
+            title: string;
+            summary: string;
+            format: string;
+            venue: string;
+            startsAt: string;
+            timezone: string;
+            capacity: number | null;
+            hostName: string;
+            registeredCount: number;
+          }>(),
+      ),
+      optionalHomepageValue(() => getPublishedHouseDirectory(db)),
+      optionalHomepageValue(() => loadHomepageRolePresence(db, "creator")),
+      optionalHomepageValue(() => loadHomepageRolePresence(db, "investor")),
+    ]);
+  const emptyPresence: HouseRolePresence = { totalCount: 0, members: [] };
   return {
     user,
     project: project ?? null,
@@ -100,6 +156,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     partners: (directory ?? []).filter(
       (entry) => entry.category === "partner" || entry.category === "provider",
     ),
+    memberPresence: {
+      creators: creators ?? emptyPresence,
+      investors: investors ?? emptyPresence,
+    },
   };
 }
 
@@ -171,6 +231,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             </ScrollTo>
           </div>
         </section>
+
+        <HouseMemberPresence
+          creators={loaderData.memberPresence.creators}
+          investors={loaderData.memberPresence.investors}
+        />
 
         <HouseHall />
 
