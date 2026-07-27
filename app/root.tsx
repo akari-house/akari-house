@@ -14,6 +14,7 @@ import "./styles/project-needs.css";
 import "./styles/footer.css";
 import "./styles/footer-theme-fix.css";
 import "./styles/opportunities.css";
+import "./styles/opportunity-operations.css";
 import "./styles/header-layout-fix.css";
 
 export const headers: Route.HeadersFunction = () => productionSecurityHeaders();
