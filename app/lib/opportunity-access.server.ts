@@ -63,6 +63,7 @@ export async function investorEligibility(
        JOIN role_verifications rv
          ON rv.user_id = ip.user_id AND rv.role = 'investor'
        JOIN users u ON u.id = ip.user_id
+       JOIN user_roles ur ON ur.user_id = ip.user_id AND ur.role = 'investor'
        JOIN membership_applications ma ON ma.user_id = ip.user_id
        WHERE ip.user_id = ?
          AND u.status = 'active'
@@ -72,30 +73,32 @@ export async function investorEligibility(
     .first<InvestorEligibilityRow>();
 }
 
-export async function isVerifiedInvestor(
+export async function isVerifiedInvestorId(
   db: D1Database,
-  user: SessionUser | null,
+  userId: string,
 ) {
-  if (!user || user.accessTier !== "member" || !user.roles.includes("investor"))
-    return false;
-  const eligibility = await investorEligibility(db, user.id);
+  const eligibility = await investorEligibility(db, userId);
   return (
     eligibility?.profileStatus === "verified" &&
     eligibility.roleStatus === "verified"
   );
 }
 
-export async function opportunityAccessState(
+export async function isVerifiedInvestor(
+  db: D1Database,
+  user: SessionUser | null,
+) {
+  if (!user || user.accessTier !== "member" || !user.roles.includes("investor"))
+    return false;
+  return isVerifiedInvestorId(db, user.id);
+}
+
+async function latestListingAccessSnapshot(
   db: D1Database,
   projectId: string,
-  user: SessionUser | null,
-): Promise<OpportunityAccessState> {
-  if (!user) return "public_preview";
-  if (user.accessTier !== "member" || !user.roles.includes("investor"))
-    return "restricted";
-  if (!(await isVerifiedInvestor(db, user))) return "verification_required";
-
-  const row = await db
+  userId: string,
+) {
+  return db
     .prepare(
       `SELECT ol.access_mode AS accessMode, ol.status AS listingStatus,
               drr.status AS requestStatus, drr.expires_at AS expiresAt
@@ -111,10 +114,31 @@ export async function opportunityAccessState(
          )
        WHERE ol.project_id = ?`,
     )
-    .bind(user.id, projectId)
+    .bind(userId, projectId)
     .first<ListingAccessSnapshot>();
+}
 
-  return resolveOpportunityListingAccess(row);
+export async function opportunityAccessStateForUserId(
+  db: D1Database,
+  projectId: string,
+  userId: string,
+): Promise<OpportunityAccessState> {
+  if (!(await isVerifiedInvestorId(db, userId)))
+    return "verification_required";
+  return resolveOpportunityListingAccess(
+    await latestListingAccessSnapshot(db, projectId, userId),
+  );
+}
+
+export async function opportunityAccessState(
+  db: D1Database,
+  projectId: string,
+  user: SessionUser | null,
+): Promise<OpportunityAccessState> {
+  if (!user) return "public_preview";
+  if (user.accessTier !== "member" || !user.roles.includes("investor"))
+    return "restricted";
+  return opportunityAccessStateForUserId(db, projectId, user.id);
 }
 
 export async function requireOpportunityAccess(
