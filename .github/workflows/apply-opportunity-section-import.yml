@@ -1,15 +1,15 @@
 name: Apply Shared Deal Room Section Import
 
 on:
-  pull_request:
-    branches: [main]
+  push:
+    branches: [fix/complete-investor-deals-room]
 
 permissions:
   contents: write
 
 jobs:
   patch:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    if: ${{ !contains(github.event.head_commit.message, 'Apply shared Deal Room section import') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
