@@ -4,11 +4,20 @@ const fixtureHeaders = { "x-akari-test-fixture": "launch-gate-v1" };
 const projectSlug = "opportunity-gate-project";
 const confidentialMarker = "CONFIDENTIAL-AKARI-ROOM-EVIDENCE";
 
+const publicSectionMarker = "PUBLIC-STRUCTURED-DEAL-ROOM-EVIDENCE";
+
 type Scenario = {
   projectSlug: string;
   projectId: string;
   documentId: string;
   confidentialMarker: string;
+};
+
+type CrossDealScenario = {
+  secondProjectSlug: string;
+  secondProjectId: string;
+  secondDocumentId: string;
+  secondConfidentialMarker: string;
 };
 
 async function activatePersona(
@@ -41,6 +50,15 @@ async function seedOpportunity(page: Page): Promise<Scenario> {
   });
   expect(response.status()).toBe(200);
   return response.json() as Promise<Scenario>;
+}
+
+async function seedCrossDeal(page: Page): Promise<CrossDealScenario> {
+  const response = await page.request.post(
+    "/__test__/opportunities/cross-deal",
+    { headers: fixtureHeaders },
+  );
+  expect(response.status()).toBe(200);
+  return response.json() as Promise<CrossDealScenario>;
 }
 
 async function prepareScenario(page: Page): Promise<Scenario> {
@@ -95,6 +113,7 @@ test.describe("curated opportunity permissions", () => {
     await expect(
       page.getByText("PUBLIC-AKARI-OPPORTUNITY-EVIDENCE"),
     ).toBeVisible();
+    await expect(page.getByText(publicSectionMarker)).toBeVisible();
     await expect(page.getByText(confidentialMarker)).toHaveCount(0);
     await expect(
       page.getByRole("heading", { name: "Authorised diligence space" }),
@@ -126,7 +145,7 @@ test.describe("curated opportunity permissions", () => {
     await expect(
       page.getByRole("heading", { name: "Authorised diligence space" }),
     ).toBeVisible();
-    await expect(page.getByText(confidentialMarker)).toBeVisible();
+    await expect(page.getByText(confidentialMarker).first()).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Opportunity Gate Diligence.txt" }),
     ).toBeVisible();
@@ -135,6 +154,30 @@ test.describe("curated opportunity permissions", () => {
       `/projects/${projectSlug}/documents/${scenario.documentId}`,
     );
     expect(documentResponse.status()).toBe(200);
+  });
+
+  test("approval for one opportunity never unlocks a second opportunity", async ({
+    page,
+  }) => {
+    const second = await seedCrossDeal(page);
+    await usePersona(page, "opp_granted");
+
+    await page.goto(`/deals/${projectSlug}`);
+    await expect(page.getByText(confidentialMarker).first()).toBeVisible();
+
+    await page.goto(`/deals/${second.secondProjectSlug}`);
+    await expect(
+      page.getByText("request required", { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText(second.secondConfidentialMarker)).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Authorised diligence space" }),
+    ).toHaveCount(0);
+
+    const directDocument = await page.request.get(
+      `/projects/${second.secondProjectSlug}/documents/${second.secondDocumentId}`,
+    );
+    expect(directDocument.status()).toBe(404);
   });
 
   test("expired and revoked access remove private content immediately", async ({
@@ -148,7 +191,7 @@ test.describe("curated opportunity permissions", () => {
 
     await usePersona(page, "opp_granted");
     await page.goto(`/deals/${projectSlug}`);
-    await expect(page.getByText(confidentialMarker)).toBeVisible();
+    await expect(page.getByText(confidentialMarker).first()).toBeVisible();
 
     const revoke = await page.request.post("/__test__/opportunities/revoke", {
       headers: fixtureHeaders,
@@ -175,6 +218,39 @@ test.describe("curated opportunity permissions", () => {
     });
   });
 
+  test("current Investor restriction invalidates an existing room and file grant", async ({
+    page,
+  }) => {
+    const scenario = await seedOpportunity(page);
+    await usePersona(page, "opp_granted");
+    expect(
+      (
+        await page.request.get(
+          `/projects/${projectSlug}/documents/${scenario.documentId}`,
+        )
+      ).status(),
+    ).toBe(200);
+
+    const restriction = await page.request.post(
+      "/__test__/opportunities/restrict-investor",
+      { headers: fixtureHeaders },
+    );
+    expect(restriction.status()).toBe(200);
+
+    await page.goto(`/deals/${projectSlug}`);
+    await expect(
+      page.getByText("verification required", { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText(confidentialMarker)).toHaveCount(0);
+    expect(
+      (
+        await page.request.get(
+          `/projects/${projectSlug}/documents/${scenario.documentId}`,
+        )
+      ).status(),
+    ).toBe(404);
+  });
+
   test("Founder ownership and scoped administration remain deny by default", async ({
     page,
   }) => {
@@ -197,5 +273,22 @@ test.describe("curated opportunity permissions", () => {
         name: "Review listings and Investor eligibility.",
       }),
     ).toBeVisible();
+  });
+
+  test("footer Deal Room destination remains usable at mobile width", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/");
+    const link = page.getByRole("link", {
+      name: "Investor and Angel Deal Rooms",
+    });
+    await link.scrollIntoViewIfNeeded();
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute("href", "/deals");
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(overflow).toBeLessThanOrEqual(1);
   });
 });
