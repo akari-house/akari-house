@@ -101,8 +101,14 @@ export async function opportunityAccessState(
               drr.status AS requestStatus, drr.expires_at AS expiresAt
        FROM opportunity_listings ol
        LEFT JOIN data_room_requests drr
-         ON drr.project_id = ol.project_id
-        AND drr.investor_user_id = ?
+         ON drr.id = (
+           SELECT request.id
+           FROM data_room_requests request
+           WHERE request.project_id = ol.project_id
+             AND request.investor_user_id = ?
+           ORDER BY request.created_at DESC, request.id DESC
+           LIMIT 1
+         )
        WHERE ol.project_id = ?`,
     )
     .bind(user.id, projectId)
@@ -143,4 +149,40 @@ export async function recordOpportunityAudit(
       JSON.stringify(metadata),
     )
     .run();
+}
+
+export async function recordOpportunityView(
+  db: D1Database,
+  userId: string,
+  projectId: string,
+  dedupeMinutes = 30,
+) {
+  const current = await db
+    .prepare(
+      `SELECT last_viewed_at AS lastViewedAt
+       FROM opportunity_user_states
+       WHERE project_id = ? AND user_id = ?`,
+    )
+    .bind(projectId, userId)
+    .first<{ lastViewedAt: string | null }>();
+  const lastViewedAt = current?.lastViewedAt
+    ? Date.parse(current.lastViewedAt)
+    : Number.NaN;
+  const shouldAudit =
+    !Number.isFinite(lastViewedAt) ||
+    Date.now() - lastViewedAt >= dedupeMinutes * 60 * 1000;
+
+  await db
+    .prepare(
+      `INSERT INTO opportunity_user_states
+         (project_id, user_id, last_viewed_at, updated_at)
+       VALUES (?, ?, datetime('now'), datetime('now'))
+       ON CONFLICT(project_id, user_id) DO UPDATE SET
+         last_viewed_at = datetime('now'), updated_at = datetime('now')`,
+    )
+    .bind(projectId, userId)
+    .run();
+
+  if (shouldAudit)
+    await recordOpportunityAudit(db, userId, "opportunity.viewed", projectId);
 }
