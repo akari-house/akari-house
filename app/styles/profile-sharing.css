@@ -40,8 +40,7 @@
   border: 1px solid #ffffff12;
   border-radius: var(--app-panel-radius);
   background:
-    radial-gradient(circle at 50% 0%, #f04f8712, transparent 45%),
-    #090c14;
+    radial-gradient(circle at 50% 0%, #f04f8712, transparent 45%), #090c14;
 }
 
 .akari-share-card {
@@ -60,8 +59,16 @@
   border-radius: 28px;
   color: var(--card-ink);
   background:
-    radial-gradient(circle at 86% 12%, color-mix(in srgb, var(--card-accent) 35%, transparent), transparent 32%),
-    linear-gradient(145deg, color-mix(in srgb, var(--card-bg) 92%, black), var(--card-bg));
+    radial-gradient(
+      circle at 86% 12%,
+      color-mix(in srgb, var(--card-accent) 35%, transparent),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--card-bg) 92%, black),
+      var(--card-bg)
+    );
   box-shadow: 0 32px 90px #0008;
   isolation: isolate;
 }
