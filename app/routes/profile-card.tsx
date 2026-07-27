@@ -149,7 +149,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       () =>
         db
           .prepare(
-              `SELECT
+            `SELECT
                  (SELECT COUNT(*)
                     FROM projects p
                     JOIN opportunity_listings listing ON listing.project_id = p.id
