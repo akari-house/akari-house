@@ -13,6 +13,7 @@ export default [
   route("hall", "routes/hall.tsx"),
   route("rooms/:room", "routes/room.tsx"),
   route("archive", "routes/archive.tsx"),
+  route("team", "routes/team.tsx"),
   route("archive/:slug", "routes/case-study.tsx"),
   route("projects", "routes/projects.tsx"),
   route("projects/new", "routes/project-new.tsx"),
@@ -52,6 +53,7 @@ export default [
   route("admin/interests", "routes/admin-interests.tsx"),
   route("admin/moderation", "routes/admin-moderation.tsx"),
   route("admin/team", "routes/admin-team.tsx"),
+  route("admin/house-directory", "routes/admin-house-directory.tsx"),
   route("admin/verifications", "routes/admin-verifications.tsx"),
   route("admin/opportunities", "routes/admin-opportunities.tsx"),
   route(
@@ -82,6 +84,7 @@ export default [
   route("profiles/:username", "routes/profile.tsx"),
   route("profile-card", "routes/profile-card.tsx"),
   route("media/profile/:username", "routes/profile-photo.ts"),
+  route("media/house-directory/:entryId", "routes/house-directory-media.ts"),
   route("privacy", "routes/legal.tsx"),
   route("terms", "routes/terms.tsx"),
   route("community-guidelines", "routes/community-guidelines.tsx"),
