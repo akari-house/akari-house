@@ -7367,6 +7367,7 @@ select:disabled {
 }
 
 
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
 /* House people, partners and ecosystem — public chapter */
 .people-house-hero {
   min-height: 520px;
@@ -7515,7 +7516,11 @@ select:disabled {
   border: 1px solid rgb(255 255 255 / 11%);
   border-radius: 18px;
   color: white;
-  background: linear-gradient(145deg, rgb(255 255 255 / 7%), rgb(255 255 255 / 3%));
+  background: linear-gradient(
+    145deg,
+    rgb(255 255 255 / 7%),
+    rgb(255 255 255 / 3%)
+  );
   text-decoration: none;
 }
 
