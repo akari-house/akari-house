@@ -7378,3 +7378,266 @@ select:disabled {
     max-width: 32ch;
   }
 }
+
+/* House people, partners and ecosystem — public chapter */
+.people-house-hero {
+  min-height: 520px;
+  padding-top: clamp(7rem, 10vw, 8.5rem);
+  grid-template-columns: minmax(0, 620px) minmax(280px, 460px);
+  align-items: center;
+  background:
+    linear-gradient(90deg, rgb(9 11 20 / 96%) 0 42%, rgb(9 11 20 / 34%) 72%),
+    radial-gradient(circle at 78% 44%, rgb(240 79 135 / 22%), transparent 33%);
+}
+
+.people-house-hero__copy {
+  position: relative;
+  z-index: 2;
+}
+
+.people-house-hero__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1.5rem;
+}
+
+.people-house-hero__nav a {
+  padding: 0.55rem 0.85rem;
+  border: 1px solid rgb(255 255 255 / 14%);
+  border-radius: 999px;
+  color: rgb(255 255 255 / 78%);
+  background: rgb(255 255 255 / 5%);
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.people-house-hero__nav a:hover {
+  border-color: rgb(240 79 135 / 58%);
+  color: white;
+  background: rgb(240 79 135 / 12%);
+}
+
+.people-house-hero__scene {
+  position: relative;
+  min-height: 310px;
+  display: grid;
+  place-items: center;
+}
+
+.people-house-hero__scene img {
+  position: relative;
+  z-index: 3;
+  width: min(10vw, 112px);
+  height: auto;
+  filter: drop-shadow(0 18px 36px rgb(240 79 135 / 38%));
+}
+
+.people-house-hero__moon {
+  position: absolute;
+  width: min(25vw, 320px);
+  aspect-ratio: 1;
+  border: 1px solid rgb(255 211 61 / 18%);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgb(255 211 61 / 14%), transparent 62%),
+    rgb(255 255 255 / 2%);
+  box-shadow:
+    0 0 0 2.6rem rgb(240 79 135 / 3%),
+    0 0 80px rgb(240 79 135 / 14%);
+}
+
+.people-house-hero__gate {
+  position: absolute;
+  z-index: 2;
+  bottom: 0;
+  width: min(25vw, 310px);
+  height: 210px;
+  border-inline: 20px solid rgb(240 79 135 / 30%);
+  border-top: 18px solid rgb(240 79 135 / 38%);
+  filter: drop-shadow(0 14px 22px rgb(0 0 0 / 45%));
+}
+
+.people-house-hero__gate::before {
+  position: absolute;
+  top: -42px;
+  left: -46px;
+  width: calc(100% + 92px);
+  height: 15px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, transparent, #f04f87 12% 88%, transparent);
+  content: "";
+}
+
+.people-page .people-grid {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 260px));
+  justify-content: start;
+}
+
+.people-page .people-card__portrait {
+  aspect-ratio: 1 / 1;
+  max-height: 245px;
+}
+
+.people-page .people-card__copy {
+  padding: 1rem 1.05rem 1.1rem;
+}
+
+.people-page .directory-socials a {
+  width: 34px;
+  height: 34px;
+  font-size: 0.78rem;
+}
+
+.ecosystem-house,
+.house-socials {
+  position: relative;
+  padding: clamp(3.25rem, 6vw, 5rem) var(--people-gutter);
+  color: white;
+  border-top: 1px solid rgb(255 255 255 / 6%);
+}
+
+.ecosystem-house {
+  background:
+    radial-gradient(circle at 12% 30%, rgb(255 211 61 / 6%), transparent 24rem),
+    rgb(255 255 255 / 1.2%);
+}
+
+.ecosystem-house__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.house-socials__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.house-socials__grid > a {
+  min-height: 92px;
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: 0.85rem;
+  border: 1px solid rgb(255 255 255 / 11%);
+  border-radius: 18px;
+  color: white;
+  background: linear-gradient(
+    145deg,
+    rgb(255 255 255 / 7%),
+    rgb(255 255 255 / 3%)
+  );
+  text-decoration: none;
+}
+
+.house-socials__grid > a:hover {
+  border-color: rgb(240 79 135 / 58%);
+  transform: translateY(-2px);
+}
+
+.house-socials__grid > a > span {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #0b0d15;
+  background: var(--yellow, #ffd93d);
+  font-weight: 900;
+}
+
+.house-socials__grid strong,
+.house-socials__grid small {
+  display: block;
+}
+
+.house-socials__grid small {
+  margin-top: 0.2rem;
+  color: rgb(255 255 255 / 58%);
+}
+
+.house-socials__grid b {
+  color: var(--pink, #f76c8c);
+}
+
+@media (max-width: 840px) {
+  .people-house-hero {
+    min-height: 440px;
+    grid-template-columns: minmax(0, 1fr) 180px;
+  }
+
+  .people-house-hero__scene {
+    min-height: 220px;
+  }
+
+  .people-house-hero__gate {
+    width: 160px;
+    height: 150px;
+    border-inline-width: 13px;
+    border-top-width: 13px;
+  }
+
+  .people-house-hero__gate::before {
+    top: -31px;
+    left: -28px;
+    width: calc(100% + 56px);
+    height: 11px;
+  }
+
+  .house-socials__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .people-house-hero {
+    min-height: 0;
+    padding-bottom: 3rem;
+    grid-template-columns: 1fr;
+  }
+
+  .people-house-hero__scene {
+    display: none;
+  }
+
+  .people-house-hero h1 {
+    max-width: 13ch;
+    font-size: clamp(2.15rem, 10vw, 3rem);
+  }
+
+  .people-page .people-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem;
+  }
+
+  .people-page .people-card__portrait {
+    max-height: none;
+  }
+
+  .people-page .people-card__copy {
+    padding: 0.85rem;
+  }
+
+  .people-page .people-card__copy h3 {
+    font-size: 1.08rem;
+  }
+
+  .people-page .people-card__copy > p {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 390px) {
+  .people-page .people-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .people-page .people-card {
+    max-width: 280px;
+  }
+}
