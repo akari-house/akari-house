@@ -4,6 +4,12 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { ensureDiligenceSchema } from "~/lib/diligence-schema.server";
+import {
+  isVerifiedInvestor,
+  isVerifiedInvestorId,
+  opportunityAccessStateForUserId,
+  recordOpportunityAudit,
+} from "~/lib/opportunity-access.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 
@@ -30,6 +36,12 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const isInvestor = user.roles.includes("investor");
   if (!isFounder && !isInvestor)
     throw new Response("Founder or Investor access required.", { status: 403 });
+  const opportunity = await db
+    .prepare("SELECT status FROM opportunity_listings WHERE project_id = ?")
+    .bind(project.id)
+    .first<{ status: string }>();
+  if (!isFounder && opportunity && !(await isVerifiedInvestor(db, user)))
+    throw new Response("Diligence room not found.", { status: 404 });
 
   const documents = await db
     .prepare(
@@ -204,8 +216,12 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const intent = formText(form.get("intent"));
 
   if (intent === "request-data-room") {
-    if (!user.roles.includes("investor") || user.id === project.founderUserId)
-      throw new Response("Investor access required.", { status: 403 });
+    if (
+      !user.roles.includes("investor") ||
+      user.id === project.founderUserId ||
+      !(await isVerifiedInvestor(db, user))
+    )
+      throw new Response("Verified Investor access required.", { status: 403 });
     const reason = formText(form.get("reason")).trim();
     if (reason.length < 20 || reason.length > 800)
       return { error: "Add a request reason between 20 and 800 characters." };
@@ -252,13 +268,36 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       };
     const valid = await db
       .prepare(
-        `SELECT 1 FROM project_documents pd
-       JOIN role_verifications rv ON rv.user_id = ? AND rv.role = 'investor' AND rv.status = 'verified'
-       WHERE pd.id = ? AND pd.project_id = ?`,
+        `SELECT pd.approved_at AS approvedAt,
+                ol.project_id AS opportunityProjectId
+         FROM project_documents pd
+         LEFT JOIN opportunity_listings ol ON ol.project_id = pd.project_id
+         WHERE pd.id = ? AND pd.project_id = ?`,
       )
-      .bind(investorUserId, documentId, project.id)
-      .first();
-    if (!valid) throw new Response("Invalid diligence grant.", { status: 400 });
+      .bind(documentId, project.id)
+      .first<{
+        approvedAt: string | null;
+        opportunityProjectId: string | null;
+      }>();
+    if (!valid || !(await isVerifiedInvestorId(db, investorUserId)))
+      throw new Response("Invalid diligence grant.", { status: 400 });
+    if (valid.opportunityProjectId) {
+      if (!valid.approvedAt)
+        return {
+          error: "AKARI must approve this document before it can be granted.",
+        };
+      if (
+        (await opportunityAccessStateForUserId(
+          db,
+          project.id,
+          investorUserId,
+        )) !== "approved"
+      )
+        return {
+          error:
+            "Approve this Investor's Deal Room request before granting documents.",
+        };
+    }
     await db.batch([
       db
         .prepare(
@@ -356,6 +395,10 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       .first<{ investorUserId: string }>();
     if (!target) throw new Response("Request not found.", { status: 404 });
     const approved = intent === "approve-data-room";
+    if (approved && !(await isVerifiedInvestorId(db, target.investorUserId)))
+      return {
+        error: "Only a currently verified Investor can receive access.",
+      };
     await db.batch([
       db
         .prepare(
@@ -397,7 +440,71 @@ export async function action({ request, context, params }: Route.ActionArgs) {
           JSON.stringify({ requestId, approved, days }),
         ),
     ]);
+    await recordOpportunityAudit(
+      db,
+      user.id,
+      approved ? "opportunity.access_approved" : "opportunity.access_declined",
+      project.id,
+      { requestId, days, decisionNote: note },
+    );
     throw redirect(`/projects/${project.slug}/diligence?decision=1`);
+  }
+
+  if (intent === "revoke-data-room") {
+    const requestId = formText(form.get("requestId"));
+    const note = formText(form.get("decisionNote")).trim();
+    if (note.length < 5 || note.length > 500)
+      return { error: "Add a revocation note between 5 and 500 characters." };
+    const target = await db
+      .prepare(
+        `SELECT investor_user_id AS investorUserId
+         FROM data_room_requests
+         WHERE id = ? AND project_id = ? AND status = 'approved'`,
+      )
+      .bind(requestId, project.id)
+      .first<{ investorUserId: string }>();
+    if (!target)
+      throw new Response("Approved request not found.", { status: 404 });
+    await db.batch([
+      db
+        .prepare(
+          `UPDATE data_room_requests
+           SET status = 'revoked', reviewed_by = ?, reviewed_at = datetime('now'),
+               decision_note = ?, updated_at = datetime('now')
+           WHERE id = ? AND project_id = ?`,
+        )
+        .bind(user.id, note, requestId, project.id),
+      db
+        .prepare(
+          `UPDATE document_access_grants
+           SET revoked_at = datetime('now'), revoked_by = ?,
+               updated_at = datetime('now')
+           WHERE project_id = ? AND investor_user_id = ?
+             AND revoked_at IS NULL`,
+        )
+        .bind(user.id, project.id, target.investorUserId),
+      db
+        .prepare(
+          `INSERT INTO notifications
+             (id, user_id, kind, title, body, action_url)
+           VALUES (?, ?, 'opportunity.access_revoked',
+                   'Deal Room access revoked', ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          target.investorUserId,
+          `Access to ${project.title} was revoked. ${note}`,
+          `/deals/${project.slug}`,
+        ),
+    ]);
+    await recordOpportunityAudit(
+      db,
+      user.id,
+      "opportunity.access_revoked",
+      project.id,
+      { requestId, investorUserId: target.investorUserId, decisionNote: note },
+    );
+    throw redirect(`/projects/${project.slug}/diligence?revoked=1`);
   }
 
   throw new Response("Unsupported diligence action.", { status: 400 });
