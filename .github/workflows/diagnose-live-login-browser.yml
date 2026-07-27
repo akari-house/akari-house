@@ -1,0 +1,90 @@
+name: Diagnose Live Login Browser
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Open live login in Chromium and capture evidence
+        run: |
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright';
+          import fs from 'node:fs';
+
+          const browser = await chromium.launch({ headless: true });
+          const context = await browser.newContext({
+            viewport: { width: 1488, height: 768 },
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36',
+            extraHTTPHeaders: {
+              'Accept-Language': 'en-GB,en;q=0.9',
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
+            }
+          });
+          const page = await context.newPage();
+          const events = [];
+          page.on('console', msg => events.push(`console:${msg.type()}:${msg.text()}`));
+          page.on('pageerror', error => events.push(`pageerror:${error.message}`));
+          page.on('requestfailed', request => events.push(`requestfailed:${request.url()}:${request.failure()?.errorText}`));
+
+          const response = await page.goto(`https://akarihouse.com/login?diagnostic=${Date.now()}`, {
+            waitUntil: 'networkidle',
+            timeout: 45000
+          });
+          const status = response?.status() ?? 0;
+          const headers = response?.headers() ?? {};
+          const title = await page.title();
+          const body = await page.locator('body').innerText();
+          const html = await page.content();
+          const cookies = await context.cookies('https://akarihouse.com');
+          await page.screenshot({ path: 'live-login-browser.png', fullPage: true });
+
+          const evidence = {
+            status,
+            finalUrl: page.url(),
+            title,
+            headers,
+            body,
+            containsErrorBoundary: body.toLowerCase().includes('the lantern went out unexpectedly'),
+            containsLoginHeading: body.includes('Return to the House'),
+            emailFields: await page.locator('input[name="email"]').count(),
+            passwordFields: await page.locator('input[name="password"]').count(),
+            cookies,
+            events,
+            htmlStart: html.slice(0, 3000)
+          };
+          fs.writeFileSync('live-login-browser.json', JSON.stringify(evidence, null, 2));
+          console.log(JSON.stringify(evidence, null, 2));
+          await browser.close();
+
+          if (
+            status !== 200 ||
+            evidence.containsErrorBoundary ||
+            !evidence.containsLoginHeading ||
+            evidence.emailFields !== 1 ||
+            evidence.passwordFields !== 1
+          ) {
+            process.exit(1);
+          }
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-login-browser-evidence
+          path: |
+            live-login-browser.json
+            live-login-browser.png
+          retention-days: 7
