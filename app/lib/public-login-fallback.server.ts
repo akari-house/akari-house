@@ -1,4 +1,4 @@
-export const publicLoginRelease = "worker-login-2026-07-27-final";
+export const publicLoginRelease = "worker-login-2026-07-27-success-v2";
 
 function escapeHtml(value: string) {
   return value.replace(
@@ -12,6 +12,41 @@ function escapeHtml(value: string) {
         '"': "&quot;",
       })[character] ?? character,
   );
+}
+
+function loginSecurityHeaders(request: Request) {
+  const url = new URL(request.url);
+  const isLocalDevelopment =
+    url.hostname === "127.0.0.1" || url.hostname === "localhost";
+  const headers = new Headers({
+    "content-type": "text/html; charset=utf-8",
+    "cache-control": "private, no-store, max-age=0",
+    vary: "Cookie",
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "strict-origin-when-cross-origin",
+    "x-frame-options": "DENY",
+    "permissions-policy":
+      "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    "content-security-policy": [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "frame-ancestors 'none'",
+      "form-action 'self'",
+      "object-src 'none'",
+      "img-src 'self' data:",
+      "font-src 'self' https://fonts.gstatic.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      `script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com${isLocalDevelopment ? " 'unsafe-eval'" : ""}`,
+      "frame-src https://challenges.cloudflare.com",
+      `connect-src 'self' https://challenges.cloudflare.com${isLocalDevelopment ? " ws:" : ""}`,
+    ].join("; "),
+  });
+  if (url.protocol === "https:")
+    headers.set(
+      "strict-transport-security",
+      "max-age=31536000; includeSubDomains",
+    );
+  return headers;
 }
 
 export interface PublicLoginFallbackOptions {
@@ -83,15 +118,43 @@ export function publicLoginFallbackResponse(
 </body>
 </html>`;
 
+  const headers = loginSecurityHeaders(request);
+  headers.set("x-akari-login-fallback", "worker");
+  headers.set("x-akari-login-release", publicLoginRelease);
+  headers.set("x-akari-login-result", options.error ? "error" : "form");
+  headers.set("x-akari-login-stage", options.stage ?? "form");
   return new Response(body, {
     status: options.status ?? 200,
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "no-store, max-age=0",
-      "x-akari-login-fallback": "worker",
-      "x-akari-login-release": publicLoginRelease,
-      "x-akari-login-result": options.error ? "error" : "form",
-      "x-akari-login-stage": options.stage ?? "form",
-    },
+    headers,
   });
+}
+
+export function publicLoginSuccessResponse(
+  request: Request,
+  cookie: string,
+  destination: string,
+) {
+  const safeDestination = escapeHtml(destination);
+  const body = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#090B14">
+  <meta http-equiv="refresh" content="0;url=${safeDestination}">
+  <title>Opening AKARI House</title>
+  <style>:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui;background:#090B14;color:#fff}body{margin:0;min-height:100vh;display:grid;place-items:center;text-align:center;padding:2rem}main{max-width:42rem}p{color:#B7BAC5}a{color:#FFD33D}</style>
+</head>
+<body>
+  <main><h1>Welcome back.</h1><p>Your secure session is ready. Opening the House now.</p><p><a href="${safeDestination}">Continue to AKARI House</a></p></main>
+  <script>window.location.replace(${JSON.stringify(destination)});</script>
+</body>
+</html>`;
+  const headers = loginSecurityHeaders(request);
+  headers.set("set-cookie", cookie);
+  headers.set("x-akari-login-fallback", "worker");
+  headers.set("x-akari-login-release", publicLoginRelease);
+  headers.set("x-akari-login-result", "success");
+  headers.set("x-akari-login-stage", "complete");
+  return new Response(body, { status: 200, headers });
 }
