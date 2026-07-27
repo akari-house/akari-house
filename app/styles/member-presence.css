@@ -207,3 +207,25 @@
     flex-basis: auto;
   }
 }
+
+@media (max-width: 420px) {
+  .house-member-presence__group {
+    gap: 0.45rem;
+    padding-inline: 0.65rem;
+  }
+
+  .house-member-presence__avatars > img,
+  .house-member-presence__monogram {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+    margin-left: -14px;
+  }
+
+  .house-member-presence__remaining {
+    min-width: 30px;
+    height: 28px;
+    margin-left: -8px;
+    padding-inline: 0.25rem;
+  }
+}
