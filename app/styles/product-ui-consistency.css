@@ -1,0 +1,267 @@
+/*
+ * AKARI application-scale consistency layer.
+ *
+ * The public homepage keeps its cinematic story scale. Working product screens
+ * use a denser hierarchy so navigation, controls, and primary content appear
+ * above the fold without sacrificing AKARI's pink/yellow visual identity.
+ */
+
+:root {
+  --app-page-top: clamp(6.25rem, 9vw, 7.5rem);
+  --app-page-bottom: clamp(3.5rem, 7vw, 5.5rem);
+  --app-section-gap: clamp(1.5rem, 3vw, 2.5rem);
+  --app-heading-xl: clamp(2.25rem, 4.4vw, 4rem);
+  --app-heading-lg: clamp(1.85rem, 3.4vw, 3rem);
+  --app-heading-md: clamp(1.35rem, 2.3vw, 2rem);
+  --app-panel-radius: 20px;
+}
+
+/* Shared directories: members, projects, events, campaigns and notifications. */
+.directory-main {
+  padding-top: var(--app-page-top);
+  padding-bottom: var(--app-page-bottom);
+}
+
+.directory-heading {
+  gap: clamp(1rem, 3vw, 2rem);
+  margin-bottom: var(--app-section-gap);
+}
+
+.directory-heading h1 {
+  max-width: 18ch;
+  margin: 0.45rem 0 0;
+  font-size: var(--app-heading-xl);
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+.directory-heading > div > p {
+  max-width: 62ch;
+  margin-top: 0.8rem;
+  line-height: 1.6;
+}
+
+.directory-empty {
+  min-height: min(390px, 48vh);
+  padding: clamp(1.5rem, 4vw, 2.75rem);
+  border-radius: var(--app-panel-radius);
+}
+
+.directory-empty h2 {
+  font-size: var(--app-heading-md);
+}
+
+/* Dashboard and authenticated workspace pages. */
+.dashboard-main,
+.opportunity-operations-main {
+  padding-top: var(--app-page-top);
+  padding-bottom: var(--app-page-bottom);
+}
+
+.dashboard-content {
+  gap: var(--app-section-gap);
+}
+
+.dashboard-heading,
+.admin-heading {
+  gap: clamp(1rem, 3vw, 2rem);
+  margin-bottom: clamp(1.25rem, 3vw, 2rem);
+}
+
+.dashboard-heading h1,
+.admin-heading h1 {
+  max-width: 20ch;
+  margin: 0.45rem 0 0;
+  font-size: var(--app-heading-lg);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.admin-panel,
+.profile-panel,
+.status-card {
+  border-radius: var(--app-panel-radius);
+}
+
+.opportunity-operations-main > section,
+.opportunity-operations-main > .admin-panel {
+  margin-top: var(--app-section-gap);
+}
+
+/* Public member/project/event detail pages remain expressive but not landing-page sized. */
+.public-profile,
+.profile-main,
+.project-detail-main,
+.event-detail-main,
+.campaign-detail-main {
+  padding-top: var(--app-page-top);
+  padding-bottom: var(--app-page-bottom);
+}
+
+.profile-headline,
+.project-detail-main h1,
+.event-detail-main h1,
+.campaign-detail-main h1 {
+  font-size: var(--app-heading-xl);
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+/* Investor discovery is a working product, not a second marketing homepage. */
+.opportunities-main {
+  padding-top: var(--app-page-top);
+  padding-bottom: var(--app-page-bottom);
+}
+
+.investor-workspace-nav {
+  margin-bottom: 1.25rem;
+}
+
+.deals-hero {
+  min-height: 300px;
+  padding: clamp(1.5rem, 4vw, 3.25rem);
+  border-radius: 22px;
+}
+
+.deals-hero h1 {
+  max-width: 15ch;
+  margin: 0.55rem 0 0.75rem;
+  font-size: clamp(2.35rem, 4.5vw, 4.35rem);
+  line-height: 0.98;
+  letter-spacing: -0.052em;
+}
+
+.deals-hero p {
+  max-width: 60ch;
+  line-height: 1.6;
+}
+
+.deals-hero::before {
+  top: 24px;
+  height: 240px;
+}
+
+.deals-hero::after {
+  top: 72px;
+  height: 180px;
+}
+
+.deals-controls {
+  margin-top: 1.5rem;
+  padding: 1rem;
+}
+
+.deal-card {
+  min-height: 510px;
+}
+
+.deal-card h2 {
+  font-size: clamp(1.35rem, 1.8vw, 1.75rem);
+}
+
+/* Individual Deal Room and structured diligence content. */
+.deal-room-main .deal-room-hero > div {
+  padding: clamp(1.35rem, 3vw, 2.25rem);
+  border-radius: var(--app-panel-radius);
+}
+
+.deal-room-main .deal-room-hero h1 {
+  font-size: var(--app-heading-lg);
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+.deal-room-sections {
+  margin-top: var(--app-section-gap);
+  padding: clamp(1.2rem, 3vw, 2rem);
+  border-radius: var(--app-panel-radius);
+}
+
+.deal-room-sections > header h2 {
+  font-size: clamp(1.65rem, 3vw, 2.55rem);
+}
+
+.deal-section-grid article {
+  padding: clamp(1rem, 2vw, 1.3rem);
+  border-radius: 16px;
+}
+
+/* Legal pages need readability, but not an oversized title or excessive runway. */
+.legal-main {
+  padding-top: var(--app-page-top);
+  padding-bottom: var(--app-page-bottom);
+}
+
+.legal-breadcrumb {
+  margin-bottom: 2rem;
+}
+
+.legal-main h1 {
+  max-width: 16ch;
+  font-size: var(--app-heading-xl);
+}
+
+.legal-header {
+  margin-bottom: 2.25rem;
+}
+
+.legal-summary {
+  margin-bottom: 2.75rem;
+}
+
+/* Preserve accessible controls while reducing only surrounding whitespace. */
+.button,
+button,
+input,
+select,
+textarea {
+  scroll-margin-top: 6rem;
+}
+
+@media (max-width: 720px) {
+  :root {
+    --app-page-top: 5.75rem;
+    --app-page-bottom: 3.5rem;
+    --app-heading-xl: clamp(2rem, 10vw, 3rem);
+    --app-heading-lg: clamp(1.75rem, 8vw, 2.5rem);
+  }
+
+  .directory-heading,
+  .dashboard-heading,
+  .admin-heading {
+    align-items: flex-start;
+  }
+
+  .deals-hero {
+    min-height: 0;
+    padding: 1.35rem;
+    border-radius: 18px;
+  }
+
+  .deals-hero h1 {
+    font-size: clamp(2.1rem, 11vw, 3.25rem);
+  }
+
+  .deals-controls {
+    margin-top: 1rem;
+  }
+
+  .deal-card {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .directory-main,
+  .opportunities-main,
+  .opportunity-operations-main {
+    width: min(100% - 1rem, 1240px);
+  }
+
+  .admin-panel,
+  .profile-panel,
+  .status-card,
+  .directory-empty {
+    border-radius: 16px;
+  }
+}
