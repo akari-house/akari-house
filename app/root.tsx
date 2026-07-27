@@ -17,6 +17,7 @@ import "./styles/opportunities.css";
 import "./styles/opportunity-operations.css";
 import "./styles/header-layout-fix.css";
 import "./styles/product-ui-consistency.css";
+import "./styles/profile-sharing.css";
 
 export const headers: Route.HeadersFunction = () => productionSecurityHeaders();
 
