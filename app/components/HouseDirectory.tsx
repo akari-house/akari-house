@@ -77,7 +77,7 @@ export function PartnerStrip({ entries }: { entries: HouseDirectoryEntry[] }) {
     label: string;
   }[] = [
     { category: "partner", label: "Partners" },
-    { category: "provider", label: "Value-Added Providers" },
+    { category: "provider", label: "Value-Added & Solution Providers" },
   ];
   if (!entries.length) return null;
   return (
@@ -103,13 +103,7 @@ export function PartnerStrip({ entries }: { entries: HouseDirectoryEntry[] }) {
             <h3>{label}</h3>
             <div className="partner-house__grid">
               {group.map((entry) => (
-                <a
-                  className="partner-mark"
-                  key={entry.id}
-                  href={entry.websiteUrl || `/team#${category}s`}
-                  target={entry.websiteUrl ? "_blank" : undefined}
-                  rel={entry.websiteUrl ? "noreferrer" : undefined}
-                >
+                <article className="partner-mark" key={entry.id}>
                   {entry.imageKey ? (
                     <img
                       src={`/media/house-directory/${entry.id}`}
@@ -124,7 +118,7 @@ export function PartnerStrip({ entries }: { entries: HouseDirectoryEntry[] }) {
                     </span>
                   )}
                   <strong>{entry.name}</strong>
-                </a>
+                </article>
               ))}
             </div>
           </div>
