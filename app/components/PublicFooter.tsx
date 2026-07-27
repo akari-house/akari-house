@@ -39,6 +39,16 @@ const footerGroups = [
   },
 ] as const;
 
+const footerSocials = [
+  { label: "AKARI on X", href: "https://x.com/house_akari", mark: "𝕏" },
+  { label: "DCC on X", href: "https://x.com/DesiCryptoClub", mark: "𝕏" },
+  {
+    label: "DCC Discord",
+    href: "https://discord.gg/f6DEBDZbr",
+    mark: "D",
+  },
+] as const;
+
 export function PublicFooter() {
   const footerContentRef = useRef<HTMLDivElement>(null);
   const [landscapeVisible, setLandscapeVisible] = useState(false);
@@ -91,6 +101,22 @@ export function PublicFooter() {
             <span className="akari-footer__principle">
               People first. Permission always.
             </span>
+            <nav
+              className="akari-footer__socials"
+              aria-label="AKARI and DCC social channels"
+            >
+              {footerSocials.map((social) => (
+                <a
+                  href={social.href}
+                  key={social.label}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <span aria-hidden="true">{social.mark}</span>
+                  {social.label}
+                </a>
+              ))}
+            </nav>
           </section>
 
           <nav className="akari-footer__links" aria-label="Footer navigation">
