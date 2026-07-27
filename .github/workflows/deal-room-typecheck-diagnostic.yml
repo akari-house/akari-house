@@ -1,0 +1,32 @@
+name: Deal Room Typecheck Diagnostic
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Run typecheck with captured output
+        run: |
+          set +e
+          npm run typecheck 2>&1 | tee deal-room-typecheck.log
+          status=${PIPESTATUS[0]}
+          exit "$status"
+      - name: Upload typecheck diagnostic
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deal-room-typecheck-${{ github.sha }}
+          path: deal-room-typecheck.log
+          retention-days: 7
