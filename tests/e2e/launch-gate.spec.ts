@@ -84,6 +84,10 @@ test.describe("automated launch gate", () => {
     await activatePersona(page, "founder");
     expect((await page.goto("/projects/new"))?.status()).toBe(200);
     expect((await page.goto("/admin/launch-gate"))?.status()).toBe(403);
+    expect((await page.goto("/app"))?.status()).toBe(200);
+    await expect(
+      page.getByRole("link", { name: "People & Partners" }),
+    ).toHaveCount(0);
   });
 
   test("[creator:creator] Creator cannot open Founder project creation", async ({
@@ -122,10 +126,15 @@ test.describe("automated launch gate", () => {
     expect((await page.goto("/admin/applications"))?.status()).toBe(403);
   });
 
-  test("[superadmin:superadmin] Superadmin can open the launch gate", async ({
+  test("[superadmin:superadmin] Superadmin can open the launch gate and House directory", async ({
     page,
   }) => {
     await activatePersona(page, "superadmin");
+    expect((await page.goto("/app"))?.status()).toBe(200);
+    await expect(
+      page.getByRole("link", { name: "People & Partners" }),
+    ).toHaveAttribute("href", "/admin/house-directory");
+    expect((await page.goto("/admin/house-directory"))?.status()).toBe(200);
     expect((await page.goto("/admin/launch-gate"))?.status()).toBe(200);
     await expect(
       page.getByRole("heading", { name: "Real-role permission testing" }),
