@@ -51,6 +51,8 @@ const views = [
 type CatalogueView = (typeof views)[number];
 
 type CatalogueFilters = {
+  search: string;
+  sort: string;
   sector: string;
   stage: string;
   geography: string;
@@ -99,6 +101,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const view = safeView(url.searchParams.get("view"));
   const filters: CatalogueFilters = {
+    search: safeFilter(url.searchParams.get("search"), 120),
+    sort: safeFilter(url.searchParams.get("sort"), 20),
     sector: safeFilter(url.searchParams.get("sector"), 80),
     stage: safeFilter(url.searchParams.get("stage"), 80),
     geography: safeFilter(url.searchParams.get("geography"), 80),
@@ -154,6 +158,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   if (!archived) conditions.push("pr.status = 'published'");
   const values: Array<string | number> = [userId, userId];
 
+  if (filters.search) {
+    conditions.push("(pr.title LIKE ? OR ol.public_summary LIKE ? OR ol.sector LIKE ?)");
+    const searchTerm = `%${filters.search}%`;
+    values.push(searchTerm, searchTerm, searchTerm);
+  }
   if (filters.sector) {
     conditions.push("ol.sector = ?");
     values.push(filters.sector);
@@ -219,6 +228,15 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   )
     conditions.push("1 = 0");
 
+  const orderBy =
+    filters.sort === "newest"
+      ? "ol.updated_at DESC"
+      : filters.sort === "raise"
+        ? "COALESCE(ol.raise_maximum, ol.raise_minimum, 0) DESC"
+        : filters.sort === "closing"
+          ? "CASE WHEN ol.closing_at IS NULL THEN 1 ELSE 0 END, ol.closing_at, ol.updated_at DESC"
+          : "CASE WHEN ol.closing_at IS NULL THEN 1 ELSE 0 END, ol.closing_at, ol.updated_at DESC";
+
   const result = await db
     .prepare(
       `SELECT pr.id AS projectId, pr.slug, pr.title, pr.summary,
@@ -254,10 +272,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
            LIMIT 1
          )
        WHERE ${conditions.join(" AND ")}
-       ORDER BY
-         CASE WHEN ol.closing_at IS NULL THEN 1 ELSE 0 END,
-         ol.closing_at,
-         ol.updated_at DESC
+       ORDER BY ${orderBy}
        LIMIT 100`,
     )
     .bind(...values)
@@ -406,18 +421,32 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
     <div className="site-shell">
       <SiteHeader user={loaderData.user} />
       <main id="main-content" className="deals-main">
+        <nav className="investor-workspace-nav" aria-label="Investor workspace">
+          <Link className="investor-workspace-brand" to="/deals">
+            <span className="workspace-flower" aria-hidden="true">✦</span>
+            <span><strong>AKARI</strong><small>Investor House</small></span>
+          </Link>
+          <div className="investor-workspace-links">
+            <Link className={loaderData.view === "available" ? "is-active" : ""} to="/deals">Discover</Link>
+            <Link className={loaderData.view === "saved" ? "is-active" : ""} to="/deals?view=saved">Saved</Link>
+            <Link className={loaderData.view === "requested" ? "is-active" : ""} to="/deals?view=requested">Requests</Link>
+            <Link className={loaderData.view === "approved" ? "is-active" : ""} to="/deals?view=approved">My Deal Rooms</Link>
+            <Link to="/settings/investor">Investor profile</Link>
+          </div>
+          <Link className="workspace-notifications" to="/notifications" aria-label="Notifications">Updates</Link>
+        </nav>
         <header className="deals-hero">
           <div>
             <span className="chapter">Investor and Angel Deal Rooms</span>
-            <h1>Considered opportunities, opened with context.</h1>
+            <h1>Private opportunities. Clearer conviction.</h1>
             <p>
-              Explore AKARI-reviewed public previews. Confidential information
-              remains closed until eligibility and per-opportunity access are
-              confirmed.
+              Discover reviewed early-stage opportunities, compare the essentials,
+              and enter secure Deal Rooms when access is approved.
             </p>
           </div>
           <aside>
-            <strong>Discovery is not endorsement.</strong>
+            <span className="workspace-pulse" aria-hidden="true" />
+            <strong>Curated, controlled, confidential.</strong>
             <p>
               AKARI supports professional discovery and introductions. Members
               remain responsible for independent due diligence and professional
@@ -444,9 +473,23 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
         <section className="deals-controls" aria-labelledby="deal-filter-title">
           <div>
             <span className="eyebrow">Catalogue</span>
-            <h2 id="deal-filter-title">Find relevant context</h2>
+            <h2 id="deal-filter-title">Discover opportunities</h2>
+            <p>{loaderData.opportunities.length} reviewed deal{loaderData.opportunities.length === 1 ? "" : "s"} in this view</p>
           </div>
           <Form method="get" className="deal-filter-form">
+            <label className="deal-search-field">
+              Search
+              <input name="search" type="search" defaultValue={loaderData.filters.search} placeholder="Project, sector or thesis" />
+            </label>
+            <label>
+              Sort
+              <select name="sort" defaultValue={loaderData.filters.sort}>
+                <option value="">Recommended</option>
+                <option value="newest">Newest</option>
+                <option value="closing">Closing soon</option>
+                <option value="raise">Largest raise</option>
+              </select>
+            </label>
             <label>
               View
               <select name="view" defaultValue={loaderData.view}>
@@ -570,6 +613,11 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
               ].filter(Boolean);
               return (
                 <article className="deal-card" key={opportunity.projectId}>
+                  <div className="deal-card-art" aria-hidden="true">
+                    <span>{opportunity.sector?.slice(0, 2).toUpperCase() || "AK"}</span>
+                    <i />
+                    <b>AKARI REVIEWED</b>
+                  </div>
                   <div className="deal-card-topline">
                     <span>{opportunity.sector || "Selected opportunity"}</span>
                     <span>{opportunity.stage.replaceAll("_", " ")}</span>
