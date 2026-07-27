@@ -2,6 +2,7 @@ import type { Route } from "./+types/project-document";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { ensureDiligenceSchema } from "~/lib/diligence-schema.server";
+import { opportunityAccessState } from "~/lib/opportunity-access.server";
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
@@ -16,9 +17,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
             dag.id AS grantId, COALESCE(dag.can_download, 0) AS canDownload
      FROM project_documents pd
      JOIN projects pr ON pr.id = pd.project_id
-     LEFT JOIN opportunity_listings ol
-       ON ol.project_id = pr.id
-      AND ol.status IN ('submitted', 'published', 'paused')
+     LEFT JOIN opportunity_listings ol ON ol.project_id = pr.id
      LEFT JOIN document_access_grants dag
        ON dag.project_id = pr.id AND dag.document_id = pd.id
       AND dag.investor_user_id = ? AND dag.revoked_at IS NULL
@@ -41,9 +40,15 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
   if (!document) throw new Response("Document not found.", { status: 404 });
   const owner = document.founderUserId === user.id;
-  const approvalRequired = Boolean(document.opportunityProjectId);
-  const documentEligible = !approvalRequired || Boolean(document.approvedAt);
+  const opportunityDocument = Boolean(document.opportunityProjectId);
+  const roomState = opportunityDocument
+    ? await opportunityAccessState(env.DB, document.projectId, user)
+    : null;
+  const documentEligible =
+    !opportunityDocument ||
+    (Boolean(document.approvedAt) && roomState === "approved");
   const granted = Boolean(document.grantId && documentEligible);
+
   if (!owner && !granted) {
     await env.DB.prepare(
       `INSERT INTO document_access_logs
@@ -57,9 +62,11 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
         user.id,
         JSON.stringify({
           reason:
-            approvalRequired && !document.approvedAt
+            opportunityDocument && !document.approvedAt
               ? "document_not_approved"
-              : "no_active_grant",
+              : opportunityDocument && roomState !== "approved"
+                ? `opportunity_${roomState ?? "restricted"}`
+                : "no_active_grant",
         }),
       )
       .run();

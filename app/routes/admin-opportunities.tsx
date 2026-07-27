@@ -4,8 +4,17 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { requireAdmin, requireAdminScope } from "~/lib/membership.server";
 import { recordOpportunityAudit } from "~/lib/opportunity-access.server";
+import { publishSubmittedOpportunitySections } from "~/lib/opportunity-sections.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
+
+type ReviewedSection = {
+  id: string;
+  title: string;
+  body: string;
+  visibility: "public" | "confidential";
+  status: string;
+};
 
 type ListingReviewRow = {
   projectId: string;
@@ -20,6 +29,7 @@ type ListingReviewRow = {
   status: string;
   submittedAt: string | null;
   decisionNote: string;
+  sectionsJson: string;
 };
 
 type InvestorReviewRow = {
@@ -39,6 +49,24 @@ type AdminPermissionRow = {
   accessLevel: "admin" | "superadmin";
   scopes: string | null;
 };
+
+function parseSections(value: string): ReviewedSection[] {
+  try {
+    const sections = JSON.parse(value) as ReviewedSection[];
+    return Array.isArray(sections) ? sections : [];
+  } catch {
+    return [];
+  }
+}
+
+function parseList(value: string) {
+  try {
+    const values = JSON.parse(value) as string[];
+    return Array.isArray(values) ? values : [];
+  } catch {
+    return [];
+  }
+}
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -73,7 +101,20 @@ export async function loader({ request, context }: Route.LoaderArgs) {
                     ol.public_summary AS publicSummary,
                     ol.risk_summary AS riskSummary,
                     ol.status, ol.submitted_at AS submittedAt,
-                    ol.decision_note AS decisionNote
+                    ol.decision_note AS decisionNote,
+                    COALESCE((
+                      SELECT json_group_array(json_object(
+                        'id', os.id,
+                        'title', os.title,
+                        'body', os.body,
+                        'visibility', os.visibility,
+                        'status', os.status
+                      ))
+                      FROM opportunity_sections os
+                      WHERE os.project_id = pr.id
+                        AND os.status IN ('submitted', 'published')
+                        AND trim(os.body) <> ''
+                    ), '[]') AS sectionsJson
              FROM opportunity_listings ol
              JOIN projects pr ON pr.id = ol.project_id
              JOIN profiles p ON p.user_id = pr.founder_user_id
@@ -182,6 +223,13 @@ export async function action({ request, context }: Route.ActionArgs) {
             : `/projects/${listing.slug}/opportunity`,
         ),
     ]);
+    if (nextStatus === "published")
+      await publishSubmittedOpportunitySections(
+        db,
+        projectId,
+        admin.id,
+        decisionNote,
+      );
     await recordOpportunityAudit(
       db,
       admin.id,
@@ -231,7 +279,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       return { error: "Only active approved members can be verified." };
 
     const roleStatus = nextStatus === "verified" ? "verified" : "revoked";
-    const statements = [
+    const statements: D1PreparedStatement[] = [
       db
         .prepare(
           `UPDATE investor_profiles
@@ -290,6 +338,27 @@ export async function action({ request, context }: Route.ActionArgs) {
             decisionNote,
           ),
       );
+    else
+      statements.push(
+        db
+          .prepare(
+            `UPDATE data_room_requests
+             SET status = 'revoked', reviewed_by = ?,
+                 reviewed_at = datetime('now'), decision_note = ?,
+                 updated_at = datetime('now')
+             WHERE investor_user_id = ?
+               AND status IN ('pending', 'approved')`,
+          )
+          .bind(admin.id, decisionNote, userId),
+        db
+          .prepare(
+            `UPDATE document_access_grants
+             SET revoked_at = datetime('now'), revoked_by = ?,
+                 updated_at = datetime('now')
+             WHERE investor_user_id = ? AND revoked_at IS NULL`,
+          )
+          .bind(admin.id, userId),
+      );
     await db.batch(statements);
     await recordOpportunityAudit(
       db,
@@ -322,9 +391,17 @@ export default function AdminOpportunities({
               be bypassed by selecting a role or changing a URL.
             </p>
           </div>
-          <Link className="button button-quiet" to="/admin/operations">
-            Operations centre
-          </Link>
+          <div className="deal-action-row">
+            <Link
+              className="button button-primary"
+              to="/admin/opportunities/operations"
+            >
+              Deal Room operations
+            </Link>
+            <Link className="button button-quiet" to="/admin/operations">
+              Operations centre
+            </Link>
+          </div>
         </header>
         {actionData?.error && (
           <p className="form-error" role="alert">
@@ -343,78 +420,98 @@ export default function AdminOpportunities({
             <h2 id="opportunity-review-title">Founder submissions</h2>
             <div className="application-list">
               {loaderData.listings.length ? (
-                loaderData.listings.map((listing) => (
-                  <article className="application-card" key={listing.projectId}>
-                    <div>
-                      <span className="chapter">
-                        {listing.status} · {listing.sector}
-                      </span>
-                      <h3>{listing.title}</h3>
-                      <p>Founder: {listing.founderName}</p>
-                      <p>{listing.publicSummary}</p>
-                      <p>
-                        <strong>Geography:</strong> {listing.geography}
-                        <br />
-                        <strong>Instrument:</strong>{" "}
-                        {listing.fundingInstrument.replaceAll("_", " ")}
-                      </p>
-                      <aside className="deal-risk-note">
-                        <strong>Submitted risk information</strong>
-                        <p>{listing.riskSummary}</p>
-                      </aside>
-                      <Link to={`/projects/${listing.slug}`}>
-                        Review project
-                      </Link>
-                    </div>
-                    <Form method="post" className="application-actions">
-                      <input
-                        type="hidden"
-                        name="projectId"
-                        value={listing.projectId}
-                      />
-                      <label>
-                        Decision note
-                        <textarea
-                          name="decisionNote"
-                          minLength={5}
-                          maxLength={1000}
-                          required
+                loaderData.listings.map((listing) => {
+                  const sections = parseSections(listing.sectionsJson);
+                  return (
+                    <article
+                      className="application-card"
+                      key={listing.projectId}
+                    >
+                      <div>
+                        <span className="chapter">
+                          {listing.status} · {listing.sector}
+                        </span>
+                        <h3>{listing.title}</h3>
+                        <p>Founder: {listing.founderName}</p>
+                        <p>{listing.publicSummary}</p>
+                        <p>
+                          <strong>Geography:</strong> {listing.geography}
+                          <br />
+                          <strong>Instrument:</strong>{" "}
+                          {listing.fundingInstrument.replaceAll("_", " ")}
+                        </p>
+                        <aside className="deal-risk-note">
+                          <strong>Submitted risk information</strong>
+                          <p>{listing.riskSummary}</p>
+                        </aside>
+                        {sections.length > 0 && (
+                          <div className="admin-review-sections">
+                            <h4>Submitted Deal Room sections</h4>
+                            {sections.map((section) => (
+                              <article key={section.id}>
+                                <span className="status-pill">
+                                  {section.visibility} · {section.status}
+                                </span>
+                                <strong>{section.title}</strong>
+                                <p>{section.body}</p>
+                              </article>
+                            ))}
+                          </div>
+                        )}
+                        <Link to={`/projects/${listing.slug}`}>
+                          Review project
+                        </Link>
+                      </div>
+                      <Form method="post" className="application-actions">
+                        <input
+                          type="hidden"
+                          name="projectId"
+                          value={listing.projectId}
                         />
-                      </label>
-                      <button
-                        className="button button-primary"
-                        name="intent"
-                        value="publish"
-                        disabled={navigation.state !== "idle"}
-                      >
-                        Publish approved preview
-                      </button>
-                      <button
-                        className="button button-quiet"
-                        name="intent"
-                        value="decline"
-                      >
-                        Decline
-                      </button>
-                      {listing.status === "published" && (
+                        <label>
+                          Decision note
+                          <textarea
+                            name="decisionNote"
+                            minLength={5}
+                            maxLength={1000}
+                            required
+                          />
+                        </label>
+                        <button
+                          className="button button-primary"
+                          name="intent"
+                          value="publish"
+                          disabled={navigation.state !== "idle"}
+                        >
+                          Publish approved preview
+                        </button>
                         <button
                           className="button button-quiet"
                           name="intent"
-                          value="pause"
+                          value="decline"
                         >
-                          Pause access
+                          Decline
                         </button>
-                      )}
-                      <button
-                        className="text-button"
-                        name="intent"
-                        value="archive"
-                      >
-                        Archive
-                      </button>
-                    </Form>
-                  </article>
-                ))
+                        {listing.status === "published" && (
+                          <button
+                            className="button button-quiet"
+                            name="intent"
+                            value="pause"
+                          >
+                            Pause access
+                          </button>
+                        )}
+                        <button
+                          className="text-button"
+                          name="intent"
+                          value="archive"
+                        >
+                          Archive
+                        </button>
+                      </Form>
+                    </article>
+                  );
+                })
               ) : (
                 <p className="empty-state">
                   No opportunity submissions need review.
@@ -443,20 +540,19 @@ export default function AdminOpportunities({
                       <p>{investor.eligibilityNote}</p>
                       <p>
                         <strong>Sectors:</strong>{" "}
-                        {(JSON.parse(investor.sectorsJson) as string[]).join(
-                          ", ",
-                        )}
+                        {parseList(investor.sectorsJson).join(", ") ||
+                          "Not set"}
                         <br />
                         <strong>Stages:</strong>{" "}
-                        {(JSON.parse(investor.stagesJson) as string[]).join(
-                          ", ",
-                        )}
+                        {parseList(investor.stagesJson).join(", ") || "Not set"}
                         <br />
                         <strong>Geographies:</strong>{" "}
-                        {(
-                          JSON.parse(investor.geographiesJson) as string[]
-                        ).join(", ")}
+                        {parseList(investor.geographiesJson).join(", ") ||
+                          "Not set"}
                       </p>
+                      {investor.decisionNote && (
+                        <small>{investor.decisionNote}</small>
+                      )}
                     </div>
                     <Form method="post" className="application-actions">
                       <input
@@ -482,7 +578,7 @@ export default function AdminOpportunities({
                         </select>
                       </label>
                       <label>
-                        Review again after
+                        Scheduled review
                         <select name="reviewMonths" defaultValue="12">
                           {[3, 6, 12, 24].map((months) => (
                             <option key={months} value={months}>
@@ -513,20 +609,22 @@ export default function AdminOpportunities({
                         name="intent"
                         value="restrict-investor"
                       >
-                        Restrict
+                        Restrict and revoke access
                       </button>
                       <button
-                        className="button button-quiet"
+                        className="text-button"
                         name="intent"
                         value="reject-investor"
                       >
-                        Reject
+                        Reject and revoke access
                       </button>
                     </Form>
                   </article>
                 ))
               ) : (
-                <p className="empty-state">No Investor profiles need review.</p>
+                <p className="empty-state">
+                  No Investor profiles currently require review.
+                </p>
               )}
             </div>
           </section>

@@ -4,6 +4,9 @@ import { getOptionalUser, requireUser } from "./auth.server";
 export type MembershipStatus =
   "pending_email" | "pending_review" | "approved" | "declined" | "waitlisted";
 
+export type AdminScope =
+  "membership" | "verification" | "projects" | "campaigns" | "moderation";
+
 export async function membershipStatusForUser(db: D1Database, userId: string) {
   return db
     .prepare(
@@ -43,25 +46,34 @@ export async function requireSuperAdmin(request: Request, db: D1Database) {
   return user;
 }
 
+export async function hasAdminScope(
+  db: D1Database,
+  userId: string,
+  scope: AdminScope,
+) {
+  return Boolean(
+    await db
+      .prepare(
+        `SELECT au.user_id
+         FROM admin_users au
+         LEFT JOIN admin_scopes s
+           ON s.admin_user_id = au.user_id AND s.scope = ?
+         WHERE au.user_id = ?
+           AND (au.access_level = 'superadmin' OR s.scope IS NOT NULL)`,
+      )
+      .bind(scope, userId)
+      .first(),
+  );
+}
+
 export async function requireAdminScope(
   request: Request,
   db: D1Database,
-  scope:
-    "membership" | "verification" | "projects" | "campaigns" | "moderation",
+  scope: AdminScope,
 ) {
   const user = await requireUser(request, db);
-  const admin = await db
-    .prepare(
-      `SELECT au.user_id
-       FROM admin_users au
-       LEFT JOIN admin_scopes s
-         ON s.admin_user_id = au.user_id AND s.scope = ?
-       WHERE au.user_id = ?
-         AND (au.access_level = 'superadmin' OR s.scope IS NOT NULL)`,
-    )
-    .bind(scope, user.id)
-    .first();
-  if (!admin) throw new Response("Admin permission required.", { status: 403 });
+  if (!(await hasAdminScope(db, user.id, scope)))
+    throw new Response("Admin permission required.", { status: 403 });
   return user;
 }
 

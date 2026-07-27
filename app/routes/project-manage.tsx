@@ -58,7 +58,7 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
                 <ProjectNeedChips value={project.seeking} compact />
                 {project.opportunityStatus && (
                   <small>
-                    Opportunity review:{" "}
+                    Deal Room review:{" "}
                     {project.opportunityStatus.replaceAll("_", " ")}
                   </small>
                 )}
@@ -69,10 +69,15 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
                   </Link>
                   <Link to={`/projects/${project.slug}/needs`}>Edit needs</Link>
                   <Link to={`/projects/${project.slug}/opportunity`}>
-                    Opportunity submission
+                    Deal preview submission
                   </Link>
+                  {project.opportunityStatus && (
+                    <Link to={`/projects/${project.slug}/opportunity/manage`}>
+                      Deal Room operations
+                    </Link>
+                  )}
                   <Link to={`/projects/${project.slug}/diligence`}>
-                    Diligence room
+                    Private documents and access
                   </Link>
                 </footer>
               </article>

@@ -20,6 +20,7 @@ export default [
   route("projects/:slug/edit", "routes/project-edit.tsx"),
   route("projects/:slug/needs", "routes/project-needs.tsx"),
   route("projects/:slug/opportunity", "routes/project-opportunity.tsx"),
+  route("projects/:slug/opportunity/manage", "routes/opportunity-manage.tsx"),
   route("projects/:slug/diligence", "routes/project-diligence.tsx"),
   route("projects/:slug/documents/:documentId", "routes/project-document.ts"),
   route("projects/:slug", "routes/project-detail.tsx"),
@@ -53,6 +54,10 @@ export default [
   route("admin/team", "routes/admin-team.tsx"),
   route("admin/verifications", "routes/admin-verifications.tsx"),
   route("admin/opportunities", "routes/admin-opportunities.tsx"),
+  route(
+    "admin/opportunities/operations",
+    "routes/admin-opportunity-operations.tsx",
+  ),
   route(
     "admin/opportunities/documents",
     "routes/admin-opportunity-documents.tsx",

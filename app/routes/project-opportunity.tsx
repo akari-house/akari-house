@@ -238,12 +238,22 @@ export default function ProjectOpportunity({
               Submissions remain unavailable to Investors until AKARI review.
             </p>
           </div>
-          <Link
-            className="button button-quiet"
-            to={`/projects/${loaderData.project.slug}`}
-          >
-            Return to project
-          </Link>
+          <div className="deal-action-row">
+            {listing && (
+              <Link
+                className="button button-primary"
+                to={`/projects/${loaderData.project.slug}/opportunity/manage`}
+              >
+                Deal Room operations
+              </Link>
+            )}
+            <Link
+              className="button button-quiet"
+              to={`/projects/${loaderData.project.slug}`}
+            >
+              Return to project
+            </Link>
+          </div>
         </header>
 
         {listing && (

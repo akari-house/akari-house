@@ -63,6 +63,7 @@ export async function investorEligibility(
        JOIN role_verifications rv
          ON rv.user_id = ip.user_id AND rv.role = 'investor'
        JOIN users u ON u.id = ip.user_id
+       JOIN user_roles ur ON ur.user_id = ip.user_id AND ur.role = 'investor'
        JOIN membership_applications ma ON ma.user_id = ip.user_id
        WHERE ip.user_id = ?
          AND u.status = 'active'
@@ -72,16 +73,56 @@ export async function investorEligibility(
     .first<InvestorEligibilityRow>();
 }
 
+export async function isVerifiedInvestorId(db: D1Database, userId: string) {
+  const eligibility = await investorEligibility(db, userId);
+  return (
+    eligibility?.profileStatus === "verified" &&
+    eligibility.roleStatus === "verified"
+  );
+}
+
 export async function isVerifiedInvestor(
   db: D1Database,
   user: SessionUser | null,
 ) {
   if (!user || user.accessTier !== "member" || !user.roles.includes("investor"))
     return false;
-  const eligibility = await investorEligibility(db, user.id);
-  return (
-    eligibility?.profileStatus === "verified" &&
-    eligibility.roleStatus === "verified"
+  return isVerifiedInvestorId(db, user.id);
+}
+
+async function latestListingAccessSnapshot(
+  db: D1Database,
+  projectId: string,
+  userId: string,
+) {
+  return db
+    .prepare(
+      `SELECT ol.access_mode AS accessMode, ol.status AS listingStatus,
+              drr.status AS requestStatus, drr.expires_at AS expiresAt
+       FROM opportunity_listings ol
+       LEFT JOIN data_room_requests drr
+         ON drr.id = (
+           SELECT request.id
+           FROM data_room_requests request
+           WHERE request.project_id = ol.project_id
+             AND request.investor_user_id = ?
+           ORDER BY request.created_at DESC, request.id DESC
+           LIMIT 1
+         )
+       WHERE ol.project_id = ?`,
+    )
+    .bind(userId, projectId)
+    .first<ListingAccessSnapshot>();
+}
+
+export async function opportunityAccessStateForUserId(
+  db: D1Database,
+  projectId: string,
+  userId: string,
+): Promise<OpportunityAccessState> {
+  if (!(await isVerifiedInvestorId(db, userId))) return "verification_required";
+  return resolveOpportunityListingAccess(
+    await latestListingAccessSnapshot(db, projectId, userId),
   );
 }
 
@@ -93,22 +134,7 @@ export async function opportunityAccessState(
   if (!user) return "public_preview";
   if (user.accessTier !== "member" || !user.roles.includes("investor"))
     return "restricted";
-  if (!(await isVerifiedInvestor(db, user))) return "verification_required";
-
-  const row = await db
-    .prepare(
-      `SELECT ol.access_mode AS accessMode, ol.status AS listingStatus,
-              drr.status AS requestStatus, drr.expires_at AS expiresAt
-       FROM opportunity_listings ol
-       LEFT JOIN data_room_requests drr
-         ON drr.project_id = ol.project_id
-        AND drr.investor_user_id = ?
-       WHERE ol.project_id = ?`,
-    )
-    .bind(user.id, projectId)
-    .first<ListingAccessSnapshot>();
-
-  return resolveOpportunityListingAccess(row);
+  return opportunityAccessStateForUserId(db, projectId, user.id);
 }
 
 export async function requireOpportunityAccess(
@@ -143,4 +169,40 @@ export async function recordOpportunityAudit(
       JSON.stringify(metadata),
     )
     .run();
+}
+
+export async function recordOpportunityView(
+  db: D1Database,
+  userId: string,
+  projectId: string,
+  dedupeMinutes = 30,
+) {
+  const current = await db
+    .prepare(
+      `SELECT last_viewed_at AS lastViewedAt
+       FROM opportunity_user_states
+       WHERE project_id = ? AND user_id = ?`,
+    )
+    .bind(projectId, userId)
+    .first<{ lastViewedAt: string | null }>();
+  const lastViewedAt = current?.lastViewedAt
+    ? Date.parse(current.lastViewedAt)
+    : Number.NaN;
+  const shouldAudit =
+    !Number.isFinite(lastViewedAt) ||
+    Date.now() - lastViewedAt >= dedupeMinutes * 60 * 1000;
+
+  await db
+    .prepare(
+      `INSERT INTO opportunity_user_states
+         (project_id, user_id, last_viewed_at, updated_at)
+       VALUES (?, ?, datetime('now'), datetime('now'))
+       ON CONFLICT(project_id, user_id) DO UPDATE SET
+         last_viewed_at = datetime('now'), updated_at = datetime('now')`,
+    )
+    .bind(projectId, userId)
+    .run();
+
+  if (shouldAudit)
+    await recordOpportunityAudit(db, userId, "opportunity.viewed", projectId);
 }
