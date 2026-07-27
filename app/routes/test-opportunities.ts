@@ -5,7 +5,8 @@ const fixtureHeader = "launch-gate-v1";
 const projectSlug = "opportunity-gate-project";
 const secondProjectSlug = "opportunity-gate-second-project";
 const documentObjectKey = "opportunity-gate/diligence-document.txt";
-const secondDocumentObjectKey = "opportunity-gate/second-diligence-document.txt";
+const secondDocumentObjectKey =
+  "opportunity-gate/second-diligence-document.txt";
 const confidentialMarker = "CONFIDENTIAL-AKARI-ROOM-EVIDENCE";
 const secondConfidentialMarker = "SECOND-DEAL-CONFIDENTIAL-EVIDENCE";
 

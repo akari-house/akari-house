@@ -540,7 +540,8 @@ export default function AdminOpportunities({
                       <p>{investor.eligibilityNote}</p>
                       <p>
                         <strong>Sectors:</strong>{" "}
-                        {parseList(investor.sectorsJson).join(", ") || "Not set"}
+                        {parseList(investor.sectorsJson).join(", ") ||
+                          "Not set"}
                         <br />
                         <strong>Stages:</strong>{" "}
                         {parseList(investor.stagesJson).join(", ") || "Not set"}

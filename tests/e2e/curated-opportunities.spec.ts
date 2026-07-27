@@ -169,7 +169,9 @@ test.describe("curated opportunity permissions", () => {
     await expect(
       page.getByText("request required", { exact: true }),
     ).toBeVisible();
-    await expect(page.getByText(second.secondConfidentialMarker)).toHaveCount(0);
+    await expect(page.getByText(second.secondConfidentialMarker)).toHaveCount(
+      0,
+    );
     await expect(
       page.getByRole("heading", { name: "Authorised diligence space" }),
     ).toHaveCount(0);
