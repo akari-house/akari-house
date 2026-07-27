@@ -32,6 +32,44 @@ describe("optional session resilience", () => {
     expect(prepare).not.toHaveBeenCalled();
   });
 
+  it("uses a first-primary D1 session for authentication and role reads", async () => {
+    const sessionFirst = vi.fn().mockResolvedValue({
+      id: "user-1",
+      username: "owner",
+      displayName: "AKARI Owner",
+      status: "active",
+    });
+    const rolesAll = vi.fn().mockResolvedValue({
+      results: [{ role: "founder" }, { role: "creator" }, { role: "investor" }],
+    });
+    const prepare = vi.fn((sql: string) => ({
+      bind: vi.fn(() =>
+        sql.includes("FROM sessions")
+          ? { first: sessionFirst }
+          : { all: rolesAll },
+      ),
+    }));
+    const directPrepare = vi.fn();
+    const withSession = vi.fn(() => ({ prepare }));
+    const db = {
+      prepare: directPrepare,
+      withSession,
+    } as unknown as D1Database;
+
+    await expect(
+      getOptionalUser(requestWithCookie("akari_session=valid-token"), db),
+    ).resolves.toEqual({
+      id: "user-1",
+      username: "owner",
+      displayName: "AKARI Owner",
+      accessTier: "member",
+      roles: ["founder", "creator", "investor"],
+    });
+    expect(withSession).toHaveBeenCalledWith("first-primary");
+    expect(directPrepare).not.toHaveBeenCalled();
+    expect(prepare).toHaveBeenCalledTimes(2);
+  });
+
   it("keeps public requests signed out when an optional session lookup fails", async () => {
     const error = vi
       .spyOn(console, "error")
