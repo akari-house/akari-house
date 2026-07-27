@@ -1,0 +1,72 @@
+name: Full Product Audit
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      PRODUCTION_URL: https://akarihouse.com
+      AUDIT_DIR: audit-results
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Prepare audit directory
+        run: mkdir -p audit-results
+      - name: Audit all dependencies
+        run: npm audit --json > audit-results/npm-audit-all.json || true
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --json > audit-results/npm-audit-production.json || true
+      - name: Summarise dependency risk
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+
+          const read = (path) => {
+            try {
+              return JSON.parse(fs.readFileSync(path, "utf8"));
+            } catch (error) {
+              return { parseError: error instanceof Error ? error.message : String(error) };
+            }
+          };
+          const summarise = (payload) => ({
+            vulnerabilities: payload.metadata?.vulnerabilities ?? null,
+            dependencies: payload.metadata?.dependencies ?? null,
+            parseError: payload.parseError ?? null,
+          });
+          const report = {
+            all: summarise(read("audit-results/npm-audit-all.json")),
+            production: summarise(read("audit-results/npm-audit-production.json")),
+          };
+          fs.writeFileSync(
+            "audit-results/dependency-summary.json",
+            `${JSON.stringify(report, null, 2)}\n`,
+          );
+          console.log(JSON.stringify(report, null, 2));
+          NODE
+      - name: Install audit browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Run existing production route and security audit
+        run: |
+          node scripts/production-public-audit.mjs
+          mv production-audit.json audit-results/production-public-audit.json
+      - name: Run multi-browser UX and accessibility audit
+        run: node scripts/full-product-production-audit.mjs
+      - name: Upload full audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-product-audit-${{ github.sha }}
+          path: audit-results
+          retention-days: 90
+          if-no-files-found: error
