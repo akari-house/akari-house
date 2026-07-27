@@ -42,8 +42,28 @@ function runScheduledJob(job: ScheduledJobName, env: CloudflareEnvironment) {
   }
 }
 
+function loginFallbackRedirect(request: Request) {
+  if (request.method !== "GET") return null;
+  const source = new URL(request.url);
+  if (source.pathname !== "/login") return null;
+
+  const destination = new URL("/signin", source.origin);
+  destination.search = source.search;
+  return new Response(null, {
+    status: 302,
+    headers: {
+      Location: destination.toString(),
+      "Cache-Control": "private, no-store",
+      "X-AKARI-Login-Fallback": "signin-v1",
+    },
+  });
+}
+
 export default {
   async fetch(request, env, ctx) {
+    const loginRedirect = loginFallbackRedirect(request);
+    if (loginRedirect) return withSecurityHeaders(request, loginRedirect);
+
     const context = new RouterContextProvider();
     context.set(cloudflareContext, { env, ctx });
     const response = await requestHandler(request, context);
