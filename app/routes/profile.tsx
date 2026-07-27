@@ -173,9 +173,14 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           </Link>
         )}
         {user?.id === profile.userId && (
-          <Link className="button button-primary" to="/app">
-            Edit profile
-          </Link>
+          <div className="profile-owner-actions">
+            <Link className="button button-primary" to="/app">
+              Edit profile
+            </Link>
+            <Link className="button button-secondary" to="/profile-card">
+              Create sharing card
+            </Link>
+          </div>
         )}
       </main>
     </div>
