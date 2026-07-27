@@ -1,0 +1,24 @@
+name: Source Export Helper
+
+on:
+  push:
+    branches:
+      - agent/profile-sharing-launch-readiness
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-export
+          path: |
+            .
+            !.git
+          include-hidden-files: true
+          retention-days: 1
