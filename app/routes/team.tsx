@@ -1,27 +1,66 @@
+import { Link } from "react-router";
 import type { Route } from "./+types/team";
 import { PeopleCard, PartnerStrip } from "~/components/HouseDirectory";
+import { ProjectLanternCard } from "~/components/discovery/ProjectLanternCard";
 import { PublicFooter } from "~/components/PublicFooter";
 import { SiteHeader } from "~/components/SiteHeader";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { getPublishedHouseDirectory } from "~/lib/house-directory.server";
 
+type EcosystemProject = {
+  slug: string;
+  title: string;
+  summary: string;
+  stage: string;
+  seeking: string;
+  founderName: string;
+  founderUsername: string;
+  followerCount: number;
+};
+
 export const meta: Route.MetaFunction = () => [
   { title: "The People of AKARI | AKARI House" },
   {
     name: "description",
     content:
-      "Meet the AKARI team, advisors, supporters, partners and value-added providers.",
+      "Meet the AKARI team, advisors, supporters, partners and ecosystem projects.",
   },
 ];
 
+async function getEcosystemProjects(db: D1Database) {
+  try {
+    const projects = await db
+      .prepare(
+        `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
+                COALESCE(p.display_name, u.username, 'AKARI Founder') AS founderName,
+                u.username AS founderUsername,
+                COUNT(DISTINCT pf.user_id) AS followerCount
+         FROM projects pr
+         JOIN users u ON u.id = pr.founder_user_id
+         LEFT JOIN profiles p ON p.user_id = u.id
+         LEFT JOIN project_follows pf ON pf.project_id = pr.id
+         WHERE pr.status = 'published'
+         GROUP BY pr.id
+         ORDER BY pr.updated_at DESC
+         LIMIT 12`,
+      )
+      .all<EcosystemProject>();
+    return projects.results;
+  } catch (error) {
+    console.error("Ecosystem project query failed.", error);
+    return [] as EcosystemProject[];
+  }
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
-  const [user, entries] = await Promise.all([
+  const [user, entries, ecosystemProjects] = await Promise.all([
     getOptionalUser(request, db),
     getPublishedHouseDirectory(db),
+    getEcosystemProjects(db),
   ]);
-  return { user, entries };
+  return { user, entries, ecosystemProjects };
 }
 
 const sections = [
@@ -48,27 +87,66 @@ const sections = [
   },
 ] as const;
 
+const houseSocials = [
+  {
+    label: "AKARI on X",
+    handle: "@house_akari",
+    href: "https://x.com/house_akari",
+    mark: "𝕏",
+  },
+  {
+    label: "DCC on X",
+    handle: "@DesiCryptoClub",
+    href: "https://x.com/DesiCryptoClub",
+    mark: "𝕏",
+  },
+  {
+    label: "DCC Community",
+    handle: "Join the Discord",
+    href: "https://discord.gg/f6DEBDZbr",
+    mark: "D",
+  },
+] as const;
+
 export default function TeamPage({ loaderData }: Route.ComponentProps) {
+  const partnerEntries = loaderData.entries.filter(
+    (entry) => entry.category === "partner" || entry.category === "provider",
+  );
+
   return (
     <div className="site-shell people-page">
       <SiteHeader user={loaderData.user} />
       <main id="main-content">
-        <header className="people-hero">
-          <div>
-            <span className="chapter">Inside the House</span>
+        <header className="people-hero people-house-hero">
+          <div className="people-house-hero__copy">
+            <span className="chapter">Inside AKARI House</span>
             <h1>The people who keep the light on.</h1>
             <p>
-              AKARI is built through care, judgment and trusted relationships.
-              Meet the people and organizations helping the House grow.
+              Meet the builders, advisors and supporters who care for the House,
+              alongside the partners and projects growing within its walls.
             </p>
+            <nav
+              className="people-house-hero__nav"
+              aria-label="Explore this page"
+            >
+              <a href="#team">People</a>
+              <a href="#partners">Partners</a>
+              <a href="#ecosystem">Ecosystem</a>
+              <a href="#house-socials">Socials</a>
+            </nav>
           </div>
-          <img
-            src="/assets/optimized/akari-mark.webp"
-            alt=""
-            width={240}
-            height={225}
-          />
+          <div className="people-house-hero__scene" aria-hidden="true">
+            <span className="people-house-hero__moon" />
+            <span className="people-house-hero__gate" />
+            <img
+              src="/assets/optimized/akari-mark.webp"
+              alt=""
+              width={150}
+              height={141}
+            />
+          </div>
         </header>
+
         {sections.map((section) => {
           const people = loaderData.entries.filter(
             (entry) => entry.category === section.category,
@@ -97,8 +175,8 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
                   <img
                     src="/assets/optimized/akari-mark.webp"
                     alt=""
-                    width={80}
-                    height={75}
+                    width={54}
+                    height={51}
                   />
                   <p>This chapter is being prepared.</p>
                 </div>
@@ -106,12 +184,100 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
             </section>
           );
         })}
-        <PartnerStrip
-          entries={loaderData.entries.filter(
-            (entry) =>
-              entry.category === "partner" || entry.category === "provider",
+
+        <div id="partners">
+          {partnerEntries.length ? (
+            <PartnerStrip entries={partnerEntries} />
+          ) : (
+            <section className="partner-house chapter-section">
+              <div className="section-intro">
+                <div>
+                  <span className="chapter">Chapter 04 · The wider House</span>
+                  <h2>Partners and value-added providers.</h2>
+                </div>
+                <p>
+                  Trusted organizations and specialists who add practical value
+                  to the AKARI network.
+                </p>
+              </div>
+              <div className="people-empty">
+                <p>The first partner lanterns are being prepared.</p>
+              </div>
+            </section>
           )}
-        />
+        </div>
+
+        <section
+          className="ecosystem-house chapter-section"
+          id="ecosystem"
+          aria-labelledby="ecosystem-title"
+        >
+          <div className="section-intro">
+            <div>
+              <span className="chapter">
+                Chapter 05 · The growing ecosystem
+              </span>
+              <h2 id="ecosystem-title">Projects building inside the House.</h2>
+            </div>
+            <p>
+              Published projects created by AKARI Founder members appear here as
+              Ecosystem Projects. They are customers and network participants,
+              not automatically AKARI partners or endorsements.
+            </p>
+          </div>
+          {loaderData.ecosystemProjects.length ? (
+            <div className="ecosystem-house__grid">
+              {loaderData.ecosystemProjects.map((project) => (
+                <ProjectLanternCard project={project} key={project.slug} />
+              ))}
+            </div>
+          ) : (
+            <div className="people-empty">
+              <p>The first Ecosystem Projects are preparing their lanterns.</p>
+            </div>
+          )}
+          <Link className="quiet-link" to="/projects">
+            Explore all published projects →
+          </Link>
+        </section>
+
+        <section
+          className="house-socials chapter-section"
+          id="house-socials"
+          aria-labelledby="house-socials-title"
+        >
+          <div className="section-intro">
+            <div>
+              <span className="chapter">
+                Epilogue · Stay close to the House
+              </span>
+              <h2 id="house-socials-title">
+                Follow AKARI and the DCC community.
+              </h2>
+            </div>
+            <p>
+              Join the public channels where House updates, conversations and
+              community opportunities are shared.
+            </p>
+          </div>
+          <div className="house-socials__grid">
+            {houseSocials.map((social) => (
+              <a
+                href={social.href}
+                key={social.label}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span aria-hidden="true">{social.mark}</span>
+                <div>
+                  <strong>{social.label}</strong>
+                  <small>{social.handle}</small>
+                </div>
+                <b aria-hidden="true">↗</b>
+              </a>
+            ))}
+          </div>
+        </section>
       </main>
       <PublicFooter />
     </div>

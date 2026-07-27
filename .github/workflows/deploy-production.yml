@@ -42,7 +42,6 @@ jobs:
       PUBLIC_WORKER_URL: https://akari-house.spacematesxyz.workers.dev
       PRODUCTION_URL: https://akarihouse.com
       EXPECTED_RELEASE: launch-completion-2026-07-26
-      OWNER_EMAIL: mmxinthi@gmail.com
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -206,7 +205,7 @@ jobs:
         run: |
           set -euo pipefail
           npx wrangler d1 execute DB --remote --config wrangler.production.jsonc --json --command \
-            "SELECT id FROM users WHERE lower(email) = lower('${OWNER_EMAIL}')" > owner-account.json
+            "SELECT user_id AS id FROM admin_users WHERE access_level = 'superadmin' ORDER BY user_id LIMIT 1" > owner-account.json
           node --input-type=module <<'NODE'
           import crypto from "node:crypto";
           import fs from "node:fs";
@@ -216,7 +215,7 @@ jobs:
           const row = containers.flatMap(
             (entry) => entry.results ?? entry.result?.results ?? [],
           )[0];
-          if (!row?.id) throw new Error("Canonical owner account was not found.");
+          if (!row?.id) throw new Error("A Superadmin account was not found.");
 
           const token = crypto.randomBytes(48).toString("hex");
           const tokenHash = crypto
