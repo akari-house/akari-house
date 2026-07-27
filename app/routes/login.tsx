@@ -30,7 +30,7 @@ export function getLoginPageData(
   }
 }
 
-export async function loader({ context }: Route.LoaderArgs) {
+export function loader({ context }: Route.LoaderArgs) {
   return getLoginPageData(context);
 }
 
