@@ -1,0 +1,36 @@
+/* Keep the desktop navigation and account actions inside the viewport at
+   common Windows scaling and browser zoom levels. */
+.site-header {
+  grid-template-columns: minmax(150px, 210px) minmax(0, 1fr) max-content;
+  column-gap: clamp(0.55rem, 1.25vw, 1.35rem);
+}
+
+.desktop-nav {
+  min-width: 0;
+  gap: clamp(0.65rem, 1.45vw, 1.45rem);
+}
+
+.desktop-nav a,
+.header-actions {
+  white-space: nowrap;
+}
+
+.header-actions {
+  min-width: max-content;
+}
+
+@media (max-width: 1380px) {
+  .site-header {
+    grid-template-columns: minmax(145px, 180px) minmax(0, 1fr) max-content;
+    padding-inline: 1rem;
+  }
+
+  .desktop-nav {
+    gap: clamp(0.5rem, 1vw, 0.85rem);
+    font-size: 0.72rem;
+  }
+
+  .header-actions > .button-primary {
+    display: none;
+  }
+}
