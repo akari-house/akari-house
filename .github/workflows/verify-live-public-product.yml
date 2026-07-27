@@ -1,0 +1,27 @@
+name: Verify Live Public Product
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  live-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Verify live routes and actual login form
+        env:
+          PRODUCTION_URL: https://akarihouse.com
+          PRODUCTION_AUDIT_PATH: live-production-audit.json
+        run: node scripts/production-public-audit.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: live-production-audit
+          path: live-production-audit.json
+          if-no-files-found: error
