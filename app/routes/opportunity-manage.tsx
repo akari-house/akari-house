@@ -199,9 +199,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     const title = formText(form.get("title")).trim();
     const body = formText(form.get("body")).trim();
     const visibility =
-      formText(form.get("visibility")) === "public"
-        ? "public"
-        : "confidential";
+      formText(form.get("visibility")) === "public" ? "public" : "confidential";
     if (title.length < 5 || title.length > 160)
       return { error: "Update titles must be between 5 and 160 characters." };
     if (body.length < 20 || body.length > 6000)
@@ -290,13 +288,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
                decision_note = ?, updated_at = datetime('now')
            WHERE id = ? AND project_id = ?`,
         )
-        .bind(
-          nextStatus,
-          user.id,
-          decisionNote,
-          introductionId,
-          project.id,
-        ),
+        .bind(nextStatus, user.id, decisionNote, introductionId, project.id),
       db
         .prepare(
           `INSERT INTO notifications
@@ -342,7 +334,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     throw redirect(`/projects/${project.slug}/opportunity/manage`);
   }
 
-  throw new Response("Unsupported Founder opportunity action.", { status: 400 });
+  throw new Response("Unsupported Founder opportunity action.", {
+    status: 400,
+  });
 }
 
 export default function OpportunityManage({
@@ -358,7 +352,10 @@ export default function OpportunityManage({
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
-      <main id="main-content" className="admin-main opportunity-operations-main">
+      <main
+        id="main-content"
+        className="admin-main opportunity-operations-main"
+      >
         <header className="admin-heading">
           <div>
             <span className="eyebrow">Founder Deal Room operations</span>
@@ -539,7 +536,10 @@ export default function OpportunityManage({
           <div className="application-list">
             {loaderData.interests.length ? (
               loaderData.interests.map((interest, index) => (
-                <article className="application-card" key={`${interest.investorName}-${index}`}>
+                <article
+                  className="application-card"
+                  key={`${interest.investorName}-${index}`}
+                >
                   <div>
                     <span className="chapter">{interest.status}</span>
                     <h3>{interest.investorName}</h3>
@@ -548,7 +548,9 @@ export default function OpportunityManage({
                 </article>
               ))
             ) : (
-              <p className="empty-state">No Investor interest has been recorded.</p>
+              <p className="empty-state">
+                No Investor interest has been recorded.
+              </p>
             )}
           </div>
         </section>
@@ -630,7 +632,9 @@ export default function OpportunityManage({
                     <span className="chapter">{question.status}</span>
                     <h3>{question.investorName}</h3>
                     <p>{question.question}</p>
-                    {question.answer && <blockquote>{question.answer}</blockquote>}
+                    {question.answer && (
+                      <blockquote>{question.answer}</blockquote>
+                    )}
                   </div>
                   {!question.answer && (
                     <Link to={`/deals/${loaderData.project.slug}`}>

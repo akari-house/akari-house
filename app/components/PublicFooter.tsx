@@ -123,16 +123,16 @@ export function PublicFooter() {
               legal or tax advice.
             </p>
             <p>
-              Project review, Investor verification or Deal Room access is not an
-              endorsement. Early-stage and digital-asset opportunities can be
+              Project review, Investor verification or Deal Room access is not
+              an endorsement. Early-stage and digital-asset opportunities can be
               illiquid and may involve a risk of total loss. Members remain
               responsible for independent due diligence and professional advice.
             </p>
             <p>
               Access may depend on membership, verification, eligibility,
               jurisdiction and specific per-opportunity approval. AKARI does not
-              guarantee funding, returns, token listings, campaign performance or
-              commercial outcomes.
+              guarantee funding, returns, token listings, campaign performance
+              or commercial outcomes.
             </p>
             <p>
               AKARI does not custody investment funds or member assets through

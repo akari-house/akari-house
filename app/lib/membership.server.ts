@@ -2,18 +2,10 @@ import { redirect } from "react-router";
 import { getOptionalUser, requireUser } from "./auth.server";
 
 export type MembershipStatus =
-  | "pending_email"
-  | "pending_review"
-  | "approved"
-  | "declined"
-  | "waitlisted";
+  "pending_email" | "pending_review" | "approved" | "declined" | "waitlisted";
 
 export type AdminScope =
-  | "membership"
-  | "verification"
-  | "projects"
-  | "campaigns"
-  | "moderation";
+  "membership" | "verification" | "projects" | "campaigns" | "moderation";
 
 export async function membershipStatusForUser(db: D1Database, userId: string) {
   return db

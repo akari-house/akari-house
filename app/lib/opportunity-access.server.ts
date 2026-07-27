@@ -73,10 +73,7 @@ export async function investorEligibility(
     .first<InvestorEligibilityRow>();
 }
 
-export async function isVerifiedInvestorId(
-  db: D1Database,
-  userId: string,
-) {
+export async function isVerifiedInvestorId(db: D1Database, userId: string) {
   const eligibility = await investorEligibility(db, userId);
   return (
     eligibility?.profileStatus === "verified" &&
@@ -123,8 +120,7 @@ export async function opportunityAccessStateForUserId(
   projectId: string,
   userId: string,
 ): Promise<OpportunityAccessState> {
-  if (!(await isVerifiedInvestorId(db, userId)))
-    return "verification_required";
+  if (!(await isVerifiedInvestorId(db, userId))) return "verification_required";
   return resolveOpportunityListingAccess(
     await latestListingAccessSnapshot(db, projectId, userId),
   );

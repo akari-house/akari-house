@@ -106,11 +106,10 @@ describe("opportunity access policy", () => {
   });
 
   it("selects only the latest access request for a project and Investor", () => {
-    const source = readFileSync(
-      "app/lib/opportunity-access.server.ts",
-      "utf8",
+    const source = readFileSync("app/lib/opportunity-access.server.ts", "utf8");
+    expect(source).toContain(
+      "ORDER BY request.created_at DESC, request.id DESC",
     );
-    expect(source).toContain("ORDER BY request.created_at DESC, request.id DESC");
     expect(source).toContain("LIMIT 1");
   });
 

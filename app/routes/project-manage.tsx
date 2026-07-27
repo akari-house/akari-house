@@ -58,7 +58,7 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
                 <ProjectNeedChips value={project.seeking} compact />
                 {project.opportunityStatus && (
                   <small>
-                    Deal Room review: {" "}
+                    Deal Room review:{" "}
                     {project.opportunityStatus.replaceAll("_", " ")}
                   </small>
                 )}

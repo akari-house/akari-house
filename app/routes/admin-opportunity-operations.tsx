@@ -251,9 +251,15 @@ export async function action({ request, context }: Route.ActionArgs) {
         title: string;
         status: string;
       }>();
-    if (!target) throw new Response("Access request not found.", { status: 404 });
-    if (intent === "approve-access" && !(await isVerifiedInvestorId(db, target.investorUserId)))
-      return { error: "Only a currently verified Investor can receive access." };
+    if (!target)
+      throw new Response("Access request not found.", { status: 404 });
+    if (
+      intent === "approve-access" &&
+      !(await isVerifiedInvestorId(db, target.investorUserId))
+    )
+      return {
+        error: "Only a currently verified Investor can receive access.",
+      };
 
     const status =
       intent === "approve-access"
@@ -332,7 +338,8 @@ export async function action({ request, context }: Route.ActionArgs) {
         title: string;
         updateTitle: string;
       }>();
-    if (!target) throw new Response("Submitted update not found.", { status: 404 });
+    if (!target)
+      throw new Response("Submitted update not found.", { status: 404 });
     const status = intent === "publish-update" ? "published" : "declined";
     await db
       .prepare(
@@ -489,14 +496,18 @@ export default function AdminOpportunityOperations({
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
-      <main id="main-content" className="admin-main opportunity-operations-main">
+      <main
+        id="main-content"
+        className="admin-main opportunity-operations-main"
+      >
         <header className="admin-heading">
           <div>
             <span className="eyebrow">Deal Room operations</span>
             <h1>Control access, communications and review history.</h1>
             <p>
-              Every protected action is server-authorised and written to the AKARI
-              audit record. Access for one opportunity never unlocks another.
+              Every protected action is server-authorised and written to the
+              AKARI audit record. Access for one opportunity never unlocks
+              another.
             </p>
           </div>
           <div className="deal-action-row">
@@ -541,7 +552,8 @@ export default function AdminOpportunityOperations({
                       <p>{item.investorName}</p>
                       <p>{item.reason}</p>
                       <small>
-                        Requested {formatDate(item.createdAt)} · Expires {formatDate(item.expiresAt)}
+                        Requested {formatDate(item.createdAt)} · Expires{" "}
+                        {formatDate(item.expiresAt)}
                       </small>
                       {item.decisionNote && <p>{item.decisionNote}</p>}
                     </div>
@@ -661,7 +673,9 @@ export default function AdminOpportunityOperations({
                   </article>
                 ))
               ) : (
-                <p className="empty-state">No Founder updates require review.</p>
+                <p className="empty-state">
+                  No Founder updates require review.
+                </p>
               )}
             </div>
           </section>
@@ -783,7 +797,10 @@ export default function AdminOpportunityOperations({
           <h2 id="audit-title">Recent sensitive activity</h2>
           <div className="application-list audit-list">
             {loaderData.audits.map((item, index) => (
-              <article className="application-card" key={`${item.createdAt}-${index}`}>
+              <article
+                className="application-card"
+                key={`${item.createdAt}-${index}`}
+              >
                 <div>
                   <span className="chapter">{item.action}</span>
                   <h3>{item.projectTitle || "Opportunity record"}</h3>

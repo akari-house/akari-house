@@ -148,7 +148,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   const verifiedInvestor = await isVerifiedInvestor(db, user);
   const archived = view === "archived";
-  const conditions = [archived ? "ol.status = 'archived'" : "ol.status = 'published'"];
+  const conditions = [
+    archived ? "ol.status = 'archived'" : "ol.status = 'published'",
+  ];
   if (!archived) conditions.push("pr.status = 'published'");
   const values: Array<string | number> = [userId, userId];
 
@@ -173,13 +175,17 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     values.push(filters.traction);
   }
   if (filters.raise === "under_1m")
-    conditions.push("COALESCE(ol.raise_maximum, ol.raise_minimum, 0) < 1000000");
+    conditions.push(
+      "COALESCE(ol.raise_maximum, ol.raise_minimum, 0) < 1000000",
+    );
   if (filters.raise === "1m_5m")
     conditions.push(
       "COALESCE(ol.raise_maximum, ol.raise_minimum, 0) >= 1000000 AND COALESCE(ol.raise_minimum, ol.raise_maximum, 0) <= 5000000",
     );
   if (filters.raise === "5m_plus")
-    conditions.push("COALESCE(ol.raise_maximum, ol.raise_minimum, 0) > 5000000");
+    conditions.push(
+      "COALESCE(ol.raise_maximum, ol.raise_minimum, 0) > 5000000",
+    );
   if (filters.minimum === "under_25k")
     conditions.push("COALESCE(ol.minimum_participation, 0) < 25000");
   if (filters.minimum === "25k_100k")
@@ -516,7 +522,10 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
             </label>
             <label>
               Traction stage
-              <select name="traction" defaultValue={loaderData.filters.traction}>
+              <select
+                name="traction"
+                defaultValue={loaderData.filters.traction}
+              >
                 <option value="">Any traction stage</option>
                 {loaderData.options.tractionStages.map((value) => (
                   <option key={value}>{value}</option>
@@ -525,7 +534,10 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
             </label>
             <label>
               Closing timeline
-              <select name="timeline" defaultValue={loaderData.filters.timeline}>
+              <select
+                name="timeline"
+                defaultValue={loaderData.filters.timeline}
+              >
                 <option value="">Any timeline</option>
                 <option value="30">Within 30 days</option>
                 <option value="60">Within 60 days</option>
@@ -577,7 +589,9 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                     )}
                     <div>
                       <dt>Instrument</dt>
-                      <dd>{opportunity.fundingInstrument.replaceAll("_", " ")}</dd>
+                      <dd>
+                        {opportunity.fundingInstrument.replaceAll("_", " ")}
+                      </dd>
                     </div>
                     {range.length > 0 && (
                       <div>
@@ -633,7 +647,11 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                             name="projectId"
                             value={opportunity.projectId}
                           />
-                          <input type="hidden" name="returnTo" value={returnTo} />
+                          <input
+                            type="hidden"
+                            name="returnTo"
+                            value={returnTo}
+                          />
                           <button
                             className="button button-quiet"
                             name="intent"
@@ -646,7 +664,8 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                   </div>
                   {opportunity.requestStatus && (
                     <small>
-                      Deal Room access: {opportunity.requestStatus.replaceAll("_", " ")}
+                      Deal Room access:{" "}
+                      {opportunity.requestStatus.replaceAll("_", " ")}
                     </small>
                   )}
                 </article>
