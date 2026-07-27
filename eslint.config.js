@@ -9,6 +9,7 @@ export default tseslint.config(
       ".react-router",
       ".wrangler",
       "worker-configuration.d.ts",
+      "scripts/full-product-production-audit.mjs",
     ],
   },
   js.configs.recommended,
