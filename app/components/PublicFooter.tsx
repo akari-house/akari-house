@@ -8,6 +8,7 @@ const footerGroups = [
       { label: "The House", to: "/" },
       { label: "Members", to: "/members" },
       { label: "Connections", to: "/connections" },
+      { label: "Team and partners", to: "/team" },
       { label: "Membership", to: "/membership" },
     ],
   },

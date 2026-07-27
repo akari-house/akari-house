@@ -10,9 +10,11 @@ import { MembershipDesk } from "~/components/membership/MembershipDesk";
 import { SiteHeader } from "~/components/SiteHeader";
 import { PublicFooter } from "~/components/PublicFooter";
 import { ScrollTo } from "~/components/ScrollTo";
+import { PartnerStrip } from "~/components/HouseDirectory";
 import { caseStudies } from "~/data/case-studies";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import { getPublishedHouseDirectory } from "~/lib/house-directory.server";
 
 export const meta: Route.MetaFunction = () => [
   { title: "AKARI House | A private Web3 professional network" },
@@ -35,7 +37,7 @@ export async function optionalHomepageValue<T>(
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
-  const [user, project, event] = await Promise.all([
+  const [user, project, event, directory] = await Promise.all([
     optionalHomepageValue(() => getOptionalUser(request, db)),
     optionalHomepageValue(() =>
       db
@@ -89,11 +91,15 @@ export async function loader({ request, context }: Route.LoaderArgs) {
           registeredCount: number;
         }>(),
     ),
+    optionalHomepageValue(() => getPublishedHouseDirectory(db)),
   ]);
   return {
     user,
     project: project ?? null,
     event: event ?? null,
+    partners: (directory ?? []).filter(
+      (entry) => entry.category === "partner" || entry.category === "provider",
+    ),
   };
 }
 
@@ -222,6 +228,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </div>
           <FeaturedArchiveCarousel />
         </section>
+
+        <PartnerStrip entries={loaderData.partners} />
 
         <MembershipDesk />
 
