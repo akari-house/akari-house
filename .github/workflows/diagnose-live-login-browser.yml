@@ -40,37 +40,47 @@ jobs:
           page.on('pageerror', error => events.push(`pageerror:${error.message}`));
           page.on('requestfailed', request => events.push(`requestfailed:${request.url()}:${request.failure()?.errorText}`));
 
-          const response = await page.goto(`https://akarihouse.com/login?diagnostic=${Date.now()}`, {
-            waitUntil: 'networkidle',
-            timeout: 45000
-          });
+          let response;
+          let navigationError = null;
+          try {
+            response = await page.goto(`https://akarihouse.com/login?diagnostic=${Date.now()}`, {
+              waitUntil: 'domcontentloaded',
+              timeout: 20000
+            });
+            await page.waitForTimeout(4000);
+          } catch (error) {
+            navigationError = error instanceof Error ? error.message : String(error);
+          }
+
           const status = response?.status() ?? 0;
           const headers = response?.headers() ?? {};
-          const title = await page.title();
-          const body = await page.locator('body').innerText();
-          const html = await page.content();
+          const title = await page.title().catch(() => '');
+          const body = await page.locator('body').innerText().catch(() => '');
+          const html = await page.content().catch(() => '');
           const cookies = await context.cookies('https://akarihouse.com');
-          await page.screenshot({ path: 'live-login-browser.png', fullPage: true });
+          await page.screenshot({ path: 'live-login-browser.png', fullPage: true }).catch(() => undefined);
 
           const evidence = {
             status,
             finalUrl: page.url(),
             title,
             headers,
+            navigationError,
             body,
             containsErrorBoundary: body.toLowerCase().includes('the lantern went out unexpectedly'),
             containsLoginHeading: body.includes('Return to the House'),
-            emailFields: await page.locator('input[name="email"]').count(),
-            passwordFields: await page.locator('input[name="password"]').count(),
+            emailFields: await page.locator('input[name="email"]').count().catch(() => 0),
+            passwordFields: await page.locator('input[name="password"]').count().catch(() => 0),
             cookies,
             events,
             htmlStart: html.slice(0, 3000)
           };
           fs.writeFileSync('live-login-browser.json', JSON.stringify(evidence, null, 2));
-          console.log(JSON.stringify(evidence, null, 2));
+          console.log('AKARI_LOGIN_EVIDENCE=' + JSON.stringify(evidence));
           await browser.close();
 
           if (
+            navigationError ||
             status !== 200 ||
             evidence.containsErrorBoundary ||
             !evidence.containsLoginHeading ||
@@ -88,3 +98,4 @@ jobs:
             live-login-browser.json
             live-login-browser.png
           retention-days: 7
+          if-no-files-found: warn
