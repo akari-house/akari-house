@@ -3,9 +3,7 @@ import process from "node:process";
 import AxeBuilder from "@axe-core/playwright";
 import { chromium, firefox, webkit } from "@playwright/test";
 
-const baseUrl = new URL(
-  process.env.PRODUCTION_URL || "https://akarihouse.com",
-);
+const baseUrl = new URL(process.env.PRODUCTION_URL || "https://akarihouse.com");
 const outputDirectory = process.env.AUDIT_DIR || "audit-results";
 const screenshotDirectory = `${outputDirectory}/screenshots`;
 const genericErrorCopy = "the lantern went out unexpectedly";
@@ -219,7 +217,10 @@ for (const browserName of Object.keys(browserTypes)) {
           }
           const loadMilliseconds = Date.now() - startedAt;
 
-          const bodyText = await page.locator("body").innerText().catch(() => "");
+          const bodyText = await page
+            .locator("body")
+            .innerText()
+            .catch(() => "");
           const normalizedBody = bodyText.toLowerCase();
           const layout = await page
             .evaluate(() => ({
@@ -229,8 +230,9 @@ for (const browserName of Object.keys(browserTypes)) {
               viewportWidth: window.innerWidth,
               h1Count: document.querySelectorAll("h1").length,
               mainLandmarkCount: document.querySelectorAll("main").length,
-              navigationLandmarkCount:
-                document.querySelectorAll("nav,[role='navigation']").length,
+              navigationLandmarkCount: document.querySelectorAll(
+                "nav,[role='navigation']",
+              ).length,
               activeElement: document.activeElement?.tagName || null,
               resources: performance
                 .getEntriesByType("resource")
@@ -252,10 +254,12 @@ for (const browserName of Object.keys(browserTypes)) {
               resources: [],
             }));
 
-          const largeFirstPartyResources = layout.resources.filter((resource) => {
-            if (!sameOrigin(resource.name)) return false;
-            return resource.transferSize > 1_500_000;
-          });
+          const largeFirstPartyResources = layout.resources.filter(
+            (resource) => {
+              if (!sameOrigin(resource.name)) return false;
+              return resource.transferSize > 1_500_000;
+            },
+          );
 
           const headers = navigationResponse
             ? await navigationResponse.allHeaders()
@@ -363,14 +367,19 @@ try {
   try {
     for (const route of protectedRoutes) {
       const page = await context.newPage();
-      const response = await page.goto(new URL(route.path, baseUrl).toString(), {
-        waitUntil: "domcontentloaded",
-        timeout: 30_000,
-      });
+      const response = await page.goto(
+        new URL(route.path, baseUrl).toString(),
+        {
+          waitUntil: "domcontentloaded",
+          timeout: 30_000,
+        },
+      );
       const finalUrl = page.url();
       const passed =
         finalUrl.includes("/login") &&
-        !((await page.locator("body").innerText()).toLowerCase().includes(genericErrorCopy));
+        !(await page.locator("body").innerText())
+          .toLowerCase()
+          .includes(genericErrorCopy);
       authResults.push({
         route,
         initialStatus: response?.status() ?? 0,
@@ -395,8 +404,7 @@ const severityCounts = results.reduce(
   { P0: 0, P1: 0, P2: 0, PASS: 0 },
 );
 for (const result of authResults) {
-  severityCounts[result.severity] =
-    (severityCounts[result.severity] || 0) + 1;
+  severityCounts[result.severity] = (severityCounts[result.severity] || 0) + 1;
 }
 
 const uniqueAccessibilityIssues = new Map();
@@ -492,4 +500,6 @@ await writeFile(
   markdown,
 );
 
-process.stdout.write(`${JSON.stringify({ severityCounts, accessibilitySummary }, null, 2)}\n`);
+process.stdout.write(
+  `${JSON.stringify({ severityCounts, accessibilitySummary }, null, 2)}\n`,
+);
