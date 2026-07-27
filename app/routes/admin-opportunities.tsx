@@ -4,6 +4,7 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { requireAdmin, requireAdminScope } from "~/lib/membership.server";
 import { recordOpportunityAudit } from "~/lib/opportunity-access.server";
+import { publishSubmittedOpportunitySections } from "~/lib/opportunity-sections.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 
@@ -182,6 +183,13 @@ export async function action({ request, context }: Route.ActionArgs) {
             : `/projects/${listing.slug}/opportunity`,
         ),
     ]);
+    if (nextStatus === "published")
+      await publishSubmittedOpportunitySections(
+        db,
+        projectId,
+        admin.id,
+        decisionNote,
+      );
     await recordOpportunityAudit(
       db,
       admin.id,
@@ -322,9 +330,17 @@ export default function AdminOpportunities({
               be bypassed by selecting a role or changing a URL.
             </p>
           </div>
-          <Link className="button button-quiet" to="/admin/operations">
-            Operations centre
-          </Link>
+          <div className="deal-action-row">
+            <Link
+              className="button button-primary"
+              to="/admin/opportunities/operations"
+            >
+              Deal Room operations
+            </Link>
+            <Link className="button button-quiet" to="/admin/operations">
+              Operations centre
+            </Link>
+          </div>
         </header>
         {actionData?.error && (
           <p className="form-error" role="alert">
