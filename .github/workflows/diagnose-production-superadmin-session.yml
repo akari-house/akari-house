@@ -1,0 +1,171 @@
+name: Diagnose Production Superadmin Session
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PRODUCTION_URL: https://akarihouse.com
+      OWNER_EMAIL: mmxinthi@gmail.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Generate production D1 configuration
+        run: |
+          set -euo pipefail
+          npx wrangler d1 list --json > d1-databases.json
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          const payload = JSON.parse(fs.readFileSync("d1-databases.json", "utf8"));
+          const databases = Array.isArray(payload) ? payload : payload.result ?? [];
+          const database = databases.find((entry) =>
+            [entry.name, entry.database_name].includes("akari-house-db"),
+          );
+          const databaseId = database?.uuid ?? database?.database_id ?? database?.id;
+          if (!databaseId) throw new Error("Production D1 database was not found.");
+          fs.writeFileSync(
+            "wrangler.production.jsonc",
+            `${JSON.stringify({
+              name: "akari-house",
+              main: "./worker/index.ts",
+              compatibility_date: "2026-07-23",
+              compatibility_flags: ["nodejs_compat", "global_fetch_strictly_public"],
+              d1_databases: [
+                {
+                  binding: "DB",
+                  database_name: "akari-house-db",
+                  database_id: databaseId,
+                  migrations_dir: "migrations",
+                },
+              ],
+            }, null, 2)}\n`,
+          );
+          NODE
+          rm -f d1-databases.json
+      - name: Inspect the canonical account graph
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.production.jsonc --json --command \
+            "SELECT u.id, u.username, u.status, u.email_verified_at,
+              (SELECT COUNT(*) FROM profiles p WHERE p.user_id = u.id) AS profile_count,
+              (SELECT COUNT(*) FROM user_roles r WHERE r.user_id = u.id) AS role_count,
+              (SELECT COUNT(*) FROM membership_applications ma WHERE ma.user_id = u.id AND ma.status = 'approved') AS approved_membership_count,
+              (SELECT access_level FROM admin_users au WHERE au.user_id = u.id) AS admin_access,
+              (SELECT COUNT(*) FROM sessions s WHERE s.user_id = u.id AND s.expires_at > datetime('now')) AS active_session_count
+             FROM users u WHERE lower(u.email) = lower('${OWNER_EMAIL}')" > account-raw.json
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          const payload = JSON.parse(fs.readFileSync("account-raw.json", "utf8"));
+          const containers = Array.isArray(payload) ? payload : [payload];
+          const row = containers.flatMap((entry) => entry.results ?? entry.result?.results ?? [])[0];
+          if (!row?.id) throw new Error("Canonical owner account was not found.");
+          fs.writeFileSync("owner-user-id.txt", row.id);
+          fs.writeFileSync(
+            "account-summary.json",
+            `${JSON.stringify({
+              accountExists: true,
+              usernamePresent: Boolean(row.username),
+              status: row.status,
+              emailVerified: Boolean(row.email_verified_at),
+              profileCount: Number(row.profile_count),
+              roleCount: Number(row.role_count),
+              approvedMembershipCount: Number(row.approved_membership_count),
+              adminAccess: row.admin_access,
+              activeSessionCountBeforeAudit: Number(row.active_session_count),
+            }, null, 2)}\n`,
+          );
+          console.log(fs.readFileSync("account-summary.json", "utf8"));
+          NODE
+          rm -f account-raw.json
+      - name: Create a temporary production session
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import crypto from "node:crypto";
+          import fs from "node:fs";
+          const token = crypto.randomBytes(48).toString("hex");
+          const tokenHash = crypto.createHash("sha256").update(token).digest("base64");
+          const sessionId = crypto.randomUUID();
+          const userId = fs.readFileSync("owner-user-id.txt", "utf8").trim();
+          const quote = (value) => `'${String(value).replaceAll("'", "''")}'`;
+          fs.writeFileSync("audit-session-token.txt", token);
+          fs.writeFileSync("audit-session-id.txt", sessionId);
+          fs.writeFileSync(
+            "insert-audit-session.sql",
+            `INSERT INTO sessions (id, user_id, token_hash, expires_at) VALUES (${quote(sessionId)}, ${quote(userId)}, ${quote(tokenHash)}, datetime('now', '+15 minutes'));\n`,
+          );
+          NODE
+          npx wrangler d1 execute DB --remote --config wrangler.production.jsonc --file insert-audit-session.sql >/dev/null
+          rm -f insert-audit-session.sql owner-user-id.txt
+      - name: Exercise authenticated production destinations
+        run: |
+          set -euo pipefail
+          token=$(cat audit-session-token.txt)
+          mkdir -p production-session-diagnostic
+          for route in app admin/launch-gate admin/operations; do
+            key=$(echo "$route" | tr '/' '-')
+            curl -sS --max-time 30 \
+              -D "production-session-diagnostic/${key}.headers" \
+              -o "production-session-diagnostic/${key}.html" \
+              -w '%{http_code}' \
+              -H "Cookie: akari_session=${token}" \
+              "${PRODUCTION_URL}/${route}" > "production-session-diagnostic/${key}.status"
+          done
+          node --input-type=module <<'NODE'
+          import fs from "node:fs";
+          const routes = ["app", "admin-launch-gate", "admin-operations"];
+          const checks = routes.map((key) => {
+            const status = Number(fs.readFileSync(`production-session-diagnostic/${key}.status`, "utf8"));
+            const headers = fs.readFileSync(`production-session-diagnostic/${key}.headers`, "utf8");
+            const body = fs.readFileSync(`production-session-diagnostic/${key}.html`, "utf8");
+            const location = headers.match(/^location:\s*(.+)$/im)?.[1]?.trim() ?? null;
+            return {
+              key,
+              status,
+              location,
+              genericErrorBoundary: body.toLowerCase().includes("the lantern went out unexpectedly"),
+              loginForm: body.includes("Return to the House") && body.includes('name="password"'),
+              akariShell: body.toLowerCase().includes("akari"),
+              bodyPreview: body.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 500),
+            };
+          });
+          fs.writeFileSync(
+            "production-session-diagnostic/summary.json",
+            `${JSON.stringify({ checks }, null, 2)}\n`,
+          );
+          console.log(JSON.stringify({ checks }, null, 2));
+          NODE
+          rm -f audit-session-token.txt
+      - name: Remove the temporary production session
+        if: always()
+        run: |
+          set +e
+          if [ -f audit-session-id.txt ] && [ -f wrangler.production.jsonc ]; then
+            session_id=$(cat audit-session-id.txt | sed "s/'/''/g")
+            npx wrangler d1 execute DB --remote --config wrangler.production.jsonc --command \
+              "DELETE FROM sessions WHERE id = '${session_id}'" >/dev/null
+          fi
+          rm -f audit-session-id.txt audit-session-token.txt
+      - name: Upload sanitised diagnostic evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-superadmin-session-diagnostic-${{ github.sha }}
+          path: |
+            account-summary.json
+            production-session-diagnostic
+          retention-days: 7
+          if-no-files-found: error
