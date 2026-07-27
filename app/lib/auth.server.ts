@@ -5,6 +5,17 @@ import { sha256 } from "./security.server";
 const cookieName = "akari_session";
 const sessionLifetimeSeconds = 60 * 60 * 24 * 7;
 
+type AuthQueryDatabase = Pick<D1Database, "prepare">;
+
+function primaryAuthDatabase(db: D1Database): AuthQueryDatabase {
+  const sessionCapable = db as D1Database & {
+    withSession?: (constraint: "first-primary") => AuthQueryDatabase;
+  };
+  return typeof sessionCapable.withSession === "function"
+    ? sessionCapable.withSession("first-primary")
+    : db;
+}
+
 function parseCookie(request: Request) {
   const cookies = request.headers.get("Cookie") ?? "";
   for (const part of cookies.split(";")) {
@@ -29,7 +40,10 @@ export function clearSessionCookie(request: Request) {
   return `${cookieName}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${secure}`;
 }
 
-async function loadRoles(db: D1Database, userId: string): Promise<Role[]> {
+async function loadRoles(
+  db: AuthQueryDatabase,
+  userId: string,
+): Promise<Role[]> {
   const result = await db
     .prepare("SELECT role FROM user_roles WHERE user_id = ? ORDER BY role")
     .bind(userId)
@@ -45,17 +59,18 @@ export async function getOptionalUser(
   if (!token) return null;
 
   try {
+    const authDb = primaryAuthDatabase(db);
     const tokenHash = await sha256(token);
-    const row = await db
+    const row = await authDb
       .prepare(
         `SELECT u.id, u.username, u.status,
-                p.display_name AS displayName
-       FROM sessions s
-       JOIN users u ON u.id = s.user_id
-       JOIN profiles p ON p.user_id = u.id
-       WHERE s.token_hash = ? AND s.expires_at > datetime('now')
-         AND u.status IN ('active', 'restricted')
-         AND u.email_verified_at IS NOT NULL`,
+                COALESCE(p.display_name, u.username) AS displayName
+         FROM sessions s
+         JOIN users u ON u.id = s.user_id
+         LEFT JOIN profiles p ON p.user_id = u.id
+         WHERE s.token_hash = ? AND s.expires_at > datetime('now')
+           AND u.status IN ('active', 'restricted')
+           AND u.email_verified_at IS NOT NULL`,
       )
       .bind(tokenHash)
       .first<{
@@ -69,7 +84,7 @@ export async function getOptionalUser(
     return {
       ...identity,
       accessTier: status === "active" ? "member" : "applicant",
-      roles: await loadRoles(db, row.id),
+      roles: await loadRoles(authDb, row.id),
     };
   } catch (error) {
     console.error(
@@ -104,7 +119,7 @@ export async function createSession(
   const token = `${crypto.randomUUID()}${crypto.randomUUID()}`;
   const tokenHash = await sha256(token);
   const sessionId = crypto.randomUUID();
-  await db
+  await primaryAuthDatabase(db)
     .prepare(
       "INSERT INTO sessions (id, user_id, token_hash, expires_at) VALUES (?, ?, ?, datetime('now', '+7 days'))",
     )
@@ -116,7 +131,7 @@ export async function createSession(
 export async function destroySession(request: Request, db: D1Database) {
   const token = parseCookie(request);
   if (token)
-    await db
+    await primaryAuthDatabase(db)
       .prepare("DELETE FROM sessions WHERE token_hash = ?")
       .bind(await sha256(token))
       .run();
