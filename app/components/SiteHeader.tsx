@@ -11,6 +11,7 @@ const links = [
   ["Campaigns", "/campaigns"],
   ["Events", "/events"],
   ["Archive", "/archive"],
+  ["Team", "/team"],
   ["Membership", "/membership"],
 ];
 
