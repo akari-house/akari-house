@@ -67,7 +67,9 @@ async function requireLoginEdgeFallback(init = {}) {
   const location = response.headers.get("location") || "";
   const destination = new URL(location, baseUrl);
   if (destination.pathname !== "/signin")
-    throw new Error(`Login redirected to ${destination.pathname || "no path"}.`);
+    throw new Error(
+      `Login redirected to ${destination.pathname || "no path"}.`,
+    );
   if (destination.searchParams.get("returnTo") !== "/deals")
     throw new Error("Login fallback did not preserve returnTo.");
   if (response.headers.get("x-akari-login-fallback") !== "signin-v1")
@@ -129,8 +131,10 @@ await record(
   "Login uses the versioned edge fallback",
   () => requireLoginEdgeFallback(),
 );
-await record("login_form", "Sign in renders the actual authentication form", () =>
-  requireLoginForm(),
+await record(
+  "login_form",
+  "Sign in renders the actual authentication form",
+  () => requireLoginForm(),
 );
 
 const sessionFaultProfiles = [
