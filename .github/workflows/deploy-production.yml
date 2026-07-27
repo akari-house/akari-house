@@ -42,6 +42,7 @@ jobs:
       PUBLIC_WORKER_URL: https://akari-house.spacematesxyz.workers.dev
       PRODUCTION_URL: https://akarihouse.com
       EXPECTED_RELEASE: launch-completion-2026-07-26
+      OWNER_EMAIL: mmxinthi@gmail.com
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -116,6 +117,10 @@ jobs:
             "wrangler.production.jsonc",
             `${JSON.stringify(config, null, 2)}\n`,
           );
+          fs.appendFileSync(
+            process.env.GITHUB_ENV,
+            `PRODUCTION_DB_ID=${databaseId}\n`,
+          );
           NODE
           rm -f d1-databases.json
       - name: Build production Worker and assets
@@ -128,10 +133,10 @@ jobs:
           node -e 'const fs=require("fs"); const value=JSON.parse(fs.readFileSync(".wrangler/deploy/config.json","utf8")); if(!value.configPath) process.exit(1); console.log("Generated deployment configuration is ready.")'
       - name: Apply production migrations
         run: npx wrangler d1 migrations apply DB --remote --config wrangler.production.jsonc
-      - name: Deploy production Worker
+      - name: Deploy production Worker with explicit production bindings
         run: |
           set +e
-          npx wrangler deploy --keep-vars 2>&1 | tee production-deploy.log
+          npx wrangler deploy --config wrangler.production.jsonc --keep-vars 2>&1 | tee production-deploy.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
             tail -n 80 production-deploy.log > production-deploy-error.log
@@ -157,6 +162,83 @@ jobs:
           done
           echo "The Worker deployment did not return the expected public release."
           exit 1
+      - name: Create short-lived authenticated production smoke session
+        run: |
+          set -euo pipefail
+          npx wrangler d1 execute DB --remote --config wrangler.production.jsonc --json --command \
+            "SELECT id FROM users WHERE lower(email) = lower('${OWNER_EMAIL}')" > owner-account.json
+          node --input-type=module <<'NODE'
+          import crypto from "node:crypto";
+          import fs from "node:fs";
+
+          const payload = JSON.parse(fs.readFileSync("owner-account.json", "utf8"));
+          const containers = Array.isArray(payload) ? payload : [payload];
+          const row = containers.flatMap(
+            (entry) => entry.results ?? entry.result?.results ?? [],
+          )[0];
+          if (!row?.id) throw new Error("Canonical owner account was not found.");
+
+          const token = crypto.randomBytes(48).toString("hex");
+          const tokenHash = crypto
+            .createHash("sha256")
+            .update(token)
+            .digest("base64");
+          const sessionId = crypto.randomUUID();
+          const quote = (value) =>
+            `'${String(value).replaceAll("'", "''")}'`;
+
+          fs.writeFileSync("production-smoke-token.txt", token);
+          fs.writeFileSync("production-smoke-session-id.txt", sessionId);
+          fs.writeFileSync(
+            "production-smoke-session.sql",
+            `INSERT INTO sessions (id, user_id, token_hash, expires_at) VALUES (${quote(sessionId)}, ${quote(row.id)}, ${quote(tokenHash)}, datetime('now', '+15 minutes'));\n`,
+          );
+          NODE
+          rm -f owner-account.json
+          npx wrangler d1 execute DB --remote --config wrangler.production.jsonc --file production-smoke-session.sql >/dev/null
+          rm -f production-smoke-session.sql
+      - name: Prove member dashboard and Superadmin access on the custom domain
+        run: |
+          set -euo pipefail
+          token=$(cat production-smoke-token.txt)
+          for route in app admin/launch-gate admin/operations; do
+            key=$(echo "$route" | tr '/' '-')
+            status=$(curl -sS --max-time 30 \
+              -D "${key}.headers" \
+              -o "${key}.html" \
+              -w '%{http_code}' \
+              -H "Cookie: akari_session=${token}" \
+              "${PRODUCTION_URL}/${route}")
+            if [ "$status" != "200" ]; then
+              echo "Authenticated /${route} returned HTTP ${status}."
+              sed -n '1,30p' "${key}.headers"
+              exit 1
+            fi
+            if grep -qi 'the lantern went out unexpectedly' "${key}.html"; then
+              echo "Authenticated /${route} rendered the generic AKARI error boundary."
+              exit 1
+            fi
+            if grep -q 'name="password"' "${key}.html"; then
+              echo "Authenticated /${route} rendered the login form."
+              exit 1
+            fi
+            if ! grep -qi 'akari' "${key}.html"; then
+              echo "Authenticated /${route} did not render the AKARI product."
+              exit 1
+            fi
+          done
+          echo "Authenticated production dashboard and Superadmin routes passed."
+          rm -f -- *.headers *.html production-smoke-token.txt
+      - name: Remove short-lived authenticated smoke session
+        if: always()
+        run: |
+          set +e
+          if [ -f production-smoke-session-id.txt ] && [ -f wrangler.production.jsonc ]; then
+            session_id=$(sed "s/'/''/g" production-smoke-session-id.txt)
+            npx wrangler d1 execute DB --remote --config wrangler.production.jsonc --command \
+              "DELETE FROM sessions WHERE id = '${session_id}'" >/dev/null
+          fi
+          rm -f production-smoke-session-id.txt production-smoke-token.txt
       - name: Run public production audit
         run: node scripts/production-public-audit.mjs
       - name: Persist production audit in D1
@@ -195,7 +277,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment 31 --repo "$GITHUB_REPOSITORY" --body "✅ Public deployment and custom-domain audit succeeded for commit \`${GITHUB_SHA}\`. Live product: ${PRODUCTION_URL}. Audit evidence was persisted in D1 and uploaded as a 90-day workflow artifact."
+          gh issue comment 31 --repo "$GITHUB_REPOSITORY" --body "✅ Public deployment, authenticated Superadmin smoke and custom-domain audit succeeded for commit \`${GITHUB_SHA}\`. Live product: ${PRODUCTION_URL}. Audit evidence was persisted in D1 and uploaded as a 90-day workflow artifact."
       - name: Record deployment failure
         if: failure()
         env:
