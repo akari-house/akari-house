@@ -1,7 +1,7 @@
 import { createSession } from "./auth.server";
 import {
   publicLoginFallbackResponse,
-  publicLoginRelease,
+  publicLoginSuccessResponse,
 } from "./public-login-fallback.server";
 import { consumeAuthLimit } from "./rate-limit.server";
 import { assertSameOrigin, verifyPassword } from "./security.server";
@@ -249,17 +249,11 @@ export async function handlePublicLoginRequest(
       console.error("Non-blocking onboarding marker update failed.", error);
     }
 
-    return new Response(null, {
-      status: 303,
-      headers: {
-        Location: safeReturnTo(request),
-        "Set-Cookie": cookie,
-        "Cache-Control": "no-store",
-        "X-AKARI-Login-Release": publicLoginRelease,
-        "X-AKARI-Login-Result": "success",
-        "X-AKARI-Login-Stage": "complete",
-      },
-    });
+    return publicLoginSuccessResponse(
+      request,
+      cookie,
+      safeReturnTo(request),
+    );
   } catch (error) {
     console.error("Unexpected public login failure.", error);
     return loginResponse(
