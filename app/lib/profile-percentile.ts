@@ -1,4 +1,5 @@
-export type SignalSource = "official_api" | "partner_verified" | "member_reported" | "unavailable";
+export type SignalSource =
+  "official_api" | "partner_verified" | "member_reported" | "unavailable";
 
 export type MemberSignals = {
   sorsaScore: number | null;
@@ -19,7 +20,9 @@ export function confidenceFor(source: SignalSource) {
 
 function rank(value: number | null, population: Array<number | null>) {
   if (value === null || !Number.isFinite(value)) return null;
-  const valid = population.filter((item): item is number => item !== null && Number.isFinite(item));
+  const valid = population.filter(
+    (item): item is number => item !== null && Number.isFinite(item),
+  );
   if (valid.length < 3) return null;
   const below = valid.filter((item) => item < value).length;
   const equal = valid.filter((item) => item === value).length;
@@ -33,17 +36,26 @@ export function calculateAkariPercentile(
   const inputs = [
     {
       key: "sorsaScore" as const,
-      rank: rank(member.sorsaScore, population.map((item) => item.sorsaScore)),
+      rank: rank(
+        member.sorsaScore,
+        population.map((item) => item.sorsaScore),
+      ),
       confidence: confidenceFor(member.sorsaSource),
     },
     {
       key: "xScore" as const,
-      rank: rank(member.xScore, population.map((item) => item.xScore)),
+      rank: rank(
+        member.xScore,
+        population.map((item) => item.xScore),
+      ),
       confidence: confidenceFor(member.xScoreSource),
     },
     {
       key: "following" as const,
-      rank: rank(member.following, population.map((item) => item.following)),
+      rank: rank(
+        member.following,
+        population.map((item) => item.following),
+      ),
       confidence: confidenceFor(member.followingSource),
     },
   ].filter((item) => item.rank !== null && item.confidence > 0);
@@ -63,16 +75,13 @@ export function calculateAkariPercentile(
       0,
     ) / denominator;
   const verifiedWeight = inputs.reduce(
-    (sum, item) =>
-      sum + weights[item.key] * (item.confidence === 1 ? 1 : 0),
+    (sum, item) => sum + weights[item.key] * (item.confidence === 1 ? 1 : 0),
     0,
   );
 
   return {
     topPercent: Math.max(1, Math.min(99, Math.round((1 - score) * 100))),
     confidence:
-      verifiedWeight >= 0.6
-        ? ("verified" as const)
-        : ("provisional" as const),
+      verifiedWeight >= 0.6 ? ("verified" as const) : ("provisional" as const),
   };
 }
