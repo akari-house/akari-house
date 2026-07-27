@@ -79,6 +79,7 @@ export default [
   route("media/profile/:username", "routes/profile-photo.ts"),
   route("privacy", "routes/legal.tsx"),
   route("terms", "routes/terms.tsx"),
-  route("contact", "routes/contact.tsx"),
   route("community-guidelines", "routes/community-guidelines.tsx"),
+  route("contact", "routes/contact.tsx"),
+  route("admin/contact", "routes/admin-contact.tsx"),
 ] satisfies RouteConfig;
