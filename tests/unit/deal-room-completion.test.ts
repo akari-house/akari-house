@@ -10,7 +10,9 @@ describe("Investor and Angel Deal Room completion", () => {
     const catalogue = source("app/routes/deals.tsx");
     const room = source("app/routes/deal-room.tsx");
     expect(catalogue).toContain("FROM opportunity_listings ol");
-    expect(catalogue).toContain("AKARI does not populate this area with placeholder deals");
+    expect(catalogue).toContain(
+      "AKARI does not populate this area with placeholder deals",
+    );
     expect(room).toContain("The secure Deal Room is temporarily unavailable");
     expect(room).not.toContain("throw redirect(`/projects/${project.slug}`)");
   });
@@ -41,7 +43,9 @@ describe("Investor and Angel Deal Room completion", () => {
     expect(admin).toContain("UPDATE data_room_requests");
     expect(admin).toContain("AND status IN ('pending', 'approved')");
     expect(admin).toContain("UPDATE document_access_grants");
-    expect(admin).toContain("WHERE investor_user_id = ? AND revoked_at IS NULL");
+    expect(admin).toContain(
+      "WHERE investor_user_id = ? AND revoked_at IS NULL",
+    );
   });
 
   it("registers Founder and scoped administrator operations in the real router", () => {
@@ -67,6 +71,8 @@ describe("Investor and Angel Deal Room completion", () => {
       source("app/routes/opportunity-manage.tsx"),
       source("app/routes/admin-opportunity-operations.tsx"),
     ].join("\n");
-    expect(publicSurface).not.toMatch(/reference platform|copied from|inspired by/i);
+    expect(publicSurface).not.toMatch(
+      /reference platform|copied from|inspired by/i,
+    );
   });
 });
