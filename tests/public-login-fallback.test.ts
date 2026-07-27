@@ -1,23 +1,21 @@
 import { describe, expect, it } from "vitest";
-import {
-  publicLoginFallbackResponse,
-  shouldServePublicLoginFallback,
-} from "~/lib/public-login-fallback.server";
+import { isPublicLoginRequest } from "~/lib/public-login-handler.server";
+import { publicLoginFallbackResponse } from "~/lib/public-login-fallback.server";
 
-describe("Worker-level public login fallback", () => {
-  it("intercepts only GET requests for /login", () => {
+describe("Worker-level public login", () => {
+  it("routes both GET and POST /login requests through the Worker handler", () => {
     expect(
-      shouldServePublicLoginFallback(
+      isPublicLoginRequest(
         new Request("https://akarihouse.com/login", { method: "GET" }),
       ),
     ).toBe(true);
     expect(
-      shouldServePublicLoginFallback(
+      isPublicLoginRequest(
         new Request("https://akarihouse.com/login", { method: "POST" }),
       ),
-    ).toBe(false);
+    ).toBe(true);
     expect(
-      shouldServePublicLoginFallback(
+      isPublicLoginRequest(
         new Request("https://akarihouse.com/register", { method: "GET" }),
       ),
     ).toBe(false);
@@ -32,6 +30,7 @@ describe("Worker-level public login fallback", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("x-akari-login-fallback")).toBe("worker");
+    expect(response.headers.get("x-akari-login-result")).toBe("form");
     expect(response.headers.get("cache-control")).toContain("no-store");
     expect(body).toContain("Return to the House");
     expect(body).toContain('name="email"');
@@ -39,5 +38,29 @@ describe("Worker-level public login fallback", () => {
     expect(body).toContain('data-sitekey="test-site-key"');
     expect(body).toContain('action="/login?returnTo=%2Fapp"');
     expect(body).not.toContain("The lantern went out unexpectedly");
+  });
+
+  it("shows a visible and escaped authentication error", async () => {
+    const response = publicLoginFallbackResponse(
+      new Request("https://akarihouse.com/login"),
+      "test-site-key",
+      {
+        error: 'The email or password was not recognised. <retry>',
+        email: 'member+test@example.com" autofocus',
+        status: 401,
+      },
+    );
+    const body = await response.text();
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get("x-akari-login-result")).toBe("error");
+    expect(body).toContain('role="alert"');
+    expect(body).toContain(
+      "The email or password was not recognised. &lt;retry&gt;",
+    );
+    expect(body).toContain(
+      'value="member+test@example.com&quot; autofocus"',
+    );
+    expect(body).not.toContain("<retry>");
   });
 });
