@@ -8,8 +8,10 @@ import {
   isVerifiedInvestor,
   opportunityAccessState,
   recordOpportunityAudit,
+  recordOpportunityView,
   type OpportunityAccessState,
 } from "~/lib/opportunity-access.server";
+import { hasAdminScope } from "~/lib/membership.server";
 import { isOpportunitySchemaUnavailable } from "~/lib/opportunity-schema.server";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
 import { assertSameOrigin } from "~/lib/security.server";
@@ -158,14 +160,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     .first<PreviewRow>();
   if (!preview) throw new Response("Opportunity not found.", { status: 404 });
 
-  const admin = user
-    ? Boolean(
-        await db
-          .prepare("SELECT 1 FROM admin_users WHERE user_id = ?")
-          .bind(user.id)
-          .first(),
-      )
-    : false;
+  const admin = user ? await hasAdminScope(db, user.id, "projects") : false;
   const founder = user?.id === preview.founderUserId;
   const investorState =
     founder || admin
@@ -262,16 +257,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
             .all<QuestionRow>();
     questions = questionResult.results;
 
-    await db
-      .prepare(
-        `INSERT INTO opportunity_user_states
-           (project_id, user_id, last_viewed_at, updated_at)
-         VALUES (?, ?, datetime('now'), datetime('now'))
-         ON CONFLICT(project_id, user_id) DO UPDATE SET
-           last_viewed_at = datetime('now'), updated_at = datetime('now')`,
-      )
-      .bind(preview.projectId, user.id)
-      .run();
+    await recordOpportunityView(db, user.id, preview.projectId);
   }
 
   const [userState, ownInterest, introduction] = user
@@ -362,12 +348,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const intent = formText(form.get("intent"));
   const verifiedInvestor = await isVerifiedInvestor(db, user);
   const isFounder = user.id === listing.founderUserId;
-  const isAdmin = Boolean(
-    await db
-      .prepare("SELECT 1 FROM admin_users WHERE user_id = ?")
-      .bind(user.id)
-      .first(),
-  );
+  const isAdmin =
+    (await hasAdminScope(db, user.id, "projects")) ||
+    (await hasAdminScope(db, user.id, "moderation"));
 
   if (["save", "pass", "clear-state"].includes(intent)) {
     if (!verifiedInvestor)
@@ -549,14 +532,28 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       return {
         error: "Add an introduction note between 10 and 800 characters.",
       };
-    await db
-      .prepare(
-        `INSERT INTO introduction_requests
-           (id, project_id, investor_user_id, message, status, updated_at)
-         VALUES (?, ?, ?, ?, 'pending', datetime('now'))`,
-      )
-      .bind(crypto.randomUUID(), listing.projectId, user.id, message)
-      .run();
+    await db.batch([
+      db
+        .prepare(
+          `INSERT INTO introduction_requests
+             (id, project_id, investor_user_id, message, status, updated_at)
+           VALUES (?, ?, ?, ?, 'pending', datetime('now'))`,
+        )
+        .bind(crypto.randomUUID(), listing.projectId, user.id, message),
+      db
+        .prepare(
+          `INSERT INTO notifications
+             (id, user_id, kind, title, body, action_url)
+           VALUES (?, ?, 'opportunity.introduction_requested',
+                   'Founder introduction requested', ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          listing.founderUserId,
+          `${user.displayName} requested an introduction for ${listing.title}.`,
+          `/deals/${params.dealSlug}`,
+        ),
+    ]);
     await recordOpportunityAudit(
       db,
       user.id,
@@ -576,14 +573,28 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     const question = formText(form.get("question")).trim();
     if (question.length < 10 || question.length > 1200)
       return { error: "Add a question between 10 and 1,200 characters." };
-    await db
-      .prepare(
-        `INSERT INTO opportunity_questions
-         (id, project_id, asked_by, question, status)
-         VALUES (?, ?, ?, ?, 'submitted')`,
-      )
-      .bind(crypto.randomUUID(), listing.projectId, user.id, question)
-      .run();
+    await db.batch([
+      db
+        .prepare(
+          `INSERT INTO opportunity_questions
+           (id, project_id, asked_by, question, status)
+           VALUES (?, ?, ?, ?, 'submitted')`,
+        )
+        .bind(crypto.randomUUID(), listing.projectId, user.id, question),
+      db
+        .prepare(
+          `INSERT INTO notifications
+             (id, user_id, kind, title, body, action_url)
+           VALUES (?, ?, 'opportunity.question_submitted',
+                   'New Investor question', ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          listing.founderUserId,
+          `${user.displayName} submitted a question about ${listing.title}.`,
+          `/deals/${params.dealSlug}`,
+        ),
+    ]);
     await recordOpportunityAudit(
       db,
       user.id,
@@ -602,6 +613,16 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     const answer = formText(form.get("answer")).trim();
     if (answer.length < 10 || answer.length > 2400)
       return { error: "Add an answer between 10 and 2,400 characters." };
+    const questionOwner = await db
+      .prepare(
+        `SELECT asked_by AS askedBy
+         FROM opportunity_questions
+         WHERE id = ? AND project_id = ? AND status = 'submitted'`,
+      )
+      .bind(questionId, listing.projectId)
+      .first<{ askedBy: string }>();
+    if (!questionOwner)
+      throw new Response("Question not found.", { status: 404 });
     const updated = await db
       .prepare(
         `UPDATE opportunity_questions
@@ -613,6 +634,20 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       .run();
     if (!updated.meta.changes)
       throw new Response("Question not found.", { status: 404 });
+    await db
+      .prepare(
+        `INSERT INTO notifications
+           (id, user_id, kind, title, body, action_url)
+         VALUES (?, ?, 'opportunity.question_answered',
+                 'Your Investor question was answered', ?, ?)`,
+      )
+      .bind(
+        crypto.randomUUID(),
+        questionOwner.askedBy,
+        `A response is available for your question about ${listing.title}.`,
+        `/deals/${params.dealSlug}`,
+      )
+      .run();
     await recordOpportunityAudit(
       db,
       user.id,
