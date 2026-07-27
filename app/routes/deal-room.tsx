@@ -40,7 +40,7 @@ type PreviewRow = {
   closingAt: string | null;
   accessMode: "verified_investors" | "approved_only";
   founderName: string;
-  founderUsername: string | null;
+  founderUsername: string;
 };
 
 type DocumentRow = {
@@ -170,7 +170,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   } catch (error) {
     if (!(error instanceof Response) || error.status !== 403) throw error;
   }
-  const safePreview: PreviewRow = {
+  const safePreview = {
     ...preview,
     founderName: visibleFounder?.displayName ?? "AKARI Founder",
     founderUsername: visibleFounder?.username ?? null,
