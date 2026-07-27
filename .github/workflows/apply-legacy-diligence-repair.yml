@@ -22,7 +22,19 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: node scripts/patch-legacy-diligence.mjs
+      - name: Apply diligence patch
+        run: |
+          set +e
+          node scripts/patch-legacy-diligence.mjs 2>&1 | tee diligence-patch.log
+          status=${PIPESTATUS[0]}
+          exit "$status"
+      - name: Upload diligence patch diagnostic
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diligence-patch-diagnostic-${{ github.sha }}
+          path: diligence-patch.log
+          retention-days: 7
       - run: npx prettier --write app/routes/project-diligence.tsx
       - name: Commit changes
         if: github.event_name == 'push'
