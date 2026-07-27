@@ -1,0 +1,209 @@
+.house-member-presence {
+  position: relative;
+  z-index: 5;
+  width: min(1180px, calc(100% - 3rem));
+  margin: clamp(1rem, 2.5vw, 1.75rem) auto 0;
+  padding: 0.85rem;
+  display: grid;
+  grid-template-columns: minmax(190px, 0.55fr) minmax(0, 1.45fr);
+  gap: 0.85rem;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(240, 79, 135, 0.12), transparent 36%),
+    radial-gradient(
+      circle at 92% 100%,
+      rgba(255, 211, 61, 0.08),
+      transparent 34%
+    ),
+    #0b0e17;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.18);
+}
+
+.house-member-presence::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    115deg,
+    transparent,
+    rgba(255, 255, 255, 0.025),
+    transparent
+  );
+}
+
+.house-member-presence__intro,
+.house-member-presence__groups {
+  position: relative;
+  z-index: 1;
+}
+
+.house-member-presence__intro {
+  padding: 0 0.45rem;
+}
+
+.house-member-presence__intro > span,
+.house-member-presence__meta > span {
+  color: var(--yellow);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.house-member-presence__intro > p {
+  max-width: 300px;
+  margin: 0.3rem 0 0;
+  color: #b9bec8;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
+.house-member-presence__groups {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.house-member-presence__group {
+  min-width: 0;
+  min-height: 64px;
+  padding: 0.7rem 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.house-member-presence__group[data-role="creator"] {
+  box-shadow: inset 2px 0 rgba(240, 79, 135, 0.8);
+}
+
+.house-member-presence__group[data-role="investor"] {
+  box-shadow: inset 2px 0 rgba(255, 211, 61, 0.8);
+}
+
+.house-member-presence__meta {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.house-member-presence__meta > strong {
+  color: #f7f3ed;
+  font-size: 1.05rem;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.house-member-presence__avatars {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-left: 0.45rem;
+}
+
+.house-member-presence__avatars > img,
+.house-member-presence__monogram,
+.house-member-presence__remaining {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  margin-left: -8px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid #111520;
+  border-radius: 50%;
+  background: #1a1f2b;
+  color: #f7f3ed;
+  object-fit: cover;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+}
+
+.house-member-presence__avatars > :first-child {
+  margin-left: 0;
+}
+
+.house-member-presence__monogram {
+  background: linear-gradient(145deg, #36202f, #171b26);
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.house-member-presence__remaining {
+  width: auto;
+  min-width: 32px;
+  padding: 0 0.35rem;
+  flex-basis: auto;
+  border-radius: 999px;
+  background: #25202a;
+  color: #ffd86a;
+  font-size: 0.56rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.dashboard-nav > .dashboard-nav-section-label {
+  margin: 0.9rem 0 0.25rem;
+  padding: 0 0.9rem;
+  color: var(--yellow);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.dashboard-nav > a.dashboard-nav-admin {
+  border-left-color: rgba(255, 211, 61, 0.58);
+  background: linear-gradient(90deg, rgba(255, 211, 61, 0.07), transparent);
+}
+
+@media (max-width: 900px) {
+  .house-member-presence {
+    grid-template-columns: 1fr;
+  }
+
+  .house-member-presence__intro > p {
+    max-width: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .house-member-presence {
+    width: min(100% - 1.5rem, 1180px);
+    margin-top: 0.75rem;
+    padding: 0.7rem;
+    border-radius: 16px;
+  }
+
+  .house-member-presence__groups {
+    grid-template-columns: 1fr;
+  }
+
+  .house-member-presence__group {
+    min-height: 58px;
+  }
+
+  .house-member-presence__avatars > img,
+  .house-member-presence__monogram,
+  .house-member-presence__remaining {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+  }
+
+  .house-member-presence__remaining {
+    width: auto;
+    flex-basis: auto;
+  }
+}
