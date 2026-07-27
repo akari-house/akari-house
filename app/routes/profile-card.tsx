@@ -355,12 +355,12 @@ export default function ProfileCard({ loaderData, actionData }: Route.ComponentP
       await navigator.share({
         title: `${loaderData.profile.displayName} on AKARI House`,
         text: "Connect with me on AKARI House.",
-        url: `${location.origin}/profiles/${loaderData.user.username}`,
+        url: `${window.location.origin}/profiles/${loaderData.user.username}`,
         files: [file],
       });
     } else {
       await navigator.clipboard.writeText(
-        `${location.origin}/profiles/${loaderData.user.username}`,
+        `${window.location.origin}/profiles/${loaderData.user.username}`,
       );
     }
   }
