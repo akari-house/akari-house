@@ -42,7 +42,7 @@ jobs:
       PUBLIC_WORKER_URL: https://akari-house.spacematesxyz.workers.dev
       PRODUCTION_URL: https://akarihouse.com
       EXPECTED_RELEASE: launch-completion-2026-07-26
-      OWNER_EMAIL: mmxinthi@gmail.com
+      OWNER_EMAIL: ${{ secrets.OWNER_EMAIL }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
