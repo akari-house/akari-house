@@ -127,9 +127,9 @@
   position: absolute;
   top: 1.25rem;
   right: 1.5rem;
-  color: var(--card-accent);
-  font-size: clamp(2.8rem, 7vw, 5.5rem);
-  line-height: 1;
+  width: clamp(3.8rem, 8vw, 6.5rem);
+  height: auto;
+  object-fit: contain;
   filter: drop-shadow(0 10px 24px #0005);
 }
 
