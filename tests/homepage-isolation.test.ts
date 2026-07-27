@@ -11,6 +11,15 @@ describe("public Inari homepage isolation", () => {
     expect(homeSource).not.toContain("PublicCommunityProof");
   });
 
+  it("uses only approved public profiles for compact member presence", () => {
+    expect(homeSource).toContain("HouseMemberPresence");
+    expect(homeSource).toContain("ma.status = 'approved'");
+    expect(homeSource).toContain(
+      "COALESCE(pv.visibility, p.visibility) = 'public'",
+    );
+    expect(homeSource).toContain("LIMIT 10");
+  });
+
   it("preserves the approved AKARI House journey", () => {
     for (const expected of [
       "Welcome to AKARI House",
