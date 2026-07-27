@@ -15,9 +15,9 @@ import { consumeAuthLimit } from "~/lib/rate-limit.server";
 export type LoginEnvironment = CloudflareEnvironment &
   TurnstileEnvironment & { TURNSTILE_SITE_KEY?: string };
 
-export function getLoginPageData(
-  context: Route.LoaderArgs["context"],
-): { siteKey?: string } {
+export function getLoginPageData(context: Route.LoaderArgs["context"]): {
+  siteKey?: string;
+} {
   try {
     const env = context.get(cloudflareContext).env as LoginEnvironment;
     return { siteKey: env.TURNSTILE_SITE_KEY };

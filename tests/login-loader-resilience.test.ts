@@ -24,7 +24,9 @@ describe("login page loader", () => {
   });
 
   it("still renders when the Cloudflare environment is temporarily unavailable", () => {
-    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const error = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     const context = {
       get: vi.fn(() => {
         throw new Error("Cloudflare context unavailable");
