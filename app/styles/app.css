@@ -7163,7 +7163,6 @@ select:disabled {
   }
 }
 
-
 /* Team page refinement: compact editorial scale with The House atmosphere. */
 .people-page {
   --people-gutter: max(1.25rem, calc((100vw - 1180px) / 2));
