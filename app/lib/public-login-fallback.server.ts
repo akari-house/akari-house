@@ -1,3 +1,5 @@
+const publicLoginRelease = "worker-login-2026-07-27-final";
+
 function escapeHtml(value: string) {
   return value.replace(
     /[&<>'"]/g,
@@ -16,6 +18,7 @@ export interface PublicLoginFallbackOptions {
   error?: string;
   email?: string;
   status?: number;
+  stage?: string;
 }
 
 export function shouldServePublicLoginFallback(request: Request) {
@@ -86,7 +89,9 @@ export function publicLoginFallbackResponse(
       "content-type": "text/html; charset=utf-8",
       "cache-control": "no-store, max-age=0",
       "x-akari-login-fallback": "worker",
+      "x-akari-login-release": publicLoginRelease,
       "x-akari-login-result": options.error ? "error" : "form",
+      "x-akari-login-stage": options.stage ?? "form",
     },
   });
 }
