@@ -15,7 +15,7 @@ const footerGroups = [
     title: "Opportunities",
     links: [
       { label: "Projects", to: "/projects" },
-      { label: "Investor deals", to: "/deals" },
+      { label: "Investor and Angel Deal Rooms", to: "/deals" },
       { label: "Creator campaigns", to: "/campaigns" },
       { label: "Events", to: "/events" },
     ],
@@ -83,8 +83,8 @@ export function PublicFooter() {
               <span>House</span>
             </span>
             <p>
-              A private professional network for Founders, Creators and
-              Investors to build trusted relationships, collaborations and
+              A private professional network for Founders, Creators, Investors
+              and Angels to build trusted relationships, collaborations and
               introductions.
             </p>
             <span className="akari-footer__principle">
@@ -123,16 +123,16 @@ export function PublicFooter() {
               legal or tax advice.
             </p>
             <p>
-              Project review, member verification or access approval is not an
+              Project review, Investor verification or Deal Room access is not an
               endorsement. Early-stage and digital-asset opportunities can be
               illiquid and may involve a risk of total loss. Members remain
               responsible for independent due diligence and professional advice.
             </p>
             <p>
               Access may depend on membership, verification, eligibility,
-              jurisdiction and specific approval. AKARI does not guarantee
-              funding, investment, returns, token listings, campaign performance
-              or commercial outcomes.
+              jurisdiction and specific per-opportunity approval. AKARI does not
+              guarantee funding, returns, token listings, campaign performance or
+              commercial outcomes.
             </p>
             <p>
               AKARI does not custody investment funds or member assets through
