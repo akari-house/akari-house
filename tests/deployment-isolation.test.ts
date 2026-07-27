@@ -1,34 +1,41 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const previewConfig = readFileSync("wrangler.jsonc", "utf8");
+const defaultConfig = readFileSync("wrangler.jsonc", "utf8");
 const productionWorkflow = readFileSync(
   ".github/workflows/deploy-production.yml",
   "utf8",
 );
 
+const productionDatabaseId = "183409bf-cd4a-4867-875e-11ae04d91ee5";
+
 describe("Cloudflare deployment isolation", () => {
-  it("keeps the checked-in Wrangler configuration outside production", () => {
-    expect(previewConfig).toContain('"name": "akari-house-preview"');
-    expect(previewConfig).toContain('"APP_ENV": "preview"');
-    expect(previewConfig).toContain('"APP_URL": "http://localhost:5173"');
-    expect(previewConfig).not.toContain('"APP_ENV": "production"');
-    expect(previewConfig).not.toContain('"APP_URL": "https://akarihouse.com"');
-    expect(previewConfig).not.toContain('"triggers"');
-    expect(previewConfig).toContain(
-      '"database_name": "akari-house-preview-db"',
+  it("keeps the connected AKARI Worker on production storage", () => {
+    expect(defaultConfig).toContain('"name": "akari-house"');
+    expect(defaultConfig).toContain('"APP_ENV": "production"');
+    expect(defaultConfig).toContain(
+      '"APP_URL": "https://akarihouse.com"',
     );
-    expect(previewConfig).toContain(
-      '"bucket_name": "akari-house-preview-media"',
-    );
+    expect(defaultConfig).toContain('"TURNSTILE_HOSTNAME": "akarihouse.com"');
+    expect(defaultConfig).toContain('"database_name": "akari-house-db"');
+    expect(defaultConfig).toContain(`"database_id": "${productionDatabaseId}"`);
+    expect(defaultConfig).toContain('"bucket_name": "akari-house-media"');
+    expect(defaultConfig).not.toContain("akari-house-preview-db");
+    expect(defaultConfig).not.toContain("akari-house-preview-media");
   });
 
-  it("keeps production configuration explicit in the main-only workflow", () => {
+  it("keeps the main deployment independently validated and authenticated", () => {
     expect(productionWorkflow).toContain("branches:\n      - main");
     expect(productionWorkflow).toContain('name: "akari-house"');
     expect(productionWorkflow).toContain('APP_ENV: "production"');
     expect(productionWorkflow).toContain('APP_URL: "https://akarihouse.com"');
     expect(productionWorkflow).toContain('database_name: "akari-house-db"');
     expect(productionWorkflow).toContain('bucket_name: "akari-house-media"');
+    expect(productionWorkflow).toContain(
+      "Prove member dashboard and Superadmin access on the custom domain",
+    );
+    expect(productionWorkflow).toContain(
+      "Generated deployment is production-safe",
+    );
   });
 });
