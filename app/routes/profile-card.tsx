@@ -298,7 +298,14 @@ export async function action({ request, context }: Route.ActionArgs) {
   throw redirect("/profile-card?saved=1");
 }
 
-function drawCard(
+async function loadFlower() {
+  const image = new Image();
+  image.src = "/assets/brand/akari-flower-mark.png";
+  await image.decode();
+  return image;
+}
+
+async function drawCard(
   canvas: HTMLCanvasElement,
   data: Route.ComponentProps["loaderData"],
   settings: CardSettings,
@@ -370,11 +377,12 @@ function drawCard(
       90,
       portrait ? 890 : 930,
     );
-  ctx.textAlign = "right";
-  ctx.font = "700 110px Inter, sans-serif";
-  ctx.fillStyle = palette.accent;
-  ctx.fillText("✦", canvas.width - 90, 150);
-  ctx.textAlign = "left";
+  try {
+    const flower = await loadFlower();
+    ctx.drawImage(flower, canvas.width - 220, 62, 130, 130);
+  } catch {
+    // The AKARI wordmark remains present if the image cannot be decoded.
+  }
 }
 
 export default function ProfileCard({
@@ -396,9 +404,9 @@ export default function ProfileCard({
       ? `${flagFor(settings.countryCode)} ${settings.countryCode}`
       : "Location private";
 
-  function download() {
+  async function download() {
     const canvas = document.createElement("canvas");
-    drawCard(canvas, loaderData, settings);
+    await drawCard(canvas, loaderData, settings);
     const link = document.createElement("a");
     link.download = `akari-${loaderData.user.username}-${settings.orientation}.png`;
     link.href = canvas.toDataURL("image/png");
@@ -407,7 +415,7 @@ export default function ProfileCard({
 
   async function share() {
     const canvas = document.createElement("canvas");
-    drawCard(canvas, loaderData, settings);
+    await drawCard(canvas, loaderData, settings);
     const blob = await new Promise<Blob | null>((resolve) =>
       canvas.toBlob(resolve, "image/png"),
     );
@@ -471,9 +479,11 @@ export default function ProfileCard({
                 <strong>AKARI</strong>
                 <span>HOUSE</span>
               </div>
-              <span className="share-card-flower" aria-hidden="true">
-                ✦
-              </span>
+              <img
+                className="share-card-flower"
+                src="/assets/brand/akari-flower-mark.png"
+                alt=""
+              />
               <div className="share-card-identity">
                 <span>
                   {settings.design === "passport"
@@ -662,7 +672,7 @@ export default function ProfileCard({
               <button
                 type="button"
                 className="button button-primary"
-                onClick={download}
+                onClick={() => void download()}
               >
                 Download PNG
               </button>
