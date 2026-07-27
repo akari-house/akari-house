@@ -2,7 +2,7 @@ import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/login";
 import { AuthLayout } from "~/layouts/AuthLayout";
 import { TurnstileWidget } from "~/components/TurnstileWidget";
-import { createSession, getOptionalUser } from "~/lib/auth.server";
+import { createSession } from "~/lib/auth.server";
 import { assertSameOrigin, verifyPassword } from "~/lib/security.server";
 import { formText, normalizeEmail } from "~/lib/validation";
 import { cloudflareContext } from "~/lib/cloudflare-context";
@@ -12,14 +12,26 @@ import {
 } from "~/lib/turnstile.server";
 import { consumeAuthLimit } from "~/lib/rate-limit.server";
 
-type LoginEnvironment = CloudflareEnvironment &
+export type LoginEnvironment = CloudflareEnvironment &
   TurnstileEnvironment & { TURNSTILE_SITE_KEY?: string };
 
-export async function loader({ request, context }: Route.LoaderArgs) {
-  if (await getOptionalUser(request, context.get(cloudflareContext).env.DB))
-    throw redirect("/app");
-  const env = context.get(cloudflareContext).env as LoginEnvironment;
-  return { siteKey: env.TURNSTILE_SITE_KEY };
+export function getLoginPageData(context: Route.LoaderArgs["context"]): {
+  siteKey?: string;
+} {
+  try {
+    const env = context.get(cloudflareContext).env as LoginEnvironment;
+    return { siteKey: env.TURNSTILE_SITE_KEY };
+  } catch (error) {
+    console.error(
+      "Login page environment lookup failed; rendering without Turnstile until the binding is restored.",
+      error,
+    );
+    return { siteKey: undefined };
+  }
+}
+
+export function loader({ context }: Route.LoaderArgs) {
+  return getLoginPageData(context);
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
