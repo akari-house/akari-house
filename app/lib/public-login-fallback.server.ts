@@ -1,4 +1,4 @@
-const publicLoginRelease = "worker-login-2026-07-27-final";
+export const publicLoginRelease = "worker-login-2026-07-27-final";
 
 function escapeHtml(value: string) {
   return value.replace(
