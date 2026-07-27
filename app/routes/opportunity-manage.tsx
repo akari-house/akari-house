@@ -4,9 +4,9 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { recordOpportunityAudit } from "~/lib/opportunity-access.server";
+import { opportunitySectionDefinitions } from "~/lib/opportunity-sections";
 import {
   loadOpportunitySections,
-  opportunitySectionDefinitions,
   saveOpportunitySections,
 } from "~/lib/opportunity-sections.server";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
