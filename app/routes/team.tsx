@@ -1,3 +1,4 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
 import { Link } from "react-router";
 import type { Route } from "./+types/team";
 import { PeopleCard, PartnerStrip } from "~/components/HouseDirectory";
@@ -125,7 +126,10 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
               Meet the builders, advisors and supporters who care for the House,
               alongside the partners and projects growing within its walls.
             </p>
-            <nav className="people-house-hero__nav" aria-label="Explore this page">
+            <nav
+              className="people-house-hero__nav"
+              aria-label="Explore this page"
+            >
               <a href="#team">People</a>
               <a href="#partners">Partners</a>
               <a href="#ecosystem">Ecosystem</a>
@@ -211,7 +215,9 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
         >
           <div className="section-intro">
             <div>
-              <span className="chapter">Chapter 05 · The growing ecosystem</span>
+              <span className="chapter">
+                Chapter 05 · The growing ecosystem
+              </span>
               <h2 id="ecosystem-title">Projects building inside the House.</h2>
             </div>
             <p>
@@ -243,8 +249,12 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
         >
           <div className="section-intro">
             <div>
-              <span className="chapter">Epilogue · Stay close to the House</span>
-              <h2 id="house-socials-title">Follow AKARI and the DCC community.</h2>
+              <span className="chapter">
+                Epilogue · Stay close to the House
+              </span>
+              <h2 id="house-socials-title">
+                Follow AKARI and the DCC community.
+              </h2>
             </div>
             <p>
               Join the public channels where House updates, conversations and
@@ -274,3 +284,8 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
     </div>
   );
 }
+npm notice
+npm notice New minor version of npm available! 11.9.0 -> 11.18.0
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.18.0
+npm notice To update run: npm install -g npm@11.18.0
+npm notice
