@@ -1,0 +1,60 @@
+name: Fix Verification Queue Types
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/verification-active-queue
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Fix serialized role filter typing
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app/routes/admin-verifications.tsx')
+          text = path.read_text()
+          old = '''function queueHref(
+            view: VerificationView,
+            role: VerificationRole | "all",
+            page = 1,
+          ) {
+            const params = new URLSearchParams({ view });
+            if (role !== "all") params.set("role", role);
+            if (page > 1) params.set("page", String(page));
+            return `/admin/verifications?${params.toString()}`;
+          }'''
+          new = '''function queueHref(view: VerificationView, role: string, page = 1) {
+            const params = new URLSearchParams({ view });
+            if (roles.includes(role as VerificationRole)) params.set("role", role);
+            if (page > 1) params.set("page", String(page));
+            return `/admin/verifications?${params.toString()}`;
+          }'''
+          if old not in text:
+              raise SystemExit('Expected queueHref block was not found')
+          path.write_text(text.replace(old, new))
+          PY
+      - run: npm ci
+      - run: npm run format
+      - run: npm run typecheck
+      - name: Remove temporary workflows and commit
+        run: |
+          rm -f .github/workflows/diagnose-verification-queue.yml
+          rm -f .github/workflows/fix-verification-queue-types.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix verification queue filter typing"
+          git push origin HEAD:agent/verification-active-queue
