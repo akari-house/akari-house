@@ -20,6 +20,16 @@ describe("authentication password experience", () => {
     expect(passwordField).toContain("setCustomValidity");
   });
 
+  it("keeps the worker-served login form at password UX parity", () => {
+    const fallback = read("app/lib/public-login-fallback.server.ts");
+    expect(fallback).toContain('data-password-field="password"');
+    expect(fallback).toContain("password-visibility-toggle");
+    expect(fallback).toContain("Show entered characters");
+    expect(fallback).toContain("Hide entered characters");
+    expect(fallback).toContain("login-password-error");
+    expect(fallback).toContain('toggle.addEventListener("click"');
+  });
+
   it("shows immediate registration acceptance and matching feedback", () => {
     const register = read("app/routes/register.tsx");
     expect(register).toContain("Password length accepted.");
