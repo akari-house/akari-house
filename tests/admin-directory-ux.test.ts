@@ -42,6 +42,9 @@ describe("member directory and admin trust workflow", () => {
     expect(verifications).toContain(
       "function queueHref(view: VerificationView, role: string",
     );
+    expect(verifications).toContain(
+      "<strong>{firstResult}</strong> to <strong>{lastResult}</strong>",
+    );
   });
 
   it("provides a scoped admin overview", () => {
