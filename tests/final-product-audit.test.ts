@@ -85,4 +85,11 @@ describe("final product audit safeguards", () => {
     );
     expect(deal).toContain("Introduction approved");
   });
+
+  it("resolves production smoke access by internal Superadmin role", () => {
+    const workflow = read(".github/workflows/deploy-production.yml");
+    expect(workflow).not.toContain("OWNER_EMAIL");
+    expect(workflow).toContain("au.access_level = 'superadmin'");
+    expect(workflow).toContain("SELECT u.id FROM users u");
+  });
 });

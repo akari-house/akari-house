@@ -205,7 +205,7 @@ jobs:
         run: |
           set -euo pipefail
           npx wrangler d1 execute DB --remote --config wrangler.production.jsonc --json --command \
-            "SELECT user_id AS id FROM admin_users WHERE access_level = 'superadmin' ORDER BY user_id LIMIT 1" > owner-account.json
+            "SELECT u.id FROM users u JOIN admin_users au ON au.user_id = u.id WHERE u.status = 'active' AND au.access_level = 'superadmin' ORDER BY u.created_at, u.id LIMIT 1" > owner-account.json
           node --input-type=module <<'NODE'
           import crypto from "node:crypto";
           import fs from "node:fs";
@@ -215,7 +215,7 @@ jobs:
           const row = containers.flatMap(
             (entry) => entry.results ?? entry.result?.results ?? [],
           )[0];
-          if (!row?.id) throw new Error("A Superadmin account was not found.");
+          if (!row?.id) throw new Error("Canonical owner account was not found.");
 
           const token = crypto.randomBytes(48).toString("hex");
           const tokenHash = crypto
