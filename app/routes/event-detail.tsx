@@ -1,7 +1,7 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/event-detail";
 import { SiteHeader } from "~/components/SiteHeader";
-import { getOptionalUser, requireApprovedMember } from "~/lib/auth.server";
+import { getOptionalUser, requireUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
@@ -10,6 +10,7 @@ import { AkariMotif } from "~/components/AkariMotif";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
 import { cancellationOpensEventPlace } from "~/lib/event-registration";
 import { PublicFooter } from "~/components/PublicFooter";
+import { googleCalendarEventUrl } from "~/lib/calendar";
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -21,6 +22,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
               e.meeting_url AS meetingUrl, e.starts_at AS startsAt,
               e.ends_at AS endsAt, e.timezone, e.capacity, e.status,
               e.image_key AS imageKey,
+              e.image_source_url AS imageSourceUrl,
               p.display_name AS hostName, u.username AS hostUsername,
               COUNT(CASE WHEN er.status = 'registered' THEN 1 END) AS registeredCount
        FROM events e
@@ -46,6 +48,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       capacity: number | null;
       status: string;
       imageKey: string | null;
+      imageSourceUrl: string;
       hostName: string;
       hostUsername: string;
       registeredCount: number;
@@ -61,6 +64,18 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
         .bind(event.id, user.id)
         .first<{ status: string }>()
     : null;
+  const interest = user
+    ? await db
+        .prepare(
+          "SELECT 1 AS interested FROM event_interests WHERE event_id = ? AND user_id = ?",
+        )
+        .bind(event.id, user.id)
+        .first<{ interested: number }>()
+    : null;
+  const interestCount = await db
+    .prepare("SELECT COUNT(*) AS total FROM event_interests WHERE event_id = ?")
+    .bind(event.id)
+    .first<{ total: number }>();
   const attendees =
     user?.id === event.hostUserId
       ? await db
@@ -89,6 +104,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
           : "",
     },
     registration,
+    interested: Boolean(interest),
+    interestCount: interestCount?.total ?? 0,
     attendees: attendees?.results ?? [],
     submitted: new URL(request.url).searchParams.has("submitted"),
     registrationFeedback:
@@ -99,7 +116,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireApprovedMember(request, db);
+  const user = await requireUser(request, db);
   const event = await db
     .prepare(
       `SELECT id, host_user_id AS hostUserId, title, capacity, status,
@@ -127,7 +144,35 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     30,
     60,
   );
+  if (intent === "interest" || intent === "remove-interest") {
+    if (user.id === event.hostUserId)
+      throw new Response("Hosts already belong to their own event.", {
+        status: 400,
+      });
+    if (intent === "interest")
+      await db
+        .prepare(
+          `INSERT INTO event_interests (event_id, user_id, updated_at)
+           VALUES (?, ?, datetime('now'))
+           ON CONFLICT(event_id, user_id) DO UPDATE SET
+             updated_at = excluded.updated_at`,
+        )
+        .bind(event.id, user.id)
+        .run();
+    else
+      await db
+        .prepare(
+          "DELETE FROM event_interests WHERE event_id = ? AND user_id = ?",
+        )
+        .bind(event.id, user.id)
+        .run();
+    throw redirect(
+      `/events/${params.slug}?interest=${intent === "interest" ? "saved" : "removed"}`,
+    );
+  }
   if (intent === "register") {
+    if (user.accessTier !== "member")
+      throw new Response("Approved membership is required.", { status: 403 });
     if (user.id === event.hostUserId)
       throw new Response("Hosts cannot register for their own event.", {
         status: 400,
@@ -200,6 +245,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       `/events/${params.slug}?registration=${saved?.status === "waitlisted" ? "waitlisted" : "registered"}`,
     );
   } else if (intent === "cancel") {
+    if (user.accessTier !== "member")
+      throw new Response("Approved membership is required.", { status: 403 });
     const existingRegistration = await db
       .prepare(
         `SELECT status FROM event_registrations
@@ -293,6 +340,14 @@ export default function EventDetail({
   const isHost = user?.id === event.hostUserId;
   const navigation = useNavigation();
   const pending = navigation.state !== "idle";
+  const calendarUrl = googleCalendarEventUrl({
+    title: event.title,
+    summary: event.summary,
+    startsAt: event.startsAt,
+    endsAt: event.endsAt,
+    venue: event.venue,
+    publicUrl: `https://akarihouse.com/events/${event.slug}`,
+  });
   return (
     <div className="site-shell">
       <SiteHeader user={user} />
@@ -333,14 +388,26 @@ export default function EventDetail({
           </div>
         </header>
         {event.imageKey && (
-          <div className="event-detail-cover">
-            <img
-              src={`/media/events/${event.slug}`}
-              alt={`${event.title} event cover`}
-              width={1280}
-              height={720}
-            />
-          </div>
+          <>
+            <div className="event-detail-cover">
+              <img
+                src={`/media/events/${event.slug}`}
+                alt={`${event.title} event cover`}
+                width={1280}
+                height={720}
+              />
+            </div>
+            {event.imageSourceUrl && (
+              <a
+                className="event-image-source"
+                href={event.imageSourceUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Original image source
+              </a>
+            )}
+          </>
         )}
         <div className="event-detail-layout">
           <div className="event-detail-story">
@@ -387,6 +454,15 @@ export default function EventDetail({
               {event.registeredCount}
               {event.capacity ? ` / ${event.capacity}` : ""} registered
             </p>
+            <p>
+              <strong>Interested</strong>
+              {loaderData.interestCount}
+            </p>
+            {calendarUrl && (
+              <a href={calendarUrl} rel="noreferrer" target="_blank">
+                Add to Google Calendar
+              </a>
+            )}
             {event.meetingUrl && (
               <a href={event.meetingUrl} rel="noreferrer" target="_blank">
                 Open meeting room
@@ -398,6 +474,18 @@ export default function EventDetail({
           <p className="form-error" role="alert">
             {actionData.error}
           </p>
+        )}
+        {user && !isHost && event.status === "published" && (
+          <Form method="post" className="event-interest-action">
+            <button
+              className="button button-quiet"
+              name="intent"
+              value={loaderData.interested ? "remove-interest" : "interest"}
+              disabled={pending}
+            >
+              {loaderData.interested ? "Interested ✓" : "I’m interested"}
+            </button>
+          </Form>
         )}
         {user?.accessTier === "member" &&
           !isHost &&
@@ -446,10 +534,10 @@ export default function EventDetail({
           !isHost &&
           event.status === "published" && (
             <div className="status-card">
-              <h2>Registration opens after membership approval.</h2>
+              <h2>You can follow this gathering now.</h2>
               <p>
-                Keep your profile current while the Membership Desk completes
-                its review.
+                Mark yourself interested and add it to Google Calendar.
+                Registration opens after membership approval.
               </p>
               <Link className="button button-quiet" to="/app">
                 View membership status
