@@ -43,6 +43,18 @@ describe("campaign delivery requirements", () => {
     ).toEqual([]);
   });
 
+  it("respects Creator-selected posting weekdays", () => {
+    expect(
+      expectedCampaignSlots(
+        "2026-08-03",
+        "2026-08-09",
+        "daily_posting",
+        new Date("2026-08-09T12:00:00.000Z"),
+        [2, 4, 6],
+      ).map((slot) => slot.periodStart),
+    ).toEqual(["2026-08-04", "2026-08-06", "2026-08-08"]);
+  });
+
   it("suggests a proportional payout and never exceeds allocation", () => {
     expect(campaignPayoutSuggestion(100_000, 10, 8)).toBe(80_000);
     expect(campaignPayoutSuggestion(100_000, 10, 12)).toBe(100_000);
