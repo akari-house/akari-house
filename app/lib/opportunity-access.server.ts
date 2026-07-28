@@ -1,4 +1,5 @@
 import type { SessionUser } from "./domain";
+import { isRoleVerifiedId } from "./role-verification.server";
 
 export const investorProfileStatuses = [
   "claimed",
@@ -77,7 +78,7 @@ export async function isVerifiedInvestorId(db: D1Database, userId: string) {
   const eligibility = await investorEligibility(db, userId);
   return (
     eligibility?.profileStatus === "verified" &&
-    eligibility.roleStatus === "verified"
+    (await isRoleVerifiedId(db, userId, "investor"))
   );
 }
 
