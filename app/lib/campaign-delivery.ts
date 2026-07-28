@@ -37,6 +37,7 @@ export function expectedCampaignSlots(
   endsAt: string,
   cadence: PostingCadence,
   asOf = new Date(),
+  selectedPostingDays: number[] = [],
 ) {
   if (cadence === "daily_engagement") return [];
   const start = utcDay(startsAt);
@@ -47,6 +48,35 @@ export function expectedCampaignSlots(
   const daily = cadence === "daily_posting";
   const perWeek = daily ? 1 : Number(cadence.split("_")[1]);
   const slots: Array<{ periodStart: string; slotNumber: number }> = [];
+  const selected = new Set(
+    selectedPostingDays.filter(
+      (day) => Number.isInteger(day) && day >= 0 && day <= 6,
+    ),
+  );
+  if (selected.size) {
+    const weeklyCounts = new Map<number, number>();
+    for (
+      const cursor = new Date(start);
+      cursor <= effectiveEnd;
+      cursor.setUTCDate(cursor.getUTCDate() + 1)
+    ) {
+      if (!selected.has(cursor.getUTCDay())) continue;
+      if (daily) {
+        slots.push({ periodStart: isoDay(cursor), slotNumber: 1 });
+        continue;
+      }
+      const weekIndex = Math.floor(
+        (cursor.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000),
+      );
+      const slotNumber = (weeklyCounts.get(weekIndex) ?? 0) + 1;
+      if (slotNumber > perWeek) continue;
+      weeklyCounts.set(weekIndex, slotNumber);
+      const periodStart = new Date(start);
+      periodStart.setUTCDate(periodStart.getUTCDate() + weekIndex * 7);
+      slots.push({ periodStart: isoDay(periodStart), slotNumber });
+    }
+    return slots;
+  }
   if (daily) {
     for (
       const cursor = new Date(start);
