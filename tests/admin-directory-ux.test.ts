@@ -29,5 +29,6 @@ describe("member directory and admin trust workflow", () => {
     expect(dashboard).toContain('to="/admin"');
     expect(dashboard).toContain("Admin workspace");
     expect(workspace).toContain("visibleAdminWorkspaceItems");
+    expect(workspace).toContain("loadAdminWorkspaceAccess");
   });
 });
