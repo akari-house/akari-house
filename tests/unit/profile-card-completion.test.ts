@@ -52,6 +52,8 @@ describe("completed AKARI profile card", () => {
     expect(component).toContain("akarihouse.com/profiles/${model.username}");
     expect(component).toContain('value="landscape"');
     expect(component).toContain('value="portrait"');
-    expect(route).toContain("languageCandidates.length > MAX_PROFILE_CARD_LANGUAGES");
+    expect(route).toContain(
+      "languageCandidates.length > MAX_PROFILE_CARD_LANGUAGES",
+    );
   });
 });

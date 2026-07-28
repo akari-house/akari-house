@@ -34,11 +34,7 @@ export const PROFILE_CARD_LANGUAGE_OPTIONS = [
   "Vietnamese",
 ] as const;
 
-export const PROFILE_CARD_PALETTES = [
-  "sakura",
-  "midnight",
-  "lantern",
-] as const;
+export const PROFILE_CARD_PALETTES = ["sakura", "midnight", "lantern"] as const;
 export const PROFILE_CARD_DESIGNS = ["signature", "passport"] as const;
 export const PROFILE_CARD_ORIENTATIONS = ["landscape", "portrait"] as const;
 export const PROFILE_CARD_SOCIAL_PLATFORMS = [
@@ -52,15 +48,11 @@ export const PROFILE_CARD_SOCIAL_PLATFORMS = [
 
 export type ProfileCardPalette = (typeof PROFILE_CARD_PALETTES)[number];
 export type ProfileCardDesign = (typeof PROFILE_CARD_DESIGNS)[number];
-export type ProfileCardOrientation =
-  (typeof PROFILE_CARD_ORIENTATIONS)[number];
+export type ProfileCardOrientation = (typeof PROFILE_CARD_ORIENTATIONS)[number];
 export type ProfileCardSocialPlatform =
   (typeof PROFILE_CARD_SOCIAL_PLATFORMS)[number];
 export type ProfileCardSignalSource =
-  | "official_api"
-  | "partner_verified"
-  | "member_reported"
-  | "unavailable";
+  "official_api" | "partner_verified" | "member_reported" | "unavailable";
 
 export type ProfileCardSettings = {
   design: ProfileCardDesign;

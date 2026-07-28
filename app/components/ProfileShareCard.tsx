@@ -166,11 +166,7 @@ function drawSocialMark(
   } else {
     ctx.font = "700 20px Inter, sans-serif";
     ctx.fillText(
-      platform === "linkedin"
-        ? "in"
-        : platform === "facebook"
-          ? "f"
-          : "♪",
+      platform === "linkedin" ? "in" : platform === "facebook" ? "f" : "♪",
       2,
       20,
     );
@@ -195,7 +191,8 @@ async function drawCard(
   const verifiedRoles = model.verificationStates
     .filter((state) => state.status === "verified")
     .map((state) => state.role[0]?.toUpperCase() + state.role.slice(1));
-  const opportunities = model.opportunityStats.created + model.opportunityStats.received;
+  const opportunities =
+    model.opportunityStats.created + model.opportunityStats.received;
 
   ctx.fillStyle = palette.background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -274,11 +271,17 @@ async function drawCard(
   ctx.fillText(`@${model.username}`, identityX, identityY + 46);
   if (model.headline) {
     ctx.font = "500 25px Inter, sans-serif";
-    ctx.fillText(model.headline.slice(0, portrait ? 48 : 62), identityX, identityY + 88);
+    ctx.fillText(
+      model.headline.slice(0, portrait ? 48 : 62),
+      identityX,
+      identityY + 88,
+    );
   }
   ctx.font = "600 25px Inter, sans-serif";
   ctx.fillText(
-    model.roles.map((role) => role[0]?.toUpperCase() + role.slice(1)).join(" · "),
+    model.roles
+      .map((role) => role[0]?.toUpperCase() + role.slice(1))
+      .join(" · "),
     identityX,
     identityY + 130,
   );
@@ -297,7 +300,12 @@ async function drawCard(
   const metricValues = [
     [String(opportunities), "OPPORTUNITIES"],
     [formatProfileReach(model.followerCount), "REACH"],
-    [model.percentile.topPercent ? `TOP ${model.percentile.topPercent}%` : "BUILDING", "PERCENTILE"],
+    [
+      model.percentile.topPercent
+        ? `TOP ${model.percentile.topPercent}%`
+        : "BUILDING",
+      "PERCENTILE",
+    ],
   ];
   ctx.strokeStyle = palette.ink + "33";
   ctx.beginPath();
@@ -328,7 +336,13 @@ async function drawCard(
     ctx.fillText(`Languages · ${languages.join(" · ")}`, 90, footerY + 35);
   }
   model.socials.forEach((social, index) =>
-    drawSocialMark(ctx, social.platform, 90 + index * 40, footerY + 58, palette.ink),
+    drawSocialMark(
+      ctx,
+      social.platform,
+      90 + index * 40,
+      footerY + 58,
+      palette.ink,
+    ),
   );
   ctx.textAlign = "right";
   ctx.font = "600 19px Inter, sans-serif";
@@ -394,7 +408,8 @@ export function ProfileShareCard({
   }
 
   function addLanguage() {
-    if (!languageToAdd || languages.length >= MAX_PROFILE_CARD_LANGUAGES) return;
+    if (!languageToAdd || languages.length >= MAX_PROFILE_CARD_LANGUAGES)
+      return;
     updateLanguages([...languages, languageToAdd]);
     setLanguageToAdd("");
   }
@@ -514,11 +529,13 @@ export function ProfileShareCard({
             <div className="share-card-metrics">
               <div>
                 <strong>
-                  {model.opportunityStats.created + model.opportunityStats.received}
+                  {model.opportunityStats.created +
+                    model.opportunityStats.received}
                 </strong>
                 <span>Opportunities</span>
                 <small>
-                  {model.opportunityStats.created} created · {model.opportunityStats.received} received
+                  {model.opportunityStats.created} created ·{" "}
+                  {model.opportunityStats.received} received
                 </small>
               </div>
               <div>
@@ -585,7 +602,9 @@ export function ProfileShareCard({
                 name="design"
                 value="signature"
                 checked={settings.design === "signature"}
-                onChange={() => setSettings({ ...settings, design: "signature" })}
+                onChange={() =>
+                  setSettings({ ...settings, design: "signature" })
+                }
               />{" "}
               Signature
             </label>
@@ -595,7 +614,9 @@ export function ProfileShareCard({
                 name="design"
                 value="passport"
                 checked={settings.design === "passport"}
-                onChange={() => setSettings({ ...settings, design: "passport" })}
+                onChange={() =>
+                  setSettings({ ...settings, design: "passport" })
+                }
               />{" "}
               Passport
             </label>
@@ -680,7 +701,10 @@ export function ProfileShareCard({
                 type="button"
                 className="button button-quiet"
                 onClick={addLanguage}
-                disabled={!languageToAdd || languages.length >= MAX_PROFILE_CARD_LANGUAGES}
+                disabled={
+                  !languageToAdd ||
+                  languages.length >= MAX_PROFILE_CARD_LANGUAGES
+                }
               >
                 Add
               </button>
@@ -694,7 +718,9 @@ export function ProfileShareCard({
                     type="button"
                     aria-label={`Remove ${language}`}
                     onClick={() =>
-                      updateLanguages(languages.filter((item) => item !== language))
+                      updateLanguages(
+                        languages.filter((item) => item !== language),
+                      )
                     }
                   >
                     ×
