@@ -11,6 +11,7 @@ import {
   type MemberSignals,
   type SignalSource,
 } from "~/lib/profile-percentile";
+import { roleVerificationStates } from "~/lib/role-verification.server";
 
 const palettes = {
   sakura: {
@@ -49,6 +50,7 @@ type CardSettings = {
   countryCode: string;
   showLocation: number;
   languagesJson: string;
+  showLanguages: number;
 };
 
 type Social = {
@@ -102,8 +104,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     db
       .prepare(
         `SELECT p.display_name AS displayName, COALESCE(p.headline, '') AS headline,
-                  COALESCE(p.location, '') AS location, COALESCE(p.avatar_key, '') AS avatarKey
-             FROM profiles p WHERE p.user_id = ?`,
+                  COALESCE(p.location, '') AS location,
+                  COALESCE(p.avatar_key, '') AS avatarKey,
+                  COALESCE(pv.visibility, p.visibility) AS visibility
+             FROM profiles p
+             LEFT JOIN profile_visibility pv ON pv.user_id = p.user_id
+             WHERE p.user_id = ?`,
       )
       .bind(user.id)
       .first<{
@@ -111,6 +117,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         headline: string;
         location: string;
         avatarKey: string;
+        visibility: string;
       }>(),
     db
       .prepare("SELECT role FROM user_roles WHERE user_id = ? ORDER BY role")
@@ -131,7 +138,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         db
           .prepare(
             `SELECT design, orientation, palette, country_code AS countryCode,
-                      show_location AS showLocation, languages_json AS languagesJson
+                      show_location AS showLocation,
+                      languages_json AS languagesJson,
+                      show_languages AS showLanguages
                  FROM profile_share_settings WHERE user_id = ?`,
           )
           .bind(user.id)
@@ -143,6 +152,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         countryCode: "",
         showLocation: 0,
         languagesJson: "[]",
+        showLanguages: 1,
       },
     ),
     safeFirst(
@@ -231,6 +241,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     followingSource,
   };
   const percentile = calculateAkariPercentile(memberSignals, population.rows);
+  const verificationStates = await roleVerificationStates(db, user.id);
   return {
     user,
     profile,
@@ -242,6 +253,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     opportunityStats,
     followerCount,
     percentile,
+    verificationStates,
     saved: new URL(request.url).searchParams.has("saved"),
   };
 }
@@ -256,6 +268,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const palette = formText(form.get("palette"));
   const countryCode = formText(form.get("countryCode")).trim().toUpperCase();
   const showLocation = form.get("showLocation") === "on" ? 1 : 0;
+  const showLanguages = form.get("showLanguages") === "on" ? 1 : 0;
   const languages = formText(form.get("languages"))
     .split(",")
     .map((item) => item.trim())
@@ -276,13 +289,14 @@ export async function action({ request, context }: Route.ActionArgs) {
     .prepare(
       `INSERT INTO profile_share_settings
        (user_id, design, orientation, palette, country_code, show_location,
-        languages_json, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        languages_json, show_languages, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
        ON CONFLICT(user_id) DO UPDATE SET
          design = excluded.design, orientation = excluded.orientation,
          palette = excluded.palette, country_code = excluded.country_code,
          show_location = excluded.show_location,
          languages_json = excluded.languages_json,
+         show_languages = excluded.show_languages,
          updated_at = excluded.updated_at`,
     )
     .bind(
@@ -293,6 +307,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       countryCode,
       showLocation,
       JSON.stringify(languages),
+      showLanguages,
     )
     .run();
   throw redirect("/profile-card?saved=1");
@@ -354,6 +369,18 @@ async function drawCard(
     90,
     portrait ? 470 : 548,
   );
+  const verifiedRoles = data.verificationStates
+    .filter((state) => state.status === "verified")
+    .map((state) => state.role[0].toUpperCase() + state.role.slice(1));
+  ctx.fillStyle = palette.accent;
+  ctx.font = "700 24px Inter, sans-serif";
+  ctx.fillText(
+    verifiedRoles.length
+      ? `Admin verified · ${verifiedRoles.join(" · ")}`
+      : "Not yet Admin verified",
+    90,
+    portrait ? 520 : 598,
+  );
   ctx.font = "500 24px Inter, sans-serif";
   const opportunityText = `${data.opportunityStats.created} created · ${data.opportunityStats.received} received`;
   ctx.fillText(opportunityText, 90, portrait ? 700 : 760);
@@ -366,11 +393,13 @@ async function drawCard(
   ctx.font = "500 23px Inter, sans-serif";
   ctx.fillStyle = palette.ink;
   const location =
-    settings.showLocation && settings.countryCode
-      ? `${flagFor(settings.countryCode)} ${settings.countryCode}`
+    settings.showLocation && data.profile.location
+      ? `${flagFor(settings.countryCode)} ${data.profile.location}`.trim()
       : "Location private";
   ctx.fillText(location, 90, portrait ? 840 : 886);
-  const languages = safeLanguages(settings.languagesJson);
+  const languages = settings.showLanguages
+    ? safeLanguages(settings.languagesJson)
+    : [];
   if (languages.length)
     ctx.fillText(
       "Languages · " + languages.join(" · "),
@@ -392,17 +421,26 @@ export default function ProfileCard({
   const navigation = useNavigation();
   const [settings, setSettings] = useState<CardSettings>(loaderData.settings);
   const languages = useMemo(
-    () => safeLanguages(settings.languagesJson).join(", "),
-    [settings.languagesJson],
+    () =>
+      settings.showLanguages
+        ? safeLanguages(settings.languagesJson).join(", ")
+        : "",
+    [settings.languagesJson, settings.showLanguages],
   );
   const title = loaderData.roles
     .map((role) => role[0].toUpperCase() + role.slice(1))
     .join(" · ");
   const palette = palettes[settings.palette];
   const location =
-    settings.showLocation && settings.countryCode
-      ? `${flagFor(settings.countryCode)} ${settings.countryCode}`
+    settings.showLocation && loaderData.profile.location
+      ? `${flagFor(settings.countryCode)} ${loaderData.profile.location}`.trim()
       : "Location private";
+  const verifiedRoles = loaderData.verificationStates
+    .filter((state) => state.status === "verified")
+    .map((state) => state.role);
+  const canSharePublicProfile =
+    loaderData.user.accessTier === "member" &&
+    loaderData.profile.visibility === "public";
 
   async function download() {
     const canvas = document.createElement("canvas");
@@ -423,17 +461,18 @@ export default function ProfileCard({
     const file = new File([blob], `akari-${loaderData.user.username}.png`, {
       type: "image/png",
     });
+    const publicUrl = canSharePublicProfile
+      ? `${window.location.origin}/profiles/${loaderData.user.username}`
+      : window.location.origin;
     if (navigator.share && navigator.canShare?.({ files: [file] })) {
       await navigator.share({
         title: `${loaderData.profile.displayName} on AKARI House`,
         text: "Connect with me on AKARI House.",
-        url: `${window.location.origin}/profiles/${loaderData.user.username}`,
+        url: publicUrl,
         files: [file],
       });
     } else {
-      await navigator.clipboard.writeText(
-        `${window.location.origin}/profiles/${loaderData.user.username}`,
-      );
+      await navigator.clipboard.writeText(publicUrl);
     }
   }
 
@@ -454,7 +493,7 @@ export default function ProfileCard({
             className="quiet-link"
             to={`/profiles/${loaderData.user.username}`}
           >
-            View public profile
+            {canSharePublicProfile ? "View public profile" : "Preview profile"}
           </Link>
         </header>
 
@@ -493,6 +532,11 @@ export default function ProfileCard({
                 <h2>{loaderData.profile.displayName}</h2>
                 <p>@{loaderData.user.username}</p>
                 <strong>{title}</strong>
+                <span className="share-card-verification">
+                  {verifiedRoles.length
+                    ? `Admin verified · ${verifiedRoles.join(" · ")}`
+                    : "Not yet Admin verified"}
+                </span>
               </div>
               <div className="share-card-metrics">
                 <div>
@@ -511,7 +555,7 @@ export default function ProfileCard({
                   </strong>
                   <span>
                     {loaderData.percentile.confidence === "verified"
-                      ? "Verified percentile"
+                      ? "High-confidence percentile"
                       : "AKARI percentile"}
                   </span>
                 </div>
@@ -613,6 +657,20 @@ export default function ProfileCard({
                 ))}
               </select>
             </label>
+            <label className="share-card-check">
+              <input
+                type="checkbox"
+                name="showLanguages"
+                checked={Boolean(settings.showLanguages)}
+                onChange={(event) =>
+                  setSettings({
+                    ...settings,
+                    showLanguages: event.target.checked ? 1 : 0,
+                  })
+                }
+              />{" "}
+              Show spoken languages
+            </label>
             <label>
               Country code
               <input
@@ -640,7 +698,7 @@ export default function ProfileCard({
                   })
                 }
               />{" "}
-              Show country and flag
+              Show profile location
             </label>
             <label>
               Languages
@@ -685,8 +743,10 @@ export default function ProfileCard({
               </button>
             </div>
             <small>
-              Sharing always uses your public profile link. Hidden location
-              never appears on the card.
+              {canSharePublicProfile
+                ? "Sharing uses your public profile link."
+                : "Your profile is not public, so sharing uses the AKARI homepage."}{" "}
+              Hidden location and languages never appear on the card.
             </small>
           </Form>
         </div>

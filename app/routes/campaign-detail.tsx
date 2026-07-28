@@ -2,10 +2,15 @@ import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/campaign-detail";
 import { PublicFooter } from "~/components/PublicFooter";
 import { SiteHeader } from "~/components/SiteHeader";
-import { getOptionalUser, requireApprovedMember } from "~/lib/auth.server";
+import { getOptionalUser, requireUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { assertSameOrigin } from "~/lib/security.server";
-import { formText } from "~/lib/validation";
+import { formText, isXProfileUrl, normalizeWebsite } from "~/lib/validation";
+import {
+  minimumPostingDays,
+  parsePostingDays,
+  postingDays,
+} from "~/lib/campaign-posting-days";
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -69,7 +74,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
         .prepare(
           `SELECT status, payout_cents AS payoutCents,
                   payout_percent AS payoutPercent,
-                  final_payout_cents AS finalPayoutCents
+                  final_payout_cents AS finalPayoutCents,
+                  posting_days_json AS postingDaysJson
            FROM campaign_applications
            WHERE campaign_id = ? AND creator_user_id = ?`,
         )
@@ -79,6 +85,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
           payoutCents: number;
           payoutPercent: number;
           finalPayoutCents: number | null;
+          postingDaysJson: string;
         }>()
     : null;
   const applications =
@@ -87,6 +94,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
           .prepare(
             `SELECT ca.id, ca.message, ca.portfolio_url AS portfolioUrl,
                     ca.contact_sharing AS contactSharing, ca.status,
+                    ca.posting_days_json AS postingDaysJson,
                     u.id AS creatorUserId, u.username,
                     p.display_name AS displayName,
                     rv.status AS verificationStatus
@@ -109,31 +117,62 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
             username: string;
             displayName: string;
             verificationStatus: string | null;
+            postingDaysJson: string;
           }>()
       : null;
+  const reputationSignals = user
+    ? await db
+        .prepare(
+          `SELECT x_score AS xScore, x_score_source AS xScoreSource,
+                  sorsa_score AS sorsaScore, sorsa_source AS sorsaSource,
+                  updated_at AS updatedAt
+           FROM profile_reputation_signals WHERE user_id = ?`,
+        )
+        .bind(user.id)
+        .first<{
+          xScore: number | null;
+          xScoreSource: string;
+          sorsaScore: number | null;
+          sorsaSource: string;
+          updatedAt: string;
+        }>()
+    : null;
+  const socialAccounts = user
+    ? (
+        await db
+          .prepare(
+            `SELECT platform, profile_url AS profileUrl,
+                    follower_count AS followerCount
+             FROM profile_social_accounts
+             WHERE user_id = ? AND platform IN ('x','tiktok','instagram','youtube')`,
+          )
+          .bind(user.id)
+          .all<{
+            platform: string;
+            profileUrl: string;
+            followerCount: number | null;
+          }>()
+      ).results
+    : [];
+  const xAccount = socialAccounts.find(
+    (account) => account.platform === "x" && account.profileUrl,
+  );
   return {
     user,
     campaign,
     following,
     application,
     applications: applications?.results ?? [],
-    socialAccounts: user
-      ? (
-          await db
-            .prepare(
-              `SELECT platform, profile_url AS profileUrl,
-                      follower_count AS followerCount
-               FROM profile_social_accounts
-               WHERE user_id = ? AND platform IN ('x','tiktok','instagram','youtube')`,
-            )
-            .bind(user.id)
-            .all<{
-              platform: string;
-              profileUrl: string;
-              followerCount: number | null;
-            }>()
-        ).results
-      : [],
+    socialAccounts,
+    reputationSignals,
+    creatorReady: Boolean(
+      xAccount &&
+      isXProfileUrl(xAccount.profileUrl) &&
+      reputationSignals?.xScore !== null &&
+      reputationSignals?.sorsaScore !== null &&
+      reputationSignals?.xScoreSource !== "unavailable" &&
+      reputationSignals?.sorsaSource !== "unavailable",
+    ),
     submitted: new URL(request.url).searchParams.has("submitted"),
   };
 }
@@ -141,11 +180,12 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireApprovedMember(request, db);
+  const user = await requireUser(request, db);
   const campaign = await db
     .prepare(
       `SELECT c.id, c.project_id AS projectId, c.title, c.created_by AS createdBy,
               c.campaign_kind AS campaignKind,
+              c.posting_cadence AS postingCadence,
               c.registration_opens_at AS registrationOpensAt,
               c.application_deadline AS applicationDeadline
        FROM ambassador_campaigns c
@@ -158,6 +198,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       title: string;
       createdBy: string;
       campaignKind: string;
+      postingCadence: string;
       registrationOpensAt: string | null;
       applicationDeadline: string | null;
     }>();
@@ -249,73 +290,79 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       error: "Follow the project before applying to its campaign.",
     };
   const message = formText(form.get("message")).trim();
-  const portfolioUrl = formText(form.get("portfolioUrl")).trim();
+  const portfolioUrl = normalizeWebsite(form.get("portfolioUrl"));
   const shareContact = form.get("shareContact") === "yes" ? 1 : 0;
-  const creatorName = formText(form.get("creatorName")).trim();
-  const xUrl = formText(form.get("xUrl")).trim();
-  const tiktokUrl = formText(form.get("tiktokUrl")).trim();
-  const instagramUrl = formText(form.get("instagramUrl")).trim();
-  const youtubeUrl = formText(form.get("youtubeUrl")).trim();
-  const xFollowers = Number(formText(form.get("xFollowers")));
-  const tiktokFollowers = Number(formText(form.get("tiktokFollowers")));
-  const instagramFollowers = Number(formText(form.get("instagramFollowers")));
-  const youtubeFollowers = Number(formText(form.get("youtubeFollowers")));
-  const xScore = Number(formText(form.get("xScore")));
-  const sorsaScore = Number(formText(form.get("sorsaScore")));
   const deliverablesAccepted =
     form.get("deliverablesAccepted") === "yes" ? 1 : 0;
   if (message.length < 30 || message.length > 1200)
     return { error: "Write an application between 30 and 1,200 characters." };
-  const socialInputs = [
-    ["x", xUrl, xFollowers],
-    ["tiktok", tiktokUrl, tiktokFollowers],
-    ["instagram", instagramUrl, instagramFollowers],
-    ["youtube", youtubeUrl, youtubeFollowers],
-  ] as const;
+  if (portfolioUrl === null)
+    return { error: "Use a valid HTTPS portfolio URL." };
+  const readiness = await db
+    .prepare(
+      `SELECT p.display_name AS creatorName,
+              x.profile_url AS xUrl, x.follower_count AS xFollowers,
+              prs.x_score AS xScore, prs.x_score_source AS xScoreSource,
+              prs.sorsa_score AS sorsaScore,
+              prs.sorsa_source AS sorsaSource
+       FROM profiles p
+       LEFT JOIN profile_social_accounts x
+         ON x.user_id = p.user_id AND x.platform = 'x'
+       LEFT JOIN profile_reputation_signals prs ON prs.user_id = p.user_id
+       WHERE p.user_id = ?`,
+    )
+    .bind(user.id)
+    .first<{
+      creatorName: string;
+      xUrl: string | null;
+      xFollowers: number | null;
+      xScore: number | null;
+      xScoreSource: string | null;
+      sorsaScore: number | null;
+      sorsaSource: string | null;
+    }>();
   if (
-    creatorName.length < 2 ||
-    creatorName.length > 100 ||
-    socialInputs.some(
-      ([, url, count]) =>
-        Boolean(url) && (!Number.isFinite(count) || count < 0),
-    ) ||
-    (campaign.campaignKind === "iio" &&
-      (!xUrl ||
-        ![xFollowers, xScore, sorsaScore].every(
-          (value) => Number.isFinite(value) && value >= 0,
-        ) ||
-        !deliverablesAccepted))
+    !readiness?.xUrl ||
+    !isXProfileUrl(readiness.xUrl) ||
+    readiness.xScore === null ||
+    readiness.sorsaScore === null ||
+    readiness.xScoreSource === "unavailable" ||
+    readiness.sorsaSource === "unavailable"
   )
     return {
       error:
-        "Add your name, X profile, current metrics, and accept the campaign deliverables.",
+        "Update your primary X link, XScore and Sorsa score in your AKARI profile before applying.",
     };
-  const socialStatements = socialInputs.flatMap(([platform, url, count]) => {
-    if (!url) return [];
-    const roundedCount = Math.round(count);
-    return [
-      db
-        .prepare(
-          `INSERT INTO profile_social_accounts
-           (user_id, platform, profile_url, follower_count, count_source,
-            sync_status, last_reported_at)
-           VALUES (?, ?, ?, ?, 'member_reported', 'manual', datetime('now'))
-           ON CONFLICT(user_id, platform) DO UPDATE SET
-             profile_url = excluded.profile_url,
-             follower_count = excluded.follower_count,
-             count_source = 'member_reported', sync_status = 'manual',
-             last_reported_at = datetime('now'), updated_at = datetime('now')`,
-        )
-        .bind(user.id, platform, url, roundedCount),
-      db
-        .prepare(
-          `INSERT INTO social_metric_snapshots
-           (id, user_id, platform, follower_count, source)
-           VALUES (?, ?, ?, ?, 'member_reported')`,
-        )
-        .bind(crypto.randomUUID(), user.id, platform, roundedCount),
-    ];
-  });
+  if (campaign.campaignKind === "iio" && !deliverablesAccepted)
+    return { error: "Accept the campaign deliverables before applying." };
+  const selectedPostingDays = Array.from(
+    new Set(
+      form
+        .getAll("postingDays")
+        .map((value) => Number(formText(value)))
+        .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6),
+    ),
+  );
+  if (selectedPostingDays.length < minimumPostingDays(campaign.postingCadence))
+    return {
+      error: `Choose at least ${minimumPostingDays(campaign.postingCadence)} posting day(s) for this cadence.`,
+    };
+  const optionalSocials = await db
+    .prepare(
+      `SELECT platform, profile_url AS profileUrl,
+              COALESCE(follower_count, 0) AS followerCount
+       FROM profile_social_accounts
+       WHERE user_id = ? AND platform IN ('tiktok','instagram','youtube')`,
+    )
+    .bind(user.id)
+    .all<{
+      platform: string;
+      profileUrl: string;
+      followerCount: number;
+    }>();
+  const optionalByPlatform = new Map(
+    optionalSocials.results.map((account) => [account.platform, account]),
+  );
   await db.batch([
     db
       .prepare(
@@ -324,9 +371,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
           contact_sharing, status, updated_at, creator_name, x_url,
           tiktok_url, instagram_url, youtube_url, x_followers,
           tiktok_followers, instagram_followers, youtube_followers, x_score,
-          sorsa_score, deliverables_accepted)
+          sorsa_score, deliverables_accepted, posting_days_json)
          VALUES (?, ?, ?, ?, ?, ?, 'submitted', datetime('now'), ?, ?, ?, ?, ?,
-                 ?, ?, ?, ?, ?, ?, ?)
+                 ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(campaign_id, creator_user_id) DO UPDATE SET
            message = excluded.message, portfolio_url = excluded.portfolio_url,
            contact_sharing = excluded.contact_sharing, status = 'submitted',
@@ -340,6 +387,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
            youtube_followers = excluded.youtube_followers,
            sorsa_score = excluded.sorsa_score,
            deliverables_accepted = excluded.deliverables_accepted,
+           posting_days_json = excluded.posting_days_json,
            updated_at = excluded.updated_at`,
       )
       .bind(
@@ -349,18 +397,19 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         message,
         portfolioUrl,
         shareContact,
-        creatorName,
-        xUrl,
-        tiktokUrl,
-        instagramUrl,
-        youtubeUrl,
-        Math.round(xFollowers),
-        Math.round(tiktokFollowers),
-        Math.round(instagramFollowers),
-        Math.round(youtubeFollowers),
-        xScore,
-        sorsaScore,
+        readiness.creatorName,
+        readiness.xUrl,
+        optionalByPlatform.get("tiktok")?.profileUrl ?? "",
+        optionalByPlatform.get("instagram")?.profileUrl ?? "",
+        optionalByPlatform.get("youtube")?.profileUrl ?? "",
+        Math.round(readiness.xFollowers ?? 0),
+        Math.round(optionalByPlatform.get("tiktok")?.followerCount ?? 0),
+        Math.round(optionalByPlatform.get("instagram")?.followerCount ?? 0),
+        Math.round(optionalByPlatform.get("youtube")?.followerCount ?? 0),
+        readiness.xScore,
+        readiness.sorsaScore,
         deliverablesAccepted,
+        JSON.stringify(selectedPostingDays),
       ),
     db
       .prepare(
@@ -381,7 +430,6 @@ export async function action({ request, context, params }: Route.ActionArgs) {
          VALUES (?, ?, 'campaign.application_submitted', 'campaign', ?)`,
       )
       .bind(crypto.randomUUID(), user.id, campaign.id),
-    ...socialStatements,
   ]);
   throw redirect(`/campaigns/${params.slug}?applied=1`);
 }
@@ -466,8 +514,7 @@ export default function CampaignDetail({
             </div>
           </section>
         )}
-        {user?.accessTier === "member" &&
-          user.roles.includes("creator") &&
+        {user?.roles.includes("creator") &&
           user.id !== campaign.createdBy &&
           (campaign.status === "published" ||
             loaderData.application?.status === "accepted") && (
@@ -514,79 +561,56 @@ export default function CampaignDetail({
                   . This confirms that you have seen the project context.
                 </p>
               )}
+              {!loaderData.creatorReady && (
+                <div className="notice">
+                  <strong>Creator profile update required.</strong> Add your
+                  primary X link, XScore and Sorsa score before applying.
+                  <Link className="quiet-link" to="/app#creator-readiness">
+                    Update Creator readiness
+                  </Link>
+                </div>
+              )}
               {actionData?.error && (
                 <p className="form-error">{actionData.error}</p>
               )}
               {campaign.status === "published" && (
                 <Form method="post" className="form-stack">
-                  <label>
-                    Creator name
-                    <input
-                      name="creatorName"
-                      minLength={2}
-                      maxLength={100}
-                      defaultValue={user.displayName}
-                      required
-                    />
-                  </label>
-                  {(["x", "tiktok", "instagram", "youtube"] as const).map(
-                    (platform) => (
-                      <div className="form-row">
-                        <label>
-                          {platform === "x"
-                            ? "X profile"
-                            : `${platform[0].toUpperCase()}${platform.slice(1)} profile`}
+                  <div className="status-card creator-readiness-summary">
+                    <strong>Application identity</strong>
+                    <span>
+                      Primary X: {socials.get("x")?.profileUrl || "Missing"}
+                    </span>
+                    <span>
+                      XScore:{" "}
+                      {loaderData.reputationSignals?.xScore ?? "Missing"}
+                    </span>
+                    <span>
+                      Sorsa score:{" "}
+                      {loaderData.reputationSignals?.sorsaScore ?? "Missing"}
+                    </span>
+                  </div>
+                  <fieldset className="profile-panel campaign-posting-days">
+                    <legend>Which days will you post?</legend>
+                    <p className="field-help">
+                      Choose the days that fit your schedule. The campaign
+                      cadence still determines the minimum number required.
+                    </p>
+                    <div className="interest-grid">
+                      {postingDays.map((day) => (
+                        <label key={day.value}>
                           <input
-                            name={`${platform}Url`}
-                            type="url"
-                            defaultValue={socials.get(platform)?.profileUrl}
-                            required={
-                              platform === "x" &&
-                              campaign.campaignKind === "iio"
-                            }
+                            type="checkbox"
+                            name="postingDays"
+                            value={day.value}
+                            defaultChecked={parsePostingDays(
+                              loaderData.application?.postingDaysJson,
+                            ).includes(day.value)}
                           />
+                          <span>{day.short}</span>
                         </label>
-                        <label>
-                          Current followers
-                          <input
-                            name={`${platform}Followers`}
-                            type="number"
-                            min="0"
-                            defaultValue={
-                              socials.get(platform)?.followerCount ?? 0
-                            }
-                            required={Boolean(
-                              socials.get(platform)?.profileUrl,
-                            )}
-                          />
-                        </label>
-                      </div>
-                    ),
-                  )}
-                  {campaign.campaignKind === "iio" && (
-                    <div className="form-row">
-                      <label>
-                        Current XScore
-                        <input
-                          name="xScore"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          required
-                        />
-                      </label>
-                      <label>
-                        Current Sorsa score
-                        <input
-                          name="sorsaScore"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          required
-                        />
-                      </label>
+                      ))}
                     </div>
-                  )}
+                  </fieldset>
                   <label>
                     Why are you a strong fit?
                     <textarea
@@ -622,7 +646,9 @@ export default function CampaignDetail({
                     name="intent"
                     value="apply"
                     disabled={
-                      !loaderData.following || navigation.state !== "idle"
+                      !loaderData.following ||
+                      !loaderData.creatorReady ||
+                      navigation.state !== "idle"
                     }
                   >
                     {loaderData.application
@@ -666,6 +692,16 @@ export default function CampaignDetail({
                     </Link>
                   </h3>
                   <p>{application.message}</p>
+                  <p>
+                    Posting days:{" "}
+                    {parsePostingDays(application.postingDaysJson)
+                      .map(
+                        (value) =>
+                          postingDays.find((day) => day.value === value)?.short,
+                      )
+                      .filter(Boolean)
+                      .join(", ") || "Not selected"}
+                  </p>
                   {application.portfolioUrl && (
                     <a
                       className="quiet-link"

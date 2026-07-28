@@ -1,4 +1,5 @@
 import type { SessionUser } from "./domain";
+import { isRoleVerifiedId } from "./role-verification.server";
 
 export type ConnectionState =
   "none" | "outgoing_pending" | "incoming_pending" | "connected" | "blocked";
@@ -45,6 +46,21 @@ export async function sendConnectionRequest(
     throw new Response("A connection relationship already exists.", {
       status: 409,
     });
+  const recipientRoles = await db
+    .prepare("SELECT role FROM user_roles WHERE user_id = ?")
+    .bind(recipientId)
+    .all<{ role: string }>();
+  if (recipientRoles.results.some((row) => row.role === "investor")) {
+    if (
+      !user.roles.includes("founder") ||
+      !(await isRoleVerifiedId(db, user.id, "founder")) ||
+      !(await isRoleVerifiedId(db, recipientId, "investor"))
+    )
+      throw new Response(
+        "Only verified Founders can request a connection with a verified Investor.",
+        { status: 403 },
+      );
+  }
   const connectionId = crypto.randomUUID();
   await db.batch([
     db

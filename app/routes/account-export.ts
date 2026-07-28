@@ -19,6 +19,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     campaigns,
     notifications,
     legal,
+    profileSharing,
+    reputation,
+    eventInterests,
   ] = await Promise.all([
     db
       .prepare(
@@ -53,7 +56,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       .prepare(
         `SELECT platform, profile_url AS profileUrl, follower_count AS followerCount,
                   sync_status AS syncStatus, updated_at AS updatedAt
-           FROM social_accounts WHERE user_id = ?`,
+           FROM profile_social_accounts WHERE user_id = ?`,
       )
       .bind(user.id)
       .all(),
@@ -67,7 +70,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       .all(),
     db
       .prepare(
-        `SELECT id, slug, title, summary, story, stage, seeking, status,
+        `SELECT id, slug, title, summary, description, stage, seeking, status,
                   created_at AS createdAt, updated_at AS updatedAt
            FROM projects WHERE founder_user_id = ?`,
       )
@@ -90,7 +93,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       .all(),
     db
       .prepare(
-        `SELECT campaign_id AS campaignId, status, created_at AS createdAt,
+        `SELECT campaign_id AS campaignId, status,
+                  posting_days_json AS postingDaysJson,
+                  created_at AS createdAt,
                   updated_at AS updatedAt
            FROM campaign_applications WHERE creator_user_id = ?`,
       )
@@ -109,6 +114,33 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         `SELECT policy, action, policy_version AS policyVersion,
                   accepted_at AS acceptedAt
            FROM legal_acceptances WHERE user_id = ? ORDER BY accepted_at`,
+      )
+      .bind(user.id)
+      .all(),
+    db
+      .prepare(
+        `SELECT design, orientation, palette, country_code AS countryCode,
+                show_location AS showLocation,
+                languages_json AS languagesJson,
+                show_languages AS showLanguages, updated_at AS updatedAt
+         FROM profile_share_settings WHERE user_id = ?`,
+      )
+      .bind(user.id)
+      .first(),
+    db
+      .prepare(
+        `SELECT sorsa_score AS sorsaScore, sorsa_source AS sorsaSource,
+                x_score AS xScore, x_score_source AS xScoreSource,
+                updated_at AS updatedAt
+         FROM profile_reputation_signals WHERE user_id = ?`,
+      )
+      .bind(user.id)
+      .first(),
+    db
+      .prepare(
+        `SELECT event_id AS eventId, created_at AS createdAt,
+                updated_at AS updatedAt
+         FROM event_interests WHERE user_id = ?`,
       )
       .bind(user.id)
       .all(),
@@ -131,6 +163,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     campaignApplications: campaigns.results,
     notifications: notifications.results,
     legalAcceptances: legal.results,
+    profileSharing,
+    reputationSignals: reputation,
+    eventInterests: eventInterests.results,
   };
 
   await db.batch([

@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { AkariMotif } from "~/components/AkariMotif";
+import { googleCalendarEventUrl } from "~/lib/calendar";
 
 export type EventInvitation = {
   slug: string;
@@ -8,6 +9,7 @@ export type EventInvitation = {
   format: string;
   venue: string;
   startsAt: string;
+  endsAt?: string;
   timezone: string;
   capacity: number | null;
   hostName: string;
@@ -69,6 +71,16 @@ export function EventInvitationCard({
   const capacityPercent = event.capacity
     ? Math.min(100, (event.registeredCount / event.capacity) * 100)
     : 0;
+  const calendarUrl = event.endsAt
+    ? googleCalendarEventUrl({
+        title: event.title,
+        summary: event.summary,
+        startsAt: event.startsAt,
+        endsAt: event.endsAt,
+        venue: event.venue,
+        publicUrl: `https://akarihouse.com/events/${event.slug}`,
+      })
+    : "";
 
   return (
     <article
@@ -124,6 +136,16 @@ export function EventInvitationCard({
           <Link className="event-card-action" to={`/events/${event.slug}`}>
             View gathering
           </Link>
+          {calendarUrl && (
+            <a
+              className="event-card-action"
+              href={calendarUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Add to calendar
+            </a>
+          )}
         </footer>
         {event.capacity && (
           <div

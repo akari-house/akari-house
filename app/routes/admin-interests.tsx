@@ -7,6 +7,7 @@ import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 import { EventTimeDisplay } from "~/components/EventTimeDisplay";
 import { isValidDecisionNote } from "~/lib/review";
+import { isRoleVerifiedId } from "~/lib/role-verification.server";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -52,6 +53,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
                 e.venue, e.meeting_url AS meetingUrl,
                 e.starts_at AS startsAt, e.ends_at AS endsAt, e.timezone,
                 e.capacity, e.image_key AS imageKey,
+                e.image_source_url AS imageSourceUrl,
                 p.display_name AS hostName
          FROM events e JOIN profiles p ON p.user_id = e.host_user_id
          WHERE e.status = 'submitted' ORDER BY e.created_at`,
@@ -70,6 +72,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         timezone: string;
         capacity: number | null;
         imageKey: string | null;
+        imageSourceUrl: string;
         hostName: string;
       }>(),
   ]);
@@ -103,6 +106,14 @@ export async function action({ request, context }: Route.ActionArgs) {
       .bind(subjectId)
       .first<{ founderUserId: string; slug: string; title: string }>();
     if (!project) throw new Response("Project not found.", { status: 404 });
+    if (
+      decision === "approve" &&
+      !(await isRoleVerifiedId(db, project.founderUserId, "founder"))
+    )
+      return {
+        error:
+          "Verify the Founder before publishing this project. Drafts and review notes remain available.",
+      };
     const status = decision === "approve" ? "published" : "declined";
     await db.batch([
       db
@@ -314,13 +325,25 @@ export default function AdminInterests({
                 <article className="application-card" key={event.id}>
                   <div>
                     {event.imageKey && (
-                      <img
-                        className="review-event-cover"
-                        src={`/media/events/${event.slug}`}
-                        alt={`${event.title} proposed cover`}
-                        width={720}
-                        height={405}
-                      />
+                      <>
+                        <img
+                          className="review-event-cover"
+                          src={`/media/events/${event.slug}`}
+                          alt={`${event.title} proposed cover`}
+                          width={720}
+                          height={405}
+                        />
+                        {event.imageSourceUrl && (
+                          <a
+                            className="quiet-link"
+                            href={event.imageSourceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Verify original image source
+                          </a>
+                        )}
+                      </>
                     )}
                     <span className="chapter">
                       {event.format.replace("_", " ")}

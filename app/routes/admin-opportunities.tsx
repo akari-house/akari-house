@@ -7,6 +7,7 @@ import { recordOpportunityAudit } from "~/lib/opportunity-access.server";
 import { publishSubmittedOpportunitySections } from "~/lib/opportunity-sections.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
+import { isRoleVerifiedId } from "~/lib/role-verification.server";
 
 type ReviewedSection = {
   id: string;
@@ -189,6 +190,13 @@ export async function action({ request, context }: Route.ActionArgs) {
     if (intent === "publish" && listing.projectStatus !== "published")
       return {
         error: "Publish the underlying project before its opportunity.",
+      };
+    if (
+      intent === "publish" &&
+      !(await isRoleVerifiedId(db, listing.founderUserId, "founder"))
+    )
+      return {
+        error: "Verify the Founder before publishing this opportunity.",
       };
     const nextStatus =
       intent === "publish"

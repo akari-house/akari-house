@@ -1,7 +1,7 @@
 import { Form, Link, useNavigation } from "react-router";
 import type { Route } from "./+types/campaign-workspace";
 import { SiteHeader } from "~/components/SiteHeader";
-import { requireApprovedMember } from "~/lib/auth.server";
+import { requireUser } from "~/lib/auth.server";
 import {
   campaignPayoutSuggestion,
   expectedCampaignSlots,
@@ -11,6 +11,7 @@ import {
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
+import { parsePostingDays, postingDays } from "~/lib/campaign-posting-days";
 
 type Campaign = {
   id: string;
@@ -35,6 +36,7 @@ type Application = {
   username: string;
   payoutCents: number;
   finalPayoutCents: number | null;
+  postingDaysJson: string;
 };
 
 type Submission = {
@@ -97,7 +99,8 @@ async function acceptedApplications(db: D1Database, campaignId: string) {
         `SELECT ca.id, ca.creator_user_id AS creatorUserId,
                 p.display_name AS creatorName, u.username,
                 ca.payout_cents AS payoutCents,
-                ca.final_payout_cents AS finalPayoutCents
+                ca.final_payout_cents AS finalPayoutCents,
+                ca.posting_days_json AS postingDaysJson
          FROM campaign_applications ca
          JOIN users u ON u.id = ca.creator_user_id
          JOIN profiles p ON p.user_id = ca.creator_user_id
@@ -130,10 +133,12 @@ async function campaignSubmissions(db: D1Database, campaignId: string) {
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireApprovedMember(request, db);
+  const user = await requireUser(request, db);
   const campaign = await getCampaign(db, params.slug);
   if (!campaign) throw new Response("Campaign not found.", { status: 404 });
-  const moderator = await canModerateCampaign(db, user.id, campaign);
+  const moderator =
+    user.accessTier === "member" &&
+    (await canModerateCampaign(db, user.id, campaign));
   const applications = await acceptedApplications(db, campaign.id);
   const ownApplication = applications.find(
     (application) => application.creatorUserId === user.id,
@@ -189,12 +194,14 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireApprovedMember(request, db);
+  const user = await requireUser(request, db);
   const campaign = await getCampaign(db, params.slug);
   if (!campaign) throw new Response("Campaign not found.", { status: 404 });
   const form = await request.formData();
   const intent = formText(form.get("intent"));
-  const moderator = await canModerateCampaign(db, user.id, campaign);
+  const moderator =
+    user.accessTier === "member" &&
+    (await canModerateCampaign(db, user.id, campaign));
   if (intent === "assign-moderator" || intent === "remove-moderator") {
     const superadmin = await db
       .prepare(
@@ -278,11 +285,12 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   if (intent === "submit-work") {
     const application = await db
       .prepare(
-        `SELECT id FROM campaign_applications
+        `SELECT id, posting_days_json AS postingDaysJson
+         FROM campaign_applications
          WHERE campaign_id = ? AND creator_user_id = ? AND status = 'accepted'`,
       )
       .bind(campaign.id, user.id)
-      .first<{ id: string }>();
+      .first<{ id: string; postingDaysJson: string }>();
     if (!application)
       throw new Response("Accepted Creator required.", { status: 403 });
     const workUrlValue = formText(form.get("workUrl")).trim();
@@ -300,6 +308,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       campaign.startsAt,
       campaign.endsAt,
       campaign.postingCadence,
+      new Date(),
+      parsePostingDays(application.postingDaysJson),
     );
     if (
       !dueSlots.some(
@@ -446,23 +456,6 @@ export default function CampaignWorkspace({
   const cadence =
     postingCadences.find((item) => item.value === campaign.postingCadence)
       ?.label ?? campaign.postingCadence;
-  const allSlots =
-    campaign.startsAt && campaign.endsAt
-      ? expectedCampaignSlots(
-          campaign.startsAt,
-          campaign.endsAt,
-          campaign.postingCadence,
-          new Date(`${campaign.endsAt.slice(0, 10)}T23:59:59.000Z`),
-        )
-      : [];
-  const dueSlots =
-    campaign.startsAt && campaign.endsAt
-      ? expectedCampaignSlots(
-          campaign.startsAt,
-          campaign.endsAt,
-          campaign.postingCadence,
-        )
-      : [];
   const money = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: campaign.currency,
@@ -502,8 +495,8 @@ export default function CampaignWorkspace({
             <span>campaign ends</span>
           </div>
           <div>
-            <strong>{allSlots.length}</strong>
-            <span>requirements per Creator</span>
+            <strong>Flexible</strong>
+            <span>Creator-selected posting days</span>
           </div>
         </section>
         {moderator && (
@@ -604,6 +597,27 @@ export default function CampaignWorkspace({
           </section>
         )}
         {loaderData.applications.map((application) => {
+          const selectedDays = parsePostingDays(application.postingDaysJson);
+          const allSlots =
+            campaign.startsAt && campaign.endsAt
+              ? expectedCampaignSlots(
+                  campaign.startsAt,
+                  campaign.endsAt,
+                  campaign.postingCadence,
+                  new Date(`${campaign.endsAt.slice(0, 10)}T23:59:59.000Z`),
+                  selectedDays,
+                )
+              : [];
+          const dueSlots =
+            campaign.startsAt && campaign.endsAt
+              ? expectedCampaignSlots(
+                  campaign.startsAt,
+                  campaign.endsAt,
+                  campaign.postingCadence,
+                  new Date(),
+                  selectedDays,
+                )
+              : [];
           const submissions = loaderData.submissions.filter(
             (submission) => submission.applicationId === application.id,
           );
@@ -642,6 +656,16 @@ export default function CampaignWorkspace({
                 {approved} approved · Suggested payout{" "}
                 <strong>{money.format(suggestion / 100)}</strong> from{" "}
                 {money.format(application.payoutCents / 100)} allocated.
+              </p>
+              <p>
+                Posting days:{" "}
+                {selectedDays
+                  .map(
+                    (value) =>
+                      postingDays.find((day) => day.value === value)?.short,
+                  )
+                  .filter(Boolean)
+                  .join(", ")}
               </p>
               {!moderator && availableSlots.length > 0 && (
                 <Form method="post" className="profile-form">

@@ -20,6 +20,7 @@ import {
   markManagedR2ObjectDeleted,
   registerManagedR2Object,
 } from "~/lib/r2-lifecycle.server";
+import { importEventImage } from "~/lib/event-image.server";
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -33,7 +34,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       `SELECT id, slug, title, summary, description, format, venue,
               meeting_url AS meetingUrl, starts_at AS startsAt,
               ends_at AS endsAt, timezone, capacity, status,
-              image_key AS imageKey
+              image_key AS imageKey,
+              image_source_url AS imageSourceUrl
        FROM events WHERE slug = ? AND host_user_id = ?`,
     )
     .bind(params.slug, user.id)
@@ -52,6 +54,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       capacity: number | null;
       status: string;
       imageKey: string | null;
+      imageSourceUrl: string;
     }>();
   if (!event) throw new Response("Event not found.", { status: 404 });
   return { user, event };
@@ -73,7 +76,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const intent = formText(form.get("intent"));
   const existing = await db
     .prepare(
-      `SELECT id, status, title, image_key AS imageKey
+      `SELECT id, status, title, image_key AS imageKey,
+              image_source_url AS imageSourceUrl
        FROM events WHERE slug = ? AND host_user_id = ?`,
     )
     .bind(params.slug, user.id)
@@ -82,6 +86,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       status: string;
       title: string;
       imageKey: string | null;
+      imageSourceUrl: string;
     }>();
   if (!existing) throw new Response("Event not found.", { status: 404 });
   if (intent === "cancel") {
@@ -185,8 +190,12 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     };
 
   const image = form.get("image");
+  const imageUrl = formText(form.get("imageUrl")).trim();
   const removeImage = form.get("removeImage") === "yes";
+  if (image instanceof File && image.size && imageUrl)
+    return { error: "Choose either an image upload or an image URL." };
   let imageKey = removeImage ? null : existing.imageKey;
+  let imageSourceUrl = removeImage ? "" : existing.imageSourceUrl;
   let uploadedImageKey: string | null = null;
   if (image instanceof File && image.size) {
     const validImage = await validateProfilePhoto(image);
@@ -194,9 +203,25 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       return { error: "Use a JPG, PNG or WebP image no larger than 2 MB." };
     uploadedImageKey = `event-images/${existing.id}/${crypto.randomUUID()}.${validImage.extension}`;
     imageKey = uploadedImageKey;
+    imageSourceUrl = "";
     await env.MEDIA.put(uploadedImageKey, image.stream(), {
       httpMetadata: { contentType: validImage.contentType },
     });
+  } else if (imageUrl && imageUrl !== existing.imageSourceUrl) {
+    try {
+      const imported = await importEventImage(imageUrl);
+      uploadedImageKey = `event-images/${existing.id}/${crypto.randomUUID()}.${imported.extension}`;
+      imageKey = uploadedImageKey;
+      imageSourceUrl = imported.sourceUrl;
+      await env.MEDIA.put(uploadedImageKey, imported.bytes, {
+        httpMetadata: { contentType: imported.contentType },
+      });
+    } catch (error) {
+      return {
+        error:
+          error instanceof Error ? error.message : "The image link is invalid.",
+      };
+    }
   }
 
   try {
@@ -211,7 +236,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       .prepare(
         `UPDATE events SET title = ?, summary = ?, description = ?,
          format = ?, venue = ?, meeting_url = ?, starts_at = ?, ends_at = ?,
-         timezone = ?, capacity = ?, image_key = ?, status = 'submitted',
+         timezone = ?, capacity = ?, image_key = ?, image_source_url = ?,
+         status = 'submitted',
          updated_at = datetime('now')
          WHERE id = ?`,
       )
@@ -227,6 +253,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         timezone,
         capacity,
         imageKey,
+        imageSourceUrl,
         existing.id,
       )
       .run();
@@ -328,6 +355,19 @@ export default function EventEdit({
               event to review.
             </small>
           </div>
+          <label>
+            Or import a cover from an HTTPS image link
+            <input
+              name="imageUrl"
+              type="url"
+              inputMode="url"
+              defaultValue={event.imageSourceUrl}
+              placeholder="https://example.com/event-cover.jpg"
+            />
+            <small>
+              AKARI securely copies the reviewed image into private storage.
+            </small>
+          </label>
           <div className="form-row">
             <label>
               Format

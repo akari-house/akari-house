@@ -44,7 +44,16 @@ export async function processAccountRetention(env: RetentionEnvironment) {
         env.DB.prepare("DELETE FROM profile_contacts WHERE user_id = ?").bind(
           request.userId,
         ),
-        env.DB.prepare("DELETE FROM social_accounts WHERE user_id = ?").bind(
+        env.DB.prepare(
+          "DELETE FROM profile_social_accounts WHERE user_id = ?",
+        ).bind(request.userId),
+        env.DB.prepare(
+          "DELETE FROM profile_share_settings WHERE user_id = ?",
+        ).bind(request.userId),
+        env.DB.prepare(
+          "DELETE FROM profile_reputation_signals WHERE user_id = ?",
+        ).bind(request.userId),
+        env.DB.prepare("DELETE FROM event_interests WHERE user_id = ?").bind(
           request.userId,
         ),
         env.DB.prepare(

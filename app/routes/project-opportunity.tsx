@@ -7,6 +7,7 @@ import { recordOpportunityAudit } from "~/lib/opportunity-access.server";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
+import { isRoleVerifiedId } from "~/lib/role-verification.server";
 
 type ListingRow = {
   sector: string;
@@ -71,7 +72,12 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     )
     .bind(project.id)
     .first<ListingRow>();
-  return { user, project, listing };
+  return {
+    user,
+    project,
+    listing,
+    founderVerified: await isRoleVerifiedId(db, user.id, "founder"),
+  };
 }
 
 export async function action({ request, context, params }: Route.ActionArgs) {
@@ -156,6 +162,11 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     return {
       error:
         "The project must be published before an opportunity can be submitted for review.",
+    };
+  if (intent === "submit" && !(await isRoleVerifiedId(db, user.id, "founder")))
+    return {
+      error:
+        "Admin Founder verification is required before an opportunity can be submitted for publication.",
     };
 
   const status = intent === "submit" ? "submitted" : "draft";
@@ -265,6 +276,12 @@ export default function ProjectOpportunity({
         {actionData?.error && (
           <p className="form-error" role="alert">
             {actionData.error}
+          </p>
+        )}
+        {!loaderData.founderVerified && (
+          <p className="notice">
+            You can complete and save this private draft now. Submission opens
+            after an AKARI Admin verifies your Founder role.
           </p>
         )}
 
@@ -417,6 +434,7 @@ export default function ProjectOpportunity({
               className="button button-primary"
               name="intent"
               value="submit"
+              disabled={!loaderData.founderVerified}
             >
               Submit for AKARI review
             </button>

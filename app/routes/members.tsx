@@ -17,6 +17,7 @@ import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 import { getVisibleProfile } from "~/lib/profile.server";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
+import { isRoleVerifiedId } from "~/lib/role-verification.server";
 
 interface DirectoryMember {
   id: string;
@@ -25,11 +26,13 @@ interface DirectoryMember {
   headline: string;
   bio: string;
   location: string;
+  languagesJson: string;
   expertise: string;
   openTo: string;
   avatarKey: string;
   rolesCsv: string;
   relationship: ConnectionState;
+  investorVerified: number;
 }
 
 export const meta: Route.MetaFunction = () => [
@@ -54,11 +57,34 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       `SELECT u.id, u.username, p.display_name AS displayName,
               COALESCE(p.headline, '') AS headline,
               COALESCE(p.bio, '') AS bio,
-              COALESCE(p.location, '') AS location,
+              CASE WHEN COALESCE(pss.show_location, 0) = 1
+                THEN COALESCE(p.location, '') ELSE '' END AS location,
+              CASE WHEN COALESCE(pss.show_languages, 1) = 1
+                THEN COALESCE(pss.languages_json, '[]') ELSE '[]'
+                END AS languagesJson,
               COALESCE(p.expertise, '') AS expertise,
               COALESCE(p.open_to, '') AS openTo,
               COALESCE(p.avatar_key, '') AS avatarKey,
               group_concat(DISTINCT ur.role) AS rolesCsv,
+              CASE WHEN EXISTS (
+                SELECT 1 FROM role_verifications investor_rv
+                WHERE investor_rv.user_id = u.id
+                  AND investor_rv.role = 'investor'
+                  AND investor_rv.status = 'verified'
+                  AND (
+                    NOT EXISTS (
+                      SELECT 1 FROM verification_provenance vp
+                      WHERE vp.user_id = u.id AND vp.role = 'investor'
+                    )
+                    OR EXISTS (
+                      SELECT 1 FROM verification_provenance vp
+                      WHERE vp.user_id = u.id AND vp.role = 'investor'
+                        AND vp.status = 'active'
+                        AND (vp.review_due_at IS NULL
+                          OR vp.review_due_at > datetime('now'))
+                    )
+                  )
+              ) THEN 1 ELSE 0 END AS investorVerified,
               CASE
                 WHEN c.status = 'blocked' THEN 'blocked'
                 WHEN c.status = 'accepted' THEN 'connected'
@@ -69,6 +95,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
        FROM users u
        JOIN profiles p ON p.user_id = u.id
        LEFT JOIN profile_visibility pv ON pv.user_id = u.id
+       LEFT JOIN profile_share_settings pss ON pss.user_id = u.id
        JOIN user_roles ur ON ur.user_id = u.id
        LEFT JOIN connections c
          ON ((c.requester_id = ? AND c.recipient_id = u.id)
@@ -87,7 +114,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
               OR p.headline LIKE ? ESCAPE '\\'
               OR p.bio LIKE ? ESCAPE '\\'
               OR p.expertise LIKE ? ESCAPE '\\')
-         AND (? = '' OR p.location LIKE ? ESCAPE '\\')
+         AND (? = '' OR (
+           COALESCE(pss.show_location, 0) = 1
+           AND p.location LIKE ? ESCAPE '\\'
+         ))
          AND (? = '' OR p.expertise LIKE ? ESCAPE '\\')
          AND (? = '' OR EXISTS (
            SELECT 1 FROM user_roles role_filter
@@ -122,9 +152,24 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return {
     user,
     filters,
+    viewerFounderVerified: user.roles.includes("founder")
+      ? await isRoleVerifiedId(db, user.id, "founder")
+      : false,
     members: rows.results.map((member) => ({
       ...member,
       roles: member.rolesCsv.split(",").filter(Boolean) as Role[],
+      languages: (() => {
+        try {
+          const parsed: unknown = JSON.parse(member.languagesJson);
+          return Array.isArray(parsed)
+            ? parsed.filter(
+                (language): language is string => typeof language === "string",
+              )
+            : [];
+        } catch {
+          return [];
+        }
+      })(),
     })),
   };
 }
@@ -273,6 +318,10 @@ export default function Members({ loaderData }: Route.ComponentProps) {
           <section className="member-card-grid" aria-label="Members">
             {loaderData.members.map((member) => {
               const status = relationshipLabel(member.relationship);
+              const canConnect =
+                !member.roles.includes("investor") ||
+                (loaderData.viewerFounderVerified &&
+                  member.investorVerified === 1);
               return (
                 <article className="member-card" key={member.id}>
                   <ProfileAvatar
@@ -299,6 +348,11 @@ export default function Members({ loaderData }: Route.ComponentProps) {
                       @{member.username}
                       {member.location ? ` · ${member.location}` : ""}
                     </p>
+                    {member.languages.length > 0 && (
+                      <p className="member-card-languages">
+                        Languages: {member.languages.join(", ")}
+                      </p>
+                    )}
                     <p>
                       {member.headline ||
                         member.bio ||
@@ -335,8 +389,9 @@ export default function Members({ loaderData }: Route.ComponentProps) {
                               className="button button-small button-primary"
                               name="intent"
                               value="connect"
+                              disabled={!canConnect}
                             >
-                              Connect
+                              {canConnect ? "Connect" : "Verification required"}
                             </button>
                           </Form>
                         )}

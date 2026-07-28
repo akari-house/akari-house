@@ -49,57 +49,56 @@ export function ProfilePhotoEditor({
             </span>
           )}
           <div>
-            <strong>
-              {isMember
-                ? "Add your face to the House"
-                : "Available after approval"}
-            </strong>
+            <strong>Add your face to the House</strong>
             <small>JPG, PNG or WebP. Maximum 2 MB.</small>
           </div>
         </div>
-        {isMember && (
-          <div className="profile-photo-actions">
-            <label className="profile-photo-picker">
-              <span>Choose image</span>
-              <input
-                name="profilePhoto"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                aria-describedby="profile-photo-selection"
-                disabled={photoPending}
-                onChange={(event) =>
-                  setFileName(event.currentTarget.files?.[0]?.name ?? "")
-                }
-              />
-            </label>
+        <div className="profile-photo-actions">
+          <label className="profile-photo-picker">
+            <span>Choose image</span>
+            <input
+              name="profilePhoto"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              aria-describedby="profile-photo-selection"
+              disabled={photoPending}
+              onChange={(event) =>
+                setFileName(event.currentTarget.files?.[0]?.name ?? "")
+              }
+            />
+          </label>
+          <button
+            className="button button-primary"
+            name="intent"
+            value="upload-photo"
+            type="submit"
+            disabled={!fileName || photoPending}
+          >
+            {pendingIntent === "upload-photo" && photoPending
+              ? "Uploading…"
+              : "Upload photo"}
+          </button>
+          {avatarKey && (
             <button
-              className="button button-primary"
+              className="button button-quiet"
               name="intent"
-              value="upload-photo"
+              value="remove-photo"
               type="submit"
-              disabled={!fileName || photoPending}
+              disabled={photoPending}
             >
-              {pendingIntent === "upload-photo" && photoPending
-                ? "Uploading…"
-                : "Upload photo"}
+              {pendingIntent === "remove-photo" && photoPending
+                ? "Removing…"
+                : "Remove profile photo"}
             </button>
-            {avatarKey && (
-              <button
-                className="button button-quiet"
-                name="intent"
-                value="remove-photo"
-                type="submit"
-                disabled={photoPending}
-              >
-                {pendingIntent === "remove-photo" && photoPending
-                  ? "Removing…"
-                  : "Remove profile photo"}
-              </button>
-            )}
-            <small id="profile-photo-selection" role="status">
-              {fileName ? `Selected: ${fileName}` : "No image selected"}
-            </small>
-          </div>
+          )}
+          <small id="profile-photo-selection" role="status">
+            {fileName ? `Selected: ${fileName}` : "No image selected"}
+          </small>
+        </div>
+        {!isMember && (
+          <small>
+            Your photo remains private while your membership is reviewed.
+          </small>
         )}
       </fieldset>
     </Form>
