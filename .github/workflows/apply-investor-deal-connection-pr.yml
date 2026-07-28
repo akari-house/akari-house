@@ -43,12 +43,12 @@ jobs:
           Path('/tmp/apply-investor-deal-connection.py').write_text(patch + "\n")
           PY
           python /tmp/apply-investor-deal-connection.py
+          rm .github/workflows/apply-investor-deal-connection.yml
       - run: npm run format
       - run: npm run typecheck
       - run: npm test -- --run tests/investor-deal-matching.test.ts
       - name: Commit the implementation
         run: |
-          rm .github/workflows/apply-investor-deal-connection.yml
           rm .github/workflows/apply-investor-deal-connection-pr.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
