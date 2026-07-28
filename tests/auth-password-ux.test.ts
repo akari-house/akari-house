@@ -20,6 +20,7 @@ describe("authentication password experience", () => {
     expect(passwordField).toContain("setCustomValidity");
   });
 
+  // The worker runtime owns /login and must match the React experience.
   it("keeps the worker-served login form at password UX parity", () => {
     const fallback = read("app/lib/public-login-fallback.server.ts");
     expect(fallback).toContain('data-password-field="password"');
