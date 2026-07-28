@@ -1,22 +1,54 @@
-name: Member Directory Source Export
+name: Apply Member Directory Repair Formatting
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
+      - agent/member-directory-discovery
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  export-source:
+  format-and-clean:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Archive source
-        run: git archive --format=tar.gz --output=akari-source.tar.gz HEAD
-      - uses: actions/upload-artifact@v4
         with:
-          name: akari-member-directory-source
-          path: akari-source.tar.gz
-          retention-days: 1
+          ref: agent/member-directory-discovery
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.0
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Apply repository formatting
+        run: |
+          npx prettier --write \
+            app/lib/member-directory.ts \
+            app/lib/network.server.ts \
+            app/lib/profile.server.ts \
+            app/routes/admin-applications.tsx \
+            app/routes/connections.tsx \
+            app/routes/members.tsx \
+            app/routes/profile.tsx \
+            app/styles/member-directory-repair.css \
+            tests/unit/member-directory.test.ts \
+            tests/unit/member-discovery-flow.test.ts
+          rm .github/workflows/member-directory-source-export.yml
+      - name: Commit formatter output and cleanup
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/lib/member-directory.ts \
+            app/lib/network.server.ts \
+            app/lib/profile.server.ts \
+            app/routes/admin-applications.tsx \
+            app/routes/connections.tsx \
+            app/routes/members.tsx \
+            app/routes/profile.tsx \
+            app/styles/member-directory-repair.css \
+            tests/unit/member-directory.test.ts \
+            tests/unit/member-discovery-flow.test.ts \
+            .github/workflows/member-directory-source-export.yml
+          git commit -m "Format member directory repair"
+          git push origin HEAD:agent/member-directory-discovery
