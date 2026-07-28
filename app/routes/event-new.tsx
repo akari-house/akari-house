@@ -19,6 +19,7 @@ import {
   markManagedR2ObjectDeleted,
   registerManagedR2Object,
 } from "~/lib/r2-lifecycle.server";
+import { importEventImage } from "~/lib/event-image.server";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -83,7 +84,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   const id = crypto.randomUUID();
   const slug = await uniqueEventSlug(db, title);
   const image = form.get("image");
+  const imageUrl = formText(form.get("imageUrl")).trim();
+  if (image instanceof File && image.size && imageUrl)
+    return { error: "Choose either an image upload or an image URL." };
   let imageKey: string | null = null;
+  let imageSourceUrl = "";
   if (image instanceof File && image.size) {
     const validImage = await validateProfilePhoto(image);
     if (!validImage)
@@ -92,6 +97,20 @@ export async function action({ request, context }: Route.ActionArgs) {
     await env.MEDIA.put(imageKey, image.stream(), {
       httpMetadata: { contentType: validImage.contentType },
     });
+  } else if (imageUrl) {
+    try {
+      const imported = await importEventImage(imageUrl);
+      imageKey = `event-images/${id}/${crypto.randomUUID()}.${imported.extension}`;
+      imageSourceUrl = imported.sourceUrl;
+      await env.MEDIA.put(imageKey, imported.bytes, {
+        httpMetadata: { contentType: imported.contentType },
+      });
+    } catch (error) {
+      return {
+        error:
+          error instanceof Error ? error.message : "The image link is invalid.",
+      };
+    }
   }
 
   try {
@@ -108,8 +127,8 @@ export async function action({ request, context }: Route.ActionArgs) {
           `INSERT INTO events
            (id, host_user_id, slug, title, summary, description, format,
             venue, meeting_url, starts_at, ends_at, timezone, capacity,
-            image_key, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted')`,
+            image_key, image_source_url, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted')`,
         )
         .bind(
           id,
@@ -126,6 +145,7 @@ export async function action({ request, context }: Route.ActionArgs) {
           timezone,
           capacity,
           imageKey,
+          imageSourceUrl,
         ),
       db
         .prepare(
@@ -208,6 +228,19 @@ export default function EventNew({
             <small>
               Optional. Use a landscape JPG, PNG or WebP up to 2 MB. The image
               remains private until the event is approved.
+            </small>
+          </label>
+          <label>
+            Or import a cover from an HTTPS image link
+            <input
+              name="imageUrl"
+              type="url"
+              inputMode="url"
+              placeholder="https://example.com/event-cover.jpg"
+            />
+            <small>
+              AKARI securely copies the reviewed image into private storage.
+              Local and private-network addresses are blocked.
             </small>
           </label>
           <div className="form-row">
