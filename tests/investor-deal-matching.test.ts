@@ -38,7 +38,7 @@ describe("investor profile to deal discovery", () => {
     ]);
   });
 
-  it("does not claim a ticket match across currencies", () => {
+  it("does not claim a perfect ticket match across currencies", () => {
     const match = matchOpportunityToInvestor(profile, {
       sector: "Infrastructure",
       stage: "prototype",
@@ -47,7 +47,7 @@ describe("investor profile to deal discovery", () => {
       raiseCurrency: "EUR",
     });
 
-    expect(match.score).toBe(100);
+    expect(match.score).toBe(80);
     expect(match.reasons).not.toContain("Ticket range fits the listed minimum");
   });
 
