@@ -95,4 +95,19 @@ describe("public onboarding launch rules", () => {
     expect(importer).toContain('redirect: "manual"');
     expect(importer).toContain("isPrivateIpv4");
   });
+
+  it("gives every final public onboarding page a title and primary heading", () => {
+    for (const route of ["campaigns", "contact", "register"]) {
+      const source = read(`app/routes/${route}.tsx`);
+      expect(source).toContain("export const meta: Route.MetaFunction");
+      expect(source).toContain("{ title:");
+    }
+
+    expect(read("app/routes/membership.tsx")).toContain(
+      "<MembershipDesk standalone />",
+    );
+    expect(read("app/components/membership/MembershipDesk.tsx")).toContain(
+      'const Heading = standalone ? "h1" : "h2";',
+    );
+  });
 });
