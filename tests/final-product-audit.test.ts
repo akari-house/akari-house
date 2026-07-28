@@ -44,15 +44,17 @@ describe("final product audit safeguards", () => {
     expect(detail).toContain("this event has ended");
   });
 
-  it("requires approved membership for collaboration mutations", () => {
-    for (const path of [
-      "app/routes/project-detail.tsx",
-      "app/routes/campaign-detail.tsx",
-      "app/routes/campaign-workspace.tsx",
-      "app/routes/iio-settlement.tsx",
-    ]) {
-      expect(read(path)).toContain("requireApprovedMember");
-    }
+  it("allows applicant-safe participation while preserving privileged gates", () => {
+    expect(read("app/routes/project-detail.tsx")).toContain("requireUser");
+    expect(read("app/routes/campaign-detail.tsx")).toContain("requireUser");
+    expect(read("app/routes/campaign-workspace.tsx")).toContain("requireUser");
+    expect(read("app/routes/event-detail.tsx")).toContain("event_interests");
+    expect(read("app/routes/project-detail.tsx")).toContain(
+      "isVerifiedInvestor",
+    );
+    expect(read("app/routes/iio-settlement.tsx")).toContain(
+      "requireApprovedMember",
+    );
   });
 
   it("keeps linked project teammates within public profile boundaries", () => {
