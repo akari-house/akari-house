@@ -1,0 +1,34 @@
+name: Format Worker Login Parity
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/auth-password-ux
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run format
+      - name: Commit worker login formatting
+        run: |
+          rm -f .github/workflows/format-worker-login-parity.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Format worker login password experience"
+          git pull --rebase origin agent/auth-password-ux
+          git push origin HEAD:agent/auth-password-ux
