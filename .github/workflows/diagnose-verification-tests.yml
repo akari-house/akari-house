@@ -1,0 +1,37 @@
+name: Diagnose Verification Queue Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Capture focused test output
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          npx vitest run tests/admin-directory-ux.test.ts > /tmp/tests.log 2>&1
+          status=$?
+          {
+            echo '## Verification queue test diagnostic'
+            echo
+            echo '```text'
+            tail -n 140 /tmp/tests.log
+            echo '```'
+          } > /tmp/comment.md
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/comment.md
+          exit "$status"
