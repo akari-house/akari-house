@@ -14,7 +14,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     .prepare(
       `SELECT pr.slug, pr.title, pr.summary, pr.status, pr.stage, pr.seeking,
               pr.updated_at AS updatedAt,
-              ol.status AS opportunityStatus
+              ol.status AS opportunityStatus,
+              COALESCE(pr.data_room_url, '') AS dataRoomUrl
        FROM projects pr
        LEFT JOIN opportunity_listings ol ON ol.project_id = pr.id
        WHERE pr.founder_user_id = ?
@@ -30,6 +31,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       seeking: string;
       updatedAt: string;
       opportunityStatus: string | null;
+      dataRoomUrl: string;
     }>();
   return { user, projects: projects.results };
 }
@@ -64,6 +66,10 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
                     {project.opportunityStatus.replaceAll("_", " ")}
                   </small>
                 )}
+                <small>
+                  VantageKit data room:{" "}
+                  {project.dataRoomUrl ? "Connected" : "Not connected"}
+                </small>
                 <footer>
                   <Link to={`/projects/${project.slug}`}>View</Link>
                   <Link to={`/projects/${project.slug}/edit`}>
