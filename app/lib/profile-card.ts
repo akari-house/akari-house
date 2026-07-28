@@ -34,6 +34,66 @@ export const PROFILE_CARD_LANGUAGE_OPTIONS = [
   "Vietnamese",
 ] as const;
 
+export const PROFILE_CARD_PALETTES = [
+  "sakura",
+  "midnight",
+  "lantern",
+] as const;
+export const PROFILE_CARD_DESIGNS = ["signature", "passport"] as const;
+export const PROFILE_CARD_ORIENTATIONS = ["landscape", "portrait"] as const;
+export const PROFILE_CARD_SOCIAL_PLATFORMS = [
+  "x",
+  "linkedin",
+  "tiktok",
+  "instagram",
+  "facebook",
+  "youtube",
+] as const;
+
+export type ProfileCardPalette = (typeof PROFILE_CARD_PALETTES)[number];
+export type ProfileCardDesign = (typeof PROFILE_CARD_DESIGNS)[number];
+export type ProfileCardOrientation =
+  (typeof PROFILE_CARD_ORIENTATIONS)[number];
+export type ProfileCardSocialPlatform =
+  (typeof PROFILE_CARD_SOCIAL_PLATFORMS)[number];
+
+export type ProfileCardSettings = {
+  design: ProfileCardDesign;
+  orientation: ProfileCardOrientation;
+  palette: ProfileCardPalette;
+  countryCode: string;
+  showLocation: number;
+  languagesJson: string;
+  showLanguages: number;
+};
+
+export type ProfileCardSocial = {
+  platform: ProfileCardSocialPlatform;
+  profileUrl: string;
+  followerCount: number | null;
+  countSource: "official_api" | "member_reported" | "unavailable";
+};
+
+export type ProfileCardModel = {
+  username: string;
+  accessTier: string;
+  displayName: string;
+  headline: string;
+  location: string;
+  avatarKey: string;
+  visibility: string;
+  roles: string[];
+  socials: ProfileCardSocial[];
+  settings: ProfileCardSettings;
+  opportunityStats: { created: number; received: number };
+  followerCount: number;
+  percentile: {
+    topPercent: number | null;
+    confidence: "verified" | "provisional" | "unavailable";
+  };
+  verificationStates: Array<{ role: string; status: string }>;
+};
+
 export function normaliseProfileCardLanguages(items: readonly string[]) {
   const languages: string[] = [];
   const seen = new Set<string>();
