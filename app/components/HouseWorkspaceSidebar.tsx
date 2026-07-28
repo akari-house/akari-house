@@ -27,14 +27,43 @@ const profileItems: WorkspaceItem[] = [
   { label: "Account & Privacy", href: "/settings/account", glyph: "⚙" },
 ];
 
+/**
+ * These routes keep the cinematic, chapter-led public House experience.
+ * Operational children such as edit, manage, work and settlement routes are
+ * intentionally excluded so they can use the CRM-style workspace shell.
+ */
+export function isImmersiveHousePath(pathname: string) {
+  if (
+    pathname === "/" ||
+    pathname === "/projects" ||
+    pathname === "/campaigns" ||
+    pathname === "/events" ||
+    pathname === "/archive" ||
+    pathname === "/team" ||
+    pathname === "/membership"
+  )
+    return true;
+
+  if (/^\/projects\/[^/]+$/.test(pathname)) return true;
+  if (/^\/campaigns\/[^/]+$/.test(pathname)) return true;
+  if (/^\/events\/[^/]+$/.test(pathname)) return true;
+  if (/^\/archive\/[^/]+$/.test(pathname)) return true;
+
+  return false;
+}
+
 export function isHouseWorkspacePath(pathname: string) {
+  if (isImmersiveHousePath(pathname)) return false;
+
   if (
     pathname === "/app" ||
+    pathname === "/members" ||
     pathname === "/connections" ||
     pathname === "/notifications" ||
     pathname === "/profile-card" ||
     pathname.startsWith("/settings/") ||
     pathname.startsWith("/admin") ||
+    pathname === "/projects/new" ||
     pathname === "/projects/manage" ||
     pathname === "/events/manage" ||
     pathname === "/events/new"
@@ -43,6 +72,7 @@ export function isHouseWorkspacePath(pathname: string) {
 
   if (/^\/projects\/[^/]+\/(edit|needs|opportunity|diligence)/.test(pathname))
     return true;
+  if (/^\/projects\/[^/]+\/campaigns\/new/.test(pathname)) return true;
   if (/^\/events\/[^/]+\/edit/.test(pathname)) return true;
   if (/^\/campaigns\/[^/]+\/(work|settlement)/.test(pathname)) return true;
 
