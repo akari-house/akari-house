@@ -1,4 +1,4 @@
-export const publicLoginRelease = "worker-login-2026-07-27-success-v2";
+export const publicLoginRelease = "worker-login-2026-07-28-password-ux-v3";
 
 function escapeHtml(value: string) {
   return value.replace(
@@ -70,9 +70,17 @@ export function publicLoginFallbackResponse(
   const action = `${url.pathname}${url.search}`;
   const safeSiteKey = siteKey ? escapeHtml(siteKey) : "";
   const safeEmail = escapeHtml(options.email ?? "");
-  const error = options.error
-    ? `<p class="error" role="alert">${escapeHtml(options.error)}</p>`
-    : "";
+  const credentialError =
+    options.error && ["account", "password"].includes(options.stage ?? "")
+      ? `<p id="login-password-error" class="field-error" role="alert">${escapeHtml(options.error)}</p>`
+      : "";
+  const formError =
+    options.error && !credentialError
+      ? `<p class="error" role="alert">${escapeHtml(options.error)}</p>`
+      : "";
+  const passwordDescribedBy = credentialError
+    ? "login-password-hint login-password-error"
+    : "login-password-hint";
   const turnstile = safeSiteKey
     ? `<div class="cf-turnstile" data-sitekey="${safeSiteKey}" data-theme="dark" data-action="login"></div>
        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>`
@@ -93,9 +101,11 @@ export function publicLoginFallbackResponse(
     .brand{position:absolute;top:1.5rem;left:clamp(1.5rem,5vw,5rem);display:flex;align-items:center;gap:.6rem;color:#fff;text-decoration:none;font-weight:700}.brand img{width:150px;height:auto}.brand span{font-size:.88rem}
     .intro{max-width:560px}.eyebrow{color:#FFD33D;font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase}h1{font-size:clamp(2.6rem,6vw,5.5rem);line-height:.95;margin:.8rem 0 1.1rem}.intro p{color:#B7BAC5;font-size:1.05rem;line-height:1.7;max-width:42rem}
     .panel{background:#111522;border:1px solid rgba(240,79,135,.3);border-radius:24px;padding:clamp(1.4rem,4vw,2.5rem);box-shadow:0 30px 80px rgba(0,0,0,.35)}
-    .panel h2{margin:0 0 .4rem;font-size:2rem}.panel>p{margin:0 0 1.5rem;color:#B7BAC5}.stack{display:grid;gap:1rem}label{display:grid;gap:.45rem;font-size:.9rem;font-weight:600}input{width:100%;min-height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:#090B14;color:#fff;padding:.8rem 1rem;font:inherit}input:focus{outline:3px solid rgba(240,79,135,.3);border-color:#F04F87}
-    button{min-height:50px;border:0;border-radius:12px;background:#F04F87;color:#090B14;font-weight:800;font-size:1rem;cursor:pointer}.assist{display:flex;justify-content:space-between;gap:1rem;font-size:.9rem}.assist a,.footer a{color:#FFD33D}.footer{margin:1.25rem 0 0;color:#B7BAC5;font-size:.92rem}.error{margin:0;padding:.85rem 1rem;border:1px solid rgba(240,79,135,.55);border-radius:12px;background:rgba(240,79,135,.12);color:#fff;line-height:1.45}
+    .panel h2{margin:0 0 .4rem;font-size:2rem}.panel>p{margin:0 0 1.5rem;color:#B7BAC5}.stack{display:grid;gap:1rem}label,.field>label{display:grid;gap:.45rem;font-size:.9rem;font-weight:600}input{width:100%;min-height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:#090B14;color:#fff;padding:.8rem 1rem;font:inherit}input:focus{outline:3px solid rgba(240,79,135,.3);border-color:#F04F87}
+    .field{display:grid;gap:.45rem}.password-shell{position:relative}.password-shell input{padding-right:6rem}.password-toggle{position:absolute;top:50%;right:.5rem;min-height:34px;min-width:4.75rem;transform:translateY(-50%);border:1px solid rgba(255,255,255,.15);border-radius:9px;background:#191E2D;color:#fff;font-size:.76rem;font-weight:800;cursor:pointer}.password-toggle:hover,.password-toggle:focus-visible,.password-toggle[aria-pressed="true"]{border-color:#F04F87;background:#22283A}.hint{margin:0;color:#B7BAC5;font-size:.76rem;line-height:1.45}.field-error{margin:0;padding:.75rem .9rem;border:1px solid rgba(240,79,135,.55);border-radius:10px;background:rgba(240,79,135,.12);color:#fff;font-size:.84rem;line-height:1.45}
+    button[type="submit"]{min-height:50px;border:0;border-radius:12px;background:#F04F87;color:#090B14;font-weight:800;font-size:1rem;cursor:pointer}.assist{display:flex;justify-content:space-between;gap:1rem;font-size:.9rem}.assist a,.footer a{color:#FFD33D}.footer{margin:1.25rem 0 0;color:#B7BAC5;font-size:.92rem}.error{margin:0;padding:.85rem 1rem;border:1px solid rgba(240,79,135,.55);border-radius:12px;background:rgba(240,79,135,.12);color:#fff;line-height:1.45}
     @media(max-width:820px){main{grid-template-columns:1fr;padding-top:7rem}.intro{display:none}.brand{top:1.2rem}.panel{max-width:560px;width:100%;margin:auto}}
+    @media(max-width:420px){.password-shell input{padding-right:3.5rem}.password-toggle{min-width:2.5rem}.password-toggle span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}}
   </style>
 </head>
 <body>
@@ -105,9 +115,17 @@ export function publicLoginFallbackResponse(
     <section class="panel" aria-labelledby="login-title">
       <h2 id="login-title">Log in</h2><p>Enter your AKARI membership details.</p>
       <form method="post" action="${escapeHtml(action)}" class="stack">
-        ${error}
-        <label>Email<input name="email" type="email" autocomplete="email" value="${safeEmail}" required></label>
-        <label>Password<input name="password" type="password" autocomplete="current-password" maxlength="128" required></label>
+        ${formError}
+        <label for="login-email">Email<input id="login-email" name="email" type="email" autocomplete="email" value="${safeEmail}" required></label>
+        <div class="field" data-password-field="password">
+          <label for="login-password">Password</label>
+          <div class="password-shell">
+            <input id="login-password" name="password" type="password" autocomplete="current-password" maxlength="128" required aria-describedby="${passwordDescribedBy}" aria-invalid="${credentialError ? "true" : "false"}">
+            <button class="password-toggle password-visibility-toggle" type="button" aria-label="Show entered characters" aria-pressed="false"><span>Show</span></button>
+          </div>
+          <p id="login-password-hint" class="hint">Passwords are case-sensitive. Use Show to check what you typed.</p>
+          ${credentialError}
+        </div>
         <div class="assist"><a href="/forgot-password">Forgot password?</a></div>
         ${turnstile}
         <button type="submit">Log in</button>
@@ -115,6 +133,21 @@ export function publicLoginFallbackResponse(
       <p class="footer">New to AKARI? <a href="/register">Request membership</a></p>
     </section>
   </main>
+  <script>
+    (() => {
+      const input = document.getElementById("login-password");
+      const toggle = document.querySelector(".password-toggle");
+      if (!(input instanceof HTMLInputElement) || !(toggle instanceof HTMLButtonElement)) return;
+      toggle.addEventListener("click", () => {
+        const show = input.type === "password";
+        input.type = show ? "text" : "password";
+        toggle.setAttribute("aria-pressed", String(show));
+        toggle.setAttribute("aria-label", show ? "Hide entered characters" : "Show entered characters");
+        const label = toggle.querySelector("span");
+        if (label) label.textContent = show ? "Hide" : "Show";
+      });
+    })();
+  </script>
 </body>
 </html>`;
 

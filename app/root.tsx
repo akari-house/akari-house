@@ -10,6 +10,7 @@ import type { Route } from "./+types/root";
 import { RouteScrollReset } from "~/components/RouteScrollReset";
 import { productionSecurityHeaders } from "~/lib/production-security.server";
 import "./styles/app.css";
+import "./styles/auth-experience.css";
 import "./styles/project-needs.css";
 import "./styles/footer.css";
 import "./styles/footer-theme-fix.css";

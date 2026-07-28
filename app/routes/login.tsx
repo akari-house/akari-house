@@ -1,6 +1,7 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/login";
 import { AuthLayout } from "~/layouts/AuthLayout";
+import { PasswordField } from "~/components/PasswordField";
 import { TurnstileWidget } from "~/components/TurnstileWidget";
 import { createSession } from "~/lib/auth.server";
 import { assertSameOrigin, verifyPassword } from "~/lib/security.server";
@@ -39,13 +40,18 @@ export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData();
   const env = context.get(cloudflareContext).env as LoginEnvironment;
   if (!(await verifyTurnstile(request, formData, env, "login")))
-    return { error: "Complete the security check and try again.", email: "" };
+    return {
+      error: "Complete the security check and try again.",
+      errorField: "form" as const,
+      email: "",
+    };
   const email = normalizeEmail(formData.get("email"));
   const password = formText(formData.get("password"));
   const db = context.get(cloudflareContext).env.DB;
   if (!(await consumeAuthLimit(db, request, "login", email, 8, 15)))
     return {
       error: "Too many login attempts. Wait a little before trying again.",
+      errorField: "form" as const,
       email,
     };
   const row = await db
@@ -61,17 +67,23 @@ export async function action({ request, context }: Route.ActionArgs) {
       onboardingStartedAt: string | null;
     }>();
   if (!row || !(await verifyPassword(password, row.passwordHash))) {
-    return { error: "The email or password was not recognized.", email };
+    return {
+      error: "The email or password was not recognized.",
+      errorField: "credentials" as const,
+      email,
+    };
   }
   if (row.status === "suspended") {
     return {
       error: "This account is not available. Contact the Membership Desk.",
+      errorField: "form" as const,
       email,
     };
   }
   if (!row.emailVerifiedAt)
     return {
       error: "Confirm your email before signing in.",
+      errorField: "form" as const,
       email,
       membershipPending: true,
     };
@@ -98,13 +110,17 @@ export default function Login({
   actionData,
 }: Route.ComponentProps) {
   const navigation = useNavigation();
+  const pending = navigation.state !== "idle";
+  const credentialError =
+    actionData?.errorField === "credentials" ? actionData.error : undefined;
+
   return (
     <AuthLayout eyebrow="Welcome back" title="Return to the House">
       <p className="form-intro">
         Your rooms, roles and privacy choices are waiting.
       </p>
-      <Form method="post" className="form-stack">
-        {actionData?.error && (
+      <Form method="post" className="form-stack" noValidate={false}>
+        {actionData?.error && actionData.errorField !== "credentials" && (
           <p className="form-error" role="alert">
             {actionData.error}
           </p>
@@ -117,28 +133,27 @@ export default function Login({
             autoComplete="email"
             defaultValue={actionData?.email}
             required
+            aria-invalid={Boolean(credentialError)}
           />
         </label>
-        <label>
-          Password
-          <input
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            maxLength={128}
-            required
-          />
-        </label>
+        <PasswordField
+          name="password"
+          label="Password"
+          autoComplete="current-password"
+          maxLength={128}
+          hint="Passwords are case-sensitive. Use Show to check what you typed."
+          error={credentialError}
+        />
         <Link className="form-assist-link" to="/forgot-password">
           Forgot password?
         </Link>
         <TurnstileWidget siteKey={loaderData.siteKey} action="login" />
         <button
           className="button button-primary button-wide"
-          disabled={navigation.state !== "idle"}
+          disabled={pending}
           type="submit"
         >
-          Log in
+          {pending ? "Signing in..." : "Log in"}
         </button>
       </Form>
       <p className="form-footer">

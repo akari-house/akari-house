@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/register";
 import { AuthLayout } from "~/layouts/AuthLayout";
+import { PasswordField } from "~/components/PasswordField";
 import { RoleSelector } from "~/components/RoleSelector";
 import { TurnstileWidget } from "~/components/TurnstileWidget";
 import { getOptionalUser } from "~/lib/auth.server";
@@ -191,176 +193,246 @@ export default function Register({
 }: Route.ComponentProps) {
   const navigation = useNavigation();
   const pending = navigation.state !== "idle";
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const passwordStatus =
+    password.length === 0
+      ? {
+          tone: "neutral" as const,
+          message: "12 to 128 characters required.",
+        }
+      : password.length < 12
+        ? {
+            tone: "error" as const,
+            message: `Add ${12 - password.length} more character${12 - password.length === 1 ? "" : "s"}.`,
+          }
+        : {
+            tone: "success" as const,
+            message: "Password length accepted.",
+          };
+  const confirmationStatus =
+    passwordConfirmation.length === 0
+      ? {
+          tone: "neutral" as const,
+          message: "Re-enter the same password.",
+        }
+      : password !== passwordConfirmation
+        ? {
+            tone: "error" as const,
+            message: "Passwords do not match yet.",
+          }
+        : {
+            tone: "success" as const,
+            message: "Passwords match.",
+          };
+
   return (
     <AuthLayout eyebrow="Membership desk" title="Request a place in the House">
       <p className="form-intro">
         Every request is reviewed by a person. Applying does not create member
         access immediately, and your profile begins private.
       </p>
+      <ol className="auth-journey" aria-label="Membership request steps">
+        <li>
+          <strong>Step 1</strong>
+          <span>Create your private account details.</span>
+        </li>
+        <li>
+          <strong>Step 2</strong>
+          <span>Choose your roles and introduce yourself.</span>
+        </li>
+        <li>
+          <strong>Step 3</strong>
+          <span>Confirm your email, then await human review.</span>
+        </li>
+      </ol>
       <Form method="post" className="form-stack">
         {actionData?.errors.form && (
           <p className="form-error" role="alert">
             {actionData.errors.form}
           </p>
         )}
-        <label>
-          Display name
-          <input
-            name="displayName"
-            autoComplete="name"
-            defaultValue={actionData?.values.displayName}
-            required
-            aria-invalid={Boolean(actionData?.errors.displayName)}
-            aria-describedby={
-              actionData?.errors.displayName ? "display-name-error" : undefined
-            }
-          />
-        </label>
-        {actionData?.errors.displayName && (
-          <small id="display-name-error" className="field-error">
-            {actionData.errors.displayName}
-          </small>
-        )}
-        <label>
-          Username
-          <input
-            name="username"
-            autoComplete="username"
-            defaultValue={actionData?.values.username}
-            placeholder="your-name"
-            required
-            aria-invalid={Boolean(actionData?.errors.username)}
-            aria-describedby={
-              actionData?.errors.username ? "username-error" : undefined
-            }
-          />
-        </label>
-        {actionData?.errors.username && (
-          <small id="username-error" className="field-error">
-            {actionData.errors.username}
-          </small>
-        )}
-        <label>
-          Email
-          <input
-            name="email"
-            type="email"
-            autoComplete="email"
-            defaultValue={actionData?.values.email}
-            required
-            aria-invalid={Boolean(actionData?.errors.email)}
-            aria-describedby={
-              actionData?.errors.email ? "email-error" : undefined
-            }
-          />
-        </label>
-        {actionData?.errors.email && (
-          <small id="email-error" className="field-error">
-            {actionData.errors.email}
-          </small>
-        )}
-        <label>
-          Password
-          <input
+
+        <section
+          className="auth-form-section"
+          aria-labelledby="account-details-title"
+        >
+          <header className="auth-section-heading">
+            <span>Step 1</span>
+            <h2 id="account-details-title">Account details</h2>
+            <p>
+              Your password is checked as you type and is never shown by
+              default.
+            </p>
+          </header>
+          <label>
+            Display name
+            <input
+              name="displayName"
+              autoComplete="name"
+              defaultValue={actionData?.values.displayName}
+              required
+              aria-invalid={Boolean(actionData?.errors.displayName)}
+              aria-describedby={
+                actionData?.errors.displayName
+                  ? "display-name-error"
+                  : undefined
+              }
+            />
+          </label>
+          {actionData?.errors.displayName && (
+            <small id="display-name-error" className="field-error">
+              {actionData.errors.displayName}
+            </small>
+          )}
+          <label>
+            Username
+            <input
+              name="username"
+              autoComplete="username"
+              defaultValue={actionData?.values.username}
+              placeholder="your-name"
+              required
+              aria-invalid={Boolean(actionData?.errors.username)}
+              aria-describedby={
+                actionData?.errors.username ? "username-error" : undefined
+              }
+            />
+          </label>
+          {actionData?.errors.username && (
+            <small id="username-error" className="field-error">
+              {actionData.errors.username}
+            </small>
+          )}
+          <label>
+            Email
+            <input
+              name="email"
+              type="email"
+              autoComplete="email"
+              defaultValue={actionData?.values.email}
+              required
+              aria-invalid={Boolean(actionData?.errors.email)}
+              aria-describedby={
+                actionData?.errors.email ? "email-error" : undefined
+              }
+            />
+          </label>
+          {actionData?.errors.email && (
+            <small id="email-error" className="field-error">
+              {actionData.errors.email}
+            </small>
+          )}
+          <PasswordField
             name="password"
-            type="password"
+            label="Password"
             autoComplete="new-password"
             minLength={12}
             maxLength={128}
-            required
-            aria-invalid={Boolean(actionData?.errors.password)}
-            aria-describedby={
-              actionData?.errors.password ? "password-error" : undefined
-            }
+            hint="A memorable passphrase is welcome. No special symbol is required."
+            status={passwordStatus}
+            error={actionData?.errors.password}
+            onValueChange={setPassword}
           />
-        </label>
-        {actionData?.errors.password && (
-          <small id="password-error" className="field-error">
-            {actionData.errors.password}
-          </small>
-        )}
-        <label>
-          Confirm password
-          <input
+          <PasswordField
             name="passwordConfirmation"
-            type="password"
+            label="Confirm password"
             autoComplete="new-password"
             minLength={12}
             maxLength={128}
-            required
-            aria-invalid={Boolean(actionData?.errors.passwordConfirmation)}
-            aria-describedby={
-              actionData?.errors.passwordConfirmation
-                ? "password-confirmation-error"
-                : undefined
-            }
+            status={confirmationStatus}
+            error={actionData?.errors.passwordConfirmation}
+            onValueChange={setPasswordConfirmation}
           />
-        </label>
-        {actionData?.errors.passwordConfirmation && (
-          <small id="password-confirmation-error" className="field-error">
-            {actionData.errors.passwordConfirmation}
-          </small>
-        )}
-        <RoleSelector
-          selected={actionData?.selected ?? loaderData.selected}
-          errorId={actionData?.errors.roles ? "roles-error" : undefined}
-        />
-        {actionData?.errors.roles && (
-          <small id="roles-error" className="field-error">
-            {actionData.errors.roles}
-          </small>
-        )}
-        <label>
-          What brings you to AKARI?
-          <textarea
-            name="applicantNote"
-            rows={5}
-            minLength={30}
-            maxLength={600}
-            defaultValue={actionData?.values.applicantNote}
-            placeholder="Share what you are building, creating or investing in, and how you hope to participate."
-            required
-            aria-invalid={Boolean(actionData?.errors.applicantNote)}
-            aria-describedby={
-              actionData?.errors.applicantNote
-                ? "applicant-note-error"
-                : undefined
-            }
+        </section>
+
+        <section
+          className="auth-form-section"
+          aria-labelledby="membership-fit-title"
+        >
+          <header className="auth-section-heading">
+            <span>Step 2</span>
+            <h2 id="membership-fit-title">Your place in AKARI</h2>
+            <p>
+              Select every role that genuinely describes how you participate.
+            </p>
+          </header>
+          <RoleSelector
+            selected={actionData?.selected ?? loaderData.selected}
+            errorId={actionData?.errors.roles ? "roles-error" : undefined}
           />
-        </label>
-        {actionData?.errors.applicantNote && (
-          <small id="applicant-note-error" className="field-error">
-            {actionData.errors.applicantNote}
-          </small>
-        )}
-        <label className="consent-row">
-          <input
-            name="legalTerms"
-            type="checkbox"
-            required
-            defaultChecked={actionData?.values.legalTerms}
-            aria-invalid={Boolean(actionData?.errors.legalTerms)}
-            aria-describedby={
-              actionData?.errors.legalTerms ? "legal-terms-error" : undefined
-            }
+          {actionData?.errors.roles && (
+            <small id="roles-error" className="field-error">
+              {actionData.errors.roles}
+            </small>
+          )}
+          <label>
+            What brings you to AKARI?
+            <textarea
+              name="applicantNote"
+              rows={5}
+              minLength={30}
+              maxLength={600}
+              defaultValue={actionData?.values.applicantNote}
+              placeholder="Share what you are building, creating or investing in, and how you hope to participate."
+              required
+              aria-invalid={Boolean(actionData?.errors.applicantNote)}
+              aria-describedby={
+                actionData?.errors.applicantNote
+                  ? "applicant-note-error"
+                  : undefined
+              }
+            />
+          </label>
+          {actionData?.errors.applicantNote && (
+            <small id="applicant-note-error" className="field-error">
+              {actionData.errors.applicantNote}
+            </small>
+          )}
+        </section>
+
+        <section
+          className="auth-form-section"
+          aria-labelledby="review-consent-title"
+        >
+          <header className="auth-section-heading">
+            <span>Step 3</span>
+            <h2 id="review-consent-title">Consent and review</h2>
+            <p>
+              Submitting creates a private application, not immediate member
+              access.
+            </p>
+          </header>
+          <label className="consent-row">
+            <input
+              name="legalTerms"
+              type="checkbox"
+              required
+              defaultChecked={actionData?.values.legalTerms}
+              aria-invalid={Boolean(actionData?.errors.legalTerms)}
+              aria-describedby={
+                actionData?.errors.legalTerms ? "legal-terms-error" : undefined
+              }
+            />
+            <span>
+              I agree to the <Link to="/terms">Terms</Link> and{" "}
+              <Link to="/community-guidelines">Community Guidelines</Link>. I
+              acknowledge that I have read the{" "}
+              <Link to="/privacy">Privacy Notice</Link>. I understand that
+              submitting this form does not guarantee membership.
+            </span>
+          </label>
+          {actionData?.errors.legalTerms && (
+            <small id="legal-terms-error" className="field-error">
+              {actionData.errors.legalTerms}
+            </small>
+          )}
+          <TurnstileWidget
+            siteKey={loaderData.siteKey}
+            action="membership_request"
           />
-          <span>
-            I agree to the <Link to="/terms">Terms</Link> and{" "}
-            <Link to="/community-guidelines">Community Guidelines</Link>. I
-            acknowledge that I have read the{" "}
-            <Link to="/privacy">Privacy Notice</Link>. I understand that
-            submitting this form does not guarantee membership.
-          </span>
-        </label>
-        {actionData?.errors.legalTerms && (
-          <small id="legal-terms-error" className="field-error">
-            {actionData.errors.legalTerms}
-          </small>
-        )}
-        <TurnstileWidget
-          siteKey={loaderData.siteKey}
-          action="membership_request"
-        />
+        </section>
+
         <button
           className="button button-primary button-wide"
           disabled={pending}
@@ -368,6 +440,10 @@ export default function Register({
         >
           {pending ? "Sending request..." : "Send membership request"}
         </button>
+        <p className="auth-submit-note">
+          Next, we will email you a confirmation link before the Membership Desk
+          reviews your request.
+        </p>
       </Form>
       <p className="form-footer">
         Already a member? <Link to="/login">Log in</Link>
