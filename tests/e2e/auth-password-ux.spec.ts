@@ -10,9 +10,10 @@ test("registration explains password acceptance while typing", async ({
   ).toBeVisible();
 
   const password = page.getByLabel("Password", { exact: true });
-  const confirmation = page.getByLabel("Confirm password");
-  const showPassword = page.getByRole("button", {
-    name: "Show password",
+  const confirmation = page.getByLabel("Confirm password", { exact: true });
+  const passwordField = page.locator('[data-password-field="password"]');
+  const showPassword = passwordField.getByRole("button", {
+    name: "Show entered characters",
     exact: true,
   });
 
@@ -20,7 +21,10 @@ test("registration explains password acceptance while typing", async ({
   await showPassword.click();
   await expect(password).toHaveAttribute("type", "text");
   await expect(
-    page.getByRole("button", { name: "Hide password", exact: true }),
+    passwordField.getByRole("button", {
+      name: "Hide entered characters",
+      exact: true,
+    }),
   ).toHaveAttribute("aria-pressed", "true");
 
   await password.fill("abcdefghijk");
@@ -45,22 +49,26 @@ test("registration explains password acceptance while typing", async ({
 test("login password can be reviewed without submitting", async ({ page }) => {
   await page.goto("/login");
   const password = page.getByLabel("Password", { exact: true });
-  const showPassword = page.getByRole("button", {
-    name: "Show password",
+  const passwordField = page.locator('[data-password-field="password"]');
+  const showPassword = passwordField.getByRole("button", {
+    name: "Show entered characters",
     exact: true,
   });
 
   await password.fill("visible-check");
   await showPassword.click();
   await expect(password).toHaveAttribute("type", "text");
-  const hidePassword = page.getByRole("button", {
-    name: "Hide password",
+  const hidePassword = passwordField.getByRole("button", {
+    name: "Hide entered characters",
     exact: true,
   });
   await expect(hidePassword).toHaveAttribute("aria-pressed", "true");
   await hidePassword.click();
   await expect(password).toHaveAttribute("type", "password");
   await expect(
-    page.getByRole("button", { name: "Show password", exact: true }),
+    passwordField.getByRole("button", {
+      name: "Show entered characters",
+      exact: true,
+    }),
   ).toHaveAttribute("aria-pressed", "false");
 });
