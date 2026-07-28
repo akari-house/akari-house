@@ -11,4 +11,8 @@ which already exists!  Assume -R? [n]
 Apply anyway? [n] 
 Skipping patch.
 1 out of 1 hunk ignored
-checking file app/styles/admin-console.css
+The next patch would create the file app/styles/admin-console.css,
+which already exists!  Assume -R? [n] 
+Apply anyway? [n] 
+Skipping patch.
+1 out of 1 hunk ignored
