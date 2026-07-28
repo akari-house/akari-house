@@ -138,7 +138,9 @@ export function HouseWorkspaceSidebar({
           </>
         )}
 
-        <span className="house-workspace-sidebar-section">Profile & settings</span>
+        <span className="house-workspace-sidebar-section">
+          Profile & settings
+        </span>
         {profileItems.map((item) => (
           <SidebarLink key={item.label} item={item} pathname={pathname} />
         ))}
