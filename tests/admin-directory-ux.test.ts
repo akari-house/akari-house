@@ -21,6 +21,17 @@ describe("member directory and admin trust workflow", () => {
     expect(migration).toContain("'pending'");
   });
 
+  it("uses a compact verification queue with approve, hold and reject", () => {
+    const verifications = read("app/routes/admin-verifications.tsx");
+    expect(verifications).toContain('className="admin-review-list"');
+    expect(verifications).toContain('className="admin-review-item"');
+    expect(verifications).toContain('value="verify"');
+    expect(verifications).toContain('value="hold"');
+    expect(verifications).toContain("Reject");
+    expect(verifications).toContain('return "on hold"');
+    expect(verifications).toContain('["verify", "hold", "decline", "revoke"]');
+  });
+
   it("provides a scoped admin overview", () => {
     const routes = read("app/routes.ts");
     const dashboard = read("app/routes/dashboard.tsx");
