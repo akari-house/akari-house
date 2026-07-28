@@ -1,0 +1,37 @@
+name: Format Investor House Reference on PR
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.head_ref == 'agent/investor-house-ui-reference'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/investor-house-ui-reference
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run format
+      - run: npm run format:check
+      - name: Commit formatted interface
+        run: |
+          rm .github/workflows/format-investor-house-reference-pr.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/styles/investor-house-reference.css tests/investor-deal-matching.test.ts tests/investor-house-reference-ui.test.ts .github/workflows/format-investor-house-reference-pr.yml
+          git commit -m "Format Investor House reference interface"
+          git push origin HEAD:agent/investor-house-ui-reference
