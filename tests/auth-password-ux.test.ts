@@ -14,6 +14,7 @@ describe("authentication password experience", () => {
     expect(passwordField).toContain("data-password-field={name}");
     expect(passwordField).toContain("Show entered characters");
     expect(passwordField).toContain("Hide entered characters");
+    // Keep control names independent from field labels for unambiguous queries.
     expect(passwordField).not.toContain("Show ${label.toLowerCase()}");
     expect(passwordField).not.toContain("Hide ${label.toLowerCase()}");
     expect(passwordField).toContain("setCustomValidity");
