@@ -25,6 +25,7 @@ import "./styles/verification-queue.css";
 import "./styles/site-final-polish.css";
 import "./styles/investor-house-reference.css";
 import "./styles/house-workspace-shell.css";
+import "./styles/house-workspace-art.css";
 
 export const headers: Route.HeadersFunction = () => productionSecurityHeaders();
 
