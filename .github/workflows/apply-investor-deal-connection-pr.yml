@@ -43,6 +43,16 @@ jobs:
           Path('/tmp/apply-investor-deal-connection.py').write_text(patch + "\n")
           PY
           python /tmp/apply-investor-deal-connection.py
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app/routes/deals.tsx')
+          content = path.read_text()
+          old = 'opportunities: [] as OpportunityRow[],'
+          new = 'opportunities: [] as OpportunityWithMatch[],'
+          if content.count(old) != 1:
+              raise SystemExit(f'Expected one empty catalogue type, found {content.count(old)}')
+          path.write_text(content.replace(old, new, 1))
+          PY
           rm .github/workflows/apply-investor-deal-connection.yml
       - run: npm run format
       - run: npm run typecheck
