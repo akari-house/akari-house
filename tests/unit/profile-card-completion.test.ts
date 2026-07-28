@@ -37,7 +37,7 @@ describe("completed AKARI profile card", () => {
   it("creates stable monograms and compact reach values", () => {
     expect(profileCardInitials("Mohamed Muaz")).toBe("MM");
     expect(profileCardInitials("AKARI")).toBe("A");
-    expect(formatProfileReach(12500)).toBe("13K");
+    expect(formatProfileReach(12500)).toBe("12.5K");
   });
 
   it("renders the requested profile identity and privacy features", () => {
