@@ -21,15 +21,24 @@ describe("member directory and admin trust workflow", () => {
     expect(migration).toContain("'pending'");
   });
 
-  it("uses a compact verification queue with approve, hold and reject", () => {
+  it("uses an active-only flat verification queue", () => {
     const verifications = read("app/routes/admin-verifications.tsx");
-    expect(verifications).toContain('className="admin-review-list"');
-    expect(verifications).toContain('className="admin-review-item"');
+    const styles = read("app/styles/verification-queue.css");
+    expect(verifications).toContain("rv.status = 'pending'");
+    expect(verifications).toContain("Reviewed history");
+    expect(verifications).toContain("Claims {titleCase(item.role)}");
+    expect(verifications).toContain('className="verification-row"');
+    expect(verifications).not.toContain("<details");
+    expect(styles).toContain(".verification-actions");
+  });
+
+  it("offers approve, hold and reject directly on each active claim", () => {
+    const verifications = read("app/routes/admin-verifications.tsx");
     expect(verifications).toContain('value="verify"');
     expect(verifications).toContain('value="hold"');
-    expect(verifications).toContain("Reject");
-    expect(verifications).toContain('return "on hold"');
-    expect(verifications).toContain('["verify", "hold", "decline", "revoke"]');
+    expect(verifications).toContain('value="decline"');
+    expect(verifications).toContain("Approved and rejected claims");
+    expect(verifications).toContain("const PAGE_SIZE = 50");
   });
 
   it("provides a scoped admin overview", () => {
