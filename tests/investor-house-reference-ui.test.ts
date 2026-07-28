@@ -21,6 +21,8 @@ describe("Investor House reference-led interface", () => {
       "/settings/account",
     ])
       expect(sidebar).toContain(destination);
+    expect(sidebar).not.toContain('href: "/messages"');
+    expect(sidebar).not.toContain('href: "/introductions"');
   });
 
   it("keeps catalogue actions connected to the existing Deals route", () => {
@@ -34,6 +36,7 @@ describe("Investor House reference-led interface", () => {
 
   it("keeps the secure Deal Room sections and server-backed actions", () => {
     expect(room).toContain("InvestorHouseSidebar");
+    expect(room).toContain('className="deal-room-tabs"');
     expect(room).toContain('id="documents"');
     expect(room).toContain('value="request-access"');
     expect(room).toContain('value="request-introduction"');
