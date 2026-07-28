@@ -9,6 +9,7 @@ import { EventTimeDisplay } from "~/components/EventTimeDisplay";
 import { AkariMotif } from "~/components/AkariMotif";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
 import { cancellationOpensEventPlace } from "~/lib/event-registration";
+import { PublicFooter } from "~/components/PublicFooter";
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -19,6 +20,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
               e.description, e.format, e.venue,
               e.meeting_url AS meetingUrl, e.starts_at AS startsAt,
               e.ends_at AS endsAt, e.timezone, e.capacity, e.status,
+              e.image_key AS imageKey,
               p.display_name AS hostName, u.username AS hostUsername,
               COUNT(CASE WHEN er.status = 'registered' THEN 1 END) AS registeredCount
        FROM events e
@@ -43,6 +45,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       timezone: string;
       capacity: number | null;
       status: string;
+      imageKey: string | null;
       hostName: string;
       hostUsername: string;
       registeredCount: number;
@@ -99,7 +102,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const user = await requireApprovedMember(request, db);
   const event = await db
     .prepare(
-      `SELECT id, host_user_id AS hostUserId, title, capacity, status
+      `SELECT id, host_user_id AS hostUserId, title, capacity, status,
+              ends_at AS endsAt
        FROM events WHERE slug = ?`,
     )
     .bind(params.slug)
@@ -109,6 +113,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       title: string;
       capacity: number | null;
       status: string;
+      endsAt: string;
     }>();
   if (!event || event.status !== "published")
     throw new Response("Event not available.", { status: 404 });
@@ -123,6 +128,12 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     60,
   );
   if (intent === "register") {
+    if (user.id === event.hostUserId)
+      throw new Response("Hosts cannot register for their own event.", {
+        status: 400,
+      });
+    if (new Date(event.endsAt).getTime() <= Date.now())
+      return { error: "Registration is closed because this event has ended." };
     const registrationId = crypto.randomUUID();
     const results = await db.batch([
       db
@@ -321,6 +332,16 @@ export default function EventDetail({
             <p className="project-lede">{event.summary}</p>
           </div>
         </header>
+        {event.imageKey && (
+          <div className="event-detail-cover">
+            <img
+              src={`/media/events/${event.slug}`}
+              alt={`${event.title} event cover`}
+              width={1280}
+              height={720}
+            />
+          </div>
+        )}
         <div className="event-detail-layout">
           <div className="event-detail-story">
             <span className="eyebrow">The invitation</span>
@@ -378,39 +399,41 @@ export default function EventDetail({
             {actionData.error}
           </p>
         )}
-        {user && !isHost && event.status === "published" && (
-          <Form method="post">
-            <button
-              className={
-                registered || waitlisted
-                  ? "button button-quiet"
-                  : "button button-primary"
-              }
-              name="intent"
-              value={registered || waitlisted ? "cancel" : "register"}
-              disabled={pending}
-              onClick={(clickEvent) => {
-                if (
-                  (registered || waitlisted) &&
-                  !window.confirm(
-                    waitlisted
-                      ? "Leave this event waitlist?"
-                      : "Cancel your event registration?",
+        {user?.accessTier === "member" &&
+          !isHost &&
+          event.status === "published" && (
+            <Form method="post">
+              <button
+                className={
+                  registered || waitlisted
+                    ? "button button-quiet"
+                    : "button button-primary"
+                }
+                name="intent"
+                value={registered || waitlisted ? "cancel" : "register"}
+                disabled={pending}
+                onClick={(clickEvent) => {
+                  if (
+                    (registered || waitlisted) &&
+                    !window.confirm(
+                      waitlisted
+                        ? "Leave this event waitlist?"
+                        : "Cancel your event registration?",
+                    )
                   )
-                )
-                  clickEvent.preventDefault();
-              }}
-            >
-              {pending
-                ? "Saving..."
-                : registered
-                  ? "Cancel registration"
-                  : waitlisted
-                    ? "Leave waitlist"
-                    : "Register"}
-            </button>
-          </Form>
-        )}
+                    clickEvent.preventDefault();
+                }}
+              >
+                {pending
+                  ? "Saving..."
+                  : registered
+                    ? "Cancel registration"
+                    : waitlisted
+                      ? "Leave waitlist"
+                      : "Register"}
+              </button>
+            </Form>
+          )}
         {!user && event.status === "published" && (
           <Link
             className="button button-primary"
@@ -419,8 +442,28 @@ export default function EventDetail({
             Log in to register
           </Link>
         )}
+        {user?.accessTier === "applicant" &&
+          !isHost &&
+          event.status === "published" && (
+            <div className="status-card">
+              <h2>Registration opens after membership approval.</h2>
+              <p>
+                Keep your profile current while the Membership Desk completes
+                its review.
+              </p>
+              <Link className="button button-quiet" to="/app">
+                View membership status
+              </Link>
+            </div>
+          )}
         {isHost && (
           <section className="project-interest-list">
+            <Link
+              className="button button-quiet"
+              to={`/events/${event.slug}/edit`}
+            >
+              Edit gathering
+            </Link>
             <h2>Registrations</h2>
             {loaderData.attendees.length ? (
               loaderData.attendees.map((attendee) => (
@@ -448,6 +491,7 @@ export default function EventDetail({
           </Link>
         )}
       </main>
+      <PublicFooter />
     </div>
   );
 }
