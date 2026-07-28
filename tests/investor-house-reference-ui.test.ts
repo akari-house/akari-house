@@ -1,16 +1,10 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-const sidebar = readFileSync(
-  "app/components/InvestorHouseSidebar.tsx",
-  "utf8",
-);
+const sidebar = readFileSync("app/components/InvestorHouseSidebar.tsx", "utf8");
 const deals = readFileSync("app/routes/deals.tsx", "utf8");
 const room = readFileSync("app/routes/deal-room.tsx", "utf8");
-const styles = readFileSync(
-  "app/styles/investor-house-reference.css",
-  "utf8",
-);
+const styles = readFileSync("app/styles/investor-house-reference.css", "utf8");
 
 describe("Investor House reference-led interface", () => {
   it("uses only real AKARI destinations in the persistent sidebar", () => {
@@ -32,7 +26,9 @@ describe("Investor House reference-led interface", () => {
   it("keeps catalogue actions connected to the existing Deals route", () => {
     expect(deals).toContain("InvestorHouseSidebar");
     expect(deals).toContain('method="post"');
-    expect(deals).toContain('value={opportunity.savedAt ? "clear-state" : "save"}');
+    expect(deals).toContain(
+      'value={opportunity.savedAt ? "clear-state" : "save"}',
+    );
     expect(deals).toContain("loaderData.navigationCounts");
   });
 

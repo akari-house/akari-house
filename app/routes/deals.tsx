@@ -2,6 +2,7 @@ import { Form, Link, redirect } from "react-router";
 import type { Route } from "./+types/deals";
 import { PublicFooter } from "~/components/PublicFooter";
 import { SiteHeader } from "~/components/SiteHeader";
+import { InvestorHouseSidebar } from "~/components/InvestorHouseSidebar";
 import { getOptionalUser, requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import {
@@ -525,94 +526,41 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
     : [];
 
   return (
-    <div className="site-shell">
+    <div className="site-shell investor-house-shell">
       <SiteHeader user={loaderData.user} />
-      <main id="main-content" className="deals-main">
-        <nav className="investor-workspace-nav" aria-label="Investor workspace">
-          <Link className="investor-workspace-brand" to="/deals">
-            <span className="workspace-flower" aria-hidden="true">
-              ✦
-            </span>
-            <span>
-              <strong>AKARI</strong>
-              <small>Investor House</small>
-            </span>
-          </Link>
-          <div className="investor-workspace-links">
-            <Link
-              className={loaderData.view === "available" ? "is-active" : ""}
-              to="/deals"
-            >
-              Discover
-            </Link>
-            <Link
-              className={loaderData.view === "saved" ? "is-active" : ""}
-              to="/deals?view=saved"
-            >
-              Saved
-              {loaderData.navigationCounts.saved > 0 && (
-                <span className="workspace-count">
-                  {loaderData.navigationCounts.saved}
-                </span>
-              )}
-            </Link>
-            <Link
-              className={loaderData.view === "requested" ? "is-active" : ""}
-              to="/deals?view=requested"
-            >
-              Requests
-              {loaderData.navigationCounts.requested > 0 && (
-                <span className="workspace-count">
-                  {loaderData.navigationCounts.requested}
-                </span>
-              )}
-            </Link>
-            <Link
-              className={loaderData.view === "approved" ? "is-active" : ""}
-              to="/deals?view=approved"
-            >
-              My Deal Rooms
-              {loaderData.navigationCounts.approved > 0 && (
-                <span className="workspace-count">
-                  {loaderData.navigationCounts.approved}
-                </span>
-              )}
-            </Link>
-            {investorMember ? (
-              <Link to="/settings/investor">Investor profile</Link>
-            ) : loaderData.user ? (
-              <Link to="/app">Your House</Link>
-            ) : (
-              <Link to="/login?returnTo=/settings/investor">
-                Investor sign in
-              </Link>
-            )}
-          </div>
-          <Link
-            className="workspace-notifications"
-            to="/notifications"
-            aria-label="Notifications"
-          >
-            Updates
-          </Link>
-        </nav>
+      <InvestorHouseSidebar
+        user={loaderData.user}
+        activeView={loaderData.view}
+        counts={loaderData.navigationCounts}
+      />
+      <main id="main-content" className="deals-main investor-house-content">
         <header className="deals-hero">
           <div>
-            <span className="chapter">Investor and Angel Deal Rooms</span>
-            <h1>Private opportunities. Clearer conviction.</h1>
+            <span className="chapter">AKARI Investor House</span>
+            <h1>Investor Deals Room</h1>
             <p>
-              Discover reviewed early-stage opportunities, compare the
-              essentials, and enter secure Deal Rooms when access is approved.
+              Curated opportunities matched to your investment preferences,
+              verification status and approved access.
             </p>
           </div>
-          <aside>
-            <span className="workspace-pulse" aria-hidden="true" />
-            <strong>Curated, controlled, confidential.</strong>
-            <p>
-              AKARI supports professional discovery and introductions. Members
-              remain responsible for independent due diligence and professional
-              advice.
-            </p>
+          <aside aria-label="Deal Room guidance">
+            <div className="deal-hero-actions">
+              <a className="button button-quiet" href="#deal-filter-title">
+                How it works
+              </a>
+              {investorMember ? (
+                <Link className="button button-primary" to="/settings/investor">
+                  Investor Preferences
+                </Link>
+              ) : (
+                <Link
+                  className="button button-primary"
+                  to="/login?returnTo=/settings/investor"
+                >
+                  Investor sign in
+                </Link>
+              )}
+            </div>
           </aside>
         </header>
 
@@ -832,7 +780,11 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                 money(opportunity.raiseMaximum, opportunity.raiseCurrency),
               ].filter(Boolean);
               return (
-                <article className="deal-card" key={opportunity.projectId}>
+                <article
+                  className="deal-card"
+                  data-sector={opportunity.sector}
+                  key={opportunity.projectId}
+                >
                   <div className="deal-card-art" aria-hidden="true">
                     <span>
                       {opportunity.sector?.slice(0, 2).toUpperCase() || "AK"}

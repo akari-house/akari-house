@@ -65,9 +65,7 @@ function SidebarLink({
   activeView?: string;
   counts?: InvestorHouseCounts;
 }) {
-  const active = item.view
-    ? item.view === (activeView || "available")
-    : false;
+  const active = item.view ? item.view === (activeView || "available") : false;
   const count = item.count ? counts?.[item.count] : undefined;
 
   return (
@@ -121,7 +119,9 @@ export function InvestorHouseSidebar({
           />
         ))}
 
-        <span className="investor-house-sidebar-section">Investor workspace</span>
+        <span className="investor-house-sidebar-section">
+          Investor workspace
+        </span>
         {investorItems.map((item) => (
           <SidebarLink
             key={item.label}

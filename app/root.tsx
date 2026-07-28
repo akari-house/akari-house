@@ -23,6 +23,7 @@ import "./styles/member-presence.css";
 import "./styles/admin-console.css";
 import "./styles/verification-queue.css";
 import "./styles/site-final-polish.css";
+import "./styles/investor-house-reference.css";
 
 export const headers: Route.HeadersFunction = () => productionSecurityHeaders();
 

@@ -2,7 +2,11 @@
 .investor-house-shell {
   min-height: 100vh;
   background:
-    radial-gradient(circle at 72% 0%, rgba(240, 79, 135, 0.08), transparent 30rem),
+    radial-gradient(
+      circle at 72% 0%,
+      rgba(240, 79, 135, 0.08),
+      transparent 30rem
+    ),
     linear-gradient(180deg, #080b13 0%, #0a0e18 48%, #080b13 100%);
 }
 
@@ -72,7 +76,11 @@
 .investor-house-sidebar-link.is-active {
   border-color: rgba(240, 79, 135, 0.3);
   color: #fff;
-  background: linear-gradient(90deg, rgba(226, 42, 109, 0.34), rgba(226, 42, 109, 0.13));
+  background: linear-gradient(
+    90deg,
+    rgba(226, 42, 109, 0.34),
+    rgba(226, 42, 109, 0.13)
+  );
   box-shadow: inset 3px 0 0 #ef3f82;
 }
 
@@ -254,7 +262,10 @@
 
 .investor-house-shell .deal-filter-form {
   display: grid;
-  grid-template-columns: minmax(190px, 1.25fr) repeat(4, minmax(120px, 0.72fr)) auto;
+  grid-template-columns: minmax(190px, 1.25fr) repeat(
+      4,
+      minmax(120px, 0.72fr)
+    ) auto;
   gap: 0.55rem;
   align-items: end;
   padding: 0.75rem;
@@ -269,7 +280,9 @@
   letter-spacing: 0.08em;
 }
 
-.investor-house-shell .deal-filter-form label:nth-of-type(n + 6):not(:nth-last-of-type(1)) {
+.investor-house-shell
+  .deal-filter-form
+  label:nth-of-type(n + 6):not(:nth-last-of-type(1)) {
   display: none;
 }
 
@@ -298,7 +311,11 @@
   min-height: 0;
   padding: 0;
   border-radius: 9px;
-  background: linear-gradient(180deg, rgba(19, 25, 39, 0.96), rgba(12, 16, 27, 0.98));
+  background: linear-gradient(
+    180deg,
+    rgba(19, 25, 39, 0.96),
+    rgba(12, 16, 27, 0.98)
+  );
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.2);
 }
 
@@ -306,7 +323,11 @@
 .investor-house-shell .deal-card:focus-within {
   transform: translateY(-2px);
   border-color: rgba(240, 79, 135, 0.72);
-  background: linear-gradient(180deg, rgba(22, 28, 44, 0.99), rgba(13, 17, 28, 0.99));
+  background: linear-gradient(
+    180deg,
+    rgba(22, 28, 44, 0.99),
+    rgba(13, 17, 28, 0.99)
+  );
 }
 
 .investor-house-shell .deal-card-art {
@@ -318,21 +339,41 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 8px 8px 0 0;
   background:
-    radial-gradient(circle at 70% 35%, rgba(255, 210, 71, 0.32), transparent 9%),
-    radial-gradient(circle at 58% 72%, rgba(239, 63, 130, 0.34), transparent 30%),
+    radial-gradient(
+      circle at 70% 35%,
+      rgba(255, 210, 71, 0.32),
+      transparent 9%
+    ),
+    radial-gradient(
+      circle at 58% 72%,
+      rgba(239, 63, 130, 0.34),
+      transparent 30%
+    ),
     linear-gradient(135deg, #111a2a, #24132b 50%, #0d1523);
 }
 
 .investor-house-shell .deal-card:nth-child(3n + 2) .deal-card-art {
   background:
-    radial-gradient(circle at 68% 22%, rgba(255, 211, 61, 0.38), transparent 8%),
+    radial-gradient(
+      circle at 68% 22%,
+      rgba(255, 211, 61, 0.38),
+      transparent 8%
+    ),
     linear-gradient(125deg, #0e1727 0 38%, #25203e 38% 62%, #111928 62%);
 }
 
 .investor-house-shell .deal-card:nth-child(3n) .deal-card-art {
   background:
-    radial-gradient(ellipse at 55% 62%, rgba(239, 63, 130, 0.46), transparent 30%),
-    radial-gradient(circle at 52% 52%, rgba(123, 95, 255, 0.42), transparent 22%),
+    radial-gradient(
+      ellipse at 55% 62%,
+      rgba(239, 63, 130, 0.46),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 52% 52%,
+      rgba(123, 95, 255, 0.42),
+      transparent 22%
+    ),
     linear-gradient(145deg, #101529, #21143c 55%, #101423);
 }
 
@@ -347,14 +388,31 @@
   height: 56%;
   opacity: 0.68;
   background:
-    linear-gradient(155deg, transparent 0 35%, rgba(4, 7, 13, 0.9) 35% 43%, transparent 43%) 0 100% / 38% 100% repeat-x,
-    linear-gradient(25deg, transparent 0 40%, rgba(3, 6, 12, 0.92) 40% 51%, transparent 51%) 0 100% / 31% 100% repeat-x;
+    linear-gradient(
+        155deg,
+        transparent 0 35%,
+        rgba(4, 7, 13, 0.9) 35% 43%,
+        transparent 43%
+      )
+      0 100% / 38% 100% repeat-x,
+    linear-gradient(
+        25deg,
+        transparent 0 40%,
+        rgba(3, 6, 12, 0.92) 40% 51%,
+        transparent 51%
+      )
+      0 100% / 31% 100% repeat-x;
 }
 
 .investor-house-shell .deal-card-art::after {
   inset: 0;
   background:
-    linear-gradient(90deg, transparent 49.5%, rgba(255, 255, 255, 0.06) 50%, transparent 50.5%),
+    linear-gradient(
+      90deg,
+      transparent 49.5%,
+      rgba(255, 255, 255, 0.06) 50%,
+      transparent 50.5%
+    ),
     linear-gradient(0deg, rgba(3, 5, 10, 0.44), transparent 55%);
 }
 
@@ -528,7 +586,11 @@
   top: 1rem;
   padding: 1rem;
   border-radius: 10px;
-  background: linear-gradient(150deg, rgba(23, 28, 42, 0.96), rgba(12, 16, 27, 0.98));
+  background: linear-gradient(
+    150deg,
+    rgba(23, 28, 42, 0.96),
+    rgba(12, 16, 27, 0.98)
+  );
   box-shadow: none;
 }
 
@@ -649,7 +711,10 @@
   }
 
   .investor-house-shell .deal-filter-form {
-    grid-template-columns: minmax(180px, 1fr) repeat(3, minmax(120px, 0.75fr)) auto;
+    grid-template-columns: minmax(180px, 1fr) repeat(
+        3,
+        minmax(120px, 0.75fr)
+      ) auto;
   }
 
   .investor-house-shell .deal-filter-form label:nth-of-type(5) {
