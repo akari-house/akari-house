@@ -67,12 +67,13 @@ function SidebarLink({
     <Link
       className={`house-workspace-sidebar-link${active ? " is-active" : ""}`}
       to={item.href}
+      aria-label={`${item.label}, workspace navigation`}
       aria-current={active ? "page" : undefined}
     >
       <span className="house-workspace-sidebar-glyph" aria-hidden="true">
         {item.glyph}
       </span>
-      <span>{item.label}</span>
+      <span aria-hidden="true">{item.label}</span>
     </Link>
   );
 }
@@ -137,9 +138,7 @@ export function HouseWorkspaceSidebar({
           </>
         )}
 
-        <span className="house-workspace-sidebar-section">
-          Profile & settings
-        </span>
+        <span className="house-workspace-sidebar-section">Profile & settings</span>
         {profileItems.map((item) => (
           <SidebarLink key={item.label} item={item} pathname={pathname} />
         ))}
