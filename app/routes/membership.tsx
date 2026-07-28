@@ -25,7 +25,7 @@ export default function Membership({ loaderData }: Route.ComponentProps) {
     <div className="site-shell">
       <SiteHeader user={loaderData.user} />
       <main id="main-content" className="standalone-membership">
-        <MembershipDesk />
+        <MembershipDesk standalone />
       </main>
       <PublicFooter />
     </div>
