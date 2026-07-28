@@ -807,7 +807,7 @@
   padding-block: 0;
 }
 
-.standalone-membership .membership-copy h2 {
+.standalone-membership .membership-copy h1 {
   font-size: clamp(2.1rem, 3.5vw, 3.15rem);
 }
 
