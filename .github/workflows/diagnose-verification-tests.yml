@@ -19,18 +19,18 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Capture focused test output
+      - name: Capture full test output
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set +e
-          npx vitest run tests/admin-directory-ux.test.ts > /tmp/tests.log 2>&1
+          npm test > /tmp/tests.log 2>&1
           status=$?
           {
-            echo '## Verification queue test diagnostic'
+            echo '## Verification queue full test diagnostic'
             echo
             echo '```text'
-            tail -n 140 /tmp/tests.log
+            tail -n 260 /tmp/tests.log
             echo '```'
           } > /tmp/comment.md
           gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/comment.md
