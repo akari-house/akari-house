@@ -1,4 +1,5 @@
 import { Form, redirect, useNavigation } from "react-router";
+import { useState } from "react";
 import type { Route } from "./+types/event-edit";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
@@ -13,19 +14,31 @@ import { EventTimezoneField } from "~/components/EventTimeDisplay";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText, normalizeWebsite } from "~/lib/validation";
 import { AkariMotif } from "~/components/AkariMotif";
+import { canHostEvents } from "~/lib/events.server";
+import { validateProfilePhoto } from "~/lib/profile-photo.server";
+import {
+  markManagedR2ObjectDeleted,
+  registerManagedR2Object,
+} from "~/lib/r2-lifecycle.server";
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const user = await requireApprovedMember(request, db);
+  if (!(await canHostEvents(db, user.id)))
+    throw new Response("Approved event-host access is required.", {
+      status: 403,
+    });
   const event = await db
     .prepare(
-      `SELECT slug, title, summary, description, format, venue,
+      `SELECT id, slug, title, summary, description, format, venue,
               meeting_url AS meetingUrl, starts_at AS startsAt,
-              ends_at AS endsAt, timezone, capacity, status
+              ends_at AS endsAt, timezone, capacity, status,
+              image_key AS imageKey
        FROM events WHERE slug = ? AND host_user_id = ?`,
     )
     .bind(params.slug, user.id)
     .first<{
+      id: string;
       slug: string;
       title: string;
       summary: string;
@@ -38,6 +51,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       timezone: string;
       capacity: number | null;
       status: string;
+      imageKey: string | null;
     }>();
   if (!event) throw new Response("Event not found.", { status: 404 });
   return { user, event };
@@ -45,25 +59,80 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
 export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
-  const db = context.get(cloudflareContext).env.DB;
+  const env = context.get(cloudflareContext).env;
+  const db = env.DB;
   const user = await requireApprovedMember(request, db);
+  if (!(await canHostEvents(db, user.id)))
+    throw new Response("Approved event-host access is required.", {
+      status: 403,
+    });
+  const contentLength = Number(request.headers.get("content-length") ?? "0");
+  if (contentLength > 2_750_000)
+    return { error: "Event cover images must be 2 MB or smaller." };
   const form = await request.formData();
   const intent = formText(form.get("intent"));
   const existing = await db
     .prepare(
-      "SELECT id, status FROM events WHERE slug = ? AND host_user_id = ?",
+      `SELECT id, status, title, image_key AS imageKey
+       FROM events WHERE slug = ? AND host_user_id = ?`,
     )
     .bind(params.slug, user.id)
-    .first<{ id: string; status: string }>();
+    .first<{
+      id: string;
+      status: string;
+      title: string;
+      imageKey: string | null;
+    }>();
   if (!existing) throw new Response("Event not found.", { status: 404 });
   if (intent === "cancel") {
-    await db
+    const registrations = await db
       .prepare(
-        `UPDATE events SET status = 'cancelled',
-         updated_at = datetime('now') WHERE id = ?`,
+        `SELECT user_id AS userId FROM event_registrations
+         WHERE event_id = ? AND status IN ('registered', 'waitlisted')`,
       )
       .bind(existing.id)
-      .run();
+      .all<{ userId: string }>();
+    await db.batch([
+      db
+        .prepare(
+          `UPDATE events SET status = 'cancelled',
+           updated_at = datetime('now') WHERE id = ?`,
+        )
+        .bind(existing.id),
+      db
+        .prepare(
+          `UPDATE event_registrations SET status = 'cancelled',
+           updated_at = datetime('now')
+           WHERE event_id = ? AND status IN ('registered', 'waitlisted')`,
+        )
+        .bind(existing.id),
+      ...registrations.results.map(({ userId }) =>
+        db
+          .prepare(
+            `INSERT INTO notifications
+             (id, user_id, kind, title, body, action_url)
+             VALUES (?, ?, 'event.cancelled', 'Event cancelled', ?, ?)`,
+          )
+          .bind(
+            crypto.randomUUID(),
+            userId,
+            `${existing.title} was cancelled by its host.`,
+            `/events/${params.slug}`,
+          ),
+      ),
+      db
+        .prepare(
+          `INSERT INTO audit_logs
+           (id, actor_user_id, action, subject_type, subject_id, metadata_json)
+           VALUES (?, ?, 'event.cancelled', 'event', ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          user.id,
+          existing.id,
+          JSON.stringify({ notified: registrations.results.length }),
+        ),
+    ]);
     throw redirect("/events/manage?cancelled=1");
   }
   const title = formText(form.get("title")).trim();
@@ -103,28 +172,78 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     return { error: "Online and hybrid events require a meeting URL." };
   if (format !== "online" && !venue)
     return { error: "In-person and hybrid events require a venue." };
-  await db
+  const confirmed = await db
     .prepare(
-      `UPDATE events SET title = ?, summary = ?, description = ?,
-       format = ?, venue = ?, meeting_url = ?, starts_at = ?, ends_at = ?,
-       timezone = ?, capacity = ?, status = 'submitted',
-       updated_at = datetime('now')
-       WHERE id = ?`,
+      `SELECT COUNT(*) AS total FROM event_registrations
+       WHERE event_id = ? AND status = 'registered'`,
     )
-    .bind(
-      title,
-      summary,
-      description,
-      format,
-      venue,
-      meetingUrl ?? "",
-      startsAt,
-      endsAt,
-      timezone,
-      capacity,
-      existing.id,
-    )
-    .run();
+    .bind(existing.id)
+    .first<{ total: number }>();
+  if (capacity !== null && capacity < (confirmed?.total ?? 0))
+    return {
+      error: `Capacity cannot be lower than the ${confirmed?.total ?? 0} confirmed registrations.`,
+    };
+
+  const image = form.get("image");
+  const removeImage = form.get("removeImage") === "yes";
+  let imageKey = removeImage ? null : existing.imageKey;
+  let uploadedImageKey: string | null = null;
+  if (image instanceof File && image.size) {
+    const validImage = await validateProfilePhoto(image);
+    if (!validImage)
+      return { error: "Use a JPG, PNG or WebP image no larger than 2 MB." };
+    uploadedImageKey = `event-images/${existing.id}/${crypto.randomUUID()}.${validImage.extension}`;
+    imageKey = uploadedImageKey;
+    await env.MEDIA.put(uploadedImageKey, image.stream(), {
+      httpMetadata: { contentType: validImage.contentType },
+    });
+  }
+
+  try {
+    if (uploadedImageKey)
+      await registerManagedR2Object(db, {
+        objectKey: uploadedImageKey,
+        sourceType: "event_image",
+        sourceId: existing.id,
+        ownerUserId: user.id,
+      });
+    await db
+      .prepare(
+        `UPDATE events SET title = ?, summary = ?, description = ?,
+         format = ?, venue = ?, meeting_url = ?, starts_at = ?, ends_at = ?,
+         timezone = ?, capacity = ?, image_key = ?, status = 'submitted',
+         updated_at = datetime('now')
+         WHERE id = ?`,
+      )
+      .bind(
+        title,
+        summary,
+        description,
+        format,
+        venue,
+        meetingUrl ?? "",
+        startsAt,
+        endsAt,
+        timezone,
+        capacity,
+        imageKey,
+        existing.id,
+      )
+      .run();
+  } catch (error) {
+    if (uploadedImageKey) {
+      await env.MEDIA.delete(uploadedImageKey);
+      await markManagedR2ObjectDeleted(db, uploadedImageKey).catch(
+        () => undefined,
+      );
+    }
+    throw error;
+  }
+
+  if (existing.imageKey && existing.imageKey !== imageKey) {
+    await env.MEDIA.delete(existing.imageKey);
+    await markManagedR2ObjectDeleted(db, existing.imageKey);
+  }
   throw redirect(`/events/${params.slug}?submitted=1`);
 }
 
@@ -134,6 +253,7 @@ export default function EventEdit({
 }: Route.ComponentProps) {
   const event = loaderData.event;
   const navigation = useNavigation();
+  const [eventFormat, setEventFormat] = useState(event.format);
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -146,7 +266,11 @@ export default function EventEdit({
             <p>Shape the invitation, timing and welcome before review.</p>
           </div>
         </header>
-        <Form method="post" className="profile-form event-form">
+        <Form
+          method="post"
+          encType="multipart/form-data"
+          className="profile-form event-form"
+        >
           {actionData?.error && (
             <p className="form-error" role="alert">
               {actionData.error}
@@ -175,10 +299,45 @@ export default function EventEdit({
               rows={8}
             />
           </label>
+          <div className="event-image-field">
+            <span>Event cover image</span>
+            {event.imageKey && (
+              <img
+                src={`/media/events/${event.slug}`}
+                alt={`${event.title} current cover`}
+                width={960}
+                height={540}
+              />
+            )}
+            <label>
+              {event.imageKey ? "Replace cover image" : "Add cover image"}
+              <input
+                name="image"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+              />
+            </label>
+            {event.imageKey && (
+              <label className="inline-choice">
+                <input type="checkbox" name="removeImage" value="yes" />
+                Remove the current cover image
+              </label>
+            )}
+            <small>
+              Landscape JPG, PNG or WebP up to 2 MB. Changes return a published
+              event to review.
+            </small>
+          </div>
           <div className="form-row">
             <label>
               Format
-              <select name="format" defaultValue={event.format}>
+              <select
+                name="format"
+                value={eventFormat}
+                onChange={(changeEvent) =>
+                  setEventFormat(changeEvent.currentTarget.value)
+                }
+              >
                 <option value="online">Online</option>
                 <option value="in_person">In person</option>
                 <option value="hybrid">Hybrid</option>
@@ -228,18 +387,28 @@ export default function EventEdit({
               removes it from the public calendar.
             </p>
           )}
-          <label>
-            Venue
-            <input name="venue" defaultValue={event.venue} maxLength={240} />
-          </label>
-          <label>
-            Meeting URL
-            <input
-              name="meetingUrl"
-              type="url"
-              defaultValue={event.meetingUrl}
-            />
-          </label>
+          {eventFormat !== "online" && (
+            <label>
+              Venue
+              <input
+                name="venue"
+                defaultValue={event.venue}
+                maxLength={240}
+                required
+              />
+            </label>
+          )}
+          {eventFormat !== "in_person" && (
+            <label>
+              Meeting URL
+              <input
+                name="meetingUrl"
+                type="url"
+                defaultValue={event.meetingUrl}
+                required
+              />
+            </label>
+          )}
           <button
             className="button button-primary"
             name="intent"
