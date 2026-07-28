@@ -40,12 +40,20 @@ jobs:
           base64 --decode /tmp/admin-min.b64 > /tmp/admin-min.patch
           patch_sha=$(sha256sum /tmp/admin-min.patch | cut -d' ' -f1)
           if [ "$patch_sha" != "164b97a5fdbcb260b2b62c25a4486d2f82e8fa95ef6b7d0e99ca55d798ed27ef" ]; then
-            gh pr comment 126 --repo "$GITHUB_REPOSITORY" --body "Admin UX patch integrity failed: received \`${patch_sha}\`."
-            exit 1
+            echo "integrity=${patch_sha}" > .github/admin-patch-error.txt
+          elif ! patch --dry-run -p1 < /tmp/admin-min.patch > .github/admin-patch-error.txt 2>&1; then
+            true
+          else
+            patch -p1 < /tmp/admin-min.patch
+            rm -rf .github/patches .github/admin-patch-error.txt
+            exit 0
           fi
-          patch --dry-run -p1 < /tmp/admin-min.patch
-          patch -p1 < /tmp/admin-min.patch
-          rm -rf .github/patches
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/admin-patch-error.txt
+          git commit -m "Record admin patch application diagnostic"
+          git push origin HEAD:agent/admin-directory-ux-audit
+          exit 1
       - run: npm ci
       - name: Format changed source
         run: npm run format
