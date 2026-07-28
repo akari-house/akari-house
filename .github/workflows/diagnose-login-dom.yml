@@ -1,0 +1,57 @@
+name: Diagnose Login DOM
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  inspect:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/auth-password-ux
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Create DOM diagnostic
+        run: |
+          cat > tests/e2e/login-dom-diagnostic.spec.ts <<'EOF'
+          import { test } from "@playwright/test";
+
+          test("inspect login password markup", async ({ page }) => {
+            await page.goto("/login");
+            const password = page.getByLabel("Password", { exact: true });
+            console.log("URL=" + page.url());
+            console.log("PASSWORD_COUNT=" + (await password.count()));
+            console.log("FIELD_WRAPPER_COUNT=" + (await page.locator('[data-password-field="password"]').count()));
+            console.log("TOGGLE_COUNT=" + (await page.locator('.password-visibility-toggle').count()));
+            if ((await password.count()) > 0) {
+              console.log("PASSWORD_OUTER_HTML=" + (await password.evaluate((element) => element.outerHTML)));
+              console.log("PASSWORD_PARENT_HTML=" + (await password.evaluate((element) => element.parentElement?.outerHTML ?? "missing")));
+              console.log("PASSWORD_GRANDPARENT_HTML=" + (await password.evaluate((element) => element.parentElement?.parentElement?.outerHTML ?? "missing")));
+            }
+          });
+          EOF
+          set +e
+          npx playwright test tests/e2e/login-dom-diagnostic.spec.ts --project=desktop-chromium --reporter=line --retries=0 > .github/login-dom-result.txt 2>&1
+          status=$?
+          echo "exit_status=${status}" >> .github/login-dom-result.txt
+          rm -f tests/e2e/login-dom-diagnostic.spec.ts
+          rm -f .github/workflows/diagnose-login-dom.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Record rendered login password markup"
+          git pull --rebase origin agent/auth-password-ux
+          git push origin HEAD:agent/auth-password-ux
+          exit 0
