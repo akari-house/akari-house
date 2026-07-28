@@ -11,15 +11,17 @@ test("registration explains password acceptance while typing", async ({
 
   const password = page.getByLabel("Password", { exact: true });
   const confirmation = page.getByLabel("Confirm password");
-  const passwordToggle = page.getByRole("button", {
+  const showPassword = page.getByRole("button", {
     name: "Show password",
     exact: true,
   });
 
   await expect(password).toHaveAttribute("type", "password");
-  await passwordToggle.click();
+  await showPassword.click();
   await expect(password).toHaveAttribute("type", "text");
-  await expect(passwordToggle).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    page.getByRole("button", { name: "Hide password", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
 
   await password.fill("abcdefghijk");
   await expect(
@@ -43,15 +45,22 @@ test("registration explains password acceptance while typing", async ({
 test("login password can be reviewed without submitting", async ({ page }) => {
   await page.goto("/login");
   const password = page.getByLabel("Password", { exact: true });
-  const toggle = page.getByRole("button", {
+  const showPassword = page.getByRole("button", {
     name: "Show password",
     exact: true,
   });
 
   await password.fill("visible-check");
-  await toggle.click();
+  await showPassword.click();
   await expect(password).toHaveAttribute("type", "text");
-  await expect(toggle).toHaveAccessibleName("Hide password");
-  await toggle.click();
+  const hidePassword = page.getByRole("button", {
+    name: "Hide password",
+    exact: true,
+  });
+  await expect(hidePassword).toHaveAttribute("aria-pressed", "true");
+  await hidePassword.click();
   await expect(password).toHaveAttribute("type", "password");
+  await expect(
+    page.getByRole("button", { name: "Show password", exact: true }),
+  ).toHaveAttribute("aria-pressed", "false");
 });
