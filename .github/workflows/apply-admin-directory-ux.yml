@@ -1,4 +1,4 @@
-name: Apply Admin Directory UX
+name: Finalize Admin Directory UX
 
 on:
   pull_request:
@@ -7,11 +7,9 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
-  issues: write
 
 jobs:
-  apply:
+  finalize:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,45 +20,52 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Apply staged patch
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Apply final route and navigation wiring
         run: |
-          set -euo pipefail
-          parts=(
-            .github/patches/admin-min.part-00
-            .github/patches/admin-min.part-01a
-            .github/patches/admin-min.part-01b
-            .github/patches/admin-min.part-02
-            .github/patches/admin-min.part-03
-            .github/patches/admin-min.part-04
-            .github/patches/admin-min.part-05
-          )
-          cat "${parts[@]}" > /tmp/admin-min.b64
-          base64 --decode /tmp/admin-min.b64 > /tmp/admin-min.patch
-          patch_sha=$(sha256sum /tmp/admin-min.patch | cut -d' ' -f1)
-          if [ "$patch_sha" != "164b97a5fdbcb260b2b62c25a4486d2f82e8fa95ef6b7d0e99ca55d798ed27ef" ]; then
-            echo "integrity=${patch_sha}" > .github/admin-patch-error.txt
-          elif ! patch --dry-run -p1 < /tmp/admin-min.patch > .github/admin-patch-error.txt 2>&1; then
-            true
-          else
-            patch -p1 < /tmp/admin-min.patch
-            rm -rf .github/patches .github/admin-patch-error.txt
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .github/admin-patch-error.txt
-          git commit -m "Record admin patch application diagnostic"
-          git push origin HEAD:agent/admin-directory-ux-audit
-          exit 1
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path("app/root.tsx")
+          source = root.read_text()
+          marker = 'import "./styles/member-presence.css";'
+          addition = marker + '\nimport "./styles/admin-console.css";'
+          if 'import "./styles/admin-console.css";' not in source:
+              if marker not in source:
+                  raise SystemExit("member presence style import not found")
+              source = source.replace(marker, addition, 1)
+              root.write_text(source)
+
+          routes = Path("app/routes.ts")
+          source = routes.read_text()
+          marker = '  route("verify-email", "routes/verify-email.tsx"),'
+          addition = marker + '\n  route("admin", "routes/admin-workspace.tsx"),'
+          if 'route("admin", "routes/admin-workspace.tsx")' not in source:
+              if marker not in source:
+                  raise SystemExit("verify-email route marker not found")
+              source = source.replace(marker, addition, 1)
+              routes.write_text(source)
+
+          dashboard = Path("app/routes/dashboard.tsx")
+          source = dashboard.read_text()
+          marker = '          <Link to="/notifications">Notifications</Link>'
+          addition = marker + '\n          {loaderData.adminAccess && (\n            <Link to="/admin">Admin workspace</Link>\n          )}'
+          if '<Link to="/admin">Admin workspace</Link>' not in source:
+              if marker not in source:
+                  raise SystemExit("notifications navigation marker not found")
+              source = source.replace(marker, addition, 1)
+              dashboard.write_text(source)
+          PY
       - run: npm ci
-      - name: Format changed source
-        run: npm run format
+      - run: npm run format
+      - run: npm run typecheck
+      - name: Remove temporary patch machinery
+        run: |
+          rm -rf .github/patches .github/payloads
+          rm -f .github/admin-patch-error.txt
+          rm -f .github/workflows/apply-admin-directory-ux.yml
       - name: Commit final implementation
         run: |
           set -euo pipefail
-          rm -f .github/workflows/apply-admin-directory-ux.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
