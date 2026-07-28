@@ -40,19 +40,20 @@ jobs:
           base64 --decode /tmp/admin-min.b64 > /tmp/admin-min.patch
           patch_sha=$(sha256sum /tmp/admin-min.patch | cut -d' ' -f1)
           if [ "$patch_sha" != "164b97a5fdbcb260b2b62c25a4486d2f82e8fa95ef6b7d0e99ca55d798ed27ef" ]; then
+            gh pr comment 126 --repo "$GITHUB_REPOSITORY" --body "Admin UX patch integrity failed: received \`${patch_sha}\`."
+            exit 1
+          fi
+          if ! git apply --check /tmp/admin-min.patch > /tmp/admin-apply.txt 2>&1; then
             {
-              echo "## Ordered admin patch diagnostic"
+              echo "## Admin UX patch application diagnostic"
               echo
               echo '```text'
-              wc -c "${parts[@]}"
-              sha256sum "${parts[@]}"
-              echo "decoded=${patch_sha}"
+              cat /tmp/admin-apply.txt
               echo '```'
             } > /tmp/admin-patch-comment.md
             gh pr comment 126 --repo "$GITHUB_REPOSITORY" --body-file /tmp/admin-patch-comment.md
             exit 1
           fi
-          git apply --check /tmp/admin-min.patch
           git apply /tmp/admin-min.patch
           rm -rf .github/patches
       - run: npm ci
