@@ -107,12 +107,7 @@ export async function getOptionalUser(
         adminScopesCsv?: string | null;
       }>();
     if (!row) return null;
-    const {
-      status,
-      adminAccessLevel,
-      adminScopesCsv,
-      ...identity
-    } = row;
+    const { status, adminAccessLevel, adminScopesCsv, ...identity } = row;
     const roles = await loadRoles(authDb, row.id);
     const adminAccess = sessionAdminAccess(adminAccessLevel, adminScopesCsv);
     return {
