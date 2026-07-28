@@ -7,6 +7,12 @@ export function HouseHall() {
   const [activeRoom, setActiveRoom] = useState(rooms[0].role);
   const room = rooms.find((item) => item.role === activeRoom) ?? rooms[0];
 
+  function moveRoom(next: number) {
+    const index = (next + rooms.length) % rooms.length;
+    setActiveRoom(rooms[index].role);
+    document.getElementById(`hall-tab-${rooms[index].role}`)?.focus();
+  }
+
   return (
     <section
       className="hall-section chapter-section story-chapter"
@@ -62,11 +68,28 @@ export function HouseHall() {
             <button
               type="button"
               key={room.role}
+              id={`hall-tab-${room.role}`}
               role="tab"
               aria-selected={activeRoom === room.role}
               aria-controls="hall-room-detail"
+              tabIndex={activeRoom === room.role ? 0 : -1}
               className={activeRoom === room.role ? "is-active" : undefined}
               onClick={() => setActiveRoom(room.role)}
+              onKeyDown={(event) => {
+                if (
+                  !["ArrowRight", "ArrowLeft", "Home", "End"].includes(
+                    event.key,
+                  )
+                )
+                  return;
+                event.preventDefault();
+                const current = rooms.findIndex(
+                  (item) => item.role === activeRoom,
+                );
+                if (event.key === "Home") moveRoom(0);
+                else if (event.key === "End") moveRoom(rooms.length - 1);
+                else moveRoom(current + (event.key === "ArrowRight" ? 1 : -1));
+              }}
             >
               <span>{room.number}</span>
               {room.title}
@@ -77,6 +100,7 @@ export function HouseHall() {
           className="hall-compass-detail"
           id="hall-room-detail"
           role="tabpanel"
+          aria-labelledby={`hall-tab-${room.role}`}
           aria-live="polite"
         >
           <div>
