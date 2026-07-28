@@ -24,8 +24,10 @@ describe("member directory and admin trust workflow", () => {
   it("provides a scoped admin overview", () => {
     const routes = read("app/routes.ts");
     const dashboard = read("app/routes/dashboard.tsx");
+    const workspace = read("app/routes/admin-workspace.tsx");
     expect(routes).toContain('route("admin", "routes/admin-workspace.tsx")');
     expect(dashboard).toContain('to="/admin"');
     expect(dashboard).toContain("Admin workspace");
+    expect(workspace).toContain("visibleAdminWorkspaceItems");
   });
 });
