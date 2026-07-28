@@ -10,6 +10,7 @@ describe("authentication password experience", () => {
     expect(passwordField).toContain("aria-pressed={visible}");
     expect(passwordField).toContain('type="button"');
     expect(passwordField).toContain('aria-live="polite"');
+    expect(passwordField).toContain("autoComplete={autoComplete}");
     expect(passwordField).toContain("setCustomValidity");
   });
 
