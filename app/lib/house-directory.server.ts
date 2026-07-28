@@ -4,7 +4,8 @@ const selectFields = `id, category, name, title, biography,
   image_key AS imageKey, website_url AS websiteUrl, x_url AS xUrl,
   linkedin_url AS linkedinUrl, instagram_url AS instagramUrl,
   tiktok_url AS tiktokUrl, youtube_url AS youtubeUrl,
-  telegram_url AS telegramUrl, display_order AS displayOrder, status`;
+  telegram_url AS telegramUrl, display_order AS displayOrder, status,
+  updated_at AS imageVersion`;
 
 export async function getPublishedHouseDirectory(db: D1Database) {
   const result = await db
