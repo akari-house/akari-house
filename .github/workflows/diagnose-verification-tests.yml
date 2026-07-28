@@ -6,32 +6,30 @@ on:
       - main
 
 permissions:
-  contents: read
-  pull-requests: write
+  contents: write
 
 jobs:
   diagnose:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: agent/verification-active-queue
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Capture full test output
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Persist full test output
         run: |
           set +e
-          npm test > /tmp/tests.log 2>&1
+          npm test > .github/verification-test-output.txt 2>&1
           status=$?
-          {
-            echo '## Verification queue full test diagnostic'
-            echo
-            echo '```text'
-            tail -n 260 /tmp/tests.log
-            echo '```'
-          } > /tmp/comment.md
-          gh pr comment "${{ github.event.pull_request.number }}" --body-file /tmp/comment.md
+          echo "exit_status=${status}" >> .github/verification-test-output.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/verification-test-output.txt
+          git commit -m "Record verification queue test diagnostic"
+          git push origin HEAD:agent/verification-active-queue
           exit "$status"
