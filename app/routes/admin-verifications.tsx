@@ -295,7 +295,8 @@ export default function AdminVerifications({
                     )}
                     <p>
                       <strong>Latest note:</strong>{" "}
-                      {item.decisionNote || "No reviewer note has been recorded."}
+                      {item.decisionNote ||
+                        "No reviewer note has been recorded."}
                     </p>
                   </div>
 
@@ -339,8 +340,8 @@ export default function AdminVerifications({
                     </label>
                     <p className="admin-scope-help">
                       <strong>Hold</strong> keeps the claim in this queue.
-                      <strong> Reject</strong> declines a pending claim or revokes
-                      an active badge.
+                      <strong> Reject</strong> declines a pending claim or
+                      revokes an active badge.
                     </p>
                     <div className="button-row">
                       <button
