@@ -72,10 +72,10 @@ describe("investor profile to deal discovery", () => {
       "app/components/InvestorHouseSidebar.tsx",
       "utf8",
     );
-    expect(sidebar).toContain('/deals?view=saved');
-    expect(sidebar).toContain('/deals?view=requested');
-    expect(sidebar).toContain('/deals?view=approved');
-    expect(sidebar).toContain('/settings/investor');
+    expect(sidebar).toContain("/deals?view=saved");
+    expect(sidebar).toContain("/deals?view=requested");
+    expect(sidebar).toContain("/deals?view=approved");
+    expect(sidebar).toContain("/settings/investor");
     expect(deals).toContain("loadInvestorPreferenceProfile");
     expect(deals).toContain("matchOpportunityToInvestor");
     expect(deals).toContain("opportunity_user_states");

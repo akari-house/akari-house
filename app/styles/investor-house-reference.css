@@ -262,10 +262,9 @@
 
 .investor-house-shell .deal-filter-form {
   display: grid;
-  grid-template-columns: minmax(190px, 1.25fr) repeat(
-      4,
-      minmax(120px, 0.72fr)
-    ) auto;
+  grid-template-columns:
+    minmax(190px, 1.25fr) repeat(4, minmax(120px, 0.72fr))
+    auto;
   gap: 0.55rem;
   align-items: end;
   padding: 0.75rem;
@@ -711,10 +710,9 @@
   }
 
   .investor-house-shell .deal-filter-form {
-    grid-template-columns: minmax(180px, 1fr) repeat(
-        3,
-        minmax(120px, 0.75fr)
-      ) auto;
+    grid-template-columns:
+      minmax(180px, 1fr) repeat(3, minmax(120px, 0.75fr))
+      auto;
   }
 
   .investor-house-shell .deal-filter-form label:nth-of-type(5) {
