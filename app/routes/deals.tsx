@@ -700,7 +700,11 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
             <label>
               Sort
               <select name="sort" defaultValue={loaderData.filters.sort}>
-                <option value="">Best profile match</option>
+                <option value="">
+                  {investorProfile?.complete
+                    ? "Best profile match"
+                    : "Recommended"}
+                </option>
                 <option value="newest">Newest</option>
                 <option value="closing">Closing soon</option>
                 <option value="raise">Largest raise</option>
