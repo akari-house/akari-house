@@ -28,6 +28,7 @@ describe("member directory and admin trust workflow", () => {
     expect(verifications).toContain('value="verify"');
     expect(verifications).toContain('value="hold"');
     expect(verifications).toContain("Reject");
+    expect(verifications).toContain('return "on hold"');
     expect(verifications).toContain('["verify", "hold", "decline", "revoke"]');
   });
 
