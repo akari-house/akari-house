@@ -16,6 +16,7 @@ jobs:
           node-version: 22.22.0
           cache: npm
       - run: npm ci
+      - run: npm run typecheck
       - name: Capture lint output
         shell: bash
         run: |
