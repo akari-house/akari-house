@@ -5,6 +5,10 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { getOptionalUser, requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import {
+  loadInvestorPreferenceProfile,
+  matchOpportunityToInvestor,
+} from "~/lib/investor-matching.server";
+import {
   isVerifiedInvestor,
   recordOpportunityAudit,
 } from "~/lib/opportunity-access.server";
@@ -35,6 +39,23 @@ type OpportunityRow = {
   passedAt: string | null;
   requestStatus: string | null;
   listingStatus: string;
+};
+
+type OpportunityWithMatch = OpportunityRow & {
+  matchScore: number | null;
+  matchReasons: string[];
+};
+
+type InvestorNavigationCounts = {
+  saved: number;
+  requested: number;
+  approved: number;
+};
+
+const emptyNavigationCounts: InvestorNavigationCounts = {
+  saved: 0,
+  requested: 0,
+  approved: 0,
 };
 
 const views = [
@@ -137,8 +158,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     return {
       user,
       verifiedInvestor: false,
+      investorProfile: null,
+      navigationCounts: emptyNavigationCounts,
       schemaReady: false,
-      opportunities: [] as OpportunityRow[],
+      opportunities: [] as OpportunityWithMatch[],
       view,
       filters,
       options: {
@@ -151,6 +174,52 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   }
 
   const verifiedInvestor = await isVerifiedInvestor(db, user);
+  const investorProfile = user?.roles.includes("investor")
+    ? await loadInvestorPreferenceProfile(db, user.id)
+    : null;
+  const navigationCounts = user?.roles.includes("investor")
+    ? ((await db
+        .prepare(
+          `SELECT
+             (SELECT COUNT(*)
+              FROM opportunity_user_states ous
+              JOIN opportunity_listings ol ON ol.project_id = ous.project_id
+              JOIN projects pr ON pr.id = ous.project_id
+              WHERE ous.user_id = ? AND ous.saved_at IS NOT NULL
+                AND ol.status = 'published' AND pr.status = 'published') AS saved,
+             (SELECT COUNT(*)
+              FROM data_room_requests drr
+              JOIN opportunity_listings ol ON ol.project_id = drr.project_id
+              JOIN projects pr ON pr.id = drr.project_id
+              WHERE drr.investor_user_id = ? AND drr.status = 'pending'
+                AND ol.status = 'published' AND pr.status = 'published'
+                AND drr.id = (
+                  SELECT latest.id
+                  FROM data_room_requests latest
+                  WHERE latest.project_id = drr.project_id
+                    AND latest.investor_user_id = drr.investor_user_id
+                  ORDER BY latest.created_at DESC, latest.id DESC
+                  LIMIT 1
+                )) AS requested,
+             (SELECT COUNT(*)
+              FROM data_room_requests drr
+              JOIN opportunity_listings ol ON ol.project_id = drr.project_id
+              JOIN projects pr ON pr.id = drr.project_id
+              WHERE drr.investor_user_id = ? AND drr.status = 'approved'
+                AND (drr.expires_at IS NULL OR drr.expires_at > datetime('now'))
+                AND ol.status = 'published' AND pr.status = 'published'
+                AND drr.id = (
+                  SELECT latest.id
+                  FROM data_room_requests latest
+                  WHERE latest.project_id = drr.project_id
+                    AND latest.investor_user_id = drr.investor_user_id
+                  ORDER BY latest.created_at DESC, latest.id DESC
+                  LIMIT 1
+                )) AS approved`,
+        )
+        .bind(user.id, user.id, user.id)
+        .first<InvestorNavigationCounts>()) ?? emptyNavigationCounts)
+    : emptyNavigationCounts;
   const archived = view === "archived";
   const conditions = [
     archived ? "ol.status = 'archived'" : "ol.status = 'published'",
@@ -280,6 +349,31 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     .bind(...values)
     .all<OpportunityRow>();
 
+  const opportunities: OpportunityWithMatch[] = result.results.map(
+    (opportunity) => {
+      const match = matchOpportunityToInvestor(investorProfile, opportunity);
+      return {
+        ...opportunity,
+        matchScore: match.score,
+        matchReasons: match.reasons,
+      };
+    },
+  );
+  if (!filters.sort && investorProfile?.complete)
+    opportunities.sort((left, right) => {
+      const scoreDifference =
+        (right.matchScore ?? -1) - (left.matchScore ?? -1);
+      if (scoreDifference) return scoreDifference;
+      const leftClosing = left.closingAt
+        ? Date.parse(left.closingAt)
+        : Number.MAX_SAFE_INTEGER;
+      const rightClosing = right.closingAt
+        ? Date.parse(right.closingAt)
+        : Number.MAX_SAFE_INTEGER;
+      if (leftClosing !== rightClosing) return leftClosing - rightClosing;
+      return Date.parse(right.updatedAt) - Date.parse(left.updatedAt);
+    });
+
   const filterRows = await db
     .prepare(
       `SELECT DISTINCT ol.sector, ol.geography,
@@ -300,8 +394,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return {
     user,
     verifiedInvestor,
+    investorProfile,
+    navigationCounts,
     schemaReady: true,
-    opportunities: result.results,
+    opportunities,
     view,
     filters,
     options: {
@@ -418,6 +514,15 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
   for (const [key, value] of Object.entries(loaderData.filters))
     if (value) currentQuery.set(key, value);
   const returnTo = `/deals?${currentQuery.toString()}`;
+  const investorMember = loaderData.user?.roles.includes("investor") ?? false;
+  const investorProfile = loaderData.investorProfile;
+  const profilePreferences = investorProfile
+    ? [
+        ...investorProfile.sectors.slice(0, 2),
+        ...investorProfile.stages.slice(0, 1),
+        ...investorProfile.geographies.slice(0, 1),
+      ]
+    : [];
 
   return (
     <div className="site-shell">
@@ -445,20 +550,43 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
               to="/deals?view=saved"
             >
               Saved
+              {loaderData.navigationCounts.saved > 0 && (
+                <span className="workspace-count">
+                  {loaderData.navigationCounts.saved}
+                </span>
+              )}
             </Link>
             <Link
               className={loaderData.view === "requested" ? "is-active" : ""}
               to="/deals?view=requested"
             >
               Requests
+              {loaderData.navigationCounts.requested > 0 && (
+                <span className="workspace-count">
+                  {loaderData.navigationCounts.requested}
+                </span>
+              )}
             </Link>
             <Link
               className={loaderData.view === "approved" ? "is-active" : ""}
               to="/deals?view=approved"
             >
               My Deal Rooms
+              {loaderData.navigationCounts.approved > 0 && (
+                <span className="workspace-count">
+                  {loaderData.navigationCounts.approved}
+                </span>
+              )}
             </Link>
-            <Link to="/settings/investor">Investor profile</Link>
+            {investorMember ? (
+              <Link to="/settings/investor">Investor profile</Link>
+            ) : loaderData.user ? (
+              <Link to="/app">Your House</Link>
+            ) : (
+              <Link to="/login?returnTo=/settings/investor">
+                Investor sign in
+              </Link>
+            )}
           </div>
           <Link
             className="workspace-notifications"
@@ -503,6 +631,53 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
             </p>
           )}
 
+        {investorMember && (
+          <section
+            className={`investor-profile-connection ${
+              investorProfile?.complete ? "is-connected" : "needs-profile"
+            }`}
+            aria-labelledby="investor-profile-connection-title"
+          >
+            <div>
+              <span className="eyebrow">Deal matching profile</span>
+              <h2 id="investor-profile-connection-title">
+                {investorProfile?.complete
+                  ? "Your Investor profile is connected."
+                  : "Complete your Investor profile."}
+              </h2>
+              <p>
+                {investorProfile?.complete
+                  ? "Recommended deals are ordered against your saved sectors, stages, geographies and ticket range. This is deterministic discovery support, not investment advice."
+                  : "Add your investment thesis and ticket preferences to activate profile-based ordering and clear match reasons across the catalogue."}
+              </p>
+              {profilePreferences.length > 0 && (
+                <div
+                  className="investor-preference-chips"
+                  aria-label="Saved Investor preferences"
+                >
+                  {profilePreferences.map((preference) => (
+                    <span key={preference}>{preference}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="investor-profile-connection-actions">
+              {investorProfile && (
+                <span
+                  className={`status-pill status-${investorProfile.status}`}
+                >
+                  {investorProfile.status.replaceAll("_", " ")}
+                </span>
+              )}
+              <Link className="button button-primary" to="/settings/investor">
+                {investorProfile?.complete
+                  ? "Update Investor profile"
+                  : "Complete Investor profile"}
+              </Link>
+            </div>
+          </section>
+        )}
+
         <section className="deals-controls" aria-labelledby="deal-filter-title">
           <div>
             <span className="eyebrow">Catalogue</span>
@@ -525,7 +700,11 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
             <label>
               Sort
               <select name="sort" defaultValue={loaderData.filters.sort}>
-                <option value="">Recommended</option>
+                <option value="">
+                  {investorProfile?.complete
+                    ? "Best profile match"
+                    : "Recommended"}
+                </option>
                 <option value="newest">Newest</option>
                 <option value="closing">Closing soon</option>
                 <option value="raise">Largest raise</option>
@@ -665,6 +844,16 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                     <span>{opportunity.sector || "Selected opportunity"}</span>
                     <span>{opportunity.stage.replaceAll("_", " ")}</span>
                   </div>
+                  {opportunity.matchScore !== null && (
+                    <div className="deal-profile-match">
+                      <strong>{opportunity.matchScore}% profile match</strong>
+                      <span>
+                        {opportunity.matchReasons.length > 0
+                          ? opportunity.matchReasons.slice(0, 3).join(" · ")
+                          : "No saved preference matched this preview yet"}
+                      </span>
+                    </div>
+                  )}
                   <h2>
                     <Link to={`/deals/${opportunity.slug}`}>
                       {opportunity.title}

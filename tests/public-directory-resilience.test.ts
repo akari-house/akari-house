@@ -44,6 +44,8 @@ describe("public directory resilience", () => {
       "AKARI will not present an outage as an empty calendar",
     );
     expect(sources.campaigns).toContain("return [] as PublicCampaignRow[]");
-    expect(sources.deals).toContain("opportunities: [] as OpportunityRow[]");
+    expect(sources.deals).toContain(
+      "opportunities: [] as OpportunityWithMatch[]",
+    );
   });
 });
