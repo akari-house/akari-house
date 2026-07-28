@@ -14,6 +14,10 @@ import {
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
+import {
+  isRoleVerifiedId,
+  roleVerificationStates,
+} from "~/lib/role-verification.server";
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -33,7 +37,26 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     profile.userId,
     user?.id ?? null,
   );
-  return { user, profile, relationship, contacts };
+  const verificationStates = await roleVerificationStates(db, profile.userId);
+  const targetInvestorVerified = profile.roles.includes("investor")
+    ? verificationStates.some(
+        (state) => state.role === "investor" && state.status === "verified",
+      )
+    : false;
+  const viewerFounderVerified =
+    user?.roles.includes("founder") === true
+      ? await isRoleVerifiedId(db, user.id, "founder")
+      : false;
+  return {
+    user,
+    profile,
+    relationship,
+    contacts,
+    verificationStates,
+    canRequestConnection:
+      !profile.roles.includes("investor") ||
+      (viewerFounderVerified && targetInvestorVerified),
+  };
 }
 
 export async function action({ request, params, context }: Route.ActionArgs) {
@@ -90,9 +113,21 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
         </p>
         <div className="role-pills">
           {profile.roles.map((role) => (
-            <span key={role}>{role}</span>
+            <span key={role}>
+              {role}
+              {loaderData.verificationStates.some(
+                (state) => state.role === role && state.status === "verified",
+              )
+                ? " · Verified"
+                : " · Not verified"}
+            </span>
           ))}
         </div>
+        {profile.languages.length > 0 && (
+          <p className="profile-languages">
+            Languages: {profile.languages.join(", ")}
+          </p>
+        )}
         <p className="profile-bio">
           {profile.bio || "This member is still shaping their introduction."}
         </p>
@@ -130,11 +165,19 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
                   className="button button-primary"
                   name="intent"
                   value="connect"
+                  disabled={!loaderData.canRequestConnection}
                 >
                   Send connection request
                 </button>
               </Form>
             )}
+            {loaderData.relationship === "none" &&
+              !loaderData.canRequestConnection && (
+                <p className="notice">
+                  Investor connections require a verified Founder and a verified
+                  Investor.
+                </p>
+              )}
             {loaderData.relationship === "incoming_pending" && (
               <Form method="post">
                 <button
