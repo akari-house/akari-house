@@ -39,6 +39,9 @@ describe("member directory and admin trust workflow", () => {
     expect(verifications).toContain('value="decline"');
     expect(verifications).toContain("Approved and rejected claims");
     expect(verifications).toContain("const PAGE_SIZE = 50");
+    expect(verifications).toContain(
+      "function queueHref(view: VerificationView, role: string",
+    );
   });
 
   it("provides a scoped admin overview", () => {
