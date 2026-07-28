@@ -522,6 +522,16 @@ export default function Dashboard({
           )}
         </nav>
         <section className="dashboard-content">
+          {loaderData.adminAccess?.accessLevel === "superadmin" && (
+            <nav
+              className="dashboard-mobile-tools"
+              aria-label="Superadmin tools"
+            >
+              <span>Superadmin</span>
+              <Link to="/admin/house-directory">People &amp; Partners</Link>
+              <Link to="/admin/team">Admin team</Link>
+            </nav>
+          )}
           {loaderData.welcome && (
             <div className="notice">
               Welcome to AKARI House. Your profile starts private.
