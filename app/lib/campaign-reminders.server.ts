@@ -3,6 +3,7 @@ import {
   type PostingCadence,
 } from "./campaign-delivery";
 import { ensureCampaignOperationsSchema } from "./campaign-operations-schema.server";
+import { parsePostingDays } from "./campaign-posting-days";
 
 type Reminder = {
   campaignId: string;
@@ -65,7 +66,8 @@ export async function createCampaignWorkReminders(
             c.starts_at AS startsAt, c.ends_at AS endsAt,
             c.posting_cadence AS postingCadence,
             ca.id AS applicationId, ca.creator_user_id AS creatorUserId,
-            ca.status AS applicationStatus
+            ca.status AS applicationStatus,
+            ca.posting_days_json AS postingDaysJson
      FROM ambassador_campaigns c
      JOIN campaign_applications ca ON ca.campaign_id = c.id
      WHERE c.status IN ('published', 'closed')
@@ -82,6 +84,7 @@ export async function createCampaignWorkReminders(
     applicationId: string;
     creatorUserId: string;
     applicationStatus: string;
+    postingDaysJson: string;
   }>();
 
   for (const item of campaigns.results) {
@@ -136,6 +139,7 @@ export async function createCampaignWorkReminders(
         item.endsAt,
         item.postingCadence,
         now,
+        parsePostingDays(item.postingDaysJson),
       );
       const submitted = await env.DB.prepare(
         `SELECT period_start AS periodStart, slot_number AS slotNumber
