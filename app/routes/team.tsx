@@ -67,42 +67,63 @@ const sections = [
   {
     category: "team",
     id: "team",
-    chapter: "Chapter 01 · The keepers",
+    chapterLabel: "The keepers",
     title: "The AKARI Team",
     copy: "The people building, operating and caring for the House.",
   },
   {
     category: "advisor",
     id: "advisors",
-    chapter: "Chapter 02 · The council",
+    chapterLabel: "The council",
     title: "AKARI Advisors",
     copy: "Experienced voices who challenge our thinking and strengthen our decisions.",
   },
   {
     category: "supporter",
     id: "supporters",
-    chapter: "Chapter 03 · The lanterns",
+    chapterLabel: "The lanterns",
     title: "Supporters of the House",
     copy: "People who open doors, share context and help the network move with integrity.",
   },
 ] as const;
 
+function chapterLabel(number: number, label: string) {
+  return `Chapter ${number.toString().padStart(2, "0")} · ${label}`;
+}
+
 export default function TeamPage({ loaderData }: Route.ComponentProps) {
   const partnerEntries = loaderData.entries.filter(
     (entry) => entry.category === "partner" || entry.category === "provider",
   );
-  const populatedPeopleSections = sections.flatMap((section) => {
-    const people = loaderData.entries.filter(
-      (entry) => entry.category === section.category,
-    );
-    return people.length ? [{ ...section, people }] : [];
-  });
+  const populatedPeopleSections = sections
+    .flatMap((section) => {
+      const people = loaderData.entries.filter(
+        (entry) => entry.category === section.category,
+      );
+      return people.length ? [{ ...section, people }] : [];
+    })
+    .map((section, index) => ({ ...section, chapterNumber: index + 1 }));
+  const partnerChapterNumber = populatedPeopleSections.length + 1;
+  const ecosystemChapterNumber = partnerChapterNumber + 1;
 
   return (
     <div className="site-shell people-page">
       <SiteHeader user={loaderData.user} />
       <main id="main-content">
         <header className="people-hero people-house-hero">
+          <picture className="people-house-hero__art" aria-hidden="true">
+            <source
+              media="(max-width: 620px)"
+              srcSet="/assets/team/keepers-hero-mobile.svg"
+            />
+            <img
+              src="/assets/team/keepers-hero.svg"
+              alt=""
+              width={1672}
+              height={941}
+              fetchPriority="high"
+            />
+          </picture>
           <div className="people-house-hero__copy">
             <span className="chapter">Inside AKARI House</span>
             <h1>The people who keep the light on.</h1>
@@ -119,29 +140,24 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
               <a href="#ecosystem">Ecosystem</a>
             </nav>
           </div>
-          <div className="people-house-hero__scene" aria-hidden="true">
-            <span className="people-house-hero__moon" />
-            <span className="people-house-hero__gate" />
-            <img
-              src="/assets/optimized/akari-mark.webp"
-              alt=""
-              width={150}
-              height={141}
-            />
-          </div>
         </header>
 
         <div id="people">
           {populatedPeopleSections.length ? (
             populatedPeopleSections.map((section) => (
               <section
-                className="people-section chapter-section"
+                className={`people-section people-section--${section.category} chapter-section`}
                 id={section.id}
                 key={section.category}
               >
                 <div className="section-intro">
                   <div>
-                    <span className="chapter">{section.chapter}</span>
+                    <span className="chapter">
+                      {chapterLabel(
+                        section.chapterNumber,
+                        section.chapterLabel,
+                      )}
+                    </span>
                     <h2>{section.title}</h2>
                   </div>
                   <p>{section.copy}</p>
@@ -175,12 +191,17 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
 
         <div id="partners">
           {partnerEntries.length ? (
-            <PartnerStrip entries={partnerEntries} />
+            <PartnerStrip
+              entries={partnerEntries}
+              eyebrow={chapterLabel(partnerChapterNumber, "The wider House")}
+            />
           ) : (
             <section className="partner-house chapter-section">
               <div className="section-intro">
                 <div>
-                  <span className="chapter">Chapter 04 · The wider House</span>
+                  <span className="chapter">
+                    {chapterLabel(partnerChapterNumber, "The wider House")}
+                  </span>
                   <h2>Partners and value-added providers.</h2>
                 </div>
                 <p>
@@ -203,7 +224,7 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
           <div className="section-intro">
             <div>
               <span className="chapter">
-                Chapter 05 · The growing ecosystem
+                {chapterLabel(ecosystemChapterNumber, "The growing ecosystem")}
               </span>
               <h2 id="ecosystem-title">Projects building inside the House.</h2>
             </div>
