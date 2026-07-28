@@ -9,20 +9,34 @@ export async function getVisibleProfile(
   const profile = await db
     .prepare(
       `SELECT p.user_id AS userId, u.username, p.display_name AS displayName,
+            u.status AS accountStatus,
             COALESCE(p.headline, '') AS headline,
             COALESCE(p.bio, '') AS bio, COALESCE(p.location, '') AS location,
             COALESCE(p.website_url, '') AS websiteUrl,
             COALESCE(p.expertise, '') AS expertise,
             COALESCE(p.open_to, '') AS openTo,
             COALESCE(p.avatar_key, '') AS avatarKey,
-            COALESCE(v.visibility, p.visibility) AS visibility
+            COALESCE(v.visibility, p.visibility) AS visibility,
+            COALESCE(pss.show_location, 0) AS showLocation,
+            COALESCE(pss.languages_json, '[]') AS languagesJson,
+            COALESCE(pss.show_languages, 1) AS showLanguages
      FROM profiles p JOIN users u ON u.id = p.user_id
      LEFT JOIN profile_visibility v ON v.user_id = p.user_id
-     WHERE u.username = ? AND u.status = 'active'`,
+     LEFT JOIN profile_share_settings pss ON pss.user_id = p.user_id
+     WHERE u.username = ?`,
     )
     .bind(username)
-    .first<Omit<ProfileRecord, "roles">>();
+    .first<
+      Omit<ProfileRecord, "roles"> & {
+        accountStatus: string;
+        showLocation: number;
+        languagesJson: string;
+        showLanguages: number;
+      }
+    >();
   if (!profile) return null;
+  if (profile.accountStatus !== "active" && viewerId !== profile.userId)
+    return null;
 
   let isConnected = false;
   const viewerIsMember =
@@ -70,5 +84,23 @@ export async function getVisibleProfile(
     .prepare("SELECT role FROM user_roles WHERE user_id = ? ORDER BY role")
     .bind(profile.userId)
     .all<{ role: Role }>();
-  return { ...profile, roles: roleRows.results.map((row) => row.role) };
+  const isOwner = viewerId === profile.userId;
+  let languages: string[] = [];
+  if (isOwner || profile.showLanguages === 1) {
+    try {
+      const parsed: unknown = JSON.parse(profile.languagesJson);
+      if (Array.isArray(parsed))
+        languages = parsed.filter(
+          (language): language is string => typeof language === "string",
+        );
+    } catch {
+      languages = [];
+    }
+  }
+  return {
+    ...profile,
+    location: isOwner || profile.showLocation === 1 ? profile.location : "",
+    languages,
+    roles: roleRows.results.map((row) => row.role),
+  };
 }
