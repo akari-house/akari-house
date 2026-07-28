@@ -253,11 +253,17 @@ export default function Register({
           </p>
         )}
 
-        <section className="auth-form-section" aria-labelledby="account-details-title">
+        <section
+          className="auth-form-section"
+          aria-labelledby="account-details-title"
+        >
           <header className="auth-section-heading">
             <span>Step 1</span>
             <h2 id="account-details-title">Account details</h2>
-            <p>Your password is checked as you type and is never shown by default.</p>
+            <p>
+              Your password is checked as you type and is never shown by
+              default.
+            </p>
           </header>
           <label>
             Display name
@@ -268,7 +274,9 @@ export default function Register({
               required
               aria-invalid={Boolean(actionData?.errors.displayName)}
               aria-describedby={
-                actionData?.errors.displayName ? "display-name-error" : undefined
+                actionData?.errors.displayName
+                  ? "display-name-error"
+                  : undefined
               }
             />
           </label>
@@ -338,11 +346,16 @@ export default function Register({
           />
         </section>
 
-        <section className="auth-form-section" aria-labelledby="membership-fit-title">
+        <section
+          className="auth-form-section"
+          aria-labelledby="membership-fit-title"
+        >
           <header className="auth-section-heading">
             <span>Step 2</span>
             <h2 id="membership-fit-title">Your place in AKARI</h2>
-            <p>Select every role that genuinely describes how you participate.</p>
+            <p>
+              Select every role that genuinely describes how you participate.
+            </p>
           </header>
           <RoleSelector
             selected={actionData?.selected ?? loaderData.selected}
@@ -378,11 +391,17 @@ export default function Register({
           )}
         </section>
 
-        <section className="auth-form-section" aria-labelledby="review-consent-title">
+        <section
+          className="auth-form-section"
+          aria-labelledby="review-consent-title"
+        >
           <header className="auth-section-heading">
             <span>Step 3</span>
             <h2 id="review-consent-title">Consent and review</h2>
-            <p>Submitting creates a private application, not immediate member access.</p>
+            <p>
+              Submitting creates a private application, not immediate member
+              access.
+            </p>
           </header>
           <label className="consent-row">
             <input

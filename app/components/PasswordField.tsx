@@ -36,7 +36,11 @@ export function PasswordField({
   const statusId = `${inputId}-status`;
   const errorId = `${inputId}-error`;
   const [visible, setVisible] = useState(false);
-  const describedBy = [hint ? hintId : null, status ? statusId : null, error ? errorId : null]
+  const describedBy = [
+    hint ? hintId : null,
+    status ? statusId : null,
+    error ? errorId : null,
+  ]
     .filter(Boolean)
     .join(" ");
 

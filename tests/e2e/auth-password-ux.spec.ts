@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-test("registration explains password acceptance while typing", async ({ page }) => {
+test("registration explains password acceptance while typing", async ({
+  page,
+}) => {
   await page.goto("/register");
 
   await expect(
@@ -20,7 +22,9 @@ test("registration explains password acceptance while typing", async ({ page }) 
   await expect(passwordToggle).toHaveAttribute("aria-pressed", "true");
 
   await password.fill("abcdefghijk");
-  await expect(page.getByText("Add 1 more character.", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Add 1 more character.", { exact: true }),
+  ).toBeVisible();
   await password.fill("abcdefghijkl");
   await expect(
     page.getByText("Password length accepted.", { exact: true }),
@@ -31,7 +35,9 @@ test("registration explains password acceptance while typing", async ({ page }) 
     page.getByText("Passwords do not match yet.", { exact: true }),
   ).toBeVisible();
   await confirmation.fill("abcdefghijkl");
-  await expect(page.getByText("Passwords match.", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Passwords match.", { exact: true }),
+  ).toBeVisible();
 });
 
 test("login password can be reviewed without submitting", async ({ page }) => {
