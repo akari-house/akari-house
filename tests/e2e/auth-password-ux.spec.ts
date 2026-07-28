@@ -50,18 +50,22 @@ test("login password can be reviewed without submitting", async ({ page }) => {
   await page.goto("/login");
   const password = page.getByLabel("Password", { exact: true });
   const passwordField = page.locator('[data-password-field="password"]');
-  const visibilityToggle = passwordField.locator(
-    ".password-visibility-toggle",
-  );
+  const visibilityToggle = passwordField.locator(".password-visibility-toggle");
 
-  await expect(visibilityToggle).toHaveAccessibleName("Show entered characters");
+  await expect(visibilityToggle).toHaveAccessibleName(
+    "Show entered characters",
+  );
   await password.fill("visible-check");
   await visibilityToggle.click();
   await expect(password).toHaveAttribute("type", "text");
-  await expect(visibilityToggle).toHaveAccessibleName("Hide entered characters");
+  await expect(visibilityToggle).toHaveAccessibleName(
+    "Hide entered characters",
+  );
   await expect(visibilityToggle).toHaveAttribute("aria-pressed", "true");
   await visibilityToggle.click();
   await expect(password).toHaveAttribute("type", "password");
-  await expect(visibilityToggle).toHaveAccessibleName("Show entered characters");
+  await expect(visibilityToggle).toHaveAccessibleName(
+    "Show entered characters",
+  );
   await expect(visibilityToggle).toHaveAttribute("aria-pressed", "false");
 });
