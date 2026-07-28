@@ -28,7 +28,7 @@ describe("shared AKARI workspace shell", () => {
 
   it("uses backend-derived scoped admin navigation", () => {
     expect(auth).toContain("loadOptionalAdminWorkspaceAccess");
-    expect(access).toContain("return null");
+    expect(access).toContain("return undefined");
     expect(sidebar).toContain("visibleAdminWorkspaceItems");
     expect(sidebar).toContain("user.adminAccess.accessLevel");
   });
@@ -48,6 +48,7 @@ describe("shared AKARI workspace shell", () => {
       "/projects/manage",
     ])
       expect(sidebar).toContain(destination);
+    expect(sidebar).toContain("workspace navigation");
   });
 
   it("uses the approved House artwork and responsive sidebar behaviour", () => {
