@@ -20,6 +20,7 @@ import "./styles/product-ui-consistency.css";
 import "./styles/profile-sharing.css";
 import "./styles/member-presence.css";
 import "./styles/admin-console.css";
+import "./styles/verification-queue.css";
 import "./styles/site-final-polish.css";
 
 export const headers: Route.HeadersFunction = () => productionSecurityHeaders();
@@ -83,24 +84,30 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  const status = isRouteErrorResponse(error) ? error.status : 500;
-  const message =
-    status === 404
-      ? "This room does not exist."
-      : status === 403
-        ? "This room is private."
-        : status === 503
-          ? "This room is being prepared."
-          : "The lantern went out unexpectedly.";
+  let message = "Something went wrong";
+  let details = "An unexpected error occurred.";
+  let stack: string | undefined;
+
+  if (isRouteErrorResponse(error)) {
+    message = error.status === 404 ? "404" : "Error";
+    details =
+      error.status === 404
+        ? "The requested page could not be found."
+        : error.statusText || details;
+  } else if (import.meta.env.DEV && error && error instanceof Error) {
+    details = error.message;
+    stack = error.stack;
+  }
 
   return (
     <main className="error-page">
-      <span className="eyebrow">AKARI House · {status}</span>
       <h1>{message}</h1>
-      <p>Please return to the Hall and try again.</p>
-      <a className="button button-primary" href="/">
-        Return home
-      </a>
+      <p>{details}</p>
+      {stack && (
+        <pre>
+          <code>{stack}</code>
+        </pre>
+      )}
     </main>
   );
 }
