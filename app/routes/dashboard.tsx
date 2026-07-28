@@ -8,6 +8,7 @@ import { requireUser } from "~/lib/auth.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import {
   formText,
+  isXProfileUrl,
   normalizeWebsite,
   selectedRoles,
   selectedVisibility,
@@ -30,6 +31,7 @@ import {
   markManagedR2ObjectDeleted,
   registerManagedR2Object,
 } from "~/lib/r2-lifecycle.server";
+import { roleVerificationClaimStatements } from "~/lib/role-verification.server";
 
 const socialLabels: Record<SocialPlatform, string> = {
   x: "X",
@@ -82,6 +84,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     contacts,
     activity,
     adminAccess,
+    shareSettings,
+    reputationSignals,
   ] = await Promise.all([
     membershipStatusForUser(db, user.id),
     loadSocialAccounts(db, user.id),
@@ -146,6 +150,35 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         canManageCampaigns: number;
         canModerate: number;
       }>(),
+    db
+      .prepare(
+        `SELECT country_code AS countryCode, show_location AS showLocation,
+                languages_json AS languagesJson,
+                show_languages AS showLanguages
+         FROM profile_share_settings WHERE user_id = ?`,
+      )
+      .bind(user.id)
+      .first<{
+        countryCode: string;
+        showLocation: number;
+        languagesJson: string;
+        showLanguages: number;
+      }>(),
+    db
+      .prepare(
+        `SELECT sorsa_score AS sorsaScore, sorsa_source AS sorsaSource,
+                x_score AS xScore, x_score_source AS xScoreSource,
+                updated_at AS updatedAt
+         FROM profile_reputation_signals WHERE user_id = ?`,
+      )
+      .bind(user.id)
+      .first<{
+        sorsaScore: number | null;
+        sorsaSource: string;
+        xScore: number | null;
+        xScoreSource: string;
+        updatedAt: string;
+      }>(),
   ]);
   return {
     user,
@@ -161,6 +194,19 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       upcomingEvents: 0,
     },
     adminAccess,
+    shareSettings: shareSettings ?? {
+      countryCode: "",
+      showLocation: 0,
+      languagesJson: "[]",
+      showLanguages: 1,
+    },
+    reputationSignals: reputationSignals ?? {
+      sorsaScore: null,
+      sorsaSource: "unavailable",
+      xScore: null,
+      xScoreSource: "unavailable",
+      updatedAt: null,
+    },
     saved: new URL(request.url).searchParams.has("saved"),
     photoSaved: new URL(request.url).searchParams.has("photo"),
     welcome: new URL(request.url).searchParams.has("welcome"),
@@ -179,8 +225,6 @@ export async function action({ request, context }: Route.ActionArgs) {
   const intent = formText(formData.get("intent"));
 
   if (intent === "upload-photo") {
-    if (user.accessTier !== "member")
-      return { error: "Profile photos unlock after membership approval." };
     await requireActionRateLimit(db, request, "profile-photo", user.id, 12, 60);
     const photo = formData.get("profilePhoto");
     if (!(photo instanceof File))
@@ -238,8 +282,6 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
 
   if (intent === "remove-photo") {
-    if (user.accessTier !== "member")
-      return { error: "Profile photos unlock after membership approval." };
     const previous = await db
       .prepare("SELECT avatar_key AS avatarKey FROM profiles WHERE user_id = ?")
       .bind(user.id)
@@ -268,6 +310,20 @@ export async function action({ request, context }: Route.ActionArgs) {
   const openTo = formText(formData.get("openTo")).trim();
   const visibility = selectedVisibility(formData.get("visibility"));
   const selected = selectedRoles(formData);
+  const showLocation = formData.get("showLocation") === "yes" ? 1 : 0;
+  const showLanguages = formData.get("showLanguages") === "yes" ? 1 : 0;
+  const languages = Array.from(
+    new Set(
+      formText(formData.get("languages"))
+        .split(",")
+        .map((language) => language.trim())
+        .filter(Boolean),
+    ),
+  ).slice(0, 10);
+  const xScoreText = formText(formData.get("xScore")).trim();
+  const sorsaScoreText = formText(formData.get("sorsaScore")).trim();
+  const xScore = xScoreText === "" ? null : Number(xScoreText);
+  const sorsaScore = sorsaScoreText === "" ? null : Number(sorsaScoreText);
   const socialAccounts = socialPlatforms.map((platform) => {
     const profileUrl = normalizeWebsite(formData.get(`social_${platform}`));
     const rawCount = formText(formData.get(`followers_${platform}`)).trim();
@@ -301,6 +357,11 @@ export async function action({ request, context }: Route.ActionArgs) {
     expertise.length > 240 ||
     openTo.length > 240 ||
     selected.length === 0 ||
+    languages.some((language) => language.length > 40) ||
+    [xScore, sorsaScore].some(
+      (score) =>
+        score !== null && (!Number.isFinite(score) || score < 0 || score > 100),
+    ) ||
     socialAccounts.some(
       ({ profileUrl, followerCount }) =>
         profileUrl === null ||
@@ -308,6 +369,12 @@ export async function action({ request, context }: Route.ActionArgs) {
           (!Number.isSafeInteger(followerCount) ||
             followerCount < 0 ||
             followerCount > 2_000_000_000)),
+    ) ||
+    socialAccounts.some(
+      ({ platform, profileUrl }) =>
+        platform === "x" &&
+        Boolean(profileUrl) &&
+        !isXProfileUrl(profileUrl ?? ""),
     ) ||
     interestNote.length > 500 ||
     (contactEmail !== "" && !validateEmail(contactEmail)) ||
@@ -321,6 +388,10 @@ export async function action({ request, context }: Route.ActionArgs) {
   }
   const enforcedVisibility =
     user.accessTier === "member" ? visibility : "private";
+  const previousRoles = await db
+    .prepare("SELECT role FROM user_roles WHERE user_id = ? ORDER BY role")
+    .bind(user.id)
+    .all<{ role: (typeof selected)[number] }>();
   await db.batch([
     db
       .prepare(
@@ -348,6 +419,56 @@ export async function action({ request, context }: Route.ActionArgs) {
         .prepare("INSERT INTO user_roles (user_id, role) VALUES (?, ?)")
         .bind(user.id, role),
     ),
+    ...roleVerificationClaimStatements(
+      db,
+      user.id,
+      previousRoles.results.map((row) => row.role),
+      selected,
+    ),
+    db
+      .prepare(
+        `INSERT INTO profile_share_settings
+           (user_id, country_code, show_location, languages_json, show_languages,
+            updated_at)
+         VALUES (?, '', ?, ?, ?, datetime('now'))
+         ON CONFLICT(user_id) DO UPDATE SET
+           show_location = excluded.show_location,
+           languages_json = excluded.languages_json,
+           show_languages = excluded.show_languages,
+           updated_at = excluded.updated_at`,
+      )
+      .bind(user.id, showLocation, JSON.stringify(languages), showLanguages),
+    db
+      .prepare(
+        `INSERT INTO profile_reputation_signals
+           (user_id, sorsa_score, sorsa_source, x_score, x_score_source, updated_at)
+         VALUES (?, ?, ?, ?, ?, datetime('now'))
+         ON CONFLICT(user_id) DO UPDATE SET
+           sorsa_score = excluded.sorsa_score,
+           sorsa_source = CASE
+             WHEN profile_reputation_signals.sorsa_score IS excluded.sorsa_score
+               AND profile_reputation_signals.sorsa_source IN (
+                 'official_api', 'partner_verified'
+               )
+             THEN profile_reputation_signals.sorsa_source
+             ELSE excluded.sorsa_source END,
+           x_score = excluded.x_score,
+           x_score_source = CASE
+             WHEN profile_reputation_signals.x_score IS excluded.x_score
+               AND profile_reputation_signals.x_score_source IN (
+                 'official_api', 'partner_verified'
+               )
+             THEN profile_reputation_signals.x_score_source
+             ELSE excluded.x_score_source END,
+           updated_at = excluded.updated_at`,
+      )
+      .bind(
+        user.id,
+        sorsaScore,
+        sorsaScore === null ? "unavailable" : "member_reported",
+        xScore,
+        xScore === null ? "unavailable" : "member_reported",
+      ),
     ...socialAccounts.map(({ platform, profileUrl, followerCount }) =>
       db
         .prepare(
@@ -469,6 +590,18 @@ export default function Dashboard({
       waitlisted: "Membership waitlist",
     }[loaderData.membership?.status ?? "pending_review"] ??
     "Application under review";
+  const spokenLanguages = (() => {
+    try {
+      const parsed: unknown = JSON.parse(
+        loaderData.shareSettings.languagesJson,
+      );
+      return Array.isArray(parsed)
+        ? parsed.filter((item): item is string => typeof item === "string")
+        : [];
+    } catch {
+      return [];
+    }
+  })();
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -550,10 +683,9 @@ export default function Dashboard({
           {!isMember && (
             <div className="notice applicant-notice">
               <strong>Your applicant profile is open.</strong> You can keep your
-              biography, roles, social links and interests current while the
-              Membership Desk reviews your application. Your profile stays
-              private, and media uploads and event hosting remain locked until
-              approval.
+              biography, photo, roles, languages, social links and interests
+              current while the Membership Desk reviews your application. Your
+              profile remains private to everyone except you.
             </div>
           )}
           <div className="dashboard-heading">
@@ -561,18 +693,12 @@ export default function Dashboard({
               <span className="eyebrow">Personal profile</span>
               <h1>Shape how you appear.</h1>
             </div>
-            {isMember ? (
-              <Link
-                className="button button-quiet"
-                to={`/profiles/${loaderData.user.username}`}
-              >
-                View profile
-              </Link>
-            ) : (
-              <span className="button button-quiet is-disabled">
-                Profile is private
-              </span>
-            )}
+            <Link
+              className="button button-quiet"
+              to={`/profiles/${loaderData.user.username}`}
+            >
+              {isMember ? "View profile" : "Preview private profile"}
+            </Link>
           </div>
           <section
             className="member-home"
@@ -693,6 +819,49 @@ export default function Dashboard({
                 />
               </label>
             </div>
+            <fieldset className="profile-panel" id="location-language-sharing">
+              <legend>Location and languages</legend>
+              <p className="field-help">
+                These choices apply everywhere AKARI shows your profile,
+                including member search and your sharing card.
+              </p>
+              <label>
+                Languages spoken
+                <input
+                  name="languages"
+                  defaultValue={spokenLanguages.join(", ")}
+                  placeholder="English, Croatian, Japanese"
+                  aria-describedby="languages-help"
+                />
+                <small id="languages-help">
+                  Separate up to 10 languages with commas.
+                </small>
+              </label>
+              <div className="interest-grid">
+                <label>
+                  <input
+                    type="checkbox"
+                    name="showLocation"
+                    value="yes"
+                    defaultChecked={loaderData.shareSettings.showLocation === 1}
+                  />
+                  <span>Show my location on visible profiles and cards</span>
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    name="showLanguages"
+                    value="yes"
+                    defaultChecked={
+                      loaderData.shareSettings.showLanguages === 1
+                    }
+                  />
+                  <span>
+                    Show my spoken languages on visible profiles and cards
+                  </span>
+                </label>
+              </div>
+            </fieldset>
             <label>
               Professional headline
               <input
@@ -759,9 +928,8 @@ export default function Dashboard({
             <fieldset className="profile-panel" id="social-links">
               <legend>Social presence</legend>
               <p className="field-help">
-                Add links and an optional current count. Counts you enter are
-                labelled member-reported; supported official syncs replace them
-                with a dated verified count.
+                X is the primary Creator identity; other networks are optional.
+                Counts you enter are labelled member-reported.
               </p>
               <div className="social-profile-grid">
                 {loaderData.socialAccounts.map((account) => (
@@ -794,6 +962,42 @@ export default function Dashboard({
                     </small>
                   </div>
                 ))}
+              </div>
+            </fieldset>
+            <fieldset className="profile-panel" id="creator-readiness">
+              <legend>Creator campaign readiness</legend>
+              <p className="field-help">
+                Creators need a primary X profile plus current XScore and Sorsa
+                score before applying to a campaign. Member-reported scores are
+                clearly labelled until a partner or Admin verifies them.
+              </p>
+              <div className="form-row">
+                <label>
+                  XScore
+                  <input
+                    name="xScore"
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    max={100}
+                    step="0.01"
+                    defaultValue={loaderData.reputationSignals.xScore ?? ""}
+                    placeholder="0 to 100"
+                  />
+                </label>
+                <label>
+                  Sorsa score
+                  <input
+                    name="sorsaScore"
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    max={100}
+                    step="0.01"
+                    defaultValue={loaderData.reputationSignals.sorsaScore ?? ""}
+                    placeholder="0 to 100"
+                  />
+                </label>
               </div>
             </fieldset>
             <fieldset className="profile-panel" id="interest-requests">
