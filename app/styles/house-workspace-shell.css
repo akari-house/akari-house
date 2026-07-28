@@ -1,0 +1,382 @@
+/* Shared authenticated workspace shell. Navigation remains permission-aware and server-enforced. */
+.house-workspace-sidebar {
+  position: fixed;
+  z-index: 40;
+  inset: 0 auto 0 0;
+  display: flex;
+  width: 236px;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 1.35rem 0.85rem 1rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(239, 63, 130, 0.08),
+      transparent 18rem
+    ),
+    linear-gradient(180deg, rgba(15, 19, 31, 0.99), rgba(8, 11, 19, 0.995));
+  box-shadow: 18px 0 54px rgba(0, 0, 0, 0.2);
+}
+
+.house-workspace-sidebar-brand {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  min-height: 54px;
+  padding: 0 0.65rem 1.2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.house-workspace-sidebar-brand img {
+  width: 112px;
+  height: auto;
+}
+
+.house-workspace-sidebar-brand span {
+  color: var(--paper);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.house-workspace-sidebar nav {
+  display: grid;
+  gap: 0.18rem;
+  margin-top: 0.75rem;
+}
+
+.house-workspace-sidebar-section {
+  margin: 0.92rem 0.72rem 0.34rem;
+  color: rgba(255, 255, 255, 0.34);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.house-workspace-sidebar-link {
+  display: grid;
+  grid-template-columns: 1.35rem minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+  min-height: 40px;
+  padding: 0.52rem 0.72rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: rgba(244, 246, 252, 0.76);
+  font-size: 0.78rem;
+  font-weight: 500;
+  transition:
+    color 160ms ease,
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.house-workspace-sidebar-link:hover,
+.house-workspace-sidebar-link:focus-visible {
+  border-color: rgba(240, 79, 135, 0.2);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.035);
+  transform: translateX(1px);
+}
+
+.house-workspace-sidebar-link.is-active {
+  border-color: rgba(240, 79, 135, 0.3);
+  color: #fff;
+  background: linear-gradient(
+    90deg,
+    rgba(226, 42, 109, 0.34),
+    rgba(226, 42, 109, 0.13)
+  );
+  box-shadow: inset 3px 0 0 #ef3f82;
+}
+
+.house-workspace-sidebar-glyph {
+  display: grid;
+  width: 1.28rem;
+  height: 1.28rem;
+  place-items: center;
+  color: currentColor;
+  font-size: 0.88rem;
+}
+
+.house-workspace-sidebar-footer {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: auto;
+  padding: 1rem 0.7rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.house-workspace-member {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.house-workspace-member > span {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 1px solid rgba(239, 63, 130, 0.48);
+  border-radius: 50%;
+  color: #fff;
+  background: rgba(239, 63, 130, 0.12);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.house-workspace-member div {
+  min-width: 0;
+}
+
+.house-workspace-member strong,
+.house-workspace-member small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.house-workspace-member strong {
+  color: #fff;
+  font-size: 0.72rem;
+}
+
+.house-workspace-member small {
+  margin-top: 0.15rem;
+  color: rgba(255, 255, 255, 0.44);
+  font-size: 0.62rem;
+}
+
+.house-workspace-sidebar-footer form,
+.house-workspace-sidebar-footer button {
+  width: 100%;
+}
+
+.house-workspace-sidebar-footer button {
+  min-height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 7px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.house-workspace-sidebar-footer button:hover,
+.house-workspace-sidebar-footer button:focus-visible {
+  color: #fff;
+  border-color: rgba(239, 63, 130, 0.32);
+}
+
+@media (min-width: 901px) {
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+    > .site-header,
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+    > .journey-back {
+    display: none;
+  }
+
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar) > main {
+    width: auto;
+    max-width: none;
+    min-height: 100vh;
+    margin: 0 0 0 236px;
+    padding: 1.4rem clamp(1rem, 2.5vw, 2.5rem) 4rem;
+  }
+
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+    > .public-footer {
+    margin-left: 236px;
+  }
+
+  .dashboard-shell:has(> .house-workspace-sidebar) .dashboard-main {
+    display: block;
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-shell:has(> .house-workspace-sidebar) .dashboard-nav {
+    display: none;
+  }
+
+  .dashboard-shell:has(> .house-workspace-sidebar) .dashboard-content {
+    width: min(100%, 1180px);
+    margin: 0 auto;
+  }
+
+  .dashboard-shell:has(> .house-workspace-sidebar) .admin-main,
+  .dashboard-shell:has(> .house-workspace-sidebar) .directory-main {
+    width: auto;
+    max-width: none;
+  }
+}
+
+/* The House-inspired hero language for authenticated workspaces. */
+:where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+  :is(.dashboard-heading, .admin-heading, .directory-heading),
+.investor-house-shell :is(.deals-hero, .deal-room-hero) {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 184px;
+  padding: clamp(1.35rem, 2.5vw, 2.3rem);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(7, 10, 18, 0.98) 0%,
+      rgba(7, 10, 18, 0.9) 42%,
+      rgba(7, 10, 18, 0.38) 74%,
+      rgba(7, 10, 18, 0.18) 100%
+    ),
+    linear-gradient(180deg, rgba(239, 63, 130, 0.05), rgba(7, 10, 18, 0.16)),
+    url("/assets/optimized/arrival.webp") center 58% / cover no-repeat;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22);
+}
+
+:where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+  :is(.dashboard-heading, .admin-heading, .directory-heading)::before,
+.investor-house-shell :is(.deals-hero, .deal-room-hero)::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at 86% 22%,
+      rgba(255, 211, 61, 0.15),
+      transparent 12rem
+    ),
+    radial-gradient(
+      circle at 72% 92%,
+      rgba(239, 63, 130, 0.18),
+      transparent 16rem
+    ),
+    linear-gradient(180deg, transparent 58%, rgba(5, 7, 12, 0.52));
+  content: "";
+  pointer-events: none;
+}
+
+:where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+  :is(.dashboard-heading, .admin-heading, .directory-heading)::after,
+.investor-house-shell :is(.deals-hero, .deal-room-hero)::after {
+  position: absolute;
+  z-index: -1;
+  top: 18%;
+  right: 5%;
+  width: 7px;
+  height: 14px;
+  border-radius: 80% 20% 70% 30%;
+  background: #ef3f82;
+  box-shadow:
+    -62px 42px 0 -1px rgba(239, 63, 130, 0.8),
+    24px 72px 0 -2px rgba(255, 211, 61, 0.8),
+    -130px 92px 0 -2px rgba(239, 63, 130, 0.62),
+    42px 122px 0 -2px rgba(239, 63, 130, 0.72);
+  content: "";
+  opacity: 0.78;
+  transform: rotate(28deg);
+  pointer-events: none;
+}
+
+:where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+  :is(.dashboard-heading, .admin-heading, .directory-heading)
+  > *,
+.investor-house-shell :is(.deals-hero, .deal-room-hero) > * {
+  position: relative;
+  z-index: 1;
+}
+
+:where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+  :is(.dashboard-heading, .admin-heading, .directory-heading)
+  h1,
+.investor-house-shell :is(.deals-hero, .deal-room-hero) h1 {
+  max-width: 15ch;
+  margin-top: 0.35rem;
+  font-size: clamp(2rem, 4vw, 3.35rem);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+:where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+  :is(.dashboard-heading, .admin-heading, .directory-heading)
+  p,
+.investor-house-shell :is(.deals-hero, .deal-room-hero) > div > p {
+  max-width: 62ch;
+  color: rgba(244, 246, 252, 0.76);
+}
+
+:where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+  :is(.dashboard-heading, .admin-heading, .directory-heading)
+  .button,
+.investor-house-shell :is(.deals-hero, .deal-room-hero) .button {
+  backdrop-filter: blur(12px);
+}
+
+/* Compact repeated dashboard navigation now that the persistent sidebar is available. */
+@media (min-width: 901px) {
+  .dashboard-shell:has(> .house-workspace-sidebar) .admin-workspace-nav {
+    display: none;
+  }
+
+  .dashboard-shell:has(> .house-workspace-sidebar) .dashboard-mobile-tools {
+    display: none;
+  }
+
+  .dashboard-shell:has(> .house-workspace-sidebar) .admin-overview-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.85rem;
+  }
+
+  .dashboard-shell:has(> .house-workspace-sidebar) .admin-overview-card,
+  .dashboard-shell:has(> .house-workspace-sidebar) .status-card,
+  .dashboard-shell:has(> .house-workspace-sidebar) .profile-panel,
+  .dashboard-shell:has(> .house-workspace-sidebar) .member-home,
+  .dashboard-shell:has(> .house-workspace-sidebar) .dashboard-workspace {
+    border-radius: 11px;
+    background:
+      linear-gradient(135deg, rgba(239, 63, 130, 0.025), transparent 45%),
+      rgba(15, 20, 32, 0.78);
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 901px) {
+  .dashboard-shell:has(> .house-workspace-sidebar) .admin-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .house-workspace-sidebar {
+    display: none;
+  }
+
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar) > main,
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+    > .public-footer {
+    margin-left: 0;
+  }
+
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+    :is(.dashboard-heading, .admin-heading, .directory-heading),
+  .investor-house-shell :is(.deals-hero, .deal-room-hero) {
+    min-height: 0;
+    padding: 1.35rem;
+    background:
+      linear-gradient(90deg, rgba(7, 10, 18, 0.96), rgba(7, 10, 18, 0.68)),
+      url("/assets/optimized/arrival.webp") center / cover no-repeat;
+  }
+}
+
+@media (max-width: 640px) {
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+    :is(.dashboard-heading, .admin-heading, .directory-heading)
+    h1,
+  .investor-house-shell :is(.deals-hero, .deal-room-hero) h1 {
+    font-size: 1.85rem;
+  }
+}

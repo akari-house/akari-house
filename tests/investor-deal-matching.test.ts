@@ -68,10 +68,14 @@ describe("investor profile to deal discovery", () => {
 
   it("keeps every Investor House menu connected to a server-backed view", () => {
     const deals = readFileSync("app/routes/deals.tsx", "utf8");
-    expect(deals).toContain('to="/deals?view=saved"');
-    expect(deals).toContain('to="/deals?view=requested"');
-    expect(deals).toContain('to="/deals?view=approved"');
-    expect(deals).toContain('to="/settings/investor"');
+    const sidebar = readFileSync(
+      "app/components/InvestorHouseSidebar.tsx",
+      "utf8",
+    );
+    expect(sidebar).toContain("/deals?view=saved");
+    expect(sidebar).toContain("/deals?view=requested");
+    expect(sidebar).toContain("/deals?view=approved");
+    expect(sidebar).toContain("/settings/investor");
     expect(deals).toContain("loadInvestorPreferenceProfile");
     expect(deals).toContain("matchOpportunityToInvestor");
     expect(deals).toContain("opportunity_user_states");

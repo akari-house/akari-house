@@ -2,6 +2,7 @@ import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/deal-room";
 import { PublicFooter } from "~/components/PublicFooter";
 import { SiteHeader } from "~/components/SiteHeader";
+import { InvestorHouseSidebar } from "~/components/InvestorHouseSidebar";
 import { getOptionalUser, requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import {
@@ -721,12 +722,17 @@ export default function DealRoom({
     loaderData.accessState === "request_required";
 
   return (
-    <div className="site-shell">
+    <div className="site-shell investor-house-shell">
       <SiteHeader user={loaderData.user} />
-      <main id="main-content" className="deal-room-main">
+      <InvestorHouseSidebar user={loaderData.user} />
+      <main id="main-content" className="deal-room-main investor-house-content">
+        <div className="deal-room-topbar">
+          <Link to="/deals">← Back to opportunities</Link>
+          <Link to="/settings/investor">Investor Preferences</Link>
+        </div>
         <header className="deal-room-hero">
           <div>
-            <span className="chapter">Approved opportunity preview</span>
+            <span className="chapter">Investor Deal Room</span>
             <h1>{preview.title}</h1>
             <p>{preview.publicSummary || preview.summary}</p>
             <p>
@@ -847,7 +853,17 @@ export default function DealRoom({
           )}
         </section>
 
-        <section className="deal-public-story">
+        <nav className="deal-room-tabs" aria-label="Deal Room sections">
+          <a href="#overview">Overview</a>
+          <a href="#information">Information</a>
+          <a href="#activity">Activity</a>
+          {loaderData.fullAccess && <a href="#documents">Documents</a>}
+          {loaderData.verifiedInvestor && !loaderData.founder && (
+            <a href="#decision-space">Decision space</a>
+          )}
+        </nav>
+
+        <section id="overview" className="deal-public-story">
           <div>
             <span className="chapter">Preview</span>
             <h2>What has been approved for discovery</h2>
@@ -863,6 +879,7 @@ export default function DealRoom({
 
         {loaderData.sections.length > 0 && (
           <section
+            id="information"
             className="deal-room-sections"
             aria-labelledby="deal-sections-title"
           >
@@ -892,7 +909,7 @@ export default function DealRoom({
         )}
 
         {loaderData.publicUpdates.length > 0 && (
-          <section className="deal-updates">
+          <section id="activity" className="deal-updates">
             <span className="chapter">Public updates</span>
             <h2>What has changed</h2>
             {loaderData.publicUpdates.map((update) => (
@@ -910,7 +927,7 @@ export default function DealRoom({
         )}
 
         {loaderData.verifiedInvestor && !loaderData.founder && (
-          <section className="deal-investor-actions">
+          <section id="decision-space" className="deal-investor-actions">
             <div>
               <span className="chapter">Your decision space</span>
               <h2>Keep a private record of your next step</h2>
@@ -971,6 +988,7 @@ export default function DealRoom({
 
         {loaderData.fullAccess && (
           <section
+            id="documents"
             className="private-deal-room"
             aria-labelledby="private-room-title"
           >

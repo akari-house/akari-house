@@ -1,4 +1,9 @@
 import { redirect } from "react-router";
+import {
+  adminScopes,
+  type AdminAccessLevel,
+  type AdminScope,
+} from "./admin-workspace";
 import type { Role, SessionUser } from "./domain";
 import { sha256 } from "./security.server";
 
@@ -51,6 +56,22 @@ async function loadRoles(
   return result.results.map((row) => row.role);
 }
 
+function sessionAdminAccess(
+  accessLevel: AdminAccessLevel | null | undefined,
+  scopesCsv: string | null | undefined,
+): SessionUser["adminAccess"] {
+  if (!accessLevel) return undefined;
+  const scopes =
+    accessLevel === "superadmin"
+      ? adminScopes
+      : (scopesCsv ?? "")
+          .split(",")
+          .filter((scope): scope is AdminScope =>
+            adminScopes.includes(scope as AdminScope),
+          );
+  return { accessLevel, scopes };
+}
+
 export async function getOptionalUser(
   request: Request,
   db: D1Database,
@@ -64,10 +85,14 @@ export async function getOptionalUser(
     const row = await authDb
       .prepare(
         `SELECT u.id, u.username, u.status,
-                COALESCE(p.display_name, u.username) AS displayName
+                COALESCE(p.display_name, u.username) AS displayName,
+                au.access_level AS adminAccessLevel,
+                (SELECT group_concat(scope, ',') FROM admin_scopes
+                  WHERE admin_user_id = u.id) AS adminScopesCsv
          FROM sessions s
          JOIN users u ON u.id = s.user_id
          LEFT JOIN profiles p ON p.user_id = u.id
+         LEFT JOIN admin_users au ON au.user_id = u.id
          WHERE s.token_hash = ? AND s.expires_at > datetime('now')
            AND u.status IN ('active', 'restricted')
            AND u.email_verified_at IS NOT NULL`,
@@ -78,13 +103,18 @@ export async function getOptionalUser(
         username: string;
         displayName: string;
         status: "active" | "restricted";
+        adminAccessLevel?: AdminAccessLevel | null;
+        adminScopesCsv?: string | null;
       }>();
     if (!row) return null;
-    const { status, ...identity } = row;
+    const { status, adminAccessLevel, adminScopesCsv, ...identity } = row;
+    const roles = await loadRoles(authDb, row.id);
+    const adminAccess = sessionAdminAccess(adminAccessLevel, adminScopesCsv);
     return {
       ...identity,
       accessTier: status === "active" ? "member" : "applicant",
-      roles: await loadRoles(authDb, row.id),
+      roles,
+      ...(adminAccess ? { adminAccess } : {}),
     };
   } catch (error) {
     console.error(
