@@ -27,7 +27,8 @@ describe("shared AKARI workspace shell", () => {
   });
 
   it("uses backend-derived scoped admin navigation", () => {
-    expect(auth).toContain("loadOptionalAdminWorkspaceAccess");
+    expect(auth).toContain("au.access_level AS adminAccessLevel");
+    expect(auth).toContain("sessionAdminAccess");
     expect(access).toContain("return undefined");
     expect(sidebar).toContain("visibleAdminWorkspaceItems");
     expect(sidebar).toContain("user.adminAccess.accessLevel");
