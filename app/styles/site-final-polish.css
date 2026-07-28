@@ -1134,3 +1134,57 @@
     transition: none;
   }
 }
+
+/* Public onboarding: quiet trust signals and compact participation controls. */
+.profile-languages,
+.member-card-languages {
+  margin: 0.25rem 0 0.55rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.share-card-verification {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 0.55rem;
+  padding: 0.28rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--card-accent) 58%, transparent);
+  border-radius: 999px;
+  color: var(--card-accent);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.creator-readiness-summary {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.campaign-posting-days .interest-grid {
+  grid-template-columns: repeat(7, minmax(54px, 1fr));
+}
+
+.campaign-posting-days .interest-grid label {
+  min-height: 48px;
+  justify-content: center;
+}
+
+.event-interest-action {
+  display: inline-flex;
+  margin: 0 0.65rem 1rem 0;
+}
+
+.event-image-source {
+  display: inline-block;
+  margin-top: 0.45rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+@media (max-width: 720px) {
+  .campaign-posting-days .interest-grid {
+    grid-template-columns: repeat(4, minmax(58px, 1fr));
+  }
+}
