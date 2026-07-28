@@ -1,0 +1,32 @@
+.member-profile-socials {
+  width: min(100%, 720px);
+  margin: 1rem auto 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+}
+
+.member-profile-socials a {
+  min-height: 42px;
+  padding: 0.65rem 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #ffffff18;
+  border-radius: 999px;
+  color: inherit;
+  background: #ffffff05;
+  text-decoration: none;
+}
+
+.member-profile-socials a:hover,
+.member-profile-socials a:focus-visible {
+  border-color: #f04f8770;
+  background: #f04f8710;
+}
+
+.member-profile-socials span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}

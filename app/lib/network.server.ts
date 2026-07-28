@@ -89,7 +89,7 @@ export async function sendConnectionRequest(
         crypto.randomUUID(),
         recipientId,
         `${user.displayName} would like to connect.`,
-        `/profiles/${user.username}`,
+        "/connections",
       ),
     db
       .prepare(
