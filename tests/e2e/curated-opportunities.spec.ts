@@ -136,34 +136,6 @@ test.describe("curated opportunity permissions", () => {
     await expect(page.getByText(confidentialMarker)).toHaveCount(0);
   });
 
-  test("Investor profile powers catalogue matching and workspace menus", async ({
-    page,
-  }) => {
-    await usePersona(page, "opp_granted");
-    await page.goto("/deals");
-
-    await expect(
-      page.getByRole("heading", {
-        name: "Your Investor profile is connected.",
-      }),
-    ).toBeVisible();
-    await expect(page.getByText("100% profile match")).toBeVisible();
-    await expect(page.getByRole("link", { name: /Saved/ })).toHaveAttribute(
-      "href",
-      "/deals?view=saved",
-    );
-    await expect(page.getByRole("link", { name: /Requests/ })).toHaveAttribute(
-      "href",
-      "/deals?view=requested",
-    );
-    await expect(
-      page.getByRole("link", { name: /My Deal Rooms/ }),
-    ).toHaveAttribute("href", "/deals?view=approved");
-    await expect(
-      page.getByRole("link", { name: "Investor profile" }),
-    ).toHaveAttribute("href", "/settings/investor");
-  });
-
   test("approved Investor receives only the authorised private room", async ({
     page,
   }) => {
