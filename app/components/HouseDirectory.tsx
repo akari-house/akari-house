@@ -42,9 +42,6 @@ export function DirectorySocials({ entry }: { entry: HouseDirectoryEntry }) {
 export function PeopleCard({ entry }: { entry: HouseDirectoryEntry }) {
   const biographyId = useId();
   const [biographyExpanded, setBiographyExpanded] = useState(false);
-  const hasLongBiography = Boolean(
-    entry.biography && entry.biography.length > 110,
-  );
 
   return (
     <article className="people-card">
@@ -85,17 +82,15 @@ export function PeopleCard({ entry }: { entry: HouseDirectoryEntry }) {
             >
               {entry.biography}
             </p>
-            {hasLongBiography && (
-              <button
-                className="people-card__bio-toggle"
-                type="button"
-                aria-controls={biographyId}
-                aria-expanded={biographyExpanded}
-                onClick={() => setBiographyExpanded((current) => !current)}
-              >
-                {biographyExpanded ? "Show less" : "Read more"}
-              </button>
-            )}
+            <button
+              className="people-card__bio-toggle"
+              type="button"
+              aria-controls={biographyId}
+              aria-expanded={biographyExpanded}
+              onClick={() => setBiographyExpanded((current) => !current)}
+            >
+              {biographyExpanded ? "Show less" : "Read more"}
+            </button>
           </>
         )}
         <DirectorySocials entry={entry} />
