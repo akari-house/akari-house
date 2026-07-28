@@ -31,6 +31,15 @@ type RegistrationEnvironment = CloudflareEnvironment &
   MembershipEmailEnvironment &
   TurnstileEnvironment & { TURNSTILE_SITE_KEY?: string };
 
+export const meta: Route.MetaFunction = () => [
+  { title: "Request Membership | AKARI House" },
+  {
+    name: "description",
+    content:
+      "Request reviewed AKARI House membership as a Founder, Creator, Investor or any combination of roles.",
+  },
+];
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   if (await getOptionalUser(request, context.get(cloudflareContext).env.DB))
     throw redirect("/app");
