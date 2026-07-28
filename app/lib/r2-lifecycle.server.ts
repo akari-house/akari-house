@@ -4,12 +4,17 @@ import { ensureOperationalResilienceSchema } from "./operational-resilience-sche
 const managedPrefixes = [
   "profile-photos/",
   "project-documents/",
+  "event-images/",
   "delivery-payloads/",
   "recovery-backups/",
 ] as const;
 
 export type ManagedR2SourceType =
-  "profile_photo" | "project_document" | "delivery_payload" | "d1_backup";
+  | "profile_photo"
+  | "project_document"
+  | "event_image"
+  | "delivery_payload"
+  | "d1_backup";
 
 export async function registerManagedR2Object(
   db: D1Database,
@@ -128,6 +133,12 @@ async function bootstrapManagedReferences(db: D1Database) {
        (object_key, owner_user_id, source_type, source_id, retention_status)
        SELECT object_key, uploaded_by, 'project_document', id, 'active'
        FROM project_documents WHERE object_key IS NOT NULL AND object_key <> ''`,
+    ),
+    db.prepare(
+      `INSERT OR IGNORE INTO managed_r2_objects
+       (object_key, owner_user_id, source_type, source_id, retention_status)
+       SELECT image_key, host_user_id, 'event_image', id, 'active'
+       FROM events WHERE image_key IS NOT NULL AND image_key <> ''`,
     ),
     db.prepare(
       `INSERT OR IGNORE INTO managed_r2_objects
