@@ -124,10 +124,15 @@ export default function AdminContact({
   actionData,
 }: Route.ComponentProps) {
   const pending = useNavigation().state !== "idle";
+  const emptyLabel =
+    loaderData.status === "all"
+      ? "contact messages"
+      : `${loaderData.status} contact messages`;
+
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
-      <main id="main-content" className="admin-main">
+      <main id="main-content" className="admin-main admin-contact-main">
         <header className="admin-heading">
           <div>
             <span className="eyebrow">Private contact desk</span>
@@ -137,16 +142,18 @@ export default function AdminContact({
               a traceable status and internal owner.
             </p>
           </div>
-          <Link className="button button-quiet" to="/admin/operations">
-            Operations centre
-          </Link>
-          <Link className="button button-quiet" to="/admin/moderation">
-            Moderation reports
-          </Link>
+          <div className="workspace-hero-actions">
+            <Link className="button button-quiet" to="/admin/operations">
+              Operations centre
+            </Link>
+            <Link className="button button-quiet" to="/admin/moderation">
+              Moderation reports
+            </Link>
+          </div>
         </header>
 
         <nav
-          className="member-next-actions"
+          className="member-next-actions contact-status-tabs"
           aria-label="Contact status filters"
         >
           {contactStatuses.map((status) => (
@@ -177,9 +184,15 @@ export default function AdminContact({
             Contact message updated.
           </p>
         )}
-        <div className="application-list" aria-busy={pending}>
+        <div
+          className="application-list contact-message-list"
+          aria-busy={pending}
+        >
           {loaderData.messages.map((message) => (
-            <article className="application-card" key={message.id}>
+            <article
+              className="application-card contact-message-card"
+              key={message.id}
+            >
               <div>
                 <span className="chapter">
                   {message.topic} · {message.status}
@@ -261,11 +274,18 @@ export default function AdminContact({
             </article>
           ))}
           {!loaderData.messages.length && (
-            <section className="status-card">
-              <h2>
-                No {loaderData.status === "all" ? "" : loaderData.status}{" "}
-                contact messages.
-              </h2>
+            <section className="status-card contact-empty-state">
+              <span className="contact-empty-mark" aria-hidden="true">
+                ✦
+              </span>
+              <div>
+                <span className="eyebrow">Queue clear</span>
+                <h2>No {emptyLabel}.</h2>
+                <p>
+                  New messages matching this filter will appear here with their
+                  owner, status and review history.
+                </p>
+              </div>
             </section>
           )}
         </div>
