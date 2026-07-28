@@ -153,11 +153,13 @@ export function matchOpportunityToInvestor(
 
   if (
     opportunity.minimumParticipation !== null &&
-    profile.maximumTicket !== null &&
-    profile.ticketCurrency === opportunity.raiseCurrency.toUpperCase()
+    profile.maximumTicket !== null
   ) {
     availableWeight += 20;
-    if (profile.maximumTicket >= opportunity.minimumParticipation) {
+    if (
+      profile.ticketCurrency === opportunity.raiseCurrency.toUpperCase() &&
+      profile.maximumTicket >= opportunity.minimumParticipation
+    ) {
       matchedWeight += 20;
       reasons.push("Ticket range fits the listed minimum");
     }
