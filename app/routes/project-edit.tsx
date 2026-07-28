@@ -1,4 +1,4 @@
-import { Form, redirect, useNavigation } from "react-router";
+import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/project-edit";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
@@ -296,8 +296,13 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       linkedUser = await db
         .prepare(
           `SELECT u.id, p.display_name AS displayName
-           FROM users u JOIN profiles p ON p.user_id = u.id
-           WHERE u.username = ? AND u.status IN ('active', 'restricted')`,
+           FROM users u
+           JOIN profiles p ON p.user_id = u.id
+           JOIN membership_applications ma
+             ON ma.user_id = u.id AND ma.status = 'approved'
+           LEFT JOIN profile_visibility pv ON pv.user_id = u.id
+           WHERE u.username = ? AND u.status = 'active'
+             AND COALESCE(pv.visibility, p.visibility) = 'public'`,
         )
         .bind(linkedUsername)
         .first<{ id: string; displayName: string }>();
@@ -348,7 +353,6 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const title = formText(form.get("title")).trim();
   const summary = formText(form.get("summary")).trim();
   const description = formText(form.get("description")).trim();
-  const seeking = formText(form.get("seeking")).trim();
   const stage = formText(form.get("stage"));
   if (
     title.length < 3 ||
@@ -356,7 +360,6 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     summary.length < 20 ||
     summary.length > 280 ||
     description.length > 4000 ||
-    seeking.length > 300 ||
     !["idea", "prototype", "early_revenue", "growth"].includes(stage)
   )
     return { error: "Check the project fields and limits." };
@@ -370,10 +373,10 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     db
       .prepare(
         `UPDATE projects SET title = ?, summary = ?, description = ?,
-         stage = ?, seeking = ?, status = ?, updated_at = datetime('now')
+         stage = ?, status = ?, updated_at = datetime('now')
          WHERE id = ?`,
       )
-      .bind(title, summary, description, stage, seeking, status, current.id),
+      .bind(title, summary, description, stage, status, current.id),
     db
       .prepare(
         `INSERT INTO audit_logs
@@ -438,24 +441,27 @@ export default function ProjectEdit({
               rows={8}
             />
           </label>
-          <div className="form-row">
-            <label>
-              Stage
-              <select name="stage" defaultValue={project.stage}>
-                <option value="idea">Idea</option>
-                <option value="prototype">Prototype</option>
-                <option value="early_revenue">Early revenue</option>
-                <option value="growth">Growth</option>
-              </select>
-            </label>
-            <label>
-              Seeking
-              <input
-                name="seeking"
-                defaultValue={project.seeking}
-                maxLength={300}
-              />
-            </label>
+          <label>
+            Stage
+            <select name="stage" defaultValue={project.stage}>
+              <option value="idea">Idea</option>
+              <option value="prototype">Prototype</option>
+              <option value="early_revenue">Early revenue</option>
+              <option value="growth">Growth</option>
+            </select>
+          </label>
+          <div className="status-card project-needs-summary">
+            <span className="eyebrow">Project support needs</span>
+            <p>
+              {project.seeking ||
+                "No structured support needs have been selected yet."}
+            </p>
+            <Link
+              className="button button-quiet"
+              to={`/projects/${project.slug}/needs`}
+            >
+              Edit support needs
+            </Link>
           </div>
           <button
             className="button button-primary"
