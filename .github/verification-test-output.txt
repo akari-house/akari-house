@@ -6,75 +6,74 @@
 [1m[30m[46m RUN [49m[39m[22m [36mv4.1.10 [39m[90m/home/runner/work/akari-house/akari-house[39m
 
  [32m✓[39m tests/unit/recovery-backup.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 276[2mms[22m[39m
- [32m✓[39m tests/unit/house-interactions.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 1228[2mms[22m[39m
+ [32m✓[39m tests/unit/house-interactions.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 1192[2mms[22m[39m
      [33m[2m✓[22m[39m locks body scroll while mobile navigation is open [33m 675[2mms[22m[39m
- [32m✓[39m tests/unit/public-discovery.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 942[2mms[22m[39m
-     [33m[2m✓[22m[39m makes date and capacity the event invitation hierarchy [33m 458[2mms[22m[39m
- [32m✓[39m tests/final-product-audit.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 9[2mms[22m[39m
- [32m✓[39m tests/unit/public-onboarding.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
- [32m✓[39m tests/public-login-fallback.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 38[2mms[22m[39m
- [32m✓[39m tests/unit/opportunity-access.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m tests/unit/deal-room-completion.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m tests/auth-optional-session.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 37[2mms[22m[39m
- [32m✓[39m tests/unit/production-readiness.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m tests/unit/member-directory.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m tests/unit/dashboard-role-actions.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 250[2mms[22m[39m
- [32m✓[39m tests/navigation-destinations.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m tests/admin-directory-ux.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m tests/unit/house-directory-admin.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 248[2mms[22m[39m
- [32m✓[39m tests/unit/profile-photo-editor.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 270[2mms[22m[39m
- [32m✓[39m tests/unit/house-directory-card.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 206[2mms[22m[39m
+ [32m✓[39m tests/unit/public-discovery.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 563[2mms[22m[39m
+ [32m✓[39m tests/final-product-audit.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/unit/public-onboarding.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m tests/public-login-fallback.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32m✓[39m tests/unit/opportunity-access.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/unit/deal-room-completion.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/auth-optional-session.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 44[2mms[22m[39m
+ [32m✓[39m tests/unit/production-readiness.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/unit/member-directory.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/unit/dashboard-role-actions.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 314[2mms[22m[39m
+ [32m✓[39m tests/navigation-destinations.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m tests/admin-directory-ux.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/unit/house-directory-admin.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 218[2mms[22m[39m
+ [32m✓[39m tests/unit/profile-photo-editor.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[32m 244[2mms[22m[39m
+ [32m✓[39m tests/unit/house-directory-card.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 188[2mms[22m[39m
  [32m✓[39m tests/google-sheets.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m tests/unit/profile-card-completion.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 21[2mms[22m[39m
- [32m✓[39m tests/campaign-delivery.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/unit/profile-card-completion.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 20[2mms[22m[39m
+ [32m✓[39m tests/campaign-delivery.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 6[2mms[22m[39m
  [32m✓[39m tests/deployment-isolation.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m tests/turnstile.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 38[2mms[22m[39m
- [32m✓[39m tests/unit/member-discovery-flow.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m tests/unit/events.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 26[2mms[22m[39m
- [32m✓[39m tests/unit/homepage-resilience.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m tests/public-directory-resilience.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [31m❯[39m tests/typography.test.ts [2m([22m[2m3 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 22[2mms[22m[39m
-[31m     [31m×[31m does not use en or em dashes in interface source[39m[32m 19[2mms[22m[39m
+ [32m✓[39m tests/turnstile.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 36[2mms[22m[39m
+ [32m✓[39m tests/unit/member-discovery-flow.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/unit/events.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m✓[39m tests/unit/homepage-resilience.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/public-directory-resilience.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [31m❯[39m tests/typography.test.ts [2m([22m[2m3 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 17[2mms[22m[39m
+[31m     [31m×[31m does not use en or em dashes in interface source[39m[32m 15[2mms[22m[39m
      [32m✓[39m loads the compact inner-page design layer last[32m 1[2mms[22m[39m
      [32m✓[39m does not apply display-heading sizing to the profile description[32m 0[2mms[22m[39m
- [32m✓[39m tests/project-needs.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m tests/project-needs.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 30[2mms[22m[39m
  [32m✓[39m tests/unit/delivery-policy.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
  [32m✓[39m tests/homepage-isolation.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m tests/unit/membership-desk.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 295[2mms[22m[39m
- [32m✓[39m tests/unit/admin-privacy.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m tests/unit/featured-archive.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 295[2mms[22m[39m
+ [32m✓[39m tests/unit/membership-desk.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 263[2mms[22m[39m
+ [32m✓[39m tests/unit/admin-privacy.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/unit/featured-archive.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 259[2mms[22m[39m
  [32m✓[39m tests/visibility.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m tests/unit/production-security.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
- [32m✓[39m tests/unit/form-controls.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 215[2mms[22m[39m
- [32m✓[39m tests/unit/common-table.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 273[2mms[22m[39m
- [32m✓[39m tests/unit/profile-percentile.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/unit/production-security.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m tests/unit/form-controls.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 197[2mms[22m[39m
+ [32m✓[39m tests/unit/common-table.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 252[2mms[22m[39m
+ [32m✓[39m tests/unit/profile-percentile.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
  [32m✓[39m tests/unit/iio-scoring.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 12[2mms[22m[39m
- [32m✓[39m tests/unit/house-member-presence.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 70[2mms[22m[39m
+ [32m✓[39m tests/unit/house-member-presence.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 68[2mms[22m[39m
  [32m✓[39m tests/unit/network-state.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
  [32m✓[39m tests/unit/launch-gate-evidence.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m tests/unit/journey-back.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 212[2mms[22m[39m
- [32m✓[39m tests/response-security.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 36[2mms[22m[39m
- [32m✓[39m tests/unit/icon-system.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[32m 171[2mms[22m[39m
- [32m✓[39m tests/unit/legal-documents.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/unit/journey-back.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 191[2mms[22m[39m
+ [32m✓[39m tests/response-security.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m tests/unit/icon-system.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[32m 153[2mms[22m[39m
+ [32m✓[39m tests/unit/legal-documents.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 9[2mms[22m[39m
  [32m✓[39m tests/unit/operations.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m tests/unit/profile-photo.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m tests/security.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 143[2mms[22m[39m
- [32m✓[39m tests/login-loader-resilience.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m tests/unit/profile-photo.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/security.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 148[2mms[22m[39m
+ [32m✓[39m tests/login-loader-resilience.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
  [32m✓[39m tests/unit/admin-workspace.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m tests/unit/launch-integrity.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/unit/launch-integrity.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
  [32m✓[39m tests/unit/campaign-operations.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m tests/unit/operational-resilience.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
- [32m✓[39m tests/unit/launch-gate.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/unit/operational-resilience.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/unit/launch-gate.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
  [32m✓[39m tests/unit/iio-settlement-schema.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m tests/validation.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m tests/unit/turnstile.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 34[2mms[22m[39m
- [32m✓[39m tests/profile-completion.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32m✓[39m tests/validation.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/unit/turnstile.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m✓[39m tests/profile-completion.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
  [32m✓[39m tests/unit/scheduled-jobs.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m tests/unit/navigation.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/unit/navigation.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
  [32m✓[39m tests/hero-architecture.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m tests/unit/projects.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 5[2mms[22m[39m
- [32m✓[39m tests/unit/rate-limit.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
- [32m✓[39m tests/integration/registration-selection.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 33[2mms[22m[39m
+ [32m✓[39m tests/unit/projects.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m✓[39m tests/unit/rate-limit.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m tests/integration/registration-selection.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 29[2mms[22m[39m
  [32m✓[39m tests/unit/room-data.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m
 
 [31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
@@ -103,8 +102,8 @@
 
 [2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m65 passed[39m[22m[90m (66)[39m
 [2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m246 passed[39m[22m[90m (247)[39m
-[2m   Start at [22m 16:37:53
-[2m   Duration [22m 27.53s[2m (transform 887ms, setup 0ms, import 3.98s, tests 5.64s, environment 8.92s)[22m
+[2m   Start at [22m 16:39:23
+[2m   Duration [22m 27.22s[2m (transform 905ms, setup 0ms, import 3.97s, tests 5.06s, environment 9.02s)[22m
 
 
 ::error file=/home/runner/work/akari-house/akari-house/tests/typography.test.ts,title=tests/typography.test.ts > public typography > does not use en or em dashes in interface source,line=21,column=23::AssertionError: expected [ Array(1) ] to deeply equal []%0A%0A- Expected%0A+ Received%0A%0A- []%0A+ [%0A+   "app/routes/admin-verifications.tsx",%0A+ ]%0A%0A ❯ tests/typography.test.ts:21:23%0A%0A
