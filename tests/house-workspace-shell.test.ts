@@ -37,7 +37,7 @@ describe("shared AKARI workspace shell", () => {
     expect(header).toContain("HouseWorkspaceSidebar");
   });
 
-  it("keeps public House discovery routes cinematic", () => {
+  it("keeps public discovery routes cinematic", () => {
     expect(sidebar).toContain("isImmersiveHousePath");
     for (const route of [
       'pathname === "/"',
@@ -49,7 +49,9 @@ describe("shared AKARI workspace shell", () => {
     ])
       expect(sidebar).toContain(route);
 
-    expect(sidebar).toContain("if (isImmersiveHousePath(pathname)) return false");
+    expect(sidebar).toContain(
+      "if (isImmersiveHousePath(pathname)) return false",
+    );
   });
 
   it("uses backend-derived scoped admin navigation", () => {
@@ -78,7 +80,7 @@ describe("shared AKARI workspace shell", () => {
     expect(sidebar).toContain("workspace navigation");
   });
 
-  it("uses dedicated House-inspired artwork and responsive sidebar behaviour", () => {
+  it("uses dedicated House artwork responsively", () => {
     expect(styles).toContain(".house-workspace-sidebar");
     expect(styles).toContain("@media (min-width: 901px)");
     expect(styles).toContain("@media (max-width: 900px)");
@@ -86,7 +88,9 @@ describe("shared AKARI workspace shell", () => {
     expect(root).toContain('import "./styles/house-workspace-art.css"');
     expect(artworkStyles).toContain("/assets/house/workspace-house.svg");
     expect(artworkStyles).not.toContain("/assets/optimized/arrival.webp");
-    expect(artwork).toContain("Stylised AKARI House workspace illustration");
+    expect(artwork).toContain(
+      "Stylised AKARI House workspace illustration",
+    );
     expect(artwork).toContain("#ef3f82");
     expect(artwork).toContain("#ffd33d");
   });
