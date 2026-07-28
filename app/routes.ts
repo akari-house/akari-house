@@ -37,6 +37,7 @@ export default [
   route("events/manage", "routes/event-manage.tsx"),
   route("events/:slug/edit", "routes/event-edit.tsx"),
   route("events/:slug", "routes/event-detail.tsx"),
+  route("media/events/:slug", "routes/event-media.ts"),
   route("login", "routes/login.tsx"),
   route("forgot-password", "routes/forgot-password.tsx"),
   route("reset-password", "routes/reset-password.tsx"),
