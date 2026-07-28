@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
+  issues: write
 
 jobs:
   apply:
@@ -21,10 +23,22 @@ jobs:
           node-version: 24
           cache: npm
       - name: Apply staged patch
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          cat .github/patches/admin-min.part-* | base64 --decode > /tmp/admin-min.patch
-          git apply --check /tmp/admin-min.patch
+          cat .github/patches/admin-min.part-* > /tmp/admin-min.b64
+          base64 --decode /tmp/admin-min.b64 > /tmp/admin-min.patch
+          {
+            echo "Patch SHA256: $(sha256sum /tmp/admin-min.patch | cut -d' ' -f1)"
+            git apply --check /tmp/admin-min.patch
+          } > /tmp/admin-patch-diagnostic.txt 2>&1 || {
+            printf '## Admin UX patch diagnostic\n\n```text\n' > /tmp/admin-patch-comment.md
+            cat /tmp/admin-patch-diagnostic.txt >> /tmp/admin-patch-comment.md
+            printf '\n```\n' >> /tmp/admin-patch-comment.md
+            gh pr comment 126 --repo "$GITHUB_REPOSITORY" --body-file /tmp/admin-patch-comment.md
+            exit 1
+          }
           git apply /tmp/admin-min.patch
           rm -rf .github/patches
       - run: npm ci
