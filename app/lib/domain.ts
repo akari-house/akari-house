@@ -1,3 +1,5 @@
+import type { AdminWorkspaceAccess } from "./admin-workspace";
+
 export const roles = ["founder", "creator", "investor"] as const;
 export type Role = (typeof roles)[number];
 
@@ -15,6 +17,7 @@ export interface SessionUser {
   displayName: string;
   accessTier: "applicant" | "member";
   roles: Role[];
+  adminAccess?: AdminWorkspaceAccess | null;
 }
 
 export const socialPlatforms = [
