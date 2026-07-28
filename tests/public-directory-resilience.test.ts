@@ -30,10 +30,20 @@ describe("public directory resilience", () => {
       expect(sources.deals).toContain(marker);
   });
 
-  it("allows every public directory to render a safe empty state", () => {
-    expect(sources.projects).toContain("return [] as PublicProjectRow[]");
+  it("separates a directory outage from a genuine empty state", () => {
+    expect(sources.projects).toContain(
+      "items: [] as PublicProjectRow[], degraded: true",
+    );
+    expect(sources.projects).toContain(
+      "AKARI will not present an outage as an empty directory",
+    );
+    expect(sources.events).toContain(
+      "items: [] as PublicEventRow[], degraded: true",
+    );
+    expect(sources.events).toContain(
+      "AKARI will not present an outage as an empty calendar",
+    );
     expect(sources.campaigns).toContain("return [] as PublicCampaignRow[]");
-    expect(sources.events).toContain("return [] as PublicEventRow[]");
     expect(sources.deals).toContain("opportunities: [] as OpportunityRow[]");
   });
 });
