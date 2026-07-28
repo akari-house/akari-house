@@ -1,4 +1,4 @@
-name: Profile Card Lint Diagnostic
+name: Profile Card Format Diagnostic
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 jobs:
-  lint-diagnostic:
+  format-diagnostic:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,17 +17,21 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
-      - name: Capture lint output
-        shell: bash
+      - name: Format profile card files
         run: |
-          set +e
-          npm run lint > lint-output.txt 2>&1
-          echo $? > lint-exit-code.txt
-          exit 0
+          npx prettier --write \
+            app/components/ProfileShareCard.tsx \
+            app/lib/profile-card.ts \
+            app/routes/profile-card.tsx \
+            app/styles/profile-card-enhancements.css \
+            tests/unit/profile-card-completion.test.ts
       - uses: actions/upload-artifact@v4
         with:
-          name: profile-card-lint-output
+          name: profile-card-formatted-source
           path: |
-            lint-output.txt
-            lint-exit-code.txt
+            app/components/ProfileShareCard.tsx
+            app/lib/profile-card.ts
+            app/routes/profile-card.tsx
+            app/styles/profile-card-enhancements.css
+            tests/unit/profile-card-completion.test.ts
           retention-days: 1
