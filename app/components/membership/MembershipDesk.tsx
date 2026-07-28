@@ -46,8 +46,13 @@ function RoleEmblem({ role }: { role: Role }) {
   );
 }
 
-export function MembershipDesk() {
+export function MembershipDesk({
+  standalone = false,
+}: {
+  standalone?: boolean;
+}) {
   const [selected, setSelected] = useState<Role[]>([]);
+  const Heading = standalone ? "h1" : "h2";
   const toggle = (role: Role) =>
     setSelected((current) =>
       current.includes(role)
@@ -66,11 +71,11 @@ export function MembershipDesk() {
     >
       <div className="membership-copy">
         <span className="chapter">Chapter 06 · Membership Desk</span>
-        <h2 id="membership-title">
+        <Heading id="membership-title">
           One identity.
           <br />
           Every role that represents you.
-        </h2>
+        </Heading>
         <p>
           Choose any combination. Your workspaces and profile adapt to how you
           participate.
