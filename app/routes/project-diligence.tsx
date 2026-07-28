@@ -19,8 +19,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const user = await requireApprovedMember(request, db);
   const project = await db
     .prepare(
-      `SELECT id, slug, title, founder_user_id AS founderUserId,
-            COALESCE(data_room_url, '') AS dataRoomUrl
+      `SELECT id, slug, title, founder_user_id AS founderUserId
      FROM projects WHERE slug = ?`,
     )
     .bind(params.slug)
@@ -29,7 +28,6 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       slug: string;
       title: string;
       founderUserId: string;
-      dataRoomUrl: string;
     }>();
   if (!project) throw new Response("Project not found.", { status: 404 });
   const isFounder = project.founderUserId === user.id;
@@ -59,13 +57,33 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     }>();
 
   if (isFounder) {
+    const dataRoom = await db
+      .prepare(
+        "SELECT COALESCE(data_room_url, '') AS dataRoomUrl FROM projects WHERE id = ?",
+      )
+      .bind(project.id)
+      .first<{ dataRoomUrl: string }>();
     const [investors, grants, requests, logs] = await Promise.all([
       db
         .prepare(
           `SELECT u.id, u.username, p.display_name AS displayName
          FROM users u JOIN profiles p ON p.user_id = u.id
          JOIN role_verifications rv ON rv.user_id = u.id AND rv.role = 'investor'
+         JOIN membership_applications ma
+           ON ma.user_id = u.id AND ma.status = 'approved'
          WHERE rv.status = 'verified' AND u.status = 'active'
+           AND (
+             NOT EXISTS (
+               SELECT 1 FROM verification_provenance vp
+               WHERE vp.user_id = u.id AND vp.role = 'investor'
+             )
+             OR EXISTS (
+               SELECT 1 FROM verification_provenance vp
+               WHERE vp.user_id = u.id AND vp.role = 'investor'
+                 AND vp.status = 'active'
+                 AND (vp.review_due_at IS NULL OR vp.review_due_at > datetime('now'))
+             )
+           )
          ORDER BY p.display_name LIMIT 200`,
         )
         .all<{ id: string; username: string; displayName: string }>(),
@@ -133,7 +151,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     ]);
     return {
       user,
-      project,
+      project: { ...project, dataRoomUrl: dataRoom?.dataRoomUrl ?? "" },
       isFounder,
       documents: documents.results,
       investors: investors.results,
@@ -179,9 +197,20 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
         createdAt: string;
       }>(),
   ]);
+  const dataRoomAccessIsCurrent =
+    ownRequest?.status === "approved" &&
+    (!ownRequest.expiresAt || Date.parse(ownRequest.expiresAt) > Date.now());
+  const dataRoom = dataRoomAccessIsCurrent
+    ? await db
+        .prepare(
+          "SELECT COALESCE(data_room_url, '') AS dataRoomUrl FROM projects WHERE id = ?",
+        )
+        .bind(project.id)
+        .first<{ dataRoomUrl: string }>()
+    : null;
   return {
     user,
-    project,
+    project: { ...project, dataRoomUrl: dataRoom?.dataRoomUrl ?? "" },
     isFounder,
     documents: [],
     investors: [],
