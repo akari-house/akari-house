@@ -1,8 +1,10 @@
+import { useId, useState } from "react";
 import { Link } from "react-router";
 import type {
   HouseDirectoryCategory,
   HouseDirectoryEntry,
 } from "~/lib/house-directory";
+import { houseDirectoryImageUrl } from "~/lib/house-directory";
 
 const socialLabels = {
   xUrl: "X",
@@ -38,15 +40,22 @@ export function DirectorySocials({ entry }: { entry: HouseDirectoryEntry }) {
 }
 
 export function PeopleCard({ entry }: { entry: HouseDirectoryEntry }) {
+  const biographyId = useId();
+  const [biographyExpanded, setBiographyExpanded] = useState(false);
+  const hasLongBiography = Boolean(
+    entry.biography && entry.biography.length > 110,
+  );
+
   return (
     <article className="people-card">
       <div className="people-card__portrait">
         {entry.imageKey ? (
           <img
-            src={`/media/house-directory/${entry.id}`}
+            className="people-card__image"
+            src={houseDirectoryImageUrl(entry)}
             alt=""
             width={640}
-            height={760}
+            height={640}
             loading="lazy"
           />
         ) : (
@@ -64,14 +73,44 @@ export function PeopleCard({ entry }: { entry: HouseDirectoryEntry }) {
       <div className="people-card__copy">
         <h3>{entry.name}</h3>
         {entry.title && <p className="people-card__title">{entry.title}</p>}
-        {entry.biography && <p>{entry.biography}</p>}
+        {entry.biography && (
+          <>
+            <p
+              className={
+                biographyExpanded
+                  ? "people-card__biography is-expanded"
+                  : "people-card__biography"
+              }
+              id={biographyId}
+            >
+              {entry.biography}
+            </p>
+            {hasLongBiography && (
+              <button
+                className="people-card__bio-toggle"
+                type="button"
+                aria-controls={biographyId}
+                aria-expanded={biographyExpanded}
+                onClick={() => setBiographyExpanded((current) => !current)}
+              >
+                {biographyExpanded ? "Show less" : "Read more"}
+              </button>
+            )}
+          </>
+        )}
         <DirectorySocials entry={entry} />
       </div>
     </article>
   );
 }
 
-export function PartnerStrip({ entries }: { entries: HouseDirectoryEntry[] }) {
+export function PartnerStrip({
+  entries,
+  eyebrow = "The wider House",
+}: {
+  entries: HouseDirectoryEntry[];
+  eyebrow?: string;
+}) {
   const groups: {
     category: HouseDirectoryCategory;
     label: string;
@@ -87,7 +126,7 @@ export function PartnerStrip({ entries }: { entries: HouseDirectoryEntry[] }) {
     >
       <div className="section-intro">
         <div>
-          <span className="chapter">The wider House</span>
+          <span className="chapter">{eyebrow}</span>
           <h2 id="partners-title">Built with trusted partners.</h2>
         </div>
         <p>
@@ -106,7 +145,7 @@ export function PartnerStrip({ entries }: { entries: HouseDirectoryEntry[] }) {
                 <article className="partner-mark" key={entry.id}>
                   {entry.imageKey ? (
                     <img
-                      src={`/media/house-directory/${entry.id}`}
+                      src={houseDirectoryImageUrl(entry)}
                       alt=""
                       width={220}
                       height={100}

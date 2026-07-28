@@ -92,4 +92,23 @@ describe("final product audit safeguards", () => {
     expect(workflow).toContain("au.access_level = 'superadmin'");
     expect(workflow).toContain("SELECT u.id FROM users u");
   });
+
+  it("keeps the Team page visual and portrait system production-safe", () => {
+    const team = read("app/routes/team.tsx");
+    const directory = read("app/components/HouseDirectory.tsx");
+    const directoryData = read("app/lib/house-directory.server.ts");
+    const styles = read("app/styles/site-final-polish.css");
+
+    expect(team).toContain("/assets/team/keepers-hero.svg");
+    expect(team).toContain("/assets/team/keepers-hero-mobile.svg");
+    expect(team).toContain("people-house-hero__art");
+    expect(team).toContain("chapterNumber");
+    expect(directory).toContain("people-card__image");
+    expect(directory).toContain("houseDirectoryImageUrl(entry)");
+    expect(directoryData).toContain("updated_at AS imageVersion");
+    expect(styles).toContain("width: 100%;");
+    expect(styles).toContain("max-height: none;");
+    expect(styles).toContain('url("/assets/team/wider-house.svg")');
+    expect(styles).toContain("@media (max-width: 390px)");
+  });
 });

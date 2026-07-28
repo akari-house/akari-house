@@ -3,6 +3,7 @@ import { Form } from "react-router";
 import {
   houseDirectoryCategories,
   houseDirectoryCategoryLabels,
+  houseDirectoryImageUrl,
   isHouseDirectoryOrganization,
   type HouseDirectoryCategory,
   type HouseDirectoryEntry,
@@ -31,7 +32,7 @@ export function HouseDirectoryAdminForm({
             className={
               isOrganization ? "directory-admin-form__organization-logo" : ""
             }
-            src={`/media/house-directory/${entry.id}`}
+            src={houseDirectoryImageUrl(entry)}
             alt=""
             width={96}
             height={96}
