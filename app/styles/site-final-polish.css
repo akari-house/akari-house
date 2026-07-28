@@ -556,15 +556,202 @@
 }
 
 .people-page .people-grid {
-  grid-template-columns: repeat(auto-fill, minmax(170px, 210px));
+  grid-template-columns: repeat(auto-fill, minmax(164px, 188px));
+  gap: 1rem;
 }
 
 .people-page .people-card__portrait {
-  max-height: 180px;
+  width: 100%;
+  max-height: none;
 }
 
 .people-page .people-empty {
   min-height: 108px;
+}
+
+.people-house-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: clamp(450px, 38vw, 520px);
+  grid-template-columns: minmax(0, 620px) 1fr;
+  align-items: center;
+  overflow: hidden;
+  background: #090b14;
+}
+
+.people-house-hero::before {
+  z-index: -1;
+  background:
+    linear-gradient(
+      90deg,
+      rgb(9 11 20 / 98%) 0 32%,
+      rgb(9 11 20 / 74%) 52%,
+      rgb(9 11 20 / 18%) 100%
+    ),
+    linear-gradient(0deg, rgb(9 11 20 / 78%), transparent 68%);
+}
+
+.people-house-hero::after {
+  display: none;
+}
+
+.people-house-hero__art {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  pointer-events: none;
+}
+
+.people-house-hero__art,
+.people-house-hero__art img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.people-house-hero__art img {
+  object-fit: cover;
+  object-position: center 54%;
+}
+
+.people-house-hero__copy {
+  max-width: 590px;
+}
+
+.people-page .people-section,
+.people-page .partner-house,
+.people-page .ecosystem-house {
+  isolation: isolate;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.people-page .people-section > *,
+.people-page .partner-house > *,
+.people-page .ecosystem-house > * {
+  position: relative;
+  z-index: 1;
+}
+
+.people-section--team::before,
+.people-section--advisor::before,
+.people-section--supporter::before,
+.partner-house::before,
+.ecosystem-house::before {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background-position: center right;
+  background-size: cover;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  content: "";
+}
+
+.people-section--team::before {
+  background-image: url("/assets/team/keepers-hero.svg");
+  opacity: 0.15;
+  -webkit-mask-image: linear-gradient(90deg, transparent 26%, #000 74%);
+  mask-image: linear-gradient(90deg, transparent 26%, #000 74%);
+}
+
+.people-section--advisor::before,
+.people-section--supporter::before,
+.partner-house::before,
+.ecosystem-house::before {
+  background-image: url("/assets/team/wider-house.svg");
+  opacity: 0.13;
+  -webkit-mask-image: linear-gradient(90deg, transparent 12%, #000 74%);
+  mask-image: linear-gradient(90deg, transparent 12%, #000 74%);
+}
+
+.people-section--advisor::before {
+  background-position: 62% center;
+}
+
+.people-section--supporter::before,
+.partner-house::before {
+  background-position: 74% center;
+}
+
+.ecosystem-house::before {
+  background-position: right center;
+  opacity: 0.16;
+}
+
+.people-page .people-card {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+}
+
+.people-page .people-card__portrait {
+  position: relative;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  aspect-ratio: 1;
+}
+
+.people-card__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: 50% 30%;
+}
+
+.people-page .people-card__copy {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.people-card__biography {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.people-card__biography.is-expanded {
+  display: block;
+  overflow: visible;
+}
+
+.people-card__bio-toggle {
+  width: fit-content;
+  margin: -0.2rem 0 0;
+  padding: 0.25rem 0;
+  border: 0;
+  color: #f5a8c1;
+  background: transparent;
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+  cursor: pointer;
+}
+
+.people-card__bio-toggle:hover,
+.people-card__bio-toggle:focus-visible {
+  color: #fff;
+}
+
+.people-page .directory-socials {
+  margin-top: auto;
+  padding-top: 0.85rem;
+}
+
+.people-page .directory-socials a {
+  width: 36px;
+  height: 36px;
 }
 
 .room-hero {
@@ -779,7 +966,7 @@
 
   .people-house-hero,
   .people-hero {
-    min-height: 340px;
+    min-height: 460px;
   }
 
   .deal-card {
@@ -815,11 +1002,120 @@
   }
 
   .people-page .people-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .people-page .people-card__portrait {
-    max-height: 160px;
+    max-height: none;
+  }
+}
+
+@media (max-width: 620px) {
+  .people-house-hero {
+    min-height: 500px;
+    padding-top: 6.5rem;
+    padding-bottom: 2.5rem;
+    grid-template-columns: 1fr;
+    align-items: end;
+  }
+
+  .people-house-hero::before {
+    background:
+      linear-gradient(
+        180deg,
+        rgb(9 11 20 / 22%) 0 34%,
+        rgb(9 11 20 / 82%) 68%,
+        #090b14 100%
+      ),
+      linear-gradient(90deg, rgb(9 11 20 / 62%), rgb(9 11 20 / 14%));
+  }
+
+  .people-house-hero__art {
+    display: block;
+  }
+
+  .people-house-hero__art img {
+    object-position: center 42%;
+  }
+
+  .people-house-hero h1 {
+    max-width: 13ch;
+    font-size: clamp(2.15rem, 10vw, 2.45rem);
+    line-height: 1.02;
+  }
+
+  .people-house-hero p {
+    max-width: 38ch;
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+
+  .people-house-hero__nav {
+    margin-top: 1.1rem;
+  }
+
+  .people-page .people-section,
+  .people-page .partner-house,
+  .people-page .ecosystem-house {
+    padding-block: 2.75rem;
+  }
+
+  .people-page .people-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .people-page .people-card {
+    max-width: 520px;
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .people-page .people-card__portrait {
+    width: 92px;
+    align-self: start;
+    border-radius: 15px 0 0 15px;
+  }
+
+  .people-page .people-card__copy {
+    padding: 0.85rem 0.9rem 0.9rem;
+  }
+
+  .people-page .people-card__copy h3 {
+    font-size: 1.08rem;
+  }
+
+  .people-page .people-card__copy > p {
+    font-size: 0.8rem;
+  }
+
+  .people-page .directory-socials {
+    padding-top: 0.55rem;
+  }
+
+  .people-page .directory-socials a {
+    width: 34px;
+    height: 34px;
+  }
+
+  .people-section--team::before,
+  .people-section--advisor::before,
+  .people-section--supporter::before,
+  .partner-house::before,
+  .ecosystem-house::before {
+    opacity: 0.09;
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000);
+    mask-image: linear-gradient(180deg, transparent, #000);
+  }
+}
+
+@media (max-width: 390px) {
+  .people-page .people-card {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+
+  .people-page .people-card__portrait {
+    width: 82px;
   }
 }
 
@@ -829,6 +1125,12 @@
   .project-lantern-card,
   .event-invitation-card,
   .event-invitation-cover img {
+    transition: none;
+  }
+
+  .people-card,
+  .people-card__image,
+  .people-card__bio-toggle {
     transition: none;
   }
 }
