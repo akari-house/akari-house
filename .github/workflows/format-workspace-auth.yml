@@ -1,0 +1,35 @@
+name: Format Workspace Session Enrichment
+
+on:
+  push:
+    branches:
+      - agent/investor-house-ui-reference
+    paths:
+      - .github/workflows/format-workspace-auth.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/investor-house-ui-reference
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write app/lib/auth.server.ts
+      - run: npm run format:check
+      - name: Commit exact formatting and remove formatter
+        run: |
+          rm .github/workflows/format-workspace-auth.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/lib/auth.server.ts .github/workflows/format-workspace-auth.yml
+          git commit -m "Format workspace session enrichment"
+          git push origin HEAD:agent/investor-house-ui-reference
