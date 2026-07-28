@@ -33,6 +33,23 @@ export function normalizeWebsite(value: FormDataEntryValue | null) {
   }
 }
 
+export function isXProfileUrl(value: string) {
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.toLowerCase();
+    return (
+      url.protocol === "https:" &&
+      (hostname === "x.com" ||
+        hostname.endsWith(".x.com") ||
+        hostname === "twitter.com" ||
+        hostname.endsWith(".twitter.com")) &&
+      url.pathname !== "/"
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function selectedRoles(formData: FormData): Role[] {
   return formData
     .getAll("roles")
