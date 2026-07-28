@@ -6,5 +6,9 @@ Apply anyway? [n]
 Skipping patch.
 14 out of 14 hunks ignored
 checking file app/routes/dashboard.tsx
-checking file app/routes/admin-workspace.tsx
+The next patch would create the file app/routes/admin-workspace.tsx,
+which already exists!  Assume -R? [n] 
+Apply anyway? [n] 
+Skipping patch.
+1 out of 1 hunk ignored
 checking file app/styles/admin-console.css
