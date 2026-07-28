@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+// Protect the complete discover → request → accept → visible-profile journey.
 const read = (path: string) => readFileSync(path, "utf8");
 
 describe("member discovery connection flow", () => {
