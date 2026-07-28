@@ -1,5 +1,6 @@
 import { redirect } from "react-router";
 import type { Role, SessionUser } from "./domain";
+import { loadOptionalAdminWorkspaceAccess } from "./admin-workspace.server";
 import { sha256 } from "./security.server";
 
 const cookieName = "akari_session";
@@ -81,10 +82,15 @@ export async function getOptionalUser(
       }>();
     if (!row) return null;
     const { status, ...identity } = row;
+    const [roles, adminAccess] = await Promise.all([
+      loadRoles(authDb, row.id),
+      loadOptionalAdminWorkspaceAccess(db, row.id),
+    ]);
     return {
       ...identity,
       accessTier: status === "active" ? "member" : "applicant",
-      roles: await loadRoles(authDb, row.id),
+      roles,
+      adminAccess,
     };
   } catch (error) {
     console.error(
