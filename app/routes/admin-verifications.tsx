@@ -14,6 +14,8 @@ type VerificationRow = {
   role: "founder" | "creator" | "investor";
   status: string;
   updatedAt: string;
+  reviewedAt: string | null;
+  decisionNote: string;
   evidenceCategory: string | null;
   reviewDueAt: string | null;
 };
@@ -25,6 +27,19 @@ const evidenceCategories = [
   "investment_activity",
   "professional_references",
 ] as const;
+
+function displayStatus(item: VerificationRow) {
+  if (
+    item.status === "pending" &&
+    item.reviewedAt &&
+    item.decisionNote.trim().length > 0
+  )
+    return "on hold";
+  if (item.status === "verified") return "approved";
+  if (item.status === "declined" || item.status === "revoked")
+    return "rejected";
+  return item.status;
+}
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -42,6 +57,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       `SELECT rv.user_id AS userId, u.username,
               p.display_name AS displayName, rv.role, rv.status,
               rv.updated_at AS updatedAt,
+              rv.reviewed_at AS reviewedAt,
+              rv.decision_note AS decisionNote,
               vp.evidence_category AS evidenceCategory,
               vp.review_due_at AS reviewDueAt
        FROM role_verifications rv
@@ -51,8 +68,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
          ON vp.user_id = rv.user_id AND vp.role = rv.role AND vp.status = 'active'
        WHERE rv.status IN ('pending', 'declined', 'revoked')
           OR vp.status = 'active'
-       ORDER BY CASE rv.status WHEN 'pending' THEN 0 ELSE 1 END,
-                rv.updated_at`,
+       ORDER BY CASE rv.status
+                  WHEN 'pending' THEN 0
+                  WHEN 'verified' THEN 1
+                  ELSE 2
+                END,
+                rv.updated_at DESC`,
     )
     .all<VerificationRow>();
   return { user, verifications: verifications.results };
@@ -72,7 +93,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const reviewMonths = Number(formText(form.get("reviewMonths")) || "12");
   if (
     !["founder", "creator", "investor"].includes(role) ||
-    !["verify", "decline", "revoke"].includes(intent) ||
+    !["verify", "hold", "decline", "revoke"].includes(intent) ||
     decisionNote.length < 5 ||
     decisionNote.length > 500 ||
     (intent === "verify" &&
@@ -89,9 +110,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   const status =
     intent === "verify"
       ? "verified"
-      : intent === "revoke"
-        ? "revoked"
-        : "declined";
+      : intent === "hold"
+        ? "pending"
+        : intent === "revoke"
+          ? "revoked"
+          : "declined";
   const statements = [
     db
       .prepare(
@@ -119,10 +142,12 @@ export async function action({ request, context }: Route.ActionArgs) {
         userId,
         `${role[0].toUpperCase()}${role.slice(1)} verification updated`,
         status === "verified"
-          ? `Your ${role} role is verified until its scheduled review.`
-          : status === "revoked"
-            ? `Your ${role} verification was revoked and requires a fresh review.`
-            : `Your ${role} verification was not approved. Review your profile before requesting another review.`,
+          ? `Your ${role} role is approved until its scheduled review.`
+          : intent === "hold"
+            ? `Your ${role} verification is on hold while additional evidence is reviewed.`
+            : status === "revoked"
+              ? `Your ${role} verification was rejected and requires a fresh review.`
+              : `Your ${role} verification was not approved. Review your profile before requesting another review.`,
       ),
     db
       .prepare(
@@ -136,6 +161,7 @@ export async function action({ request, context }: Route.ActionArgs) {
         userId,
         JSON.stringify({
           role,
+          intent,
           status,
           decisionNote,
           evidenceCategory: intent === "verify" ? evidenceCategory : null,
@@ -173,6 +199,7 @@ export default function AdminVerifications({
   actionData,
 }: Route.ComponentProps) {
   const navigation = useNavigation();
+  const busy = navigation.state !== "idle";
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -180,11 +207,10 @@ export default function AdminVerifications({
         <header className="admin-heading">
           <div>
             <span className="eyebrow">Identity and role review</span>
-            <h1>Verification with evidence and review dates</h1>
+            <h1>Verification approval centre</h1>
             <p>
-              Every active badge records its evidence category, reviewer and
-              scheduled refresh date. Verification is never treated as
-              permanent.
+              Review every role claim in one compact queue. Open a row only when
+              you need the evidence, note and decision controls.
             </p>
           </div>
           <Link className="button button-quiet" to="/admin/operations">
@@ -201,99 +227,153 @@ export default function AdminVerifications({
             Verification decision and provenance saved.
           </p>
         )}
-        <div className="application-list">
-          {loaderData.verifications.map((item) => (
-            <article
-              className="application-card"
-              key={`${item.userId}:${item.role}`}
-            >
-              <div>
-                <span className="chapter">
-                  {item.role} · {item.status}
-                </span>
-                <h2>
-                  <Link to={`/profiles/${item.username}`}>
-                    {item.displayName}
-                  </Link>
-                </h2>
-                <p>@{item.username}</p>
-                {item.evidenceCategory && (
-                  <p>
-                    <strong>Evidence:</strong>{" "}
-                    {item.evidenceCategory.replaceAll("_", " ")}
-                  </p>
-                )}
-                {item.reviewDueAt && (
-                  <small>
-                    Review due {new Date(item.reviewDueAt).toLocaleDateString()}
-                  </small>
-                )}
-              </div>
-              <Form method="post" className="application-actions">
-                <input type="hidden" name="userId" value={item.userId} />
-                <input type="hidden" name="role" value={item.role} />
-                <label>
-                  Evidence category
-                  <select
-                    name="evidenceCategory"
-                    defaultValue="identity_and_profile"
-                  >
-                    {evidenceCategories.map((category) => (
-                      <option value={category} key={category}>
-                        {category.replaceAll("_", " ")}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Review again after
-                  <select name="reviewMonths" defaultValue="12">
-                    {[3, 6, 12, 24].map((months) => (
-                      <option value={months} key={months}>
-                        {months} months
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Decision note
-                  <textarea
-                    name="decisionNote"
-                    minLength={5}
-                    maxLength={500}
-                    required
-                  />
-                </label>
-                <button
-                  className="button button-primary"
-                  name="intent"
-                  value="verify"
-                  disabled={navigation.state !== "idle"}
-                >
-                  Verify {item.role}
-                </button>
-                <button
-                  className="button button-quiet"
-                  name="intent"
-                  value="decline"
-                  disabled={navigation.state !== "idle"}
-                >
-                  Decline
-                </button>
-                {item.status === "verified" && (
-                  <button
-                    className="button button-quiet"
-                    name="intent"
-                    value="revoke"
-                    disabled={navigation.state !== "idle"}
-                  >
-                    Revoke verification
-                  </button>
-                )}
-              </Form>
-            </article>
-          ))}
+
+        <div className="admin-queue-toolbar">
+          <p className="member-directory-summary" aria-live="polite">
+            <strong>{loaderData.verifications.length}</strong>{" "}
+            {loaderData.verifications.length === 1 ? "claim" : "claims"} in the
+            review centre
+          </p>
         </div>
+
+        <section className="admin-review-list" aria-label="Verification claims">
+          {loaderData.verifications.map((item) => {
+            const status = displayStatus(item);
+            const rejectIntent =
+              item.status === "verified" ? "revoke" : "decline";
+            return (
+              <details
+                className="admin-review-item"
+                key={`${item.userId}:${item.role}`}
+              >
+                <summary>
+                  <span className="admin-review-identity">
+                    <strong>{item.displayName}</strong>
+                    <span>@{item.username}</span>
+                  </span>
+                  <span className="admin-review-status">
+                    <strong>{item.role}</strong>
+                    <span>Role claim</span>
+                  </span>
+                  <span className="admin-review-status">
+                    <strong>{status}</strong>
+                    <span>
+                      {item.evidenceCategory
+                        ? item.evidenceCategory.replaceAll("_", " ")
+                        : "Evidence not recorded"}
+                    </span>
+                  </span>
+                  <time dateTime={item.reviewDueAt ?? item.updatedAt}>
+                    {item.reviewDueAt
+                      ? `Review ${new Date(item.reviewDueAt).toLocaleDateString()}`
+                      : `Updated ${new Date(item.updatedAt).toLocaleDateString()}`}
+                  </time>
+                </summary>
+
+                <div className="admin-review-body">
+                  <div className="admin-review-evidence">
+                    <span className="chapter">Current review record</span>
+                    <h2>
+                      <Link to={`/profiles/${item.username}`}>
+                        Open {item.displayName}&apos;s profile
+                      </Link>
+                    </h2>
+                    <p>
+                      <strong>Status:</strong> {status}
+                    </p>
+                    <p>
+                      <strong>Evidence:</strong>{" "}
+                      {item.evidenceCategory
+                        ? item.evidenceCategory.replaceAll("_", " ")
+                        : "No approved evidence category yet"}
+                    </p>
+                    {item.reviewDueAt && (
+                      <p>
+                        <strong>Review due:</strong>{" "}
+                        {new Date(item.reviewDueAt).toLocaleDateString()}
+                      </p>
+                    )}
+                    <p>
+                      <strong>Latest note:</strong>{" "}
+                      {item.decisionNote || "No reviewer note has been recorded."}
+                    </p>
+                  </div>
+
+                  <Form method="post" className="admin-review-form">
+                    <input type="hidden" name="userId" value={item.userId} />
+                    <input type="hidden" name="role" value={item.role} />
+                    <label>
+                      Evidence category
+                      <select
+                        name="evidenceCategory"
+                        defaultValue={
+                          item.evidenceCategory ?? "identity_and_profile"
+                        }
+                      >
+                        {evidenceCategories.map((category) => (
+                          <option value={category} key={category}>
+                            {category.replaceAll("_", " ")}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Review again after approval
+                      <select name="reviewMonths" defaultValue="12">
+                        {[3, 6, 12, 24].map((months) => (
+                          <option value={months} key={months}>
+                            {months} months
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label>
+                      Decision note
+                      <textarea
+                        name="decisionNote"
+                        minLength={5}
+                        maxLength={500}
+                        defaultValue={item.decisionNote}
+                        required
+                      />
+                    </label>
+                    <p className="admin-scope-help">
+                      <strong>Hold</strong> keeps the claim in this queue.
+                      <strong> Reject</strong> declines a pending claim or revokes
+                      an active badge.
+                    </p>
+                    <div className="button-row">
+                      <button
+                        className="button button-primary"
+                        name="intent"
+                        value="verify"
+                        disabled={busy}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        className="button button-quiet"
+                        name="intent"
+                        value="hold"
+                        disabled={busy}
+                      >
+                        Hold
+                      </button>
+                      <button
+                        className="button button-quiet"
+                        name="intent"
+                        value={rejectIntent}
+                        disabled={busy}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </Form>
+                </div>
+              </details>
+            );
+          })}
+        </section>
       </main>
     </div>
   );
