@@ -14,10 +14,22 @@ import {
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
+import { loadSocialAccounts } from "~/lib/social.server";
+import type { SocialPlatform } from "~/lib/domain";
+import "~/styles/member-directory-repair.css";
 import {
   isRoleVerifiedId,
   roleVerificationStates,
 } from "~/lib/role-verification.server";
+
+const socialLabels: Record<SocialPlatform, string> = {
+  x: "X",
+  linkedin: "LinkedIn",
+  tiktok: "TikTok",
+  instagram: "Instagram",
+  facebook: "Facebook",
+  youtube: "YouTube",
+};
 
 export async function loader({ request, params, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -38,6 +50,9 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     user?.id ?? null,
   );
   const verificationStates = await roleVerificationStates(db, profile.userId);
+  const socialAccounts = (await loadSocialAccounts(db, profile.userId)).filter(
+    (account) => account.profileUrl,
+  );
   const targetInvestorVerified = profile.roles.includes("investor")
     ? verificationStates.some(
         (state) => state.role === "investor" && state.status === "verified",
@@ -52,6 +67,7 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     profile,
     relationship,
     contacts,
+    socialAccounts,
     verificationStates,
     canRequestConnection:
       !profile.roles.includes("investor") ||
@@ -156,6 +172,28 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
           >
             Visit website ↗
           </a>
+        )}
+        {loaderData.socialAccounts.length > 0 && (
+          <nav className="member-profile-socials" aria-label="Social profiles">
+            {loaderData.socialAccounts.map((account) => (
+              <a
+                href={account.profileUrl}
+                key={account.platform}
+                rel="noreferrer"
+                target="_blank"
+              >
+                <strong>{socialLabels[account.platform]}</strong>
+                {account.followerCount !== null && (
+                  <span>
+                    {new Intl.NumberFormat("en", {
+                      notation: "compact",
+                      maximumFractionDigits: 1,
+                    }).format(account.followerCount)}
+                  </span>
+                )}
+              </a>
+            ))}
+          </nav>
         )}
         {user?.accessTier === "member" && user.id !== profile.userId && (
           <div className="profile-connection-actions">
