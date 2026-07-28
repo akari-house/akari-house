@@ -1,85 +1,28 @@
-import { Form, Link, redirect, useNavigation } from "react-router";
-import { useMemo, useState } from "react";
+import { redirect } from "react-router";
 import type { Route } from "./+types/profile-card";
+import { ProfileShareCard } from "~/components/ProfileShareCard";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import { assertSameOrigin } from "~/lib/security.server";
-import { formText } from "~/lib/validation";
+import {
+  MAX_PROFILE_CARD_LANGUAGES,
+  PROFILE_CARD_DESIGNS,
+  PROFILE_CARD_ORIENTATIONS,
+  PROFILE_CARD_PALETTES,
+  PROFILE_CARD_SOCIAL_PLATFORMS,
+  normaliseProfileCardLanguages,
+  type ProfileCardModel,
+  type ProfileCardSettings,
+  type ProfileCardSocial,
+} from "~/lib/profile-card";
 import {
   calculateAkariPercentile,
   type MemberSignals,
   type SignalSource,
 } from "~/lib/profile-percentile";
 import { roleVerificationStates } from "~/lib/role-verification.server";
-
-const palettes = {
-  sakura: {
-    label: "Sakura",
-    background: "#f04f87",
-    ink: "#fff9f5",
-    accent: "#ffd166",
-  },
-  midnight: {
-    label: "Midnight",
-    background: "#0b0d16",
-    ink: "#fff9f5",
-    accent: "#f04f87",
-  },
-  lantern: {
-    label: "Lantern",
-    background: "#ffd166",
-    ink: "#17101a",
-    accent: "#f04f87",
-  },
-} as const;
-
-const platforms = [
-  "x",
-  "linkedin",
-  "tiktok",
-  "instagram",
-  "facebook",
-  "youtube",
-] as const;
-
-type CardSettings = {
-  design: "signature" | "passport";
-  orientation: "landscape" | "portrait";
-  palette: keyof typeof palettes;
-  countryCode: string;
-  showLocation: number;
-  languagesJson: string;
-  showLanguages: number;
-};
-
-type Social = {
-  platform: string;
-  profileUrl: string;
-  followerCount: number | null;
-  countSource: SignalSource;
-};
-
-function flagFor(code: string) {
-  return /^[A-Z]{2}$/.test(code)
-    ? String.fromCodePoint(
-        ...[...code].map((letter) => 127397 + letter.charCodeAt(0)),
-      )
-    : "";
-}
-
-function safeLanguages(value: string) {
-  try {
-    const parsed: unknown = JSON.parse(value);
-    return Array.isArray(parsed)
-      ? parsed
-          .filter((item): item is string => typeof item === "string")
-          .slice(0, 5)
-      : [];
-  } catch {
-    return [];
-  }
-}
+import { assertSameOrigin } from "~/lib/security.server";
+import { formText } from "~/lib/validation";
 
 async function safeFirst<T>(statement: () => Promise<T | null>, fallback: T) {
   try {
@@ -88,6 +31,13 @@ async function safeFirst<T>(statement: () => Promise<T | null>, fallback: T) {
     return fallback;
   }
 }
+
+type SocialRow = {
+  platform: string;
+  profileUrl: string;
+  followerCount: number | null;
+  countSource: SignalSource;
+};
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -109,7 +59,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
                   COALESCE(pv.visibility, p.visibility) AS visibility
              FROM profiles p
              LEFT JOIN profile_visibility pv ON pv.user_id = p.user_id
-             WHERE p.user_id = ?`,
+            WHERE p.user_id = ?`,
       )
       .bind(user.id)
       .first<{
@@ -132,8 +82,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
             ORDER BY platform`,
       )
       .bind(user.id)
-      .all<Social>(),
-    safeFirst<CardSettings>(
+      .all<SocialRow>(),
+    safeFirst<ProfileCardSettings>(
       () =>
         db
           .prepare(
@@ -144,7 +94,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
                  FROM profile_share_settings WHERE user_id = ?`,
           )
           .bind(user.id)
-          .first<CardSettings>(),
+          .first<ProfileCardSettings>(),
       {
         design: "signature",
         orientation: "landscape",
@@ -189,9 +139,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
           }>(),
       {
         sorsaScore: null,
-        sorsaSource: "unavailable",
+        sorsaSource: "unavailable" as SignalSource,
         xScore: null,
-        xScoreSource: "unavailable",
+        xScoreSource: "unavailable" as SignalSource,
       },
     ),
     safeFirst(
@@ -224,12 +174,21 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   ]);
 
   if (!profile) throw new Response("Profile missing", { status: 500 });
-  const followerCount = socials.results.reduce(
+
+  const connectedSocials = socials.results.filter(
+    (social): social is ProfileCardSocial =>
+      PROFILE_CARD_SOCIAL_PLATFORMS.includes(
+        social.platform as ProfileCardSocial["platform"],
+      ),
+  );
+  const followerCount = connectedSocials.reduce(
     (sum, social) => sum + (social.followerCount ?? 0),
     0,
   );
-  const followingSource: SignalSource = socials.results.some(
-    (social) => social.countSource === "official_api",
+  const followingSource: SignalSource = connectedSocials.some(
+    (social) =>
+      social.countSource === "official_api" ||
+      social.countSource === "partner_verified",
   )
     ? "official_api"
     : followerCount > 0
@@ -242,18 +201,30 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   };
   const percentile = calculateAkariPercentile(memberSignals, population.rows);
   const verificationStates = await roleVerificationStates(db, user.id);
-  return {
-    user,
-    profile,
+
+  const model: ProfileCardModel = {
+    username: user.username,
+    accessTier: user.accessTier,
+    displayName: profile.displayName,
+    headline: profile.headline,
+    location: profile.location,
+    avatarKey: profile.avatarKey,
+    visibility: profile.visibility,
     roles: roles.results.map((row) => row.role),
-    socials: socials.results.filter((social) =>
-      platforms.includes(social.platform as (typeof platforms)[number]),
-    ),
+    socials: connectedSocials,
     settings,
     opportunityStats,
     followerCount,
     percentile,
-    verificationStates,
+    verificationStates: verificationStates.map((state) => ({
+      role: state.role,
+      status: state.status,
+    })),
+  };
+
+  return {
+    user,
+    model,
     saved: new URL(request.url).searchParams.has("saved"),
   };
 }
@@ -269,18 +240,25 @@ export async function action({ request, context }: Route.ActionArgs) {
   const countryCode = formText(form.get("countryCode")).trim().toUpperCase();
   const showLocation = form.get("showLocation") === "on" ? 1 : 0;
   const showLanguages = form.get("showLanguages") === "on" ? 1 : 0;
-  const languages = formText(form.get("languages"))
+  const languageCandidates = formText(form.get("languages"))
     .split(",")
     .map((item) => item.trim())
-    .filter(Boolean)
-    .slice(0, 5);
+    .filter(Boolean);
+  const languages = normaliseProfileCardLanguages(languageCandidates);
 
   if (
-    !["signature", "passport"].includes(design) ||
-    !["landscape", "portrait"].includes(orientation) ||
-    !Object.hasOwn(palettes, palette) ||
+    !PROFILE_CARD_DESIGNS.includes(
+      design as (typeof PROFILE_CARD_DESIGNS)[number],
+    ) ||
+    !PROFILE_CARD_ORIENTATIONS.includes(
+      orientation as (typeof PROFILE_CARD_ORIENTATIONS)[number],
+    ) ||
+    !PROFILE_CARD_PALETTES.includes(
+      palette as (typeof PROFILE_CARD_PALETTES)[number],
+    ) ||
     (countryCode !== "" && !/^[A-Z]{2}$/.test(countryCode)) ||
-    languages.some((language) => language.length > 30)
+    languageCandidates.length > MAX_PROFILE_CARD_LANGUAGES ||
+    languageCandidates.some((language) => language.length > 30)
   ) {
     return { error: "Check the card style, country code and languages." };
   }
@@ -310,447 +288,22 @@ export async function action({ request, context }: Route.ActionArgs) {
       showLanguages,
     )
     .run();
+
   throw redirect("/profile-card?saved=1");
-}
-
-async function loadFlower() {
-  const image = new Image();
-  image.src = "/assets/brand/akari-flower-mark.png";
-  await image.decode();
-  return image;
-}
-
-async function drawCard(
-  canvas: HTMLCanvasElement,
-  data: Route.ComponentProps["loaderData"],
-  settings: CardSettings,
-) {
-  const portrait = settings.orientation === "portrait";
-  canvas.width = portrait ? 1080 : 1600;
-  canvas.height = portrait ? 1350 : 1000;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  const palette = palettes[settings.palette];
-  ctx.fillStyle = palette.background;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const gradient = ctx.createRadialGradient(
-    canvas.width * 0.82,
-    canvas.height * 0.18,
-    10,
-    canvas.width * 0.82,
-    canvas.height * 0.18,
-    canvas.width * 0.65,
-  );
-  gradient.addColorStop(0, palette.accent + "66");
-  gradient.addColorStop(1, palette.background + "00");
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = palette.accent;
-  ctx.lineWidth = 5;
-  ctx.strokeRect(34, 34, canvas.width - 68, canvas.height - 68);
-  ctx.fillStyle = palette.ink;
-  ctx.font = "700 34px Inter, sans-serif";
-  ctx.fillText("AKARI HOUSE", 86, 112);
-  ctx.fillStyle = palette.accent;
-  ctx.font = "700 22px Inter, sans-serif";
-  ctx.fillText(
-    settings.design === "passport" ? "MEMBER PASSPORT" : "MEMBER SIGNATURE",
-    86,
-    154,
-  );
-  ctx.fillStyle = palette.ink;
-  ctx.font = `700 ${portrait ? 74 : 82}px Inter, sans-serif`;
-  ctx.fillText(data.profile.displayName.slice(0, 24), 86, portrait ? 360 : 430);
-  ctx.font = "500 34px Inter, sans-serif";
-  ctx.fillText("@" + data.user.username, 90, portrait ? 414 : 488);
-  ctx.font = "600 27px Inter, sans-serif";
-  ctx.fillText(
-    data.roles.map((role) => role[0].toUpperCase() + role.slice(1)).join(" · "),
-    90,
-    portrait ? 470 : 548,
-  );
-  const verifiedRoles = data.verificationStates
-    .filter((state) => state.status === "verified")
-    .map((state) => state.role[0].toUpperCase() + state.role.slice(1));
-  ctx.fillStyle = palette.accent;
-  ctx.font = "700 24px Inter, sans-serif";
-  ctx.fillText(
-    verifiedRoles.length
-      ? `Admin verified · ${verifiedRoles.join(" · ")}`
-      : "Not yet Admin verified",
-    90,
-    portrait ? 520 : 598,
-  );
-  ctx.font = "500 24px Inter, sans-serif";
-  const opportunityText = `${data.opportunityStats.created} created · ${data.opportunityStats.received} received`;
-  ctx.fillText(opportunityText, 90, portrait ? 700 : 760);
-  const percentileText = data.percentile.topPercent
-    ? `Top ${data.percentile.topPercent}% on AKARI`
-    : "Percentile building";
-  ctx.font = "700 40px Inter, sans-serif";
-  ctx.fillStyle = palette.accent;
-  ctx.fillText(percentileText, 90, portrait ? 765 : 825);
-  ctx.font = "500 23px Inter, sans-serif";
-  ctx.fillStyle = palette.ink;
-  const location =
-    settings.showLocation && data.profile.location
-      ? `${flagFor(settings.countryCode)} ${data.profile.location}`.trim()
-      : "Location private";
-  ctx.fillText(location, 90, portrait ? 840 : 886);
-  const languages = settings.showLanguages
-    ? safeLanguages(settings.languagesJson)
-    : [];
-  if (languages.length)
-    ctx.fillText(
-      "Languages · " + languages.join(" · "),
-      90,
-      portrait ? 890 : 930,
-    );
-  try {
-    const flower = await loadFlower();
-    ctx.drawImage(flower, canvas.width - 220, 62, 130, 130);
-  } catch {
-    // The AKARI wordmark remains present if the image cannot be decoded.
-  }
 }
 
 export default function ProfileCard({
   loaderData,
   actionData,
 }: Route.ComponentProps) {
-  const navigation = useNavigation();
-  const [settings, setSettings] = useState<CardSettings>(loaderData.settings);
-  const languages = useMemo(
-    () =>
-      settings.showLanguages
-        ? safeLanguages(settings.languagesJson).join(", ")
-        : "",
-    [settings.languagesJson, settings.showLanguages],
-  );
-  const title = loaderData.roles
-    .map((role) => role[0].toUpperCase() + role.slice(1))
-    .join(" · ");
-  const palette = palettes[settings.palette];
-  const location =
-    settings.showLocation && loaderData.profile.location
-      ? `${flagFor(settings.countryCode)} ${loaderData.profile.location}`.trim()
-      : "Location private";
-  const verifiedRoles = loaderData.verificationStates
-    .filter((state) => state.status === "verified")
-    .map((state) => state.role);
-  const canSharePublicProfile =
-    loaderData.user.accessTier === "member" &&
-    loaderData.profile.visibility === "public";
-
-  async function download() {
-    const canvas = document.createElement("canvas");
-    await drawCard(canvas, loaderData, settings);
-    const link = document.createElement("a");
-    link.download = `akari-${loaderData.user.username}-${settings.orientation}.png`;
-    link.href = canvas.toDataURL("image/png");
-    link.click();
-  }
-
-  async function share() {
-    const canvas = document.createElement("canvas");
-    await drawCard(canvas, loaderData, settings);
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/png"),
-    );
-    if (!blob) return;
-    const file = new File([blob], `akari-${loaderData.user.username}.png`, {
-      type: "image/png",
-    });
-    const publicUrl = canSharePublicProfile
-      ? `${window.location.origin}/profiles/${loaderData.user.username}`
-      : window.location.origin;
-    if (navigator.share && navigator.canShare?.({ files: [file] })) {
-      await navigator.share({
-        title: `${loaderData.profile.displayName} on AKARI House`,
-        text: "Connect with me on AKARI House.",
-        url: publicUrl,
-        files: [file],
-      });
-    } else {
-      await navigator.clipboard.writeText(publicUrl);
-    }
-  }
-
   return (
     <div className="site-shell">
       <SiteHeader user={loaderData.user} />
-      <main id="main-content" className="share-card-main">
-        <header className="share-card-heading">
-          <div>
-            <span className="eyebrow">Your AKARI identity</span>
-            <h1>Profile sharing card</h1>
-            <p>
-              Choose an AKARI style, protect what stays private, then download
-              or share.
-            </p>
-          </div>
-          <Link
-            className="quiet-link"
-            to={`/profiles/${loaderData.user.username}`}
-          >
-            {canSharePublicProfile ? "View public profile" : "Preview profile"}
-          </Link>
-        </header>
-
-        {loaderData.saved && (
-          <p className="success-banner">Card preferences saved.</p>
-        )}
-        {actionData?.error && <p className="form-error">{actionData.error}</p>}
-
-        <div className="share-card-layout">
-          <section className="share-card-stage" aria-label="Card preview">
-            <article
-              className={`akari-share-card ${settings.orientation} ${settings.design}`}
-              style={
-                {
-                  "--card-bg": palette.background,
-                  "--card-ink": palette.ink,
-                  "--card-accent": palette.accent,
-                } as React.CSSProperties
-              }
-            >
-              <div className="share-card-brand">
-                <strong>AKARI</strong>
-                <span>HOUSE</span>
-              </div>
-              <img
-                className="share-card-flower"
-                src="/assets/brand/akari-flower-mark.png"
-                alt=""
-              />
-              <div className="share-card-identity">
-                <span>
-                  {settings.design === "passport"
-                    ? "Member passport"
-                    : "Member signature"}
-                </span>
-                <h2>{loaderData.profile.displayName}</h2>
-                <p>@{loaderData.user.username}</p>
-                <strong>{title}</strong>
-                <span className="share-card-verification">
-                  {verifiedRoles.length
-                    ? `Admin verified · ${verifiedRoles.join(" · ")}`
-                    : "Not yet Admin verified"}
-                </span>
-              </div>
-              <div className="share-card-metrics">
-                <div>
-                  <strong>{loaderData.opportunityStats.created}</strong>
-                  <span>Created</span>
-                </div>
-                <div>
-                  <strong>{loaderData.opportunityStats.received}</strong>
-                  <span>Received</span>
-                </div>
-                <div>
-                  <strong>
-                    {loaderData.percentile.topPercent
-                      ? `Top ${loaderData.percentile.topPercent}%`
-                      : "Building"}
-                  </strong>
-                  <span>
-                    {loaderData.percentile.confidence === "verified"
-                      ? "High-confidence percentile"
-                      : "AKARI percentile"}
-                  </span>
-                </div>
-              </div>
-              <footer>
-                <span>{location}</span>
-                {languages && <span>{languages}</span>}
-                <span>
-                  {loaderData.socials
-                    .map((social) =>
-                      social.platform === "x"
-                        ? "X"
-                        : social.platform[0].toUpperCase(),
-                    )
-                    .join(" · ")}
-                </span>
-              </footer>
-            </article>
-            <p className="share-card-confidence">
-              {loaderData.percentile.confidence === "verified"
-                ? "Percentile uses verified member signals."
-                : loaderData.percentile.confidence === "provisional"
-                  ? "Provisional percentile: one or more signals are member-reported."
-                  : "Your percentile appears after enough comparable member signals exist."}
-            </p>
-          </section>
-
-          <Form method="post" className="share-card-controls">
-            <fieldset>
-              <legend>Card design</legend>
-              <label>
-                <input
-                  type="radio"
-                  name="design"
-                  value="signature"
-                  checked={settings.design === "signature"}
-                  onChange={() =>
-                    setSettings({ ...settings, design: "signature" })
-                  }
-                />{" "}
-                Signature
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="design"
-                  value="passport"
-                  checked={settings.design === "passport"}
-                  onChange={() =>
-                    setSettings({ ...settings, design: "passport" })
-                  }
-                />{" "}
-                Passport
-              </label>
-            </fieldset>
-            <fieldset>
-              <legend>Format</legend>
-              <label>
-                <input
-                  type="radio"
-                  name="orientation"
-                  value="landscape"
-                  checked={settings.orientation === "landscape"}
-                  onChange={() =>
-                    setSettings({ ...settings, orientation: "landscape" })
-                  }
-                />{" "}
-                Landscape
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="orientation"
-                  value="portrait"
-                  checked={settings.orientation === "portrait"}
-                  onChange={() =>
-                    setSettings({ ...settings, orientation: "portrait" })
-                  }
-                />{" "}
-                Portrait
-              </label>
-            </fieldset>
-            <label>
-              AKARI palette
-              <select
-                name="palette"
-                value={settings.palette}
-                onChange={(event) =>
-                  setSettings({
-                    ...settings,
-                    palette: event.target.value as keyof typeof palettes,
-                  })
-                }
-              >
-                {Object.entries(palettes).map(([value, item]) => (
-                  <option key={value} value={value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="share-card-check">
-              <input
-                type="checkbox"
-                name="showLanguages"
-                checked={Boolean(settings.showLanguages)}
-                onChange={(event) =>
-                  setSettings({
-                    ...settings,
-                    showLanguages: event.target.checked ? 1 : 0,
-                  })
-                }
-              />{" "}
-              Show spoken languages
-            </label>
-            <label>
-              Country code
-              <input
-                name="countryCode"
-                maxLength={2}
-                placeholder="DE"
-                value={settings.countryCode}
-                onChange={(event) =>
-                  setSettings({
-                    ...settings,
-                    countryCode: event.target.value.toUpperCase(),
-                  })
-                }
-              />
-            </label>
-            <label className="share-card-check">
-              <input
-                type="checkbox"
-                name="showLocation"
-                checked={Boolean(settings.showLocation)}
-                onChange={(event) =>
-                  setSettings({
-                    ...settings,
-                    showLocation: event.target.checked ? 1 : 0,
-                  })
-                }
-              />{" "}
-              Show profile location
-            </label>
-            <label>
-              Languages
-              <input
-                name="languages"
-                maxLength={160}
-                placeholder="English, German"
-                value={languages}
-                onChange={(event) =>
-                  setSettings({
-                    ...settings,
-                    languagesJson: JSON.stringify(
-                      event.target.value
-                        .split(",")
-                        .map((item) => item.trim())
-                        .filter(Boolean),
-                    ),
-                  })
-                }
-              />
-            </label>
-            <button
-              className="button button-secondary"
-              disabled={navigation.state !== "idle"}
-            >
-              {navigation.state === "idle" ? "Save preferences" : "Saving…"}
-            </button>
-            <div className="share-card-actions">
-              <button
-                type="button"
-                className="button button-primary"
-                onClick={() => void download()}
-              >
-                Download PNG
-              </button>
-              <button
-                type="button"
-                className="button button-secondary"
-                onClick={() => void share()}
-              >
-                Share card
-              </button>
-            </div>
-            <small>
-              {canSharePublicProfile
-                ? "Sharing uses your public profile link."
-                : "Your profile is not public, so sharing uses the AKARI homepage."}{" "}
-              Hidden location and languages never appear on the card.
-            </small>
-          </Form>
-        </div>
-      </main>
+      <ProfileShareCard
+        model={loaderData.model}
+        saved={loaderData.saved}
+        error={actionData?.error}
+      />
     </div>
   );
 }
