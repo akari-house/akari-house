@@ -6,6 +6,8 @@ The shared workspace shell now covers the member dashboard, profile tools, accou
 
 Workspace hero banners use the approved AKARI House arrival artwork with new crops, gradients and petal details. The original AKARI flower, pink and yellow remain unchanged.
 
+Desktop sidebar links and the mobile navigation retain distinct accessible names, and optional admin-menu enrichment cannot invalidate a normal member session. Backend route permission checks remain authoritative regardless of which links are shown.
+
 The change is limited to navigation, layout, visual hierarchy and responsive presentation. Existing D1 records, server actions, Investor verification, per-deal approvals, document grants, expiry checks and audit records remain authoritative.
 
 The branch must remain in draft until the visual preview is approved and all automated gates pass.
