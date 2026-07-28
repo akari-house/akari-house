@@ -5,10 +5,10 @@ import {
   type AdminWorkspaceAccess,
 } from "./admin-workspace";
 
-export async function loadAdminWorkspaceAccess(
+export async function loadOptionalAdminWorkspaceAccess(
   db: D1Database,
   userId: string,
-): Promise<AdminWorkspaceAccess> {
+): Promise<AdminWorkspaceAccess | null> {
   const row = await db
     .prepare(
       `SELECT au.access_level AS accessLevel,
@@ -23,7 +23,7 @@ export async function loadAdminWorkspaceAccess(
       accessLevel: AdminAccessLevel;
       scopesCsv: string | null;
     }>();
-  if (!row) throw new Response("Admin permission required.", { status: 403 });
+  if (!row) return null;
 
   const scopes =
     row.accessLevel === "superadmin"
@@ -35,4 +35,13 @@ export async function loadAdminWorkspaceAccess(
           );
 
   return { accessLevel: row.accessLevel, scopes };
+}
+
+export async function loadAdminWorkspaceAccess(
+  db: D1Database,
+  userId: string,
+): Promise<AdminWorkspaceAccess> {
+  const access = await loadOptionalAdminWorkspaceAccess(db, userId);
+  if (!access) throw new Response("Admin permission required.", { status: 403 });
+  return access;
 }
