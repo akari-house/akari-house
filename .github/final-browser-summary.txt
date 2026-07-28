@@ -1,0 +1,241 @@
+
+[WebServer] ▲ [WARNING] Missing required secrets: TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY, RESEND_API_KEY, MEMBERSHIP_FROM_EMAIL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_TOKEN_ENCRYPTION_KEY. Add them to .dev.vars, .env, or set as environment variables.
+[WebServer] 
+[WebServer] 
+
+Running 300 tests using 2 workers
+
+[1/300] [desktop-chromium] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing
+[2/300] [desktop-chromium] › tests/e2e/accessibility.spec.ts:4:1 › public homepage has no serious accessibility violations
+  1) [desktop-chromium] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing 
+
+    Error: locator.fill: Error: strict mode violation: getByLabel('Confirm password') resolved to 2 elements:
+        1) <input required="" minlength="12" type="password" maxlength="128" aria-invalid="false" autocomplete="new-password" name="passwordConfirmation" id="passwordConfirmation-_R_99uj5_" aria-describedby="passwordConfirmation-_R_99uj5_-status"/> aka getByRole('textbox', { name: 'Confirm password' })
+        2) <button type="button" aria-pressed="false" class="password-visibility-toggle" aria-label="Show confirm password">…</button> aka getByRole('button', { name: 'Show confirm password' })
+
+    Call log:
+      - waiting for getByLabel('Confirm password')
+
+
+      33 |   ).toBeVisible();
+      34 |
+    > 35 |   await confirmation.fill("abcdefghijkx");
+         |                      ^
+      36 |   await expect(
+      37 |     page.getByText("Passwords do not match yet.", { exact: true }),
+      38 |   ).toBeVisible();
+        at /home/runner/work/akari-house/akari-house/tests/e2e/auth-password-ux.spec.ts:35:22
+
+    Error Context: test-results/auth-password-ux-registrat-14337-ord-acceptance-while-typing-desktop-chromium/error-context.md
+
+
+[3/300] [desktop-chromium] › tests/e2e/auth-password-ux.spec.ts:45:1 › login password can be reviewed without submitting
+[4/300] [desktop-chromium] › tests/e2e/accessibility.spec.ts:20:1 › membership action is inert until a role is selected
+[5/300] [desktop-chromium] › tests/e2e/curated-opportunities.spec.ts:98:3 › curated opportunity permissions › visitors receive approved previews but no confidential room data
+[6/300] [desktop-chromium] › tests/e2e/curated-opportunities.spec.ts:123:3 › curated opportunity permissions › Creator and claimed Investor roles do not unlock capital information
+[7/300] [desktop-chromium] › tests/e2e/curated-opportunities.spec.ts:139:3 › curated opportunity permissions › approved Investor receives only the authorised private room
+[8/300] [desktop-chromium] › tests/e2e/curated-opportunities.spec.ts:159:3 › curated opportunity permissions › approval for one opportunity never unlocks a second opportunity
+[9/300] [desktop-chromium] › tests/e2e/curated-opportunities.spec.ts:185:3 › curated opportunity permissions › expired and revoked access remove private content immediately
+[10/300] [desktop-chromium] › tests/e2e/curated-opportunities.spec.ts:223:3 › curated opportunity permissions › current Investor restriction invalidates an existing room and file grant
+[11/300] [desktop-chromium] › tests/e2e/curated-opportunities.spec.ts:256:3 › curated opportunity permissions › Founder ownership and scoped administration remain deny by default
+[12/300] [desktop-chromium] › tests/e2e/curated-opportunities.spec.ts:280:3 › curated opportunity permissions › footer Deal Room destination remains usable at mobile width
+[13/300] [desktop-chromium] › tests/e2e/footer-trust-layer.spec.ts:3:1 › public footer remains readable with a restrained AKARI horizon
+[14/300] [desktop-chromium] › tests/e2e/footer-trust-layer.spec.ts:91:1 › footer horizon respects reduced motion
+[15/300] [desktop-chromium] › tests/e2e/header-login.spec.ts:3:1 › desktop login action stays inside the viewport and opens login
+[16/300] [desktop-chromium] › tests/e2e/inari-homepage-regression.spec.ts:4:3 › approved Inari homepage › renders the House journey without overflow or footer collisions
+[17/300] [desktop-chromium] › tests/e2e/launch-gate-security.spec.ts:84:3 › launch-gate security completion › [password_reset:founder] password reset consumes the token and destroys every session
+[18/300] [desktop-chromium] › tests/e2e/launch-gate-security.spec.ts:132:3 › launch-gate security completion › [status_invalidation:status_target] moderation suspension deletes the active session immediately
+  2) [desktop-chromium] › tests/e2e/auth-password-ux.spec.ts:45:1 › login password can be reviewed without submitting 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: 'Show password', exact: true })
+
+
+      52 |
+      53 |   await password.fill("visible-check");
+    > 54 |   await showPassword.click();
+         |                      ^
+      55 |   await expect(password).toHaveAttribute("type", "text");
+      56 |   const hidePassword = page.getByRole("button", {
+      57 |     name: "Hide password",
+        at /home/runner/work/akari-house/akari-house/tests/e2e/auth-password-ux.spec.ts:54:22
+
+    Error Context: test-results/auth-password-ux-login-pas-6d67c-reviewed-without-submitting-desktop-chromium/error-context.md
+
+
+[19/300] [desktop-chromium] › tests/e2e/launch-gate-security.spec.ts:175:3 › launch-gate security completion › [diligence_revocation:investor] a revoked grant immediately removes document access and records an audit
+[20/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:68:3 › automated launch gate › [visitor:visitor] GET /app redirects to login
+[21/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:73:3 › automated launch gate › [applicant:applicant] applicant reaches status dashboard but not Founder tools
+[22/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:81:3 › automated launch gate › [founder:founder] Founder can open project creation without admin access
+[23/300] [desktop-chromium] › tests/e2e/launch-gate-security.spec.ts:220:3 › launch-gate security completion › [upload_security:project_owner] spoofed, oversized and unauthorised uploads leave no R2 or D1 records
+[24/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:93:3 › automated launch gate › [creator:creator] Creator cannot open Founder project creation
+[25/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:101:3 › automated launch gate › [investor:investor] Investor cannot open Founder project creation
+[26/300] [desktop-chromium] › tests/e2e/launch-gate-security.spec.ts:292:1 › [keyboard_accessibility:visitor] mobile navigation traps focus, closes with Escape and restores focus
+[27/300] [desktop-chromium] › tests/e2e/opportunity-document-review.spec.ts:70:3 › private opportunity document review › approval controls delivery and withdrawal revokes active grants
+[28/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:109:3 › automated launch gate › [multi_role:multi_role] multi-role access is a role union without admin inheritance
+[29/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:117:3 › automated launch gate › [scoped_admin:scoped_admin] membership and campaign administrators stay inside their scopes
+[30/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:129:3 › automated launch gate › [superadmin:superadmin] Superadmin can open the launch gate and House directory
+[31/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:144:3 › automated launch gate › [suspended:suspended] suspended session cannot enter protected routes
+[32/300] [desktop-chromium] › tests/e2e/production-command-centre.spec.ts:15:3 › production and pilot command centre › redirects visitors to login
+[33/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:152:3 › automated launch gate › [blocked:blocked] invalidated blocked session cannot enter protected routes
+[34/300] [desktop-chromium] › tests/e2e/production-command-centre.spec.ts:20:3 › production and pilot command centre › lets a Superadmin open the command centre and create a pilot
+[35/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:160:3 › automated launch gate › [cross_account:founder] unrelated member cannot read a private profile
+[36/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:177:3 › automated launch gate › [private_media:founder] unrelated member cannot download private R2-backed profile media
+[37/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:194:3 › automated launch gate › [project_ownership:project_owner] project owner can edit while an unrelated Founder is denied
+[38/300] [desktop-chromium] › tests/e2e/public-journey.spec.ts:3:1 › hero performs a visible scroll-linked push-in
+[39/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:208:3 › automated launch gate › [diligence_grant:investor] active document access works and expired access is denied
+[40/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:232:3 › automated launch gate › [campaign_ownership:creator] only an accepted Creator or moderator can open the campaign workspace
+[41/300] [desktop-chromium] › tests/e2e/public-journey.spec.ts:44:1 › desktop journey reaches the Hall, active House and Membership Desk
+[42/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:248:3 › automated launch gate › [settlement_ownership:creator] settlement and dispute records stay limited to their Creator and moderators
+[43/300] [desktop-chromium] › tests/e2e/public-journey.spec.ts:93:1 › mobile navigation traps focus and has no horizontal overflow
+[44/300] [desktop-chromium] › tests/e2e/public-journey.spec.ts:118:1 › reduced motion disables environmental animation
+[45/300] [desktop-chromium] › tests/e2e/public-journey.spec.ts:127:1 › mobile Archive responds to native horizontal swiping
+[46/300] [desktop-chromium] › tests/e2e/public-journey.spec.ts:148:1 › membership request remains gated before human approval
+[47/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:264:3 › automated launch gate › [moderator:moderator] assigned moderator can operate the campaign without inheriting Superadmin access
+  3) [desktop-chromium] › tests/e2e/public-journey.spec.ts:148:1 › membership request remains gated before human approval 
+
+    Error: locator.fill: Error: strict mode violation: getByLabel('Confirm password') resolved to 2 elements:
+        1) <input required="" minlength="12" type="password" maxlength="128" aria-invalid="false" autocomplete="new-password" name="passwordConfirmation" id="passwordConfirmation-_R_99uj5_" aria-describedby="passwordConfirmation-_R_99uj5_-status"/> aka getByRole('textbox', { name: 'Confirm password' })
+        2) <button type="button" aria-pressed="false" class="password-visibility-toggle" aria-label="Show confirm password">…</button> aka getByRole('button', { name: 'Show confirm password' })
+
+    Call log:
+      - waiting for getByLabel('Confirm password')
+
+
+      163 |   await page.getByLabel("Email").fill(email);
+      164 |   await page.getByLabel("Password", { exact: true }).fill(password);
+    > 165 |   await page.getByLabel("Confirm password").fill(password);
+          |                                             ^
+      166 |   await page.getByLabel(/Founder/).check();
+      167 |   await page.getByLabel(/Creator/).check();
+      168 |   await page
+        at /home/runner/work/akari-house/akari-house/tests/e2e/public-journey.spec.ts:165:45
+
+    Error Context: test-results/public-journey-membership--a438b-gated-before-human-approval-desktop-chromium/error-context.md
+
+
+[48/300] [mobile-chromium] › tests/e2e/accessibility.spec.ts:4:1 › public homepage has no serious accessibility violations
+[49/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:280:3 › automated launch gate › [session:founder] logout destroys the server session
+[50/300] [mobile-chromium] › tests/e2e/accessibility.spec.ts:20:1 › membership action is inert until a role is selected
+[51/300] [mobile-chromium] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing
+  4) [mobile-chromium] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing 
+
+    Error: locator.fill: Error: strict mode violation: getByLabel('Confirm password') resolved to 2 elements:
+        1) <input required="" minlength="12" type="password" maxlength="128" aria-invalid="false" autocomplete="new-password" name="passwordConfirmation" id="passwordConfirmation-_R_99uj5_" aria-describedby="passwordConfirmation-_R_99uj5_-status"/> aka getByRole('textbox', { name: 'Confirm password' })
+        2) <button type="button" aria-pressed="false" class="password-visibility-toggle" aria-label="Show confirm password">…</button> aka getByRole('button', { name: 'Show confirm password' })
+
+    Call log:
+      - waiting for getByLabel('Confirm password')
+
+
+      33 |   ).toBeVisible();
+      34 |
+    > 35 |   await confirmation.fill("abcdefghijkx");
+         |                      ^
+      36 |   await expect(
+      37 |     page.getByText("Passwords do not match yet.", { exact: true }),
+      38 |   ).toBeVisible();
+        at /home/runner/work/akari-house/akari-house/tests/e2e/auth-password-ux.spec.ts:35:22
+
+    Error Context: test-results/auth-password-ux-registrat-14337-ord-acceptance-while-typing-mobile-chromium/error-context.md
+
+
+[52/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:294:3 › automated launch gate › [request_security:founder] cross-origin state change is rejected without ending the session
+[53/300] [mobile-chromium] › tests/e2e/auth-password-ux.spec.ts:45:1 › login password can be reviewed without submitting
+[54/300] [desktop-chromium] › tests/e2e/launch-gate.spec.ts:307:1 › [accessibility:visitor] mobile navigation has no serious accessibility failures or horizontal overflow
+[55/300] [mobile-chromium] › tests/e2e/curated-opportunities.spec.ts:98:3 › curated opportunity permissions › visitors receive approved previews but no confidential room data
+[56/300] [mobile-chromium] › tests/e2e/curated-opportunities.spec.ts:123:3 › curated opportunity permissions › Creator and claimed Investor roles do not unlock capital information
+[57/300] [mobile-chromium] › tests/e2e/curated-opportunities.spec.ts:139:3 › curated opportunity permissions › approved Investor receives only the authorised private room
+[58/300] [mobile-chromium] › tests/e2e/curated-opportunities.spec.ts:159:3 › curated opportunity permissions › approval for one opportunity never unlocks a second opportunity
+[59/300] [mobile-chromium] › tests/e2e/curated-opportunities.spec.ts:185:3 › curated opportunity permissions › expired and revoked access remove private content immediately
+[60/300] [mobile-chromium] › tests/e2e/curated-opportunities.spec.ts:223:3 › curated opportunity permissions › current Investor restriction invalidates an existing room and file grant
+[61/300] [mobile-chromium] › tests/e2e/curated-opportunities.spec.ts:256:3 › curated opportunity permissions › Founder ownership and scoped administration remain deny by default
+[62/300] [mobile-chromium] › tests/e2e/curated-opportunities.spec.ts:280:3 › curated opportunity permissions › footer Deal Room destination remains usable at mobile width
+[63/300] [mobile-chromium] › tests/e2e/footer-trust-layer.spec.ts:3:1 › public footer remains readable with a restrained AKARI horizon
+[64/300] [mobile-chromium] › tests/e2e/footer-trust-layer.spec.ts:91:1 › footer horizon respects reduced motion
+[65/300] [mobile-chromium] › tests/e2e/header-login.spec.ts:3:1 › desktop login action stays inside the viewport and opens login
+[66/300] [mobile-chromium] › tests/e2e/inari-homepage-regression.spec.ts:4:3 › approved Inari homepage › renders the House journey without overflow or footer collisions
+[67/300] [mobile-chromium] › tests/e2e/launch-gate-security.spec.ts:84:3 › launch-gate security completion › [password_reset:founder] password reset consumes the token and destroys every session
+[68/300] [mobile-chromium] › tests/e2e/launch-gate-security.spec.ts:132:3 › launch-gate security completion › [status_invalidation:status_target] moderation suspension deletes the active session immediately
+[69/300] [mobile-chromium] › tests/e2e/launch-gate-security.spec.ts:175:3 › launch-gate security completion › [diligence_revocation:investor] a revoked grant immediately removes document access and records an audit
+[70/300] [mobile-chromium] › tests/e2e/launch-gate-security.spec.ts:220:3 › launch-gate security completion › [upload_security:project_owner] spoofed, oversized and unauthorised uploads leave no R2 or D1 records
+[71/300] [mobile-chromium] › tests/e2e/launch-gate-security.spec.ts:292:1 › [keyboard_accessibility:visitor] mobile navigation traps focus, closes with Escape and restores focus
+[72/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:68:3 › automated launch gate › [visitor:visitor] GET /app redirects to login
+[73/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:73:3 › automated launch gate › [applicant:applicant] applicant reaches status dashboard but not Founder tools
+[74/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:81:3 › automated launch gate › [founder:founder] Founder can open project creation without admin access
+[75/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:93:3 › automated launch gate › [creator:creator] Creator cannot open Founder project creation
+[76/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:101:3 › automated launch gate › [investor:investor] Investor cannot open Founder project creation
+[77/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:109:3 › automated launch gate › [multi_role:multi_role] multi-role access is a role union without admin inheritance
+[78/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:117:3 › automated launch gate › [scoped_admin:scoped_admin] membership and campaign administrators stay inside their scopes
+[79/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:129:3 › automated launch gate › [superadmin:superadmin] Superadmin can open the launch gate and House directory
+[80/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:144:3 › automated launch gate › [suspended:suspended] suspended session cannot enter protected routes
+[81/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:152:3 › automated launch gate › [blocked:blocked] invalidated blocked session cannot enter protected routes
+[82/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:160:3 › automated launch gate › [cross_account:founder] unrelated member cannot read a private profile
+[83/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:177:3 › automated launch gate › [private_media:founder] unrelated member cannot download private R2-backed profile media
+[84/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:194:3 › automated launch gate › [project_ownership:project_owner] project owner can edit while an unrelated Founder is denied
+[85/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:208:3 › automated launch gate › [diligence_grant:investor] active document access works and expired access is denied
+[86/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:232:3 › automated launch gate › [campaign_ownership:creator] only an accepted Creator or moderator can open the campaign workspace
+[87/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:248:3 › automated launch gate › [settlement_ownership:creator] settlement and dispute records stay limited to their Creator and moderators
+[88/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:264:3 › automated launch gate › [moderator:moderator] assigned moderator can operate the campaign without inheriting Superadmin access
+[89/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:280:3 › automated launch gate › [session:founder] logout destroys the server session
+[90/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:294:3 › automated launch gate › [request_security:founder] cross-origin state change is rejected without ending the session
+[91/300] [mobile-chromium] › tests/e2e/launch-gate.spec.ts:307:1 › [accessibility:visitor] mobile navigation has no serious accessibility failures or horizontal overflow
+[92/300] [mobile-chromium] › tests/e2e/opportunity-document-review.spec.ts:70:3 › private opportunity document review › approval controls delivery and withdrawal revokes active grants
+[93/300] [mobile-chromium] › tests/e2e/production-command-centre.spec.ts:15:3 › production and pilot command centre › redirects visitors to login
+[94/300] [mobile-chromium] › tests/e2e/production-command-centre.spec.ts:20:3 › production and pilot command centre › lets a Superadmin open the command centre and create a pilot
+[95/300] [mobile-chromium] › tests/e2e/public-journey.spec.ts:3:1 › hero performs a visible scroll-linked push-in
+[96/300] [mobile-chromium] › tests/e2e/public-journey.spec.ts:44:1 › desktop journey reaches the Hall, active House and Membership Desk
+[97/300] [mobile-chromium] › tests/e2e/public-journey.spec.ts:93:1 › mobile navigation traps focus and has no horizontal overflow
+[98/300] [mobile-chromium] › tests/e2e/public-journey.spec.ts:118:1 › reduced motion disables environmental animation
+[99/300] [mobile-chromium] › tests/e2e/public-journey.spec.ts:127:1 › mobile Archive responds to native horizontal swiping
+[100/300] [mobile-chromium] › tests/e2e/public-journey.spec.ts:148:1 › membership request remains gated before human approval
+[101/300] [short-phone-chromium] › tests/e2e/accessibility.spec.ts:4:1 › public homepage has no serious accessibility violations
+[102/300] [short-phone-chromium] › tests/e2e/accessibility.spec.ts:20:1 › membership action is inert until a role is selected
+[103/300] [short-phone-chromium] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing
+  5) [short-phone-chromium] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing 
+
+    Error: locator.fill: Error: strict mode violation: getByLabel('Confirm password') resolved to 2 elements:
+        1) <input required="" minlength="12" type="password" maxlength="128" aria-invalid="false" autocomplete="new-password" name="passwordConfirmation" id="passwordConfirmation-_R_99uj5_" aria-describedby="passwordConfirmation-_R_99uj5_-status"/> aka getByRole('textbox', { name: 'Confirm password' })
+        2) <button type="button" aria-pressed="false" class="password-visibility-toggle" aria-label="Show confirm password">…</button> aka getByRole('button', { name: 'Show confirm password' })
+
+    Call log:
+      - waiting for getByLabel('Confirm password')
+
+
+      33 |   ).toBeVisible();
+      34 |
+    > 35 |   await confirmation.fill("abcdefghijkx");
+         |                      ^
+      36 |   await expect(
+      37 |     page.getByText("Passwords do not match yet.", { exact: true }),
+      38 |   ).toBeVisible();
+        at /home/runner/work/akari-house/akari-house/tests/e2e/auth-password-ux.spec.ts:35:22
+
+    Error Context: test-results/auth-password-ux-registrat-14337-ord-acceptance-while-typing-short-phone-chromium/error-context.md
+
+
+Testing stopped early after 5 maximum allowed failures.
+
+  6) [mobile-chromium] › tests/e2e/auth-password-ux.spec.ts:45:1 › login password can be reviewed without submitting 
+
+    Test was interrupted.
+
+    Error Context: test-results/auth-password-ux-login-pas-6d67c-reviewed-without-submitting-mobile-chromium/error-context.md
+
+
+  5 failed
+    [desktop-chromium] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing 
+    [desktop-chromium] › tests/e2e/auth-password-ux.spec.ts:45:1 › login password can be reviewed without submitting 
+    [desktop-chromium] › tests/e2e/public-journey.spec.ts:148:1 › membership request remains gated before human approval 
+    [mobile-chromium] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing 
+    [short-phone-chromium] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing 
+  1 interrupted
+    [mobile-chromium] › tests/e2e/auth-password-ux.spec.ts:45:1 › login password can be reviewed without submitting 
+  43 skipped
+  197 did not run
+  54 passed (1.6m)
+  1 error was not a part of any test, see above for details
+exit_status=1
