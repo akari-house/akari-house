@@ -1,0 +1,253 @@
+.profile-card-person {
+  min-width: 0;
+  align-self: center;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(0.85rem, 2.2vw, 1.55rem);
+}
+
+.profile-card-avatar {
+  width: clamp(4.5rem, 11vw, 8.25rem);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--card-accent) 75%, transparent);
+  border-radius: 50%;
+  color: var(--card-bg);
+  background: var(--card-accent);
+  box-shadow: 0 16px 38px #0005;
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+
+.profile-card-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-card-person .share-card-identity {
+  max-width: none;
+  min-width: 0;
+}
+
+.profile-card-person .share-card-identity h2 {
+  font-size: clamp(1.75rem, 4.25vw, 4rem);
+}
+
+.profile-card-headline {
+  max-width: 52ch;
+  margin: 0 0 0.55rem !important;
+  overflow: hidden;
+  color: var(--card-ink);
+  font-size: clamp(0.7rem, 1.35vw, 0.92rem);
+  line-height: 1.35;
+  opacity: 0.92 !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-card-verification {
+  width: fit-content;
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.55rem;
+  display: block;
+  border: 1px solid color-mix(in srgb, var(--card-accent) 55%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-accent) 12%, transparent);
+  color: var(--card-accent) !important;
+  font-size: clamp(0.5rem, 1vw, 0.65rem) !important;
+  letter-spacing: 0.08em !important;
+}
+
+.share-card-metrics small {
+  color: var(--card-ink);
+  font-size: clamp(0.52rem, 1vw, 0.67rem);
+  line-height: 1.25;
+  opacity: 0.66;
+}
+
+.profile-card-footer {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.profile-card-private-details {
+  min-width: 0;
+  display: flex;
+  flex: 1 1 14rem;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.85rem;
+}
+
+.profile-card-socials {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.profile-card-socials a {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--card-ink) 24%, transparent);
+  border-radius: 50%;
+  color: var(--card-ink);
+  background: color-mix(in srgb, var(--card-ink) 7%, transparent);
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.profile-card-socials a:hover,
+.profile-card-socials a:focus-visible {
+  border-color: var(--card-accent);
+  background: color-mix(in srgb, var(--card-accent) 18%, transparent);
+  transform: translateY(-2px);
+}
+
+.profile-card-url {
+  flex: 1 1 13rem;
+  overflow: hidden;
+  font-weight: 700;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-card-language-control {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.profile-card-language-control > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.profile-card-language-add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.55rem;
+}
+
+.profile-card-language-add select {
+  width: 100%;
+}
+
+.profile-card-language-add .button {
+  min-width: 4.5rem;
+}
+
+.profile-card-language-tags {
+  min-height: 1.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.profile-card-language-tag {
+  min-height: 2rem;
+  padding: 0.35rem 0.35rem 0.35rem 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid #f04f8745;
+  border-radius: 999px;
+  color: #fff;
+  background: #f04f8712;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.profile-card-language-tag button {
+  width: 1.45rem;
+  height: 1.45rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: #ffffff12;
+  cursor: pointer;
+  font: inherit;
+}
+
+.profile-card-language-tag button:hover,
+.profile-card-language-tag button:focus-visible {
+  color: #17101a;
+  background: #ffd166;
+}
+
+.akari-share-card.portrait .profile-card-person {
+  grid-template-columns: 1fr;
+  align-content: center;
+}
+
+.akari-share-card.portrait .profile-card-avatar {
+  width: clamp(5.25rem, 20vw, 8.75rem);
+}
+
+.akari-share-card.portrait .profile-card-person .share-card-identity {
+  max-width: 100%;
+}
+
+.akari-share-card.portrait .profile-card-footer {
+  align-items: flex-start;
+  flex-direction: column;
+}
+
+.akari-share-card.portrait .profile-card-url {
+  width: 100%;
+  text-align: left;
+}
+
+@media (max-width: 620px) {
+  .profile-card-person {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .profile-card-avatar {
+    width: clamp(3.4rem, 17vw, 5.25rem);
+  }
+
+  .profile-card-person .share-card-identity h2 {
+    font-size: clamp(1.4rem, 8vw, 2.35rem);
+  }
+
+  .profile-card-headline {
+    max-width: 34ch;
+  }
+
+  .share-card-verification {
+    margin-top: 0.35rem;
+  }
+
+  .profile-card-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profile-card-url {
+    width: 100%;
+    text-align: left;
+  }
+
+  .profile-card-language-add {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profile-card-socials a {
+    transition: none;
+  }
+}
