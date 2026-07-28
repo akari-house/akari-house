@@ -39,6 +39,8 @@ interface DirectoryMember {
   visibility: "public" | "members" | "connections" | "private";
 }
 
+type DirectoryView = "list" | "grid";
+
 export const meta: Route.MetaFunction = () => [
   { title: "Members | AKARI House" },
   {
@@ -51,7 +53,10 @@ export const meta: Route.MetaFunction = () => [
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const user = await requireUser(request, db);
-  const filters = memberDirectoryFilters(new URL(request.url));
+  const url = new URL(request.url);
+  const filters = memberDirectoryFilters(url);
+  const view: DirectoryView =
+    url.searchParams.get("view") === "grid" ? "grid" : "list";
   const memberAccess = user.accessTier === "member" ? 1 : 0;
 
   const rows = await db
@@ -160,6 +165,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return {
     user,
     filters,
+    view,
     viewerFounderVerified: user.roles.includes("founder")
       ? await isRoleVerifiedId(db, user.id, "founder")
       : false,
@@ -214,15 +220,18 @@ function relationshipLabel(relationship: ConnectionState) {
 export default function Members({ loaderData }: Route.ComponentProps) {
   const navigation = useNavigation();
   const filtering = navigation.state === "loading";
-  const currentUrl = `/members${
-    new URLSearchParams(
-      Object.entries(loaderData.filters).filter(([, value]) => value),
-    ).toString()
-      ? `?${new URLSearchParams(
-          Object.entries(loaderData.filters).filter(([, value]) => value),
-        )}`
-      : ""
-  }`;
+  const filterParams = new URLSearchParams(
+    Object.entries(loaderData.filters).filter(([, value]) => value),
+  );
+  const directoryUrl = (view: DirectoryView) => {
+    const params = new URLSearchParams(filterParams);
+    if (view === "grid") params.set("view", "grid");
+    const query = params.toString();
+    return `/members${query ? `?${query}` : ""}`;
+  };
+  const currentUrl = directoryUrl(loaderData.view);
+  const clearFiltersUrl =
+    loaderData.view === "grid" ? "/members?view=grid" : "/members";
 
   return (
     <div className="site-shell">
@@ -256,6 +265,9 @@ export default function Members({ loaderData }: Route.ComponentProps) {
           role="search"
           aria-label="Find AKARI members"
         >
+          {loaderData.view === "grid" && (
+            <input type="hidden" name="view" value="grid" />
+          )}
           <label>
             <span>Search</span>
             <input
@@ -295,26 +307,50 @@ export default function Members({ loaderData }: Route.ComponentProps) {
               {filtering ? "Searching..." : "Find members"}
             </button>
             {Object.values(loaderData.filters).some(Boolean) && (
-              <Link className="quiet-link" to="/members">
+              <Link className="quiet-link" to={clearFiltersUrl}>
                 Clear filters
               </Link>
             )}
           </div>
         </Form>
 
-        <div className="member-directory-summary" aria-live="polite">
-          <strong>{loaderData.members.length}</strong>{" "}
-          {loaderData.members.length === 1 ? "member" : "members"} found
+        <div className="member-directory-toolbar">
+          <div className="member-directory-summary" aria-live="polite">
+            <strong>{loaderData.members.length}</strong>{" "}
+            {loaderData.members.length === 1 ? "member" : "members"} found
+          </div>
+          <div className="member-view-toggle" aria-label="Member result layout">
+            <Link
+              to={directoryUrl("list")}
+              aria-pressed={loaderData.view === "list"}
+            >
+              List
+            </Link>
+            <Link
+              to={directoryUrl("grid")}
+              aria-pressed={loaderData.view === "grid"}
+            >
+              Cards
+            </Link>
+          </div>
         </div>
 
         {loaderData.members.length ? (
-          <section className="member-card-grid" aria-label="Members">
+          <section
+            className={`member-card-grid is-${loaderData.view}`}
+            aria-label="Members"
+          >
             {loaderData.members.map((member) => {
               const status = relationshipLabel(member.relationship);
-              const canConnect =
-                !member.roles.includes("investor") ||
-                (loaderData.viewerFounderVerified &&
-                  member.investorVerified === 1);
+              const investorConnection = member.roles.includes("investor");
+              const connectionBlockReason = !investorConnection
+                ? null
+                : !loaderData.viewerFounderVerified
+                  ? "Verify your Founder role"
+                  : member.investorVerified !== 1
+                    ? "Investor review pending"
+                    : null;
+              const canConnect = connectionBlockReason === null;
               return (
                 <article className="member-card" key={member.id}>
                   <ProfileAvatar
@@ -327,42 +363,46 @@ export default function Members({ loaderData }: Route.ComponentProps) {
                     variant="card"
                   />
                   <div className="member-card-body">
-                    <div className="role-pills">
-                      {member.roles.map((role) => (
-                        <span key={role}>{role}</span>
-                      ))}
+                    <div className="member-card-identity">
+                      <div className="role-pills">
+                        {member.roles.map((role) => (
+                          <span key={role}>{role}</span>
+                        ))}
+                      </div>
+                      <h2>
+                        {member.profileAccessible ? (
+                          <Link to={`/profiles/${member.username}`}>
+                            {member.displayName}
+                          </Link>
+                        ) : (
+                          member.displayName
+                        )}
+                      </h2>
+                      <p className="member-card-handle">
+                        @{member.username}
+                        {member.location ? ` · ${member.location}` : ""}
+                      </p>
                     </div>
-                    <h2>
-                      {member.profileAccessible ? (
-                        <Link to={`/profiles/${member.username}`}>
-                          {member.displayName}
-                        </Link>
-                      ) : (
-                        member.displayName
+                    <div className="member-card-summary">
+                      {member.languages.length > 0 && (
+                        <p className="member-card-languages">
+                          Languages: {member.languages.join(", ")}
+                        </p>
                       )}
-                    </h2>
-                    <p className="member-card-handle">
-                      @{member.username}
-                      {member.location ? ` · ${member.location}` : ""}
-                    </p>
-                    {member.languages.length > 0 && (
-                      <p className="member-card-languages">
-                        Languages: {member.languages.join(", ")}
+                      <p>
+                        {member.profileAccessible
+                          ? member.headline ||
+                            member.bio ||
+                            "This member is still shaping their introduction."
+                          : "Profile details open after a mutual connection."}
                       </p>
-                    )}
-                    <p>
-                      {member.profileAccessible
-                        ? member.headline ||
-                          member.bio ||
-                          "This member is still shaping their introduction."
-                        : "Profile details open after a mutual connection."}
-                    </p>
-                    {member.expertise && (
-                      <p className="member-card-expertise">
-                        <strong>Expertise</strong>
-                        {member.expertise}
-                      </p>
-                    )}
+                      {member.expertise && (
+                        <p className="member-card-expertise">
+                          <strong>Expertise</strong>
+                          {member.expertise}
+                        </p>
+                      )}
+                    </div>
                     <footer>
                       {member.profileAccessible ? (
                         <Link
@@ -395,8 +435,9 @@ export default function Members({ loaderData }: Route.ComponentProps) {
                               name="intent"
                               value="connect"
                               disabled={!canConnect}
+                              title={connectionBlockReason ?? undefined}
                             >
-                              {canConnect ? "Connect" : "Verification required"}
+                              {connectionBlockReason ?? "Connect"}
                             </button>
                           </Form>
                         )}

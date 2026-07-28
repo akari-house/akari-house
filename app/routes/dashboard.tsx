@@ -629,6 +629,7 @@ export default function Dashboard({
           <Link to="/connections">Connections</Link>
           <Link to="/members">Discover members</Link>
           <Link to="/notifications">Notifications</Link>
+          {loaderData.adminAccess && <Link to="/admin">Admin workspace</Link>}
           <Link to="/settings/telegram">Telegram</Link>
           {loaderData.adminAccess?.canManageCampaigns === 1 && (
             <>

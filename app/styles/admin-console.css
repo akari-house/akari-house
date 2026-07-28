@@ -1,0 +1,340 @@
+.admin-workspace-nav {
+  margin: -1.25rem 0 2rem;
+  padding: 0.45rem;
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 0.9rem;
+  background: rgb(255 255 255 / 3%);
+  scrollbar-width: thin;
+}
+
+.admin-workspace-nav a {
+  flex: 0 0 auto;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.65rem;
+  color: #aeb4c2;
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-workspace-nav a:hover,
+.admin-workspace-nav a:focus-visible {
+  color: #fff;
+  background: rgb(255 255 255 / 6%);
+}
+
+.admin-workspace-nav a.active {
+  color: #fff;
+  background: rgb(240 79 135 / 16%);
+  box-shadow: inset 0 0 0 1px rgb(240 79 135 / 28%);
+}
+
+.admin-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.admin-overview-card {
+  min-height: 190px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 1rem;
+  color: inherit;
+  text-decoration: none;
+  background:
+    radial-gradient(circle at 10% 10%, rgb(240 79 135 / 10%), transparent 30%),
+    rgb(255 255 255 / 3%);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease;
+}
+
+.admin-overview-card:hover,
+.admin-overview-card:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgb(240 79 135 / 42%);
+}
+
+.admin-overview-card h2 {
+  margin: 0.7rem 0 0.45rem;
+  font-size: 1.2rem;
+}
+
+.admin-overview-card p {
+  margin: 0;
+  color: #aeb4c2;
+  line-height: 1.55;
+}
+
+.admin-overview-card-action {
+  margin-top: auto;
+  padding-top: 1rem;
+  color: #f58bb0;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.admin-queue-toolbar,
+.member-directory-toolbar {
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-filter-tabs,
+.member-view-toggle {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 0.7rem;
+  background: rgb(255 255 255 / 3%);
+}
+
+.admin-filter-tabs a,
+.member-view-toggle a {
+  padding: 0.5rem 0.72rem;
+  border-radius: 0.5rem;
+  color: #9ca3b2;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-filter-tabs a[aria-current="page"],
+.member-view-toggle a[aria-pressed="true"] {
+  color: #fff;
+  background: rgb(240 79 135 / 18%);
+}
+
+.admin-review-list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.admin-review-item {
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 0.9rem;
+  background: rgb(255 255 255 / 3%);
+}
+
+.admin-review-item > summary {
+  padding: 0.9rem 1rem;
+  display: grid;
+  grid-template-columns:
+    minmax(190px, 1.25fr) minmax(120px, 0.6fr) minmax(130px, 0.65fr)
+    auto;
+  gap: 1rem;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-review-item > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-review-item > summary::after {
+  content: "+";
+  color: #f58bb0;
+  font-size: 1.15rem;
+}
+
+.admin-review-item[open] > summary::after {
+  content: "−";
+}
+
+.admin-review-identity strong,
+.admin-review-status strong {
+  display: block;
+  color: #fff;
+}
+
+.admin-review-identity span,
+.admin-review-status span,
+.admin-review-item time {
+  color: #9098a8;
+  font-size: 0.76rem;
+}
+
+.admin-review-body {
+  padding: 0 1rem 1rem;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(280px, 1.1fr);
+  gap: 1rem;
+  border-top: 1px solid rgb(255 255 255 / 7%);
+}
+
+.admin-review-evidence {
+  padding-top: 1rem;
+}
+
+.admin-review-evidence p {
+  color: #b1b7c4;
+  line-height: 1.55;
+}
+
+.admin-review-socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.admin-review-socials a {
+  padding: 0.42rem 0.58rem;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  text-decoration: none;
+}
+
+.admin-review-form {
+  padding-top: 1rem;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.admin-review-form .button-row {
+  justify-content: flex-start;
+}
+
+.admin-scope-help {
+  color: #9ca3b2;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.admin-scope-help strong {
+  color: #fff;
+}
+
+.member-card-grid.is-list {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.55rem;
+}
+
+.member-card-grid.is-list .member-card {
+  padding: 0.8rem 0.95rem;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  border-radius: 0.85rem;
+  box-shadow: none;
+  background: rgb(255 255 255 / 3%);
+}
+
+.member-card-grid.is-list .member-card:hover,
+.member-card-grid.is-list .member-card:focus-within {
+  transform: none;
+}
+
+.member-card-grid.is-list .member-card-photo,
+.member-card-grid.is-list .member-card-monogram {
+  width: 48px;
+  height: 48px;
+}
+
+.member-card-grid.is-list .member-card-body {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.85fr) minmax(230px, 1.3fr) auto;
+  gap: 1rem;
+  align-items: center;
+}
+
+.member-card-grid.is-list .member-card-identity h2 {
+  margin-top: 0.3rem;
+  font-size: 1.05rem;
+}
+
+.member-card-grid.is-list .role-pills span {
+  padding: 0.28rem 0.48rem;
+  font-size: 0.6rem;
+}
+
+.member-card-summary p {
+  margin: 0;
+}
+
+.member-card-grid.is-list .member-card-summary {
+  min-width: 0;
+}
+
+.member-card-grid.is-list .member-card-summary > p {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.member-card-grid.is-list .member-card-expertise,
+.member-card-grid.is-list .member-card-languages {
+  display: none;
+}
+
+.member-card-grid.is-list .member-card footer {
+  margin-top: 0;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 960px) {
+  .admin-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-review-item > summary {
+    grid-template-columns: minmax(180px, 1fr) minmax(110px, 0.55fr) auto;
+  }
+
+  .admin-review-item > summary time {
+    display: none;
+  }
+
+  .member-card-grid.is-list .member-card-body {
+    grid-template-columns: minmax(180px, 0.8fr) minmax(0, 1.2fr);
+  }
+
+  .member-card-grid.is-list .member-card footer {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 680px) {
+  .admin-overview-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-review-item > summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .admin-review-item > summary > :not(.admin-review-identity):not(:last-child) {
+    display: none;
+  }
+
+  .admin-review-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-queue-toolbar,
+  .member-directory-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .member-card-grid.is-list .member-card-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .member-card-grid.is-list .member-card-summary {
+    display: none;
+  }
+}
