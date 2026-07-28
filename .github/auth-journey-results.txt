@@ -1,0 +1,166 @@
+=== AUTHENTICATION JOURNEYS ===
+
+[WebServer] ▲ [WARNING] Missing required secrets: TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY, RESEND_API_KEY, MEMBERSHIP_FROM_EMAIL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_TOKEN_ENCRYPTION_KEY. Add them to .dev.vars, .env, or set as environment variables.
+[WebServer] 
+[WebServer] 
+
+Running 12 tests using 2 workers
+
+[1/12] [mobile-chromium] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing
+[2/12] [desktop-chromium] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing
+[3/12] [mobile-chromium] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting
+[4/12] [desktop-chromium] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting
+  1) [mobile-chromium] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-password-field="password"]').getByRole('button', { name: 'Show entered characters', exact: true })
+
+
+      57 |
+      58 |   await password.fill("visible-check");
+    > 59 |   await showPassword.click();
+         |                      ^
+      60 |   await expect(password).toHaveAttribute("type", "text");
+      61 |   const hidePassword = passwordField.getByRole("button", {
+      62 |     name: "Hide entered characters",
+        at /home/runner/work/akari-house/akari-house/tests/e2e/auth-password-ux.spec.ts:59:22
+
+    Error Context: test-results/auth-password-ux-login-pas-6d67c-reviewed-without-submitting-mobile-chromium/error-context.md
+
+
+  2) [desktop-chromium] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-password-field="password"]').getByRole('button', { name: 'Show entered characters', exact: true })
+
+
+      57 |
+      58 |   await password.fill("visible-check");
+    > 59 |   await showPassword.click();
+         |                      ^
+      60 |   await expect(password).toHaveAttribute("type", "text");
+      61 |   const hidePassword = passwordField.getByRole("button", {
+      62 |     name: "Hide entered characters",
+        at /home/runner/work/akari-house/akari-house/tests/e2e/auth-password-ux.spec.ts:59:22
+
+    Error Context: test-results/auth-password-ux-login-pas-6d67c-reviewed-without-submitting-desktop-chromium/error-context.md
+
+
+[5/12] [short-phone-chromium] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing
+[6/12] [tablet-chromium] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing
+[7/12] [short-phone-chromium] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting
+[8/12] [tablet-chromium] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting
+  3) [short-phone-chromium] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-password-field="password"]').getByRole('button', { name: 'Show entered characters', exact: true })
+
+
+      57 |
+      58 |   await password.fill("visible-check");
+    > 59 |   await showPassword.click();
+         |                      ^
+      60 |   await expect(password).toHaveAttribute("type", "text");
+      61 |   const hidePassword = passwordField.getByRole("button", {
+      62 |     name: "Hide entered characters",
+        at /home/runner/work/akari-house/akari-house/tests/e2e/auth-password-ux.spec.ts:59:22
+
+    Error Context: test-results/auth-password-ux-login-pas-6d67c-reviewed-without-submitting-short-phone-chromium/error-context.md
+
+
+[9/12] [desktop-firefox] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing
+[10/12] [desktop-firefox] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting
+  4) [tablet-chromium] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-password-field="password"]').getByRole('button', { name: 'Show entered characters', exact: true })
+
+
+      57 |
+      58 |   await password.fill("visible-check");
+    > 59 |   await showPassword.click();
+         |                      ^
+      60 |   await expect(password).toHaveAttribute("type", "text");
+      61 |   const hidePassword = passwordField.getByRole("button", {
+      62 |     name: "Hide entered characters",
+        at /home/runner/work/akari-house/akari-house/tests/e2e/auth-password-ux.spec.ts:59:22
+
+    Error Context: test-results/auth-password-ux-login-pas-6d67c-reviewed-without-submitting-tablet-chromium/error-context.md
+
+
+[11/12] [desktop-webkit] › tests/e2e/auth-password-ux.spec.ts:3:1 › registration explains password acceptance while typing
+[12/12] [desktop-webkit] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting
+  5) [desktop-firefox] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-password-field="password"]').getByRole('button', { name: 'Show entered characters', exact: true })
+
+
+      57 |
+      58 |   await password.fill("visible-check");
+    > 59 |   await showPassword.click();
+         |                      ^
+      60 |   await expect(password).toHaveAttribute("type", "text");
+      61 |   const hidePassword = passwordField.getByRole("button", {
+      62 |     name: "Hide entered characters",
+        at /home/runner/work/akari-house/akari-house/tests/e2e/auth-password-ux.spec.ts:59:22
+
+    Error Context: test-results/auth-password-ux-login-pas-6d67c-reviewed-without-submitting-desktop-firefox/error-context.md
+
+
+  6) [desktop-webkit] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('[data-password-field="password"]').getByRole('button', { name: 'Show entered characters', exact: true })
+
+
+      57 |
+      58 |   await password.fill("visible-check");
+    > 59 |   await showPassword.click();
+         |                      ^
+      60 |   await expect(password).toHaveAttribute("type", "text");
+      61 |   const hidePassword = passwordField.getByRole("button", {
+      62 |     name: "Hide entered characters",
+        at /home/runner/work/akari-house/akari-house/tests/e2e/auth-password-ux.spec.ts:59:22
+
+    Error Context: test-results/auth-password-ux-login-pas-6d67c-reviewed-without-submitting-desktop-webkit/error-context.md
+
+
+  6 failed
+    [desktop-chromium] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting 
+    [mobile-chromium] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting 
+    [short-phone-chromium] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting 
+    [tablet-chromium] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting 
+    [desktop-firefox] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting 
+    [desktop-webkit] › tests/e2e/auth-password-ux.spec.ts:49:1 › login password can be reviewed without submitting 
+  6 passed (2.0m)
+auth_exit_status=1
+=== EXISTING MEMBERSHIP JOURNEY ===
+
+[WebServer] ▲ [WARNING] Missing required secrets: TURNSTILE_SITE_KEY, TURNSTILE_SECRET_KEY, RESEND_API_KEY, MEMBERSHIP_FROM_EMAIL, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_TOKEN_ENCRYPTION_KEY. Add them to .dev.vars, .env, or set as environment variables.
+[WebServer] 
+[WebServer] 
+
+Running 1 test using 1 worker
+
+[1/1] [desktop-chromium] › tests/e2e/public-journey.spec.ts:148:1 › membership request remains gated before human approval
+  1 passed (13.7s)
+membership_exit_status=0
