@@ -1175,3 +1175,104 @@
     grid-column: 1;
   }
 }
+
+/* Investor profile connection and deterministic catalogue matching. */
+.workspace-count {
+  display: inline-grid;
+  min-width: 1.35rem;
+  min-height: 1.35rem;
+  place-items: center;
+  margin-left: 0.35rem;
+  border: 1px solid rgba(255, 211, 61, 0.32);
+  border-radius: 999px;
+  color: var(--yellow);
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
+.investor-profile-connection {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.5rem;
+  align-items: center;
+  margin-top: 2rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid rgba(240, 79, 135, 0.28);
+  border-radius: 22px;
+  background: rgba(17, 21, 34, 0.78);
+}
+
+.investor-profile-connection.is-connected {
+  border-color: rgba(142, 230, 183, 0.28);
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(142, 230, 183, 0.08),
+      transparent 38%
+    ),
+    rgba(17, 21, 34, 0.82);
+}
+
+.investor-profile-connection h2 {
+  margin: 0.35rem 0 0.65rem;
+  font-size: clamp(1.4rem, 3vw, 2.15rem);
+}
+
+.investor-profile-connection p {
+  max-width: 70ch;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.investor-profile-connection-actions {
+  display: grid;
+  justify-items: end;
+  gap: 0.8rem;
+}
+
+.investor-preference-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+
+.investor-preference-chips span {
+  padding: 0.42rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  color: var(--paper);
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 0.76rem;
+}
+
+.deal-profile-match {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 1rem;
+  padding: 0.75rem 0.85rem;
+  border-left: 3px solid var(--yellow);
+  background: rgba(255, 211, 61, 0.045);
+}
+
+.deal-profile-match strong {
+  color: var(--yellow);
+  font-size: 0.82rem;
+}
+
+.deal-profile-match span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 760px) {
+  .investor-profile-connection {
+    grid-template-columns: 1fr;
+  }
+
+  .investor-profile-connection-actions {
+    justify-items: start;
+  }
+}

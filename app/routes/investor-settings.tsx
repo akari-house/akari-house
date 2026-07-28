@@ -225,8 +225,9 @@ export default function InvestorSettings({
             <span className="eyebrow">Investor profile</span>
             <h1>Set your opportunity preferences.</h1>
             <p>
-              Selecting the Investor role is a claim, not verification. Private
-              rooms stay closed until AKARI completes its review.
+              These preferences power the Best profile match ordering in Deal
+              Discovery. Selecting the Investor role is still a claim, and
+              private rooms stay closed until AKARI completes its review.
             </p>
           </div>
           <Link className="button button-quiet" to="/deals">

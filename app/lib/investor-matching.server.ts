@@ -64,7 +64,11 @@ function includesPreference(preferences: string[], value: string) {
   if (!target) return false;
   return preferences.some((preference) => {
     const candidate = normalise(preference);
-    return candidate === target || candidate.includes(target) || target.includes(candidate);
+    return (
+      candidate === target ||
+      candidate.includes(target) ||
+      target.includes(candidate)
+    );
   });
 }
 

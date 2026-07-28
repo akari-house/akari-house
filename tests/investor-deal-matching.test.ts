@@ -48,9 +48,7 @@ describe("investor profile to deal discovery", () => {
     });
 
     expect(match.score).toBe(100);
-    expect(match.reasons).not.toContain(
-      "Ticket range fits the listed minimum",
-    );
+    expect(match.reasons).not.toContain("Ticket range fits the listed minimum");
   });
 
   it("does not personalise discovery until the profile is complete", () => {
