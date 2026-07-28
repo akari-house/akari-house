@@ -1,0 +1,160 @@
+/* Purpose-built CRM and administration hero art.
+   Public House routes keep their chapter-led landing-page presentation. */
+:where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+  :is(.dashboard-heading, .admin-heading, .directory-heading),
+.investor-house-shell :is(.deals-hero, .deal-room-hero) {
+  min-height: 208px;
+  padding: clamp(1.45rem, 2.7vw, 2.55rem);
+  border-color: rgba(255, 255, 255, 0.1);
+  background:
+    linear-gradient(
+      90deg,
+      rgba(7, 10, 18, 0.99) 0%,
+      rgba(7, 10, 18, 0.96) 38%,
+      rgba(7, 10, 18, 0.66) 58%,
+      rgba(7, 10, 18, 0.12) 100%
+    ),
+    radial-gradient(
+      circle at 76% 28%,
+      rgba(255, 211, 61, 0.12),
+      transparent 21rem
+    ),
+    url("/assets/house/workspace-house.svg") right center / auto 100% no-repeat,
+    #080b13;
+  box-shadow:
+    0 28px 72px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+:where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+  :is(.dashboard-heading, .admin-heading, .directory-heading)::before,
+.investor-house-shell :is(.deals-hero, .deal-room-hero)::before {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 38%),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 43px,
+      rgba(255, 255, 255, 0.022) 44px
+    ),
+    radial-gradient(
+      circle at 83% 24%,
+      rgba(255, 211, 61, 0.13),
+      transparent 10rem
+    ),
+    radial-gradient(
+      circle at 69% 96%,
+      rgba(239, 63, 130, 0.16),
+      transparent 18rem
+    ),
+    linear-gradient(180deg, transparent 56%, rgba(5, 7, 12, 0.58));
+}
+
+:where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+  :is(.dashboard-heading, .admin-heading, .directory-heading)::after,
+.investor-house-shell :is(.deals-hero, .deal-room-hero)::after {
+  top: 13%;
+  right: 7%;
+  width: 8px;
+  height: 15px;
+  box-shadow:
+    -74px 38px 0 -1px rgba(239, 63, 130, 0.78),
+    18px 70px 0 -2px rgba(255, 211, 61, 0.74),
+    -152px 102px 0 -2px rgba(239, 63, 130, 0.56),
+    52px 136px 0 -2px rgba(239, 63, 130, 0.64),
+    -226px 64px 0 -2px rgba(255, 211, 61, 0.42);
+  opacity: 0.74;
+}
+
+:where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+  :is(.dashboard-heading, .admin-heading, .directory-heading)
+  > *,
+.investor-house-shell :is(.deals-hero, .deal-room-hero) > * {
+  max-width: min(64%, 47rem);
+}
+
+:where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+  :is(.dashboard-heading, .admin-heading, .directory-heading)
+  h1,
+.investor-house-shell :is(.deals-hero, .deal-room-hero) h1 {
+  max-width: 14ch;
+  text-wrap: balance;
+}
+
+:where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+  .admin-heading {
+  background-position:
+    center,
+    center,
+    right -2rem center,
+    center;
+}
+
+@media (max-width: 1180px) and (min-width: 901px) {
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+    :is(.dashboard-heading, .admin-heading, .directory-heading),
+  .investor-house-shell :is(.deals-hero, .deal-room-hero) {
+    background-size:
+      auto,
+      auto,
+      auto 92%,
+      auto;
+    background-position:
+      center,
+      center,
+      right -8rem center,
+      center;
+  }
+
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+    :is(.dashboard-heading, .admin-heading, .directory-heading)
+    > *,
+  .investor-house-shell :is(.deals-hero, .deal-room-hero) > * {
+    max-width: min(70%, 43rem);
+  }
+}
+
+@media (max-width: 900px) {
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+    :is(.dashboard-heading, .admin-heading, .directory-heading),
+  .investor-house-shell :is(.deals-hero, .deal-room-hero) {
+    min-height: 170px;
+    background:
+      linear-gradient(
+        90deg,
+        rgba(7, 10, 18, 0.98),
+        rgba(7, 10, 18, 0.76) 68%,
+        rgba(7, 10, 18, 0.36)
+      ),
+      url("/assets/house/workspace-house.svg") right -7rem center / auto 100%
+        no-repeat,
+      #080b13;
+  }
+
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+    :is(.dashboard-heading, .admin-heading, .directory-heading)
+    > *,
+  .investor-house-shell :is(.deals-hero, .deal-room-hero) > * {
+    max-width: min(82%, 40rem);
+  }
+}
+
+@media (max-width: 640px) {
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+    :is(.dashboard-heading, .admin-heading, .directory-heading),
+  .investor-house-shell :is(.deals-hero, .deal-room-hero) {
+    min-height: 0;
+    background:
+      linear-gradient(90deg, rgba(7, 10, 18, 0.98), rgba(7, 10, 18, 0.82)),
+      url("/assets/house/workspace-house.svg") right -14rem center / auto 100%
+        no-repeat,
+      #080b13;
+  }
+
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+    :is(.dashboard-heading, .admin-heading, .directory-heading)
+    > *,
+  .investor-house-shell :is(.deals-hero, .deal-room-hero) > * {
+    max-width: 100%;
+  }
+}
