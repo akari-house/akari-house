@@ -39,4 +39,11 @@ export type HouseDirectoryEntry = {
   telegramUrl: string | null;
   displayOrder: number;
   status: "draft" | "published" | "archived";
+  imageVersion: string;
 };
+
+export function houseDirectoryImageUrl(entry: HouseDirectoryEntry) {
+  return `/media/house-directory/${entry.id}?v=${encodeURIComponent(
+    entry.imageVersion,
+  )}`;
+}
