@@ -31,7 +31,10 @@ const evidenceCategories = [
   "investment_activity",
   "professional_references",
 ] as const;
-const defaultEvidenceByRole: Record<VerificationRole, (typeof evidenceCategories)[number]> = {
+const defaultEvidenceByRole: Record<
+  VerificationRole,
+  (typeof evidenceCategories)[number]
+> = {
   founder: "company_or_project",
   creator: "creator_channels",
   investor: "investment_activity",
@@ -179,7 +182,11 @@ export async function action({ request, context }: Route.ActionArgs) {
     };
 
   const status =
-    intent === "verify" ? "verified" : intent === "hold" ? "pending" : "declined";
+    intent === "verify"
+      ? "verified"
+      : intent === "hold"
+        ? "pending"
+        : "declined";
   const statements = [
     db
       .prepare(
@@ -259,13 +266,9 @@ export async function action({ request, context }: Route.ActionArgs) {
   return { saved: true };
 }
 
-function queueHref(
-  view: VerificationView,
-  role: VerificationRole | "all",
-  page = 1,
-) {
+function queueHref(view: VerificationView, role: string, page = 1) {
   const params = new URLSearchParams({ view });
-  if (role !== "all") params.set("role", role);
+  if (roles.includes(role as VerificationRole)) params.set("role", role);
   if (page > 1) params.set("page", String(page));
   return `/admin/verifications?${params.toString()}`;
 }
@@ -371,12 +374,17 @@ export default function AdminVerifications({
             </h2>
           </section>
         ) : (
-          <section className="verification-list" aria-label="Verification claims">
+          <section
+            className="verification-list"
+            aria-label="Verification claims"
+          >
             <div className="verification-list-head" aria-hidden="true">
               <span>Member</span>
               <span>Claim</span>
               <span>Status</span>
-              <span>{loaderData.view === "queue" ? "Decision" : "Reviewed"}</span>
+              <span>
+                {loaderData.view === "queue" ? "Decision" : "Reviewed"}
+              </span>
             </div>
             {loaderData.verifications.map((item) => {
               const status = displayStatus(item);
@@ -395,7 +403,9 @@ export default function AdminVerifications({
                   </div>
                   <div className="verification-claim">
                     <strong>Claims {titleCase(item.role)}</strong>
-                    <span>{item.decisionNote || "Awaiting administrator review"}</span>
+                    <span>
+                      {item.decisionNote || "Awaiting administrator review"}
+                    </span>
                   </div>
                   <div className="verification-state">
                     <strong>{titleCase(status)}</strong>
@@ -463,7 +473,10 @@ export default function AdminVerifications({
         )}
 
         {loaderData.totalPages > 1 && (
-          <nav className="verification-pagination" aria-label="Verification pages">
+          <nav
+            className="verification-pagination"
+            aria-label="Verification pages"
+          >
             {loaderData.page > 1 && (
               <Link
                 className="button button-quiet"
