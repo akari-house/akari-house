@@ -104,6 +104,32 @@ export async function action({ request, context }: Route.ActionArgs) {
         status === "approved" ? "active" : "restricted",
         application.userId,
       ),
+    ...(status === "approved"
+      ? [
+          db
+            .prepare(
+              `UPDATE profiles
+               SET visibility = CASE
+                     WHEN visibility = 'private' THEN 'connections'
+                     ELSE visibility
+                   END,
+                   updated_at = datetime('now')
+               WHERE user_id = ?`,
+            )
+            .bind(application.userId),
+          db
+            .prepare(
+              `UPDATE profile_visibility
+               SET visibility = CASE
+                     WHEN visibility = 'private' THEN 'connections'
+                     ELSE visibility
+                   END,
+                   updated_at = datetime('now')
+               WHERE user_id = ?`,
+            )
+            .bind(application.userId),
+        ]
+      : []),
     db
       .prepare(
         "INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id, metadata_json) VALUES (?, ?, 'membership.decision', 'membership_application', ?, ?)",
