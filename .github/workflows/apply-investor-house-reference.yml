@@ -1,0 +1,41 @@
+name: Apply Investor House Reference UI
+
+on:
+  push:
+    branches:
+      - agent/investor-house-ui-reference
+    paths:
+      - .github/workflows/apply-investor-house-reference.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/investor-house-ui-reference
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Apply reference-led interface
+        run: node scripts/apply-investor-house-reference.mjs
+      - run: npm run format
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test -- --run tests/investor-house-reference-ui.test.ts tests/investor-deal-matching.test.ts
+      - run: npm run build
+      - name: Commit validated interface
+        run: |
+          rm scripts/apply-investor-house-reference.mjs
+          rm .github/workflows/apply-investor-house-reference.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/root.tsx app/routes/deals.tsx app/routes/deal-room.tsx app/components/InvestorHouseSidebar.tsx app/styles/investor-house-reference.css tests/investor-house-reference-ui.test.ts scripts/apply-investor-house-reference.mjs .github/workflows/apply-investor-house-reference.yml
+          git commit -m "Redesign Investor House from approved reference"
+          git push origin HEAD:agent/investor-house-ui-reference
