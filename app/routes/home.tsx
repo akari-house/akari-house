@@ -121,7 +121,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         db
           .prepare(
             `SELECT e.slug, e.title, e.summary, e.format, e.venue,
-                  e.starts_at AS startsAt, e.timezone, e.capacity,
+                  e.starts_at AS startsAt, e.ends_at AS endsAt,
+                  e.timezone, e.capacity,
                   e.image_key AS imageKey,
                   p.display_name AS hostName,
                   COUNT(CASE WHEN er.status = 'registered' THEN 1 END)
@@ -139,6 +140,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
             format: string;
             venue: string;
             startsAt: string;
+            endsAt: string;
             timezone: string;
             capacity: number | null;
             imageKey: string | null;
