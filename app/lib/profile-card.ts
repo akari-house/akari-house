@@ -56,6 +56,11 @@ export type ProfileCardOrientation =
   (typeof PROFILE_CARD_ORIENTATIONS)[number];
 export type ProfileCardSocialPlatform =
   (typeof PROFILE_CARD_SOCIAL_PLATFORMS)[number];
+export type ProfileCardSignalSource =
+  | "official_api"
+  | "partner_verified"
+  | "member_reported"
+  | "unavailable";
 
 export type ProfileCardSettings = {
   design: ProfileCardDesign;
@@ -71,7 +76,7 @@ export type ProfileCardSocial = {
   platform: ProfileCardSocialPlatform;
   profileUrl: string;
   followerCount: number | null;
-  countSource: "official_api" | "member_reported" | "unavailable";
+  countSource: ProfileCardSignalSource;
 };
 
 export type ProfileCardModel = {
@@ -89,7 +94,7 @@ export type ProfileCardModel = {
   followerCount: number;
   percentile: {
     topPercent: number | null;
-    confidence: "verified" | "provisional" | "unavailable";
+    confidence: "verified" | "provisional" | "insufficient";
   };
   verificationStates: Array<{ role: string; status: string }>;
 };
