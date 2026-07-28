@@ -29,13 +29,18 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-          import textwrap
 
           workflow = Path('.github/workflows/apply-investor-deal-connection.yml').read_text()
-          start = workflow.index("          python - <<'PY'\n") + len("          python - <<'PY'\n")
-          end = workflow.index("\n          PY", start)
-          patch = textwrap.dedent(workflow[start:end])
-          Path('/tmp/apply-investor-deal-connection.py').write_text(patch)
+          start_marker = "          python - <<'PY'\n"
+          end_marker = "\n          PY"
+          start = workflow.index(start_marker) + len(start_marker)
+          end = workflow.index(end_marker, start)
+          block = workflow[start:end]
+          patch = "\n".join(
+              line[10:] if line.startswith("          ") else line
+              for line in block.splitlines()
+          )
+          Path('/tmp/apply-investor-deal-connection.py').write_text(patch + "\n")
           PY
           python /tmp/apply-investor-deal-connection.py
       - run: npm run format
