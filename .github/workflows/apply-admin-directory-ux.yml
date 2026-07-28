@@ -1,0 +1,42 @@
+name: Apply Admin Directory UX
+
+on:
+  push:
+    branches:
+      - agent/admin-directory-ux-audit
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/admin-directory-ux-audit
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply staged patch
+        run: |
+          set -euo pipefail
+          cat .github/patches/admin-min.part-* | base64 --decode > /tmp/admin-min.patch
+          git apply --check /tmp/admin-min.patch
+          git apply /tmp/admin-min.patch
+          rm -rf .github/patches
+      - run: npm ci
+      - name: Format changed source
+        run: npm run format
+      - name: Commit final implementation
+        run: |
+          set -euo pipefail
+          rm -f .github/workflows/apply-admin-directory-ux.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Compact member directory and add scoped admin workspace"
+          git push origin HEAD:agent/admin-directory-ux-audit
