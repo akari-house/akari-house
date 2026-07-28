@@ -14,6 +14,6 @@ This review confirms the production architecture and the intended connections be
 
 ## Gap corrected by this release
 
-The previous “Recommended” ordering did not consume the saved Investor preference record. This release connects sectors, stages, geographies and ticket range to deterministic catalogue matching, adds live menu counts, and exposes profile readiness directly inside the Investor House.
+The previous “Recommended” ordering did not consume the saved Investor preference record. This release connects sectors, stages, geographies and currency-aware ticket range to deterministic catalogue matching, adds live menu counts, and exposes profile readiness directly inside the Investor House.
 
 Matching is discovery support only. It does not rank expected returns, assess suitability or provide investment advice.
