@@ -100,9 +100,7 @@ test.describe("curated opportunity permissions", () => {
   }) => {
     await page.goto("/deals");
     await expect(
-      page.getByRole("heading", {
-        name: "Private opportunities. Clearer conviction.",
-      }),
+      page.getByRole("heading", { name: "Investor Deals Room" }),
     ).toBeVisible();
     await expect(
       page.getByText("A permission-safe public opportunity preview."),
