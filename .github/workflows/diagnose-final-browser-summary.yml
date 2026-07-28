@@ -1,0 +1,40 @@
+name: Diagnose Final Browser Summary
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/auth-password-ux
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium firefox webkit
+      - name: Capture final browser summary
+        run: |
+          set +e
+          npx playwright test --reporter=line --retries=0 --max-failures=5 > /tmp/browser-output.txt 2>&1
+          status=$?
+          tail -n 500 /tmp/browser-output.txt > .github/final-browser-summary.txt
+          echo "exit_status=${status}" >> .github/final-browser-summary.txt
+          rm -f .github/workflows/diagnose-final-browser-summary.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Record final browser failure summary"
+          git pull --rebase origin agent/auth-password-ux
+          git push origin HEAD:agent/auth-password-ux
+          exit 0
