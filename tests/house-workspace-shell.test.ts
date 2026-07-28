@@ -14,10 +14,7 @@ const artworkStyles = readFileSync(
   "app/styles/house-workspace-art.css",
   "utf8",
 );
-const artwork = readFileSync(
-  "public/assets/house/workspace-house.svg",
-  "utf8",
-);
+const artwork = readFileSync("public/assets/house/workspace-house.svg", "utf8");
 
 describe("shared AKARI workspace shell", () => {
   it("activates the sidebar across member, settings and admin workspaces", () => {
@@ -88,9 +85,7 @@ describe("shared AKARI workspace shell", () => {
     expect(root).toContain('import "./styles/house-workspace-art.css"');
     expect(artworkStyles).toContain("/assets/house/workspace-house.svg");
     expect(artworkStyles).not.toContain("/assets/optimized/arrival.webp");
-    expect(artwork).toContain(
-      "Stylised AKARI House workspace illustration",
-    );
+    expect(artwork).toContain("Stylised AKARI House workspace illustration");
     expect(artwork).toContain("#ef3f82");
     expect(artwork).toContain("#ffd33d");
   });
