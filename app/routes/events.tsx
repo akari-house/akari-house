@@ -20,6 +20,7 @@ type PublicEventRow = {
   capacity: number | null;
   hostName: string;
   registeredCount: number;
+  imageKey: string | null;
 };
 
 export const meta: Route.MetaFunction = () => [
@@ -37,7 +38,7 @@ async function readPublishedEvents(db: D1Database) {
       .prepare(
         `SELECT e.slug, e.title, e.summary, e.format, e.venue,
                 e.starts_at AS startsAt, e.ends_at AS endsAt,
-                e.timezone, e.capacity,
+                e.timezone, e.capacity, e.image_key AS imageKey,
                 COALESCE(p.display_name, 'AKARI Host') AS hostName,
                 COUNT(CASE WHEN er.status = 'registered' THEN 1 END) AS registeredCount
          FROM events e
@@ -47,7 +48,7 @@ async function readPublishedEvents(db: D1Database) {
          GROUP BY e.id ORDER BY e.starts_at`,
       )
       .all<PublicEventRow>();
-    return events.results;
+    return { items: events.results, degraded: false };
   } catch (error) {
     console.error("Event directory enhanced query failed.", error);
   }
@@ -57,7 +58,7 @@ async function readPublishedEvents(db: D1Database) {
       .prepare(
         `SELECT e.slug, e.title, e.summary, e.format, e.venue,
                 e.starts_at AS startsAt, e.ends_at AS endsAt,
-                e.timezone, NULL AS capacity,
+                e.timezone, NULL AS capacity, e.image_key AS imageKey,
                 COALESCE(p.display_name, 'AKARI Host') AS hostName,
                 0 AS registeredCount
          FROM events e
@@ -66,10 +67,10 @@ async function readPublishedEvents(db: D1Database) {
          ORDER BY e.starts_at`,
       )
       .all<PublicEventRow>();
-    return events.results;
+    return { items: events.results, degraded: false };
   } catch (error) {
     console.error("Event directory fallback query failed.", error);
-    return [] as PublicEventRow[];
+    return { items: [] as PublicEventRow[], degraded: true };
   }
 }
 
@@ -85,15 +86,23 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         })
       : Promise.resolve(false),
   ]);
-  return { user, events, canHost };
+  return {
+    user,
+    events: events.items,
+    degraded: events.degraded,
+    canHost,
+  };
 }
 
 export default function Events({ loaderData }: Route.ComponentProps) {
   return (
-    <div className="site-shell">
+    <div className="site-shell inner-page event-directory-page">
       <SiteHeader user={loaderData.user} />
-      <main id="main-content" className="directory-main">
-        <header className="directory-heading event-directory-heading">
+      <main
+        id="main-content"
+        className="directory-main directory-room directory-room--events"
+      >
+        <header className="directory-heading directory-hero event-directory-heading">
           <div>
             <span className="eyebrow">AKARI gatherings</span>
             <h1>Meet where the story moves forward.</h1>
@@ -119,13 +128,26 @@ export default function Events({ loaderData }: Route.ComponentProps) {
                 <AkariMotif motif="invitation" />
               </div>
               <div>
-                <span className="eyebrow">A quiet engawa</span>
-                <h2>The next gathering is taking shape.</h2>
+                <span className="eyebrow">
+                  {loaderData.degraded
+                    ? "The calendar is temporarily quiet"
+                    : "A quiet engawa"}
+                </span>
+                <h2>
+                  {loaderData.degraded
+                    ? "Gatherings could not be loaded."
+                    : "The next gathering is taking shape."}
+                </h2>
                 <p>
-                  Approved online and in-person gatherings will appear here with
-                  clear access, capacity and host information.
+                  {loaderData.degraded
+                    ? "Please refresh the page in a moment. AKARI will not present an outage as an empty calendar."
+                    : "Approved online and in-person gatherings will appear here with clear access, capacity and host information."}
                 </p>
-                {loaderData.canHost ? (
+                {loaderData.degraded ? (
+                  <Link className="button button-quiet" to="/events">
+                    Retry gatherings
+                  </Link>
+                ) : loaderData.canHost ? (
                   <Link className="button button-primary" to="/events/new">
                     Propose a gathering
                   </Link>

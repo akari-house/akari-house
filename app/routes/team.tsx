@@ -91,6 +91,12 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
   const partnerEntries = loaderData.entries.filter(
     (entry) => entry.category === "partner" || entry.category === "provider",
   );
+  const populatedPeopleSections = sections.flatMap((section) => {
+    const people = loaderData.entries.filter(
+      (entry) => entry.category === section.category,
+    );
+    return people.length ? [{ ...section, people }] : [];
+  });
 
   return (
     <div className="site-shell people-page">
@@ -108,7 +114,7 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
               className="people-house-hero__nav"
               aria-label="Explore this page"
             >
-              <a href="#team">People</a>
+              <a href="#people">People</a>
               <a href="#partners">Partners</a>
               <a href="#ecosystem">Ecosystem</a>
             </nav>
@@ -125,43 +131,47 @@ export default function TeamPage({ loaderData }: Route.ComponentProps) {
           </div>
         </header>
 
-        {sections.map((section) => {
-          const people = loaderData.entries.filter(
-            (entry) => entry.category === section.category,
-          );
-          return (
-            <section
-              className="people-section chapter-section"
-              id={section.id}
-              key={section.category}
-            >
-              <div className="section-intro">
-                <div>
-                  <span className="chapter">{section.chapter}</span>
-                  <h2>{section.title}</h2>
+        <div id="people">
+          {populatedPeopleSections.length ? (
+            populatedPeopleSections.map((section) => (
+              <section
+                className="people-section chapter-section"
+                id={section.id}
+                key={section.category}
+              >
+                <div className="section-intro">
+                  <div>
+                    <span className="chapter">{section.chapter}</span>
+                    <h2>{section.title}</h2>
+                  </div>
+                  <p>{section.copy}</p>
                 </div>
-                <p>{section.copy}</p>
-              </div>
-              {people.length ? (
                 <div className="people-grid">
-                  {people.map((entry) => (
+                  {section.people.map((entry) => (
                     <PeopleCard entry={entry} key={entry.id} />
                   ))}
                 </div>
-              ) : (
-                <div className="people-empty">
-                  <img
-                    src="/assets/optimized/akari-mark.webp"
-                    alt=""
-                    width={54}
-                    height={51}
-                  />
-                  <p>This chapter is being prepared.</p>
+              </section>
+            ))
+          ) : (
+            <section className="people-section chapter-section">
+              <div className="people-empty people-empty--combined">
+                <img
+                  src="/assets/optimized/akari-mark.webp"
+                  alt=""
+                  width={54}
+                  height={51}
+                />
+                <div>
+                  <strong>The people directory is being prepared.</strong>
+                  <p>
+                    Published Team, Advisor and Supporter profiles appear here.
+                  </p>
                 </div>
-              )}
+              </div>
             </section>
-          );
-        })}
+          )}
+        </div>
 
         <div id="partners">
           {partnerEntries.length ? (

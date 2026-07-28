@@ -1,4 +1,5 @@
 import { Form, redirect, useNavigation } from "react-router";
+import { useState } from "react";
 import type { Route } from "./+types/event-new";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
@@ -13,6 +14,11 @@ import { EventTimezoneField } from "~/components/EventTimeDisplay";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText, normalizeWebsite } from "~/lib/validation";
 import { AkariMotif } from "~/components/AkariMotif";
+import { validateProfilePhoto } from "~/lib/profile-photo.server";
+import {
+  markManagedR2ObjectDeleted,
+  registerManagedR2Object,
+} from "~/lib/r2-lifecycle.server";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -26,12 +32,16 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export async function action({ request, context }: Route.ActionArgs) {
   assertSameOrigin(request);
-  const db = context.get(cloudflareContext).env.DB;
+  const env = context.get(cloudflareContext).env;
+  const db = env.DB;
   const user = await requireApprovedMember(request, db);
   if (!(await canHostEvents(db, user.id)))
     throw new Response("Approved event-host access is required.", {
       status: 403,
     });
+  const contentLength = Number(request.headers.get("content-length") ?? "0");
+  if (contentLength > 2_750_000)
+    return { error: "Event cover images must be 2 MB or smaller." };
   const form = await request.formData();
   const title = formText(form.get("title")).trim();
   const summary = formText(form.get("summary")).trim();
@@ -72,37 +82,71 @@ export async function action({ request, context }: Route.ActionArgs) {
     return { error: "In-person and hybrid events require a venue." };
   const id = crypto.randomUUID();
   const slug = await uniqueEventSlug(db, title);
-  await db.batch([
-    db
-      .prepare(
-        `INSERT INTO events
-         (id, host_user_id, slug, title, summary, description, format,
-          venue, meeting_url, starts_at, ends_at, timezone, capacity, status)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted')`,
-      )
-      .bind(
-        id,
-        user.id,
-        slug,
-        title,
-        summary,
-        description,
-        format,
-        venue,
-        meetingUrl ?? "",
-        startsAt,
-        endsAt,
-        timezone,
-        capacity,
-      ),
-    db
-      .prepare(
-        `INSERT INTO audit_logs
-         (id, actor_user_id, action, subject_type, subject_id)
-         VALUES (?, ?, 'event.submitted', 'event', ?)`,
-      )
-      .bind(crypto.randomUUID(), user.id, id),
-  ]);
+  const image = form.get("image");
+  let imageKey: string | null = null;
+  if (image instanceof File && image.size) {
+    const validImage = await validateProfilePhoto(image);
+    if (!validImage)
+      return { error: "Use a JPG, PNG or WebP image no larger than 2 MB." };
+    imageKey = `event-images/${id}/${crypto.randomUUID()}.${validImage.extension}`;
+    await env.MEDIA.put(imageKey, image.stream(), {
+      httpMetadata: { contentType: validImage.contentType },
+    });
+  }
+
+  try {
+    if (imageKey)
+      await registerManagedR2Object(db, {
+        objectKey: imageKey,
+        sourceType: "event_image",
+        sourceId: id,
+        ownerUserId: user.id,
+      });
+    await db.batch([
+      db
+        .prepare(
+          `INSERT INTO events
+           (id, host_user_id, slug, title, summary, description, format,
+            venue, meeting_url, starts_at, ends_at, timezone, capacity,
+            image_key, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted')`,
+        )
+        .bind(
+          id,
+          user.id,
+          slug,
+          title,
+          summary,
+          description,
+          format,
+          venue,
+          meetingUrl ?? "",
+          startsAt,
+          endsAt,
+          timezone,
+          capacity,
+          imageKey,
+        ),
+      db
+        .prepare(
+          `INSERT INTO audit_logs
+           (id, actor_user_id, action, subject_type, subject_id, metadata_json)
+           VALUES (?, ?, 'event.submitted', 'event', ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          user.id,
+          id,
+          JSON.stringify({ hasImage: Boolean(imageKey) }),
+        ),
+    ]);
+  } catch (error) {
+    if (imageKey) {
+      await env.MEDIA.delete(imageKey);
+      await markManagedR2ObjectDeleted(db, imageKey).catch(() => undefined);
+    }
+    throw error;
+  }
   throw redirect(`/events/${slug}?submitted=1`);
 }
 
@@ -111,6 +155,7 @@ export default function EventNew({
   actionData,
 }: Route.ComponentProps) {
   const navigation = useNavigation();
+  const [eventFormat, setEventFormat] = useState("online");
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -125,7 +170,11 @@ export default function EventNew({
             </p>
           </div>
         </header>
-        <Form method="post" className="profile-form event-form">
+        <Form
+          method="post"
+          encType="multipart/form-data"
+          className="profile-form event-form"
+        >
           {actionData?.error && (
             <p className="form-error" role="alert">
               {actionData.error}
@@ -149,10 +198,26 @@ export default function EventNew({
             Full description
             <textarea name="description" maxLength={5000} rows={8} />
           </label>
+          <label className="event-image-field">
+            Event cover image
+            <input
+              name="image"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+            />
+            <small>
+              Optional. Use a landscape JPG, PNG or WebP up to 2 MB. The image
+              remains private until the event is approved.
+            </small>
+          </label>
           <div className="form-row">
             <label>
               Format
-              <select name="format" defaultValue="online">
+              <select
+                name="format"
+                value={eventFormat}
+                onChange={(event) => setEventFormat(event.currentTarget.value)}
+              >
                 <option value="online">Online</option>
                 <option value="in_person">In person</option>
                 <option value="hybrid">Hybrid</option>
@@ -174,14 +239,18 @@ export default function EventNew({
             </label>
           </div>
           <EventTimezoneField />
-          <label>
-            Venue
-            <input name="venue" maxLength={240} />
-          </label>
-          <label>
-            HTTPS meeting URL
-            <input name="meetingUrl" type="url" />
-          </label>
+          {eventFormat !== "online" && (
+            <label>
+              Venue
+              <input name="venue" maxLength={240} required />
+            </label>
+          )}
+          {eventFormat !== "in_person" && (
+            <label>
+              HTTPS meeting URL
+              <input name="meetingUrl" type="url" required />
+            </label>
+          )}
           <button
             className="button button-primary"
             disabled={navigation.state !== "idle"}

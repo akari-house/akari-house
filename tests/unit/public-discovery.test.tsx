@@ -73,6 +73,18 @@ describe("public discovery surfaces", () => {
     expect(container.querySelector(".event-host-nameplate svg")).toBeTruthy();
   });
 
+  it("renders an approved event cover as a compact card link", () => {
+    const { container } = renderWithRouter(
+      <EventInvitationCard event={{ ...event, imageKey: "event-images/a" }} />,
+    );
+    expect(
+      screen.getByRole("link", { name: "Open Summer Common Table" }),
+    ).toHaveAttribute("href", "/events/summer-table");
+    expect(
+      container.querySelector(".event-invitation-cover img"),
+    ).toHaveAttribute("src", "/media/events/summer-table");
+  });
+
   it("keeps decorative motifs hidden and named motifs semantic", () => {
     const { rerender } = render(<AkariMotif motif="blossom" />);
     expect(document.querySelector("svg")).toHaveAttribute(

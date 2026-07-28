@@ -122,7 +122,7 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             Visit website ↗
           </a>
         )}
-        {user && user.id !== profile.userId && (
+        {user?.accessTier === "member" && user.id !== profile.userId && (
           <div className="profile-connection-actions">
             {loaderData.relationship === "none" && (
               <Form method="post">
@@ -164,13 +164,18 @@ export default function Profile({ loaderData }: Route.ComponentProps) {
             ))}
           </dl>
         )}
-        {user && user.id !== profile.userId && (
+        {user?.accessTier === "member" && user.id !== profile.userId && (
           <Link
             className="quiet-link"
             to={`/report?subjectType=profile&subjectId=${encodeURIComponent(profile.userId)}&returnTo=${encodeURIComponent(`/profiles/${profile.username}`)}`}
           >
             Report profile
           </Link>
+        )}
+        {user?.accessTier === "applicant" && user.id !== profile.userId && (
+          <p className="notice">
+            Connections and reporting open after membership approval.
+          </p>
         )}
         {user?.id === profile.userId && (
           <div className="profile-owner-actions">

@@ -47,7 +47,7 @@ async function readPublishedProjects(db: D1Database) {
          ORDER BY pr.updated_at DESC`,
       )
       .all<PublicProjectRow>();
-    return projects.results;
+    return { items: projects.results, degraded: false };
   } catch (error) {
     console.error("Project directory enhanced query failed.", error);
   }
@@ -66,10 +66,10 @@ async function readPublishedProjects(db: D1Database) {
          ORDER BY pr.updated_at DESC`,
       )
       .all<PublicProjectRow>();
-    return projects.results;
+    return { items: projects.results, degraded: false };
   } catch (error) {
     console.error("Project directory fallback query failed.", error);
-    return [] as PublicProjectRow[];
+    return { items: [] as PublicProjectRow[], degraded: true };
   }
 }
 
@@ -86,20 +86,24 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return {
     user,
     selectedNeed,
+    degraded: projects.degraded,
     projects: selectedNeed
-      ? projects.filter((project) =>
+      ? projects.items.filter((project) =>
           projectHasNeed(project.seeking, selectedNeed),
         )
-      : projects,
+      : projects.items,
   };
 }
 
 export default function Projects({ loaderData }: Route.ComponentProps) {
   return (
-    <div className="site-shell">
+    <div className="site-shell inner-page project-directory-page">
       <SiteHeader user={loaderData.user} />
-      <main id="main-content" className="directory-main">
-        <header className="directory-heading">
+      <main
+        id="main-content"
+        className="directory-main directory-room directory-room--projects"
+      >
+        <header className="directory-heading directory-hero">
           <div>
             <span className="eyebrow">AKARI project lanterns</span>
             <h1>Ideas looking for the right people.</h1>
@@ -145,17 +149,28 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
                 <span />
               </div>
               <div>
-                <span className="eyebrow">The gallery before first light</span>
+                <span className="eyebrow">
+                  {loaderData.degraded
+                    ? "The gallery is temporarily quiet"
+                    : "The gallery before first light"}
+                </span>
                 <h2>
-                  {loaderData.selectedNeed
-                    ? "No published projects currently request this support."
-                    : "The first project lanterns are being prepared."}
+                  {loaderData.degraded
+                    ? "Project lanterns could not be loaded."
+                    : loaderData.selectedNeed
+                      ? "No published projects currently request this support."
+                      : "The first project lanterns are being prepared."}
                 </h2>
                 <p>
-                  Approved Founder projects will gather here with their story,
-                  stage and the support they are seeking.
+                  {loaderData.degraded
+                    ? "Please refresh the page in a moment. AKARI will not present an outage as an empty directory."
+                    : "Approved Founder projects will gather here with their story, stage and the support they are seeking."}
                 </p>
-                {loaderData.selectedNeed ? (
+                {loaderData.degraded ? (
+                  <Link className="button button-quiet" to="/projects">
+                    Retry projects
+                  </Link>
+                ) : loaderData.selectedNeed ? (
                   <Link className="button button-quiet" to="/projects">
                     View every project
                   </Link>

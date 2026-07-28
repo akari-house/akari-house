@@ -1,7 +1,7 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/iio-settlement";
 import { SiteHeader } from "~/components/SiteHeader";
-import { requireUser } from "~/lib/auth.server";
+import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { ensureIioSettlementSchema } from "~/lib/iio-settlement-schema.server";
 import { assertSameOrigin } from "~/lib/security.server";
@@ -131,7 +131,7 @@ async function getDisputes(db: D1Database, campaignId: string) {
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   await ensureIioSettlementSchema(db);
-  const user = await requireUser(request, db);
+  const user = await requireApprovedMember(request, db);
   const campaign = await getCampaign(db, params.slug);
   if (!campaign) throw new Response("IIO not found.", { status: 404 });
   const moderator = await canModerate(db, user.id, campaign.id);
@@ -196,7 +196,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
   await ensureIioSettlementSchema(db);
-  const user = await requireUser(request, db);
+  const user = await requireApprovedMember(request, db);
   const campaign = await getCampaign(db, params.slug);
   if (!campaign) throw new Response("IIO not found.", { status: 404 });
   const moderator = await canModerate(db, user.id, campaign.id);

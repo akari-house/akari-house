@@ -98,7 +98,7 @@
   padding-bottom: var(--app-page-bottom);
 }
 
-.profile-headline,
+.public-profile h1,
 .project-detail-main h1,
 .event-detail-main h1,
 .campaign-detail-main h1 {

@@ -12,6 +12,7 @@ export type EventInvitation = {
   capacity: number | null;
   hostName: string;
   registeredCount: number;
+  imageKey?: string | null;
 };
 
 function eventDateParts(startsAt: string, timezone: string) {
@@ -70,7 +71,26 @@ export function EventInvitationCard({
     : 0;
 
   return (
-    <article className={`event-invitation-card${compact ? " is-compact" : ""}`}>
+    <article
+      className={`event-invitation-card${event.imageKey ? " has-image" : ""}${
+        compact ? " is-compact" : ""
+      }`}
+    >
+      {event.imageKey && (
+        <Link
+          className="event-invitation-cover"
+          to={`/events/${event.slug}`}
+          aria-label={`Open ${event.title}`}
+        >
+          <img
+            src={`/media/events/${event.slug}`}
+            alt=""
+            width={720}
+            height={405}
+            loading="lazy"
+          />
+        </Link>
+      )}
       <div className="event-invitation-date">
         <AkariMotif motif="invitation" className="event-invitation-mark" />
         <time
@@ -101,6 +121,9 @@ export function EventInvitationCard({
             {event.registeredCount}
             {event.capacity ? ` / ${event.capacity}` : ""} registered
           </span>
+          <Link className="event-card-action" to={`/events/${event.slug}`}>
+            View gathering
+          </Link>
         </footer>
         {event.capacity && (
           <div

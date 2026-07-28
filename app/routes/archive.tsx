@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { caseStudies } from "~/data/case-studies";
+import { PublicFooter } from "~/components/PublicFooter";
 import { SiteHeader } from "~/components/SiteHeader";
 import type { Route } from "./+types/archive";
 import { getOptionalUser } from "~/lib/auth.server";
@@ -15,12 +16,26 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 export default function Archive({ loaderData }: Route.ComponentProps) {
   return (
-    <div className="site-shell archive-page">
+    <div className="site-shell archive-page inner-page">
       <SiteHeader user={loaderData.user} />
       <main id="main-content" className="archive-main">
-        <span className="chapter">The Archive</span>
-        <h1>Work that left evidence.</h1>
-        <p>Authorized outcomes, connected to the proof behind each claim.</p>
+        <header className="archive-hero">
+          <div>
+            <span className="chapter">The Archive</span>
+            <h1>Work that left evidence.</h1>
+            <p>
+              Authorized outcomes, connected to the proof behind each claim.
+            </p>
+          </div>
+          <span className="archive-hero__seal" aria-hidden="true">
+            <img
+              src="/assets/brand/akari-flower-mark.png"
+              alt=""
+              width={88}
+              height={88}
+            />
+          </span>
+        </header>
         <div className="case-grid">
           {caseStudies.map((c, index) => (
             <Link className="case-card" to={`/archive/${c.slug}`} key={c.slug}>
@@ -47,6 +62,7 @@ export default function Archive({ loaderData }: Route.ComponentProps) {
           ))}
         </div>
       </main>
+      <PublicFooter />
     </div>
   );
 }

@@ -8,6 +8,8 @@ import { cloudflareContext } from "~/lib/cloudflare-context";
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const user = await requireApprovedMember(request, db);
+  if (!user.roles.includes("founder"))
+    throw new Response("Founder role required.", { status: 403 });
   const projects = await db
     .prepare(
       `SELECT pr.slug, pr.title, pr.summary, pr.status, pr.stage, pr.seeking,

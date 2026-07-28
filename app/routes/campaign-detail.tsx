@@ -2,7 +2,7 @@ import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/campaign-detail";
 import { PublicFooter } from "~/components/PublicFooter";
 import { SiteHeader } from "~/components/SiteHeader";
-import { getOptionalUser, requireUser } from "~/lib/auth.server";
+import { getOptionalUser, requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
@@ -141,7 +141,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireUser(request, db);
+  const user = await requireApprovedMember(request, db);
   const campaign = await db
     .prepare(
       `SELECT c.id, c.project_id AS projectId, c.title, c.created_by AS createdBy,
@@ -466,7 +466,8 @@ export default function CampaignDetail({
             </div>
           </section>
         )}
-        {user?.roles.includes("creator") &&
+        {user?.accessTier === "member" &&
+          user.roles.includes("creator") &&
           user.id !== campaign.createdBy &&
           (campaign.status === "published" ||
             loaderData.application?.status === "accepted") && (

@@ -62,6 +62,22 @@ describe("house interactions", () => {
     );
   });
 
+  it("supports arrow-key navigation across Hall tabs", async () => {
+    const user = userEvent.setup();
+    withRouter(<HouseHall />);
+    const strategy = screen.getByRole("tab", { name: /Strategy Room/ });
+    strategy.focus();
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("tab", { name: /Creator Studio/ })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("link", { name: /Enter room/ })).toHaveAttribute(
+      "href",
+      "/rooms/creator",
+    );
+  });
+
   it("locks body scroll while mobile navigation is open", async () => {
     const user = userEvent.setup();
     withRouter(<SiteHeader user={null} />);

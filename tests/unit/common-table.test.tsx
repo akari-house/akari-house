@@ -4,12 +4,17 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { CommonTable } from "~/components/common-table/CommonTable";
+import { MemoryRouter } from "react-router";
 
 afterEach(cleanup);
 
 describe("CommonTable", () => {
   it("switches role workspace content", async () => {
-    render(<CommonTable />);
+    render(
+      <MemoryRouter>
+        <CommonTable />
+      </MemoryRouter>,
+    );
     const user = userEvent.setup();
     expect(
       screen.getByRole("tab", { name: "Founder Workspace" }),
@@ -24,7 +29,11 @@ describe("CommonTable", () => {
   });
 
   it("supports arrow-key tab navigation", async () => {
-    render(<CommonTable />);
+    render(
+      <MemoryRouter>
+        <CommonTable />
+      </MemoryRouter>,
+    );
     const user = userEvent.setup();
     const founder = screen.getByRole("tab", { name: "Founder Workspace" });
     founder.focus();

@@ -1,7 +1,7 @@
 import { Form, Link, useNavigation } from "react-router";
 import type { Route } from "./+types/campaign-workspace";
 import { SiteHeader } from "~/components/SiteHeader";
-import { requireUser } from "~/lib/auth.server";
+import { requireApprovedMember } from "~/lib/auth.server";
 import {
   campaignPayoutSuggestion,
   expectedCampaignSlots,
@@ -130,7 +130,7 @@ async function campaignSubmissions(db: D1Database, campaignId: string) {
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireUser(request, db);
+  const user = await requireApprovedMember(request, db);
   const campaign = await getCampaign(db, params.slug);
   if (!campaign) throw new Response("Campaign not found.", { status: 404 });
   const moderator = await canModerateCampaign(db, user.id, campaign);
@@ -189,7 +189,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireUser(request, db);
+  const user = await requireApprovedMember(request, db);
   const campaign = await getCampaign(db, params.slug);
   if (!campaign) throw new Response("Campaign not found.", { status: 404 });
   const form = await request.formData();

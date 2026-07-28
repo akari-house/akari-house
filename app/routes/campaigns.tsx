@@ -66,10 +66,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export default function Campaigns({ loaderData }: Route.ComponentProps) {
   return (
-    <div className="site-shell">
+    <div className="site-shell inner-page campaign-directory-page">
       <SiteHeader user={loaderData.user} />
-      <main id="main-content" className="directory-main">
-        <header className="directory-heading">
+      <main
+        id="main-content"
+        className="directory-main directory-room directory-room--campaigns"
+      >
+        <header className="directory-heading directory-hero">
           <div>
             <span className="eyebrow">Initial Interest Offerings</span>
             <h1>Where project stories meet Creator influence.</h1>
@@ -82,7 +85,10 @@ export default function Campaigns({ loaderData }: Route.ComponentProps) {
         <section className="project-lantern-gallery">
           {loaderData.campaigns.length ? (
             loaderData.campaigns.map((campaign) => (
-              <article className="status-card" key={campaign.slug}>
+              <article
+                className="status-card campaign-directory-card"
+                key={campaign.slug}
+              >
                 <span className="chapter">
                   {campaign.campaignKind === "iio" ? "IIO · Live" : "Campaign"}{" "}
                   · {campaign.projectTitle}
@@ -102,7 +108,7 @@ export default function Campaigns({ loaderData }: Route.ComponentProps) {
               </article>
             ))
           ) : (
-            <div className="status-card">
+            <div className="status-card campaign-directory-card campaign-directory-empty">
               <h2>No open campaigns yet</h2>
               <p>Approved Founder campaigns will appear here after review.</p>
             </div>

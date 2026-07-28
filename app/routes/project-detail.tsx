@@ -1,7 +1,7 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/project-detail";
 import { SiteHeader } from "~/components/SiteHeader";
-import { getOptionalUser, requireUser } from "~/lib/auth.server";
+import { getOptionalUser, requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
@@ -147,7 +147,18 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
                 ptm.social_url AS socialUrl, u.username AS linkedUsername
          FROM project_team_members ptm
          LEFT JOIN users u ON u.id = ptm.linked_user_id
-         WHERE ptm.project_id = ? ORDER BY ptm.created_at`,
+         LEFT JOIN profiles linked_profile ON linked_profile.user_id = u.id
+         LEFT JOIN profile_visibility pv ON pv.user_id = u.id
+         LEFT JOIN membership_applications ma
+           ON ma.user_id = u.id AND ma.status = 'approved'
+         WHERE ptm.project_id = ?
+           AND (
+             ptm.linked_user_id IS NULL OR (
+               u.status = 'active' AND ma.user_id IS NOT NULL
+               AND COALESCE(pv.visibility, linked_profile.visibility) = 'public'
+             )
+           )
+         ORDER BY ptm.created_at`,
       )
       .bind(project.id)
       .all<{
@@ -174,7 +185,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
-  const user = await requireUser(request, db);
+  const user = await requireApprovedMember(request, db);
   const project = await db
     .prepare(
       `SELECT id, founder_user_id AS founderUserId, title, status
@@ -416,64 +427,68 @@ export default function ProjectDetail({
           </section>
         )}
 
-        {user?.roles.includes("creator") && !isFounder && (
-          <Form method="post">
-            <button
-              className="button button-quiet"
-              name="intent"
-              value={loaderData.following ? "unfollow" : "follow"}
-            >
-              {loaderData.following ? "Following project" : "Follow project"}
-            </button>
-          </Form>
-        )}
-
-        {user?.roles.includes("investor") && !isFounder && (
-          <section className="project-action-panel">
-            <h2>Express investment interest</h2>
-            {actionData?.error && (
-              <p className="form-error" role="alert">
-                {actionData.error}
-              </p>
-            )}
-            <Form method="post" className="form-stack">
-              <label>
-                Why would a conversation be useful?
-                <textarea
-                  name="message"
-                  minLength={10}
-                  maxLength={800}
-                  rows={4}
-                  required
-                />
-              </label>
-              <label className="inline-choice">
-                <input type="checkbox" name="shareContact" value="yes" />
-                Allow the founder to see contact methods I marked for project
-                interests
-              </label>
+        {user?.accessTier === "member" &&
+          user.roles.includes("creator") &&
+          !isFounder && (
+            <Form method="post">
               <button
-                className="button button-primary"
+                className="button button-quiet"
                 name="intent"
-                value="interest"
-                disabled={navigation.state !== "idle"}
+                value={loaderData.following ? "unfollow" : "follow"}
               >
-                {loaderData.ownInterest
-                  ? "Update my interest"
-                  : "Show interest"}
+                {loaderData.following ? "Following project" : "Follow project"}
               </button>
-              {loaderData.ownInterest?.status !== "withdrawn" && (
-                <button
-                  className="text-button"
-                  name="intent"
-                  value="withdraw-interest"
-                >
-                  Withdraw interest
-                </button>
-              )}
             </Form>
-          </section>
-        )}
+          )}
+
+        {user?.accessTier === "member" &&
+          user.roles.includes("investor") &&
+          !isFounder && (
+            <section className="project-action-panel">
+              <h2>Express investment interest</h2>
+              {actionData?.error && (
+                <p className="form-error" role="alert">
+                  {actionData.error}
+                </p>
+              )}
+              <Form method="post" className="form-stack">
+                <label>
+                  Why would a conversation be useful?
+                  <textarea
+                    name="message"
+                    minLength={10}
+                    maxLength={800}
+                    rows={4}
+                    required
+                  />
+                </label>
+                <label className="inline-choice">
+                  <input type="checkbox" name="shareContact" value="yes" />
+                  Allow the founder to see contact methods I marked for project
+                  interests
+                </label>
+                <button
+                  className="button button-primary"
+                  name="intent"
+                  value="interest"
+                  disabled={navigation.state !== "idle"}
+                >
+                  {loaderData.ownInterest
+                    ? "Update my interest"
+                    : "Show interest"}
+                </button>
+                {loaderData.ownInterest?.status !== "withdrawn" && (
+                  <button
+                    className="text-button"
+                    name="intent"
+                    value="withdraw-interest"
+                  >
+                    Withdraw interest
+                  </button>
+                )}
+              </Form>
+            </section>
+          )}
         {loaderData.founderSharedContacts.length > 0 && (
           <section className="project-action-panel">
             <h2>Founder contact details</h2>

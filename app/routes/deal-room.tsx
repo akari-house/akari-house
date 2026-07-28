@@ -553,28 +553,52 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       return {
         error: "Add an introduction note between 10 and 800 characters.",
       };
-    await db.batch([
-      db
-        .prepare(
-          `INSERT INTO introduction_requests
-             (id, project_id, investor_user_id, message, status, updated_at)
-           VALUES (?, ?, ?, ?, 'pending', datetime('now'))`,
-        )
-        .bind(crypto.randomUUID(), listing.projectId, user.id, message),
-      db
-        .prepare(
-          `INSERT INTO notifications
-             (id, user_id, kind, title, body, action_url)
-           VALUES (?, ?, 'opportunity.introduction_requested',
-                   'Founder introduction requested', ?, ?)`,
-        )
-        .bind(
-          crypto.randomUUID(),
-          listing.founderUserId,
-          `${user.displayName} requested an introduction for ${listing.title}.`,
-          `/deals/${params.dealSlug}`,
-        ),
-    ]);
+    const activeIntroduction = await db
+      .prepare(
+        `SELECT status FROM introduction_requests
+         WHERE project_id = ? AND investor_user_id = ?
+           AND status IN ('pending', 'approved')
+         LIMIT 1`,
+      )
+      .bind(listing.projectId, user.id)
+      .first<{ status: string }>();
+    if (activeIntroduction)
+      return {
+        error:
+          activeIntroduction.status === "approved"
+            ? "Your Founder introduction is already approved."
+            : "Your Founder introduction request is already pending.",
+      };
+    try {
+      await db.batch([
+        db
+          .prepare(
+            `INSERT INTO introduction_requests
+               (id, project_id, investor_user_id, message, status, updated_at)
+             VALUES (?, ?, ?, ?, 'pending', datetime('now'))`,
+          )
+          .bind(crypto.randomUUID(), listing.projectId, user.id, message),
+        db
+          .prepare(
+            `INSERT INTO notifications
+               (id, user_id, kind, title, body, action_url)
+             VALUES (?, ?, 'opportunity.introduction_requested',
+                     'Founder introduction requested', ?, ?)`,
+          )
+          .bind(
+            crypto.randomUUID(),
+            listing.founderUserId,
+            `${user.displayName} requested an introduction for ${listing.title}.`,
+            `/deals/${params.dealSlug}`,
+          ),
+      ]);
+    } catch (error) {
+      if (String(error).toLowerCase().includes("unique"))
+        return {
+          error: "Your Founder introduction request is already active.",
+        };
+      throw error;
+    }
     await recordOpportunityAudit(
       db,
       user.id,
@@ -1023,6 +1047,9 @@ export default function DealRoom({
                       name="message"
                       minLength={10}
                       maxLength={800}
+                      disabled={["pending", "approved"].includes(
+                        loaderData.introduction?.status ?? "",
+                      )}
                       required
                     />
                   </label>
@@ -1030,11 +1057,15 @@ export default function DealRoom({
                     className="button button-quiet"
                     name="intent"
                     value="request-introduction"
-                    disabled={loaderData.introduction?.status === "pending"}
+                    disabled={["pending", "approved"].includes(
+                      loaderData.introduction?.status ?? "",
+                    )}
                   >
                     {loaderData.introduction?.status === "pending"
                       ? "Introduction requested"
-                      : "Request Founder introduction"}
+                      : loaderData.introduction?.status === "approved"
+                        ? "Introduction approved"
+                        : "Request Founder introduction"}
                   </button>
                 </Form>
               </div>

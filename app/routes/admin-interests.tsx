@@ -48,8 +48,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       }>(),
     db
       .prepare(
-        `SELECT e.id, e.slug, e.title, e.summary, e.format,
-                e.starts_at AS startsAt, e.timezone,
+        `SELECT e.id, e.slug, e.title, e.summary, e.description, e.format,
+                e.venue, e.meeting_url AS meetingUrl,
+                e.starts_at AS startsAt, e.ends_at AS endsAt, e.timezone,
+                e.capacity, e.image_key AS imageKey,
                 p.display_name AS hostName
          FROM events e JOIN profiles p ON p.user_id = e.host_user_id
          WHERE e.status = 'submitted' ORDER BY e.created_at`,
@@ -59,9 +61,15 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         slug: string;
         title: string;
         summary: string;
+        description: string;
         format: string;
+        venue: string;
+        meetingUrl: string;
         startsAt: string;
+        endsAt: string;
         timezone: string;
+        capacity: number | null;
+        imageKey: string | null;
         hostName: string;
       }>(),
   ]);
@@ -160,7 +168,7 @@ export async function action({ request, context }: Route.ActionArgs) {
           crypto.randomUUID(),
           event.hostUserId,
           decision === "approve" ? "Event published" : "Event needs revision",
-          `${event.title} was ${status}.`,
+          `${event.title} was ${status}. Review note: ${decisionNote}`,
           `/events/${event.slug}`,
         ),
       db
@@ -305,16 +313,61 @@ export default function AdminInterests({
               loaderData.events.map((event) => (
                 <article className="application-card" key={event.id}>
                   <div>
+                    {event.imageKey && (
+                      <img
+                        className="review-event-cover"
+                        src={`/media/events/${event.slug}`}
+                        alt={`${event.title} proposed cover`}
+                        width={720}
+                        height={405}
+                      />
+                    )}
                     <span className="chapter">
                       {event.format.replace("_", " ")}
                     </span>
                     <h3>{event.title}</h3>
                     <p>{event.summary}</p>
+                    {event.description && (
+                      <details>
+                        <summary>Read full event description</summary>
+                        <p>{event.description}</p>
+                      </details>
+                    )}
                     <small>Hosted by {event.hostName}</small>
                     <EventTimeDisplay
                       startsAt={event.startsAt}
                       timezone={event.timezone}
                     />
+                    <dl className="review-event-facts">
+                      <div>
+                        <dt>Ends</dt>
+                        <dd>
+                          <EventTimeDisplay
+                            startsAt={event.endsAt}
+                            timezone={event.timezone}
+                            showViewerTime={false}
+                          />
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Venue</dt>
+                        <dd>{event.venue || "Online"}</dd>
+                      </div>
+                      <div>
+                        <dt>Capacity</dt>
+                        <dd>{event.capacity ?? "Open"}</dd>
+                      </div>
+                    </dl>
+                    {event.meetingUrl && (
+                      <a
+                        className="quiet-link"
+                        href={event.meetingUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Verify meeting destination
+                      </a>
+                    )}
                   </div>
                   <Form method="post" className="application-actions">
                     <input type="hidden" name="subjectType" value="event" />
