@@ -129,10 +129,9 @@
 .admin-review-item > summary {
   padding: 0.9rem 1rem;
   display: grid;
-  grid-template-columns: minmax(190px, 1.25fr) minmax(120px, 0.6fr) minmax(
-      130px,
-      0.65fr
-    ) auto;
+  grid-template-columns:
+    minmax(190px, 1.25fr) minmax(120px, 0.6fr) minmax(130px, 0.65fr)
+    auto;
   gap: 1rem;
   align-items: center;
   cursor: pointer;
