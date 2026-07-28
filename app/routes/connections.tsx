@@ -149,10 +149,17 @@ export default function Connections({
                         : "outgoing request"}
                   </span>
                   <h2>
-                    <Link to={`/profiles/${connection.username}`}>
-                      {connection.displayName}
-                    </Link>
+                    {connection.status === "accepted" ? (
+                      <Link to={`/profiles/${connection.username}`}>
+                        {connection.displayName}
+                      </Link>
+                    ) : (
+                      connection.displayName
+                    )}
                   </h2>
+                  {connection.status === "pending" && (
+                    <p>Profile details open after the request is accepted.</p>
+                  )}
                 </div>
                 <Form method="post" className="application-actions">
                   <input
