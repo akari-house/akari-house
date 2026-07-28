@@ -1,23 +1,36 @@
 import { describe, expect, it } from "vitest";
 import {
+  canAccessDirectoryProfile,
   isDiscoverableProfile,
   memberDirectoryFilters,
+  memberMatchesDirectoryFilters,
 } from "~/lib/member-directory";
 
 describe("member directory privacy", () => {
   it("limits applicants to public profiles", () => {
-    expect(isDiscoverableProfile("public", "applicant", false)).toBe(true);
-    expect(isDiscoverableProfile("members", "applicant", false)).toBe(false);
-    expect(isDiscoverableProfile("connections", "applicant", true)).toBe(false);
-    expect(isDiscoverableProfile("private", "applicant", false)).toBe(false);
+    expect(isDiscoverableProfile("public", "applicant")).toBe(true);
+    expect(isDiscoverableProfile("members", "applicant")).toBe(false);
+    expect(isDiscoverableProfile("connections", "applicant")).toBe(false);
+    expect(isDiscoverableProfile("private", "applicant")).toBe(false);
   });
 
-  it("shows members only the profiles eligible for their relationship", () => {
-    expect(isDiscoverableProfile("public", "member", false)).toBe(true);
-    expect(isDiscoverableProfile("members", "member", false)).toBe(true);
-    expect(isDiscoverableProfile("connections", "member", false)).toBe(false);
-    expect(isDiscoverableProfile("connections", "member", true)).toBe(true);
-    expect(isDiscoverableProfile("private", "member", true)).toBe(false);
+  it("lets approved members discover connection-gated profiles", () => {
+    expect(isDiscoverableProfile("public", "member")).toBe(true);
+    expect(isDiscoverableProfile("members", "member")).toBe(true);
+    expect(isDiscoverableProfile("connections", "member")).toBe(true);
+    expect(isDiscoverableProfile("private", "member")).toBe(false);
+  });
+
+  it("keeps connection-gated profile details locked until acceptance", () => {
+    expect(canAccessDirectoryProfile("public", "member", false)).toBe(true);
+    expect(canAccessDirectoryProfile("members", "member", false)).toBe(true);
+    expect(canAccessDirectoryProfile("connections", "member", false)).toBe(
+      false,
+    );
+    expect(canAccessDirectoryProfile("connections", "member", true)).toBe(
+      true,
+    );
+    expect(canAccessDirectoryProfile("private", "member", true)).toBe(false);
   });
 });
 
@@ -43,5 +56,36 @@ describe("member directory filters", () => {
     const filters = memberDirectoryFilters(url);
     expect(filters.role).toBe("creator");
     expect(filters.query).toHaveLength(80);
+  });
+
+  it("filters only against privacy-safe fields supplied by the route", () => {
+    const member = {
+      displayName: "Aiko Mori",
+      username: "aiko",
+      headline: "Creator partnerships",
+      bio: "Building community programmes",
+      expertise: "Growth design",
+      location: "Berlin",
+      roles: ["creator" as const],
+    };
+    expect(
+      memberMatchesDirectoryFilters(member, {
+        query: "community",
+        role: "creator",
+        location: "berlin",
+        expertise: "growth",
+      }),
+    ).toBe(true);
+    expect(
+      memberMatchesDirectoryFilters(
+        { ...member, headline: "", bio: "", expertise: "", location: "" },
+        {
+          query: "community",
+          role: "creator",
+          location: "",
+          expertise: "",
+        },
+      ),
+    ).toBe(false);
   });
 });
