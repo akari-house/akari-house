@@ -2,10 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const root = readFileSync("app/root.tsx", "utf8");
-const polish = readFileSync(
-  "app/styles/house-workspace-polish.css",
-  "utf8",
-);
+const polish = readFileSync("app/styles/house-workspace-polish.css", "utf8");
 const contact = readFileSync("app/routes/admin-contact.tsx", "utf8");
 
 describe("AKARI workspace visual polish", () => {
@@ -24,7 +21,7 @@ describe("AKARI workspace visual polish", () => {
   });
 
   it("uses the approved photographic House artwork for workspace heroes", () => {
-    expect(polish).toContain('/assets/optimized/arrival.webp');
+    expect(polish).toContain("/assets/optimized/arrival.webp");
     expect(polish).toContain(".admin-heading");
     expect(polish).toContain(".directory-heading");
     expect(polish).toContain("font-size: clamp(2.05rem, 2.8vw, 3.2rem)");
