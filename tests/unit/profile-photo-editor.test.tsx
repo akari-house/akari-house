@@ -59,4 +59,27 @@ describe("ProfilePhotoEditor", () => {
       screen.getByRole("button", { name: "Remove profile photo" }),
     ).toBeEnabled();
   });
+
+  it("lets an applicant upload a private profile photo", () => {
+    render(
+      <RouterProvider
+        router={createMemoryRouter([
+          {
+            path: "*",
+            element: (
+              <ProfilePhotoEditor
+                avatarKey=""
+                displayName="Applicant"
+                isMember={false}
+                username="applicant"
+              />
+            ),
+            action: () => null,
+          },
+        ])}
+      />,
+    );
+    expect(screen.getByLabelText("Choose image")).toBeEnabled();
+    expect(screen.getByText(/photo remains private/i)).toBeInTheDocument();
+  });
 });
