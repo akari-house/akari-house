@@ -337,8 +337,8 @@ export default function AdminVerifications({
               "No claims"
             ) : (
               <>
-                <strong>{firstResult}</strong>–<strong>{lastResult}</strong> of{" "}
-                <strong>{loaderData.total}</strong>
+                <strong>{firstResult}</strong> to <strong>{lastResult}</strong>{" "}
+                of <strong>{loaderData.total}</strong>
               </>
             )}
           </p>
