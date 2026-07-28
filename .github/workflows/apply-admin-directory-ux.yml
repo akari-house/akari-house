@@ -27,14 +27,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          {
+            echo "Staged part sizes and hashes:"
+            wc -c .github/patches/admin-min.part-*
+            sha256sum .github/patches/admin-min.part-*
+          } > /tmp/admin-part-diagnostic.txt
           cat .github/patches/admin-min.part-* > /tmp/admin-min.b64
           base64 --decode /tmp/admin-min.b64 > /tmp/admin-min.patch
           {
             echo "Patch SHA256: $(sha256sum /tmp/admin-min.patch | cut -d' ' -f1)"
             git apply --check /tmp/admin-min.patch
-          } > /tmp/admin-patch-diagnostic.txt 2>&1 || {
-            printf '## Admin UX patch diagnostic\n\n```text\n' > /tmp/admin-patch-comment.md
-            cat /tmp/admin-patch-diagnostic.txt >> /tmp/admin-patch-comment.md
+          } >> /tmp/admin-part-diagnostic.txt 2>&1 || {
+            printf '## Admin UX patch integrity diagnostic\n\n```text\n' > /tmp/admin-patch-comment.md
+            cat /tmp/admin-part-diagnostic.txt >> /tmp/admin-patch-comment.md
             printf '\n```\n' >> /tmp/admin-patch-comment.md
             gh pr comment 126 --repo "$GITHUB_REPOSITORY" --body-file /tmp/admin-patch-comment.md
             exit 1
