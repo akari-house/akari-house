@@ -8,33 +8,41 @@ import {
 export async function loadOptionalAdminWorkspaceAccess(
   db: D1Database,
   userId: string,
-): Promise<AdminWorkspaceAccess | null> {
-  const row = await db
-    .prepare(
-      `SELECT au.access_level AS accessLevel,
-              group_concat(scopes.scope, ',') AS scopesCsv
-       FROM admin_users au
-       LEFT JOIN admin_scopes scopes ON scopes.admin_user_id = au.user_id
-       WHERE au.user_id = ?
-       GROUP BY au.user_id`,
-    )
-    .bind(userId)
-    .first<{
-      accessLevel: AdminAccessLevel;
-      scopesCsv: string | null;
-    }>();
-  if (!row) return null;
+): Promise<AdminWorkspaceAccess | undefined> {
+  try {
+    const row = await db
+      .prepare(
+        `SELECT au.access_level AS accessLevel,
+                group_concat(scopes.scope, ',') AS scopesCsv
+         FROM admin_users au
+         LEFT JOIN admin_scopes scopes ON scopes.admin_user_id = au.user_id
+         WHERE au.user_id = ?
+         GROUP BY au.user_id`,
+      )
+      .bind(userId)
+      .first<{
+        accessLevel: AdminAccessLevel;
+        scopesCsv: string | null;
+      }>();
+    if (!row) return undefined;
 
-  const scopes =
-    row.accessLevel === "superadmin"
-      ? adminScopes
-      : (row.scopesCsv ?? "")
-          .split(",")
-          .filter((scope): scope is AdminScope =>
-            adminScopes.includes(scope as AdminScope),
-          );
+    const scopes =
+      row.accessLevel === "superadmin"
+        ? adminScopes
+        : (row.scopesCsv ?? "")
+            .split(",")
+            .filter((scope): scope is AdminScope =>
+              adminScopes.includes(scope as AdminScope),
+            );
 
-  return { accessLevel: row.accessLevel, scopes };
+    return { accessLevel: row.accessLevel, scopes };
+  } catch (error) {
+    console.warn(
+      "Optional admin navigation lookup failed; continuing without admin links.",
+      error,
+    );
+    return undefined;
+  }
 }
 
 export async function loadAdminWorkspaceAccess(
