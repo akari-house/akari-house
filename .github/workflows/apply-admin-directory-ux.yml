@@ -43,18 +43,8 @@ jobs:
             gh pr comment 126 --repo "$GITHUB_REPOSITORY" --body "Admin UX patch integrity failed: received \`${patch_sha}\`."
             exit 1
           fi
-          if ! git apply --check /tmp/admin-min.patch > /tmp/admin-apply.txt 2>&1; then
-            {
-              echo "## Admin UX patch application diagnostic"
-              echo
-              echo '```text'
-              cat /tmp/admin-apply.txt
-              echo '```'
-            } > /tmp/admin-patch-comment.md
-            gh pr comment 126 --repo "$GITHUB_REPOSITORY" --body-file /tmp/admin-patch-comment.md
-            exit 1
-          fi
-          git apply /tmp/admin-min.patch
+          patch --dry-run -p1 < /tmp/admin-min.patch
+          patch -p1 < /tmp/admin-min.patch
           rm -rf .github/patches
       - run: npm ci
       - name: Format changed source
