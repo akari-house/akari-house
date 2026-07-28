@@ -56,9 +56,9 @@ export default function Room({ loaderData }: Route.ComponentProps) {
             <div className="room-page-actions">
               <Link
                 className="button button-primary"
-                to={`/register?role=${room.role}`}
+                to={user ? "/app" : `/register?role=${room.role}`}
               >
-                {room.action}
+                {user ? "Open My House" : room.action}
               </Link>
               <Link className="button button-quiet" to="/hall">
                 Return to the Hall
