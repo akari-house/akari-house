@@ -51,7 +51,7 @@ describe("shared AKARI workspace shell", () => {
   });
 
   it("uses the approved House artwork and responsive sidebar behaviour", () => {
-    expect(styles).toContain('/assets/optimized/arrival.webp');
+    expect(styles).toContain("/assets/optimized/arrival.webp");
     expect(styles).toContain(".house-workspace-sidebar");
     expect(styles).toContain("@media (min-width: 901px)");
     expect(styles).toContain("@media (max-width: 900px)");

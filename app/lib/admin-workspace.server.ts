@@ -42,6 +42,7 @@ export async function loadAdminWorkspaceAccess(
   userId: string,
 ): Promise<AdminWorkspaceAccess> {
   const access = await loadOptionalAdminWorkspaceAccess(db, userId);
-  if (!access) throw new Response("Admin permission required.", { status: 403 });
+  if (!access)
+    throw new Response("Admin permission required.", { status: 403 });
   return access;
 }

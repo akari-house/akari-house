@@ -10,7 +10,11 @@
   padding: 1.35rem 0.85rem 1rem;
   border-right: 1px solid rgba(255, 255, 255, 0.08);
   background:
-    radial-gradient(circle at 50% 0%, rgba(239, 63, 130, 0.08), transparent 18rem),
+    radial-gradient(
+      circle at 50% 0%,
+      rgba(239, 63, 130, 0.08),
+      transparent 18rem
+    ),
     linear-gradient(180deg, rgba(15, 19, 31, 0.99), rgba(8, 11, 19, 0.995));
   box-shadow: 18px 0 54px rgba(0, 0, 0, 0.2);
 }
@@ -177,8 +181,7 @@
     display: none;
   }
 
-  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
-    > main {
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar) > main {
     width: auto;
     max-width: none;
     min-height: 100vh;
@@ -243,8 +246,16 @@
   z-index: -1;
   inset: 0;
   background:
-    radial-gradient(circle at 86% 22%, rgba(255, 211, 61, 0.15), transparent 12rem),
-    radial-gradient(circle at 72% 92%, rgba(239, 63, 130, 0.18), transparent 16rem),
+    radial-gradient(
+      circle at 86% 22%,
+      rgba(255, 211, 61, 0.15),
+      transparent 12rem
+    ),
+    radial-gradient(
+      circle at 72% 92%,
+      rgba(239, 63, 130, 0.18),
+      transparent 16rem
+    ),
     linear-gradient(180deg, transparent 58%, rgba(5, 7, 12, 0.52));
   content: "";
   pointer-events: none;
@@ -344,8 +355,7 @@
     display: none;
   }
 
-  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
-    > main,
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar) > main,
   :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
     > .public-footer {
     margin-left: 0;
