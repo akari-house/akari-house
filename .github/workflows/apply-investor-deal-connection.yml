@@ -1,0 +1,239 @@
+name: Apply Investor Deal Connection
+
+on:
+  push:
+    branches:
+      - agent/connect-investor-profile-deals
+    paths:
+      - .github/workflows/apply-investor-deal-connection.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/connect-investor-profile-deals
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Connect investor profile to deal discovery
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          deals_path = Path('app/routes/deals.tsx')
+          deals = deals_path.read_text()
+
+          def replace_once(old: str, new: str):
+              global deals
+              if deals.count(old) != 1:
+                  raise SystemExit(f'Expected one match, found {deals.count(old)} for: {old[:120]!r}')
+              deals = deals.replace(old, new, 1)
+
+          replace_once(
+              'import { cloudflareContext } from "~/lib/cloudflare-context";\nimport {\n',
+              'import { cloudflareContext } from "~/lib/cloudflare-context";\nimport {\n  loadInvestorPreferenceProfile,\n  matchOpportunityToInvestor,\n} from "~/lib/investor-matching.server";\nimport {\n',
+          )
+
+          replace_once(
+              '  listingStatus: string;\n};\n\nconst views = [',
+              '  listingStatus: string;\n};\n\ntype OpportunityWithMatch = OpportunityRow & {\n  matchScore: number | null;\n  matchReasons: string[];\n};\n\ntype InvestorNavigationCounts = {\n  saved: number;\n  requested: number;\n  approved: number;\n};\n\nconst emptyNavigationCounts: InvestorNavigationCounts = {\n  saved: 0,\n  requested: 0,\n  approved: 0,\n};\n\nconst views = [',
+          )
+
+          replace_once(
+              '      verifiedInvestor: false,\n      schemaReady: false,',
+              '      verifiedInvestor: false,\n      investorProfile: null,\n      navigationCounts: emptyNavigationCounts,\n      schemaReady: false,',
+          )
+
+          replace_once(
+              '  const verifiedInvestor = await isVerifiedInvestor(db, user);\n  const archived = view === "archived";',
+              '''  const verifiedInvestor = await isVerifiedInvestor(db, user);\n  const investorProfile =\n    user?.roles.includes("investor")\n      ? await loadInvestorPreferenceProfile(db, user.id)\n      : null;\n  const navigationCounts = user?.roles.includes("investor")\n    ? ((await db\n        .prepare(\n          `SELECT\n             (SELECT COUNT(*)\n              FROM opportunity_user_states ous\n              JOIN opportunity_listings ol ON ol.project_id = ous.project_id\n              JOIN projects pr ON pr.id = ous.project_id\n              WHERE ous.user_id = ? AND ous.saved_at IS NOT NULL\n                AND ol.status = 'published' AND pr.status = 'published') AS saved,\n             (SELECT COUNT(*)\n              FROM data_room_requests drr\n              JOIN opportunity_listings ol ON ol.project_id = drr.project_id\n              JOIN projects pr ON pr.id = drr.project_id\n              WHERE drr.investor_user_id = ? AND drr.status = 'pending'\n                AND ol.status = 'published' AND pr.status = 'published'\n                AND drr.id = (\n                  SELECT latest.id\n                  FROM data_room_requests latest\n                  WHERE latest.project_id = drr.project_id\n                    AND latest.investor_user_id = drr.investor_user_id\n                  ORDER BY latest.created_at DESC, latest.id DESC\n                  LIMIT 1\n                )) AS requested,\n             (SELECT COUNT(*)\n              FROM data_room_requests drr\n              JOIN opportunity_listings ol ON ol.project_id = drr.project_id\n              JOIN projects pr ON pr.id = drr.project_id\n              WHERE drr.investor_user_id = ? AND drr.status = 'approved'\n                AND (drr.expires_at IS NULL OR drr.expires_at > datetime('now'))\n                AND ol.status = 'published' AND pr.status = 'published'\n                AND drr.id = (\n                  SELECT latest.id\n                  FROM data_room_requests latest\n                  WHERE latest.project_id = drr.project_id\n                    AND latest.investor_user_id = drr.investor_user_id\n                  ORDER BY latest.created_at DESC, latest.id DESC\n                  LIMIT 1\n                )) AS approved`,\n        )\n        .bind(user.id, user.id, user.id)\n        .first<InvestorNavigationCounts>()) ?? emptyNavigationCounts)\n    : emptyNavigationCounts;\n  const archived = view === "archived";''',
+          )
+
+          replace_once(
+              '    .all<OpportunityRow>();\n\n  const filterRows = await db',
+              '''    .all<OpportunityRow>();\n\n  const opportunities: OpportunityWithMatch[] = result.results.map(\n    (opportunity) => {\n      const match = matchOpportunityToInvestor(investorProfile, opportunity);\n      return {\n        ...opportunity,\n        matchScore: match.score,\n        matchReasons: match.reasons,\n      };\n    },\n  );\n  if (!filters.sort && investorProfile?.complete)\n    opportunities.sort((left, right) => {\n      const scoreDifference =\n        (right.matchScore ?? -1) - (left.matchScore ?? -1);\n      if (scoreDifference) return scoreDifference;\n      const leftClosing = left.closingAt\n        ? Date.parse(left.closingAt)\n        : Number.MAX_SAFE_INTEGER;\n      const rightClosing = right.closingAt\n        ? Date.parse(right.closingAt)\n        : Number.MAX_SAFE_INTEGER;\n      if (leftClosing !== rightClosing) return leftClosing - rightClosing;\n      return Date.parse(right.updatedAt) - Date.parse(left.updatedAt);\n    });\n\n  const filterRows = await db''',
+          )
+
+          replace_once(
+              '    verifiedInvestor,\n    schemaReady: true,\n    opportunities: result.results,',
+              '    verifiedInvestor,\n    investorProfile,\n    navigationCounts,\n    schemaReady: true,\n    opportunities,',
+          )
+
+          replace_once(
+              '  const returnTo = `/deals?${currentQuery.toString()}`;\n\n  return (',
+              '''  const returnTo = `/deals?${currentQuery.toString()}`;\n  const investorMember = loaderData.user?.roles.includes("investor") ?? false;\n  const investorProfile = loaderData.investorProfile;\n  const profilePreferences = investorProfile\n    ? [\n        ...investorProfile.sectors.slice(0, 2),\n        ...investorProfile.stages.slice(0, 1),\n        ...investorProfile.geographies.slice(0, 1),\n      ]\n    : [];\n\n  return (''',
+          )
+
+          replace_once(
+              '''              Saved\n            </Link>''',
+              '''              Saved\n              {loaderData.navigationCounts.saved > 0 && (\n                <span className="workspace-count">\n                  {loaderData.navigationCounts.saved}\n                </span>\n              )}\n            </Link>''',
+          )
+          replace_once(
+              '''              Requests\n            </Link>''',
+              '''              Requests\n              {loaderData.navigationCounts.requested > 0 && (\n                <span className="workspace-count">\n                  {loaderData.navigationCounts.requested}\n                </span>\n              )}\n            </Link>''',
+          )
+          replace_once(
+              '''              My Deal Rooms\n            </Link>\n            <Link to="/settings/investor">Investor profile</Link>''',
+              '''              My Deal Rooms\n              {loaderData.navigationCounts.approved > 0 && (\n                <span className="workspace-count">\n                  {loaderData.navigationCounts.approved}\n                </span>\n              )}\n            </Link>\n            {investorMember ? (\n              <Link to="/settings/investor">Investor profile</Link>\n            ) : loaderData.user ? (\n              <Link to="/app">Your House</Link>\n            ) : (\n              <Link to="/login?returnTo=/settings/investor">Investor sign in</Link>\n            )}''',
+          )
+
+          marker = '        <section className="deals-controls" aria-labelledby="deal-filter-title">'
+          if deals.count(marker) != 1:
+              raise SystemExit('Deals controls marker not found exactly once')
+          profile_panel = '''        {investorMember && (\n          <section\n            className={`investor-profile-connection ${\n              investorProfile?.complete ? "is-connected" : "needs-profile"\n            }`}\n            aria-labelledby="investor-profile-connection-title"\n          >\n            <div>\n              <span className="eyebrow">Deal matching profile</span>\n              <h2 id="investor-profile-connection-title">\n                {investorProfile?.complete\n                  ? "Your Investor profile is connected."\n                  : "Complete your Investor profile."}\n              </h2>\n              <p>\n                {investorProfile?.complete\n                  ? "Recommended deals are ordered against your saved sectors, stages, geographies and ticket range. This is deterministic discovery support, not investment advice."\n                  : "Add your investment thesis and ticket preferences to activate profile-based ordering and clear match reasons across the catalogue."}\n              </p>\n              {profilePreferences.length > 0 && (\n                <div className="investor-preference-chips" aria-label="Saved Investor preferences">\n                  {profilePreferences.map((preference) => (\n                    <span key={preference}>{preference}</span>\n                  ))}\n                </div>\n              )}\n            </div>\n            <div className="investor-profile-connection-actions">\n              {investorProfile && (\n                <span className={`status-pill status-${investorProfile.status}`}>\n                  {investorProfile.status.replaceAll("_", " ")}\n                </span>\n              )}\n              <Link className="button button-primary" to="/settings/investor">\n                {investorProfile?.complete ? "Update Investor profile" : "Complete Investor profile"}\n              </Link>\n            </div>\n          </section>\n        )}\n\n'''
+          deals = deals.replace(marker, profile_panel + marker, 1)
+
+          replace_once(
+              '<option value="">Recommended</option>',
+              '<option value="">Best profile match</option>',
+          )
+
+          replace_once(
+              '''                  </div>\n                  <h2>\n                    <Link to={`/deals/${opportunity.slug}`}>''',
+              '''                  </div>\n                  {opportunity.matchScore !== null && (\n                    <div className="deal-profile-match">\n                      <strong>{opportunity.matchScore}% profile match</strong>\n                      <span>\n                        {opportunity.matchReasons.length > 0\n                          ? opportunity.matchReasons.slice(0, 3).join(" · ")\n                          : "No saved preference matched this preview yet"}\n                      </span>\n                    </div>\n                  )}\n                  <h2>\n                    <Link to={`/deals/${opportunity.slug}`}>''',
+          )
+
+          deals_path.write_text(deals)
+
+          settings_path = Path('app/routes/investor-settings.tsx')
+          settings = settings_path.read_text()
+          old = '''            <p>\n              Selecting the Investor role is a claim, not verification. Private\n              rooms stay closed until AKARI completes its review.\n            </p>'''
+          new = '''            <p>\n              These preferences power the Best profile match ordering in Deal\n              Discovery. Selecting the Investor role is still a claim, and private\n              rooms stay closed until AKARI completes its review.\n            </p>'''
+          if settings.count(old) != 1:
+              raise SystemExit('Investor settings copy marker not found')
+          settings = settings.replace(old, new, 1)
+          settings_path.write_text(settings)
+
+          css_path = Path('app/styles/opportunities.css')
+          css = css_path.read_text()
+          css_addition = r'''
+
+/* Investor profile connection and deterministic catalogue matching. */
+.workspace-count {
+  display: inline-grid;
+  min-width: 1.35rem;
+  min-height: 1.35rem;
+  place-items: center;
+  margin-left: 0.35rem;
+  border: 1px solid rgba(255, 211, 61, 0.32);
+  border-radius: 999px;
+  color: var(--yellow);
+  font-size: 0.68rem;
+  line-height: 1;
+}
+
+.investor-profile-connection {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.5rem;
+  align-items: center;
+  margin-top: 2rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  border: 1px solid rgba(240, 79, 135, 0.28);
+  border-radius: 22px;
+  background: rgba(17, 21, 34, 0.78);
+}
+
+.investor-profile-connection.is-connected {
+  border-color: rgba(142, 230, 183, 0.28);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(142, 230, 183, 0.08), transparent 38%),
+    rgba(17, 21, 34, 0.82);
+}
+
+.investor-profile-connection h2 {
+  margin: 0.35rem 0 0.65rem;
+  font-size: clamp(1.4rem, 3vw, 2.15rem);
+}
+
+.investor-profile-connection p {
+  max-width: 70ch;
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.investor-profile-connection-actions {
+  display: grid;
+  justify-items: end;
+  gap: 0.8rem;
+}
+
+.investor-preference-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 1rem;
+}
+
+.investor-preference-chips span {
+  padding: 0.42rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  color: var(--paper);
+  background: rgba(255, 255, 255, 0.035);
+  font-size: 0.76rem;
+}
+
+.deal-profile-match {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 1rem;
+  padding: 0.75rem 0.85rem;
+  border-left: 3px solid var(--yellow);
+  background: rgba(255, 211, 61, 0.045);
+}
+
+.deal-profile-match strong {
+  color: var(--yellow);
+  font-size: 0.82rem;
+}
+
+.deal-profile-match span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 760px) {
+  .investor-profile-connection {
+    grid-template-columns: 1fr;
+  }
+
+  .investor-profile-connection-actions {
+    justify-items: start;
+  }
+}
+'''
+          if '/* Investor profile connection and deterministic catalogue matching. */' not in css:
+              css += css_addition
+          css_path.write_text(css)
+
+          e2e_path = Path('tests/e2e/curated-opportunities.spec.ts')
+          e2e = e2e_path.read_text()
+          insertion_marker = '''  test("approved Investor receives only the authorised private room", async ({\n    page,\n  }) => {'''
+          if e2e.count(insertion_marker) != 1:
+              raise SystemExit('E2E insertion marker not found')
+          e2e_test = '''  test("Investor profile powers catalogue matching and workspace menus", async ({\n    page,\n  }) => {\n    await usePersona(page, "opp_granted");\n    await page.goto("/deals");\n\n    await expect(\n      page.getByRole("heading", {\n        name: "Your Investor profile is connected.",\n      }),\n    ).toBeVisible();\n    await expect(page.getByText("100% profile match")).toBeVisible();\n    await expect(page.getByRole("link", { name: /Saved/ })).toHaveAttribute(\n      "href",\n      "/deals?view=saved",\n    );\n    await expect(page.getByRole("link", { name: /Requests/ })).toHaveAttribute(\n      "href",\n      "/deals?view=requested",\n    );\n    await expect(\n      page.getByRole("link", { name: /My Deal Rooms/ }),\n    ).toHaveAttribute("href", "/deals?view=approved");\n    await expect(\n      page.getByRole("link", { name: "Investor profile" }),\n    ).toHaveAttribute("href", "/settings/investor");\n  });\n\n'''
+          e2e = e2e.replace(insertion_marker, e2e_test + insertion_marker, 1)
+          e2e_path.write_text(e2e)
+          PY
+      - run: npm run format
+      - run: npm run typecheck
+      - run: npm test -- --run tests/investor-deal-matching.test.ts
+      - name: Commit implementation and remove workflow
+        run: |
+          rm .github/workflows/apply-investor-deal-connection.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/lib/investor-matching.server.ts app/routes/deals.tsx app/routes/investor-settings.tsx app/styles/opportunities.css tests/investor-deal-matching.test.ts tests/e2e/curated-opportunities.spec.ts .github/workflows/apply-investor-deal-connection.yml
+          git commit -m "Connect Investor profile to deal discovery"
+          git push origin HEAD:agent/connect-investor-profile-deals
