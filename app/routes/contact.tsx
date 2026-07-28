@@ -19,6 +19,15 @@ const topics = [
   ["other", "Other"],
 ] as const;
 
+export const meta: Route.MetaFunction = () => [
+  { title: "Contact AKARI | AKARI House" },
+  {
+    name: "description",
+    content:
+      "Contact the private AKARI desk about membership, campaigns, partnerships, privacy or account support.",
+  },
+];
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
   return {
