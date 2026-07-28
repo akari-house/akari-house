@@ -6,7 +6,11 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember, requireUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import type { Role } from "~/lib/domain";
-import { memberDirectoryFilters } from "~/lib/member-directory";
+import {
+  canAccessDirectoryProfile,
+  memberDirectoryFilters,
+  memberMatchesDirectoryFilters,
+} from "~/lib/member-directory";
 import {
   acceptConnectionRequest,
   connectionState,
@@ -15,7 +19,6 @@ import {
 } from "~/lib/network.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
-import { getVisibleProfile } from "~/lib/profile.server";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
 import { isRoleVerifiedId } from "~/lib/role-verification.server";
 
@@ -33,6 +36,7 @@ interface DirectoryMember {
   rolesCsv: string;
   relationship: ConnectionState;
   investorVerified: number;
+  visibility: "public" | "members" | "connections" | "private";
 }
 
 export const meta: Route.MetaFunction = () => [
@@ -49,8 +53,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireUser(request, db);
   const filters = memberDirectoryFilters(new URL(request.url));
   const memberAccess = user.accessTier === "member" ? 1 : 0;
-  const pattern = (value: string) =>
-    `%${value.replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
 
   const rows = await db
     .prepare(
@@ -65,6 +67,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
               COALESCE(p.expertise, '') AS expertise,
               COALESCE(p.open_to, '') AS openTo,
               COALESCE(p.avatar_key, '') AS avatarKey,
+              COALESCE(pv.visibility, p.visibility) AS visibility,
               group_concat(DISTINCT ur.role) AS rolesCsv,
               CASE WHEN EXISTS (
                 SELECT 1 FROM role_verifications investor_rv
@@ -105,49 +108,54 @@ export async function loader({ request, context }: Route.LoaderArgs) {
          AND COALESCE(c.status, '') <> 'blocked'
          AND (
            COALESCE(pv.visibility, p.visibility) = 'public'
-           OR (? = 1 AND COALESCE(pv.visibility, p.visibility) = 'members')
-           OR (? = 1 AND COALESCE(pv.visibility, p.visibility) = 'connections'
-               AND c.status = 'accepted')
+           OR (? = 1 AND COALESCE(pv.visibility, p.visibility) IN ('members', 'connections'))
          )
-         AND (? = '' OR p.display_name LIKE ? ESCAPE '\\'
-              OR u.username LIKE ? ESCAPE '\\'
-              OR p.headline LIKE ? ESCAPE '\\'
-              OR p.bio LIKE ? ESCAPE '\\'
-              OR p.expertise LIKE ? ESCAPE '\\')
-         AND (? = '' OR (
-           COALESCE(pss.show_location, 0) = 1
-           AND p.location LIKE ? ESCAPE '\\'
-         ))
-         AND (? = '' OR p.expertise LIKE ? ESCAPE '\\')
-         AND (? = '' OR EXISTS (
-           SELECT 1 FROM user_roles role_filter
-           WHERE role_filter.user_id = u.id AND role_filter.role = ?
-         ))
        GROUP BY u.id
        ORDER BY p.display_name COLLATE NOCASE
-       LIMIT 60`,
+       LIMIT 300`,
     )
-    .bind(
-      user.id,
-      user.id,
-      user.id,
-      user.id,
-      memberAccess,
-      memberAccess,
-      filters.query,
-      pattern(filters.query),
-      pattern(filters.query),
-      pattern(filters.query),
-      pattern(filters.query),
-      pattern(filters.query),
-      filters.location,
-      pattern(filters.location),
-      filters.expertise,
-      pattern(filters.expertise),
-      filters.role,
-      filters.role,
-    )
+    .bind(user.id, user.id, user.id, user.id, memberAccess)
     .all<DirectoryMember>();
+
+  const members = rows.results
+    .map((member) => {
+      const roles = member.rolesCsv.split(",").filter(Boolean) as Role[];
+      const profileAccessible = canAccessDirectoryProfile(
+        member.visibility,
+        user.accessTier,
+        member.relationship === "connected",
+      );
+      const visibleMember = {
+        ...member,
+        roles,
+        profileAccessible,
+        headline: profileAccessible ? member.headline : "",
+        bio: profileAccessible ? member.bio : "",
+        location: profileAccessible ? member.location : "",
+        languagesJson: profileAccessible ? member.languagesJson : "[]",
+        expertise: profileAccessible ? member.expertise : "",
+        openTo: profileAccessible ? member.openTo : "",
+        avatarKey: profileAccessible ? member.avatarKey : "",
+      };
+      return {
+        ...visibleMember,
+        languages: (() => {
+          try {
+            const parsed: unknown = JSON.parse(visibleMember.languagesJson);
+            return Array.isArray(parsed)
+              ? parsed.filter(
+                  (language): language is string =>
+                    typeof language === "string",
+                )
+              : [];
+          } catch {
+            return [];
+          }
+        })(),
+      };
+    })
+    .filter((member) => memberMatchesDirectoryFilters(member, filters))
+    .slice(0, 60);
 
   return {
     user,
@@ -155,22 +163,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     viewerFounderVerified: user.roles.includes("founder")
       ? await isRoleVerifiedId(db, user.id, "founder")
       : false,
-    members: rows.results.map((member) => ({
-      ...member,
-      roles: member.rolesCsv.split(",").filter(Boolean) as Role[],
-      languages: (() => {
-        try {
-          const parsed: unknown = JSON.parse(member.languagesJson);
-          return Array.isArray(parsed)
-            ? parsed.filter(
-                (language): language is string => typeof language === "string",
-              )
-            : [];
-        } catch {
-          return [];
-        }
-      })(),
-    })),
+    members,
   };
 }
 
@@ -201,7 +194,6 @@ export async function action({ request, context }: Route.ActionArgs) {
       throw new Response("Connection action is not available.", {
         status: 409,
       });
-    await getVisibleProfile(db, target.username, user.id);
     await sendConnectionRequest(db, user, recipientId);
   } else if (intent === "accept") {
     if (relationship !== "incoming_pending")
@@ -241,8 +233,9 @@ export default function Members({ loaderData }: Route.ComponentProps) {
             <span className="eyebrow">People of the House</span>
             <h1>Find the people your next chapter needs.</h1>
             <p>
-              Profiles appear according to each member&apos;s privacy settings.
-              Contact details remain protected until permission is granted.
+              Approved members can discover one another without exposing
+              protected profile details. Full profiles and contact details follow
+              each member&apos;s privacy settings.
             </p>
           </div>
           <Link className="button button-quiet" to="/connections">
@@ -340,9 +333,13 @@ export default function Members({ loaderData }: Route.ComponentProps) {
                       ))}
                     </div>
                     <h2>
-                      <Link to={`/profiles/${member.username}`}>
-                        {member.displayName}
-                      </Link>
+                      {member.profileAccessible ? (
+                        <Link to={`/profiles/${member.username}`}>
+                          {member.displayName}
+                        </Link>
+                      ) : (
+                        member.displayName
+                      )}
                     </h2>
                     <p className="member-card-handle">
                       @{member.username}
@@ -354,9 +351,11 @@ export default function Members({ loaderData }: Route.ComponentProps) {
                       </p>
                     )}
                     <p>
-                      {member.headline ||
-                        member.bio ||
-                        "This member is still shaping their introduction."}
+                      {member.profileAccessible
+                        ? member.headline ||
+                          member.bio ||
+                          "This member is still shaping their introduction."
+                        : "Profile details open after a mutual connection."}
                     </p>
                     {member.expertise && (
                       <p className="member-card-expertise">
@@ -365,12 +364,18 @@ export default function Members({ loaderData }: Route.ComponentProps) {
                       </p>
                     )}
                     <footer>
-                      <Link
-                        className="quiet-link"
-                        to={`/profiles/${member.username}`}
-                      >
-                        View profile
-                      </Link>
+                      {member.profileAccessible ? (
+                        <Link
+                          className="quiet-link"
+                          to={`/profiles/${member.username}`}
+                        >
+                          View profile
+                        </Link>
+                      ) : (
+                        <span className="status-pill">
+                          Connection-gated profile
+                        </span>
+                      )}
                       {status && <span className="status-pill">{status}</span>}
                       {loaderData.user.accessTier === "member" &&
                         member.relationship === "none" && (
@@ -432,8 +437,8 @@ export default function Members({ loaderData }: Route.ComponentProps) {
               <span className="eyebrow">A quieter corridor</span>
               <h2 id="members-empty">No members match this search yet.</h2>
               <p>
-                Try a broader role, location or expertise. Private profiles stay
-                out of view until their owner changes their visibility.
+                Try a broader role, location or expertise. Members who choose a
+                fully private profile remain out of the directory.
               </p>
               <Link className="button button-quiet" to="/members">
                 See all eligible members
