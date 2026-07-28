@@ -1,0 +1,192 @@
+.auth-journey {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 1.25rem 0 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.auth-journey li {
+  min-width: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.auth-journey strong,
+.auth-journey span {
+  display: block;
+}
+
+.auth-journey strong {
+  margin-bottom: 0.25rem;
+  color: var(--yellow);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.auth-journey span {
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.auth-form-section {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1rem;
+  border: 1px solid var(--hair);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.auth-section-heading {
+  display: grid;
+  gap: 0.18rem;
+  margin-bottom: 0.1rem;
+}
+
+.auth-section-heading span {
+  color: var(--pink);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.auth-section-heading h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.auth-section-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.password-field {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.password-field > label {
+  font-weight: 600;
+}
+
+.password-input-shell {
+  position: relative;
+}
+
+.password-input-shell input {
+  width: 100%;
+  padding-right: 6.2rem;
+}
+
+.password-visibility-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.55rem;
+  display: inline-flex;
+  min-width: 4.85rem;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.55rem;
+  transform: translateY(-50%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  background: rgba(8, 11, 19, 0.88);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.password-visibility-toggle:hover,
+.password-visibility-toggle:focus-visible,
+.password-visibility-toggle[aria-pressed="true"] {
+  border-color: rgba(240, 79, 135, 0.48);
+  color: #fff;
+}
+
+.password-visibility-toggle svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.password-hint,
+.password-status {
+  display: block;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.password-hint,
+.password-status[data-tone="neutral"] {
+  color: var(--muted);
+}
+
+.password-status[data-tone="success"] {
+  color: #8ee6b7;
+}
+
+.password-status[data-tone="error"] {
+  color: #ff9dbb;
+}
+
+.password-status::before {
+  margin-right: 0.38rem;
+  content: "•";
+}
+
+.auth-submit-note {
+  margin: -0.15rem 0 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+@media (max-width: 680px) {
+  .auth-journey {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-journey li {
+    display: grid;
+    grid-template-columns: 4.25rem 1fr;
+    align-items: start;
+    gap: 0.5rem;
+  }
+
+  .password-input-shell input {
+    padding-right: 3.2rem;
+  }
+
+  .password-visibility-toggle {
+    min-width: 2.3rem;
+    padding-inline: 0.45rem;
+  }
+
+  .password-visibility-toggle span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
