@@ -8,14 +8,18 @@ describe("member discovery connection flow", () => {
     const members = read("app/routes/members.tsx");
     expect(members).toContain("IN ('members', 'connections')");
     expect(members).toContain("profileAccessible");
-    expect(members).toContain("Profile details open after a mutual connection.");
+    expect(members).toContain(
+      "Profile details open after a mutual connection.",
+    );
     expect(members).not.toContain("await getVisibleProfile");
   });
 
   it("uses connection-gated visibility when an applicant becomes a member", () => {
     const approval = read("app/routes/admin-applications.tsx");
     const migration = read("migrations/0107_member_directory_discovery.sql");
-    expect(approval).toContain("WHEN visibility = 'private' THEN 'connections'");
+    expect(approval).toContain(
+      "WHEN visibility = 'private' THEN 'connections'",
+    );
     expect(migration).toContain("SET visibility = 'connections'");
     expect(migration).toContain("closure.status = 'cooling_off'");
   });

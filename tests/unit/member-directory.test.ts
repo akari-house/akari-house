@@ -27,9 +27,7 @@ describe("member directory privacy", () => {
     expect(canAccessDirectoryProfile("connections", "member", false)).toBe(
       false,
     );
-    expect(canAccessDirectoryProfile("connections", "member", true)).toBe(
-      true,
-    );
+    expect(canAccessDirectoryProfile("connections", "member", true)).toBe(true);
     expect(canAccessDirectoryProfile("private", "member", true)).toBe(false);
   });
 });

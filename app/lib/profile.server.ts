@@ -43,10 +43,10 @@ export async function getVisibleProfile(
     viewerId === profile.userId ||
     Boolean(
       viewerId &&
-        (await db
-          .prepare("SELECT 1 FROM users WHERE id = ? AND status = 'active'")
-          .bind(viewerId)
-          .first()),
+      (await db
+        .prepare("SELECT 1 FROM users WHERE id = ? AND status = 'active'")
+        .bind(viewerId)
+        .first()),
     );
   if (
     viewerId &&
