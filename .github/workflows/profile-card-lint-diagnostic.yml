@@ -1,9 +1,7 @@
 name: Profile Card Lint Diagnostic
 
 on:
-  push:
-    branches:
-      - agent/profile-card-completion
+  pull_request:
 
 permissions:
   contents: read
