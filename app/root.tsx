@@ -20,6 +20,7 @@ import "./styles/product-ui-consistency.css";
 import "./styles/profile-sharing.css";
 import "./styles/member-presence.css";
 import "./styles/admin-console.css";
+import "./styles/verification-queue.css";
 import "./styles/site-final-polish.css";
 
 export const headers: Route.HeadersFunction = () => productionSecurityHeaders();

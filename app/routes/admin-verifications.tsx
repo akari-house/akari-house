@@ -7,11 +7,14 @@ import { requireAdminScope } from "~/lib/membership.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 
+type VerificationRole = "founder" | "creator" | "investor";
+type VerificationView = "queue" | "history";
+
 type VerificationRow = {
   userId: string;
   username: string;
   displayName: string;
-  role: "founder" | "creator" | "investor";
+  role: VerificationRole;
   status: string;
   updatedAt: string;
   reviewedAt: string | null;
@@ -20,6 +23,7 @@ type VerificationRow = {
   reviewDueAt: string | null;
 };
 
+const roles = ["founder", "creator", "investor"] as const;
 const evidenceCategories = [
   "identity_and_profile",
   "company_or_project",
@@ -27,6 +31,15 @@ const evidenceCategories = [
   "investment_activity",
   "professional_references",
 ] as const;
+const defaultEvidenceByRole: Record<
+  VerificationRole,
+  (typeof evidenceCategories)[number]
+> = {
+  founder: "company_or_project",
+  creator: "creator_channels",
+  investor: "investment_activity",
+};
+const PAGE_SIZE = 50;
 
 function displayStatus(item: VerificationRow) {
   if (
@@ -41,6 +54,10 @@ function displayStatus(item: VerificationRow) {
   return item.status;
 }
 
+function titleCase(value: string) {
+  return `${value[0]?.toUpperCase() ?? ""}${value.slice(1)}`;
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   await ensureDiligenceSchema(db);
@@ -48,10 +65,50 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   await db
     .prepare(
       `UPDATE verification_provenance SET status = 'expired', updated_at = datetime('now')
-     WHERE status = 'active' AND review_due_at IS NOT NULL
-       AND review_due_at <= datetime('now')`,
+       WHERE status = 'active' AND review_due_at IS NOT NULL
+         AND review_due_at <= datetime('now')`,
     )
     .run();
+
+  const url = new URL(request.url);
+  const view: VerificationView =
+    url.searchParams.get("view") === "history" ? "history" : "queue";
+  const requestedRole = url.searchParams.get("role");
+  const roleFilter = roles.includes(requestedRole as VerificationRole)
+    ? (requestedRole as VerificationRole)
+    : "all";
+  const page = Math.max(
+    1,
+    Number.parseInt(url.searchParams.get("page") ?? "1", 10) || 1,
+  );
+
+  const statusClause =
+    view === "queue"
+      ? "rv.status = 'pending'"
+      : "rv.status IN ('verified', 'declined', 'revoked')";
+  const roleClause = roleFilter === "all" ? "" : " AND rv.role = ?";
+  const bindings = roleFilter === "all" ? [] : [roleFilter];
+
+  const countRow = await db
+    .prepare(
+      `SELECT COUNT(*) AS total
+       FROM role_verifications rv
+       JOIN users u ON u.id = rv.user_id
+       JOIN profiles p ON p.user_id = rv.user_id
+       WHERE ${statusClause}${roleClause}`,
+    )
+    .bind(...bindings)
+    .first<{ total: number }>();
+  const total = Number(countRow?.total ?? 0);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const offset = (currentPage - 1) * PAGE_SIZE;
+
+  const orderClause =
+    view === "queue"
+      ? "CASE WHEN rv.reviewed_at IS NULL THEN 0 ELSE 1 END, rv.updated_at DESC"
+      : "rv.updated_at DESC";
+
   const verifications = await db
     .prepare(
       `SELECT rv.user_id AS userId, u.username,
@@ -66,17 +123,23 @@ export async function loader({ request, context }: Route.LoaderArgs) {
        JOIN profiles p ON p.user_id = rv.user_id
        LEFT JOIN verification_provenance vp
          ON vp.user_id = rv.user_id AND vp.role = rv.role AND vp.status = 'active'
-       WHERE rv.status IN ('pending', 'declined', 'revoked')
-          OR vp.status = 'active'
-       ORDER BY CASE rv.status
-                  WHEN 'pending' THEN 0
-                  WHEN 'verified' THEN 1
-                  ELSE 2
-                END,
-                rv.updated_at DESC`,
+       WHERE ${statusClause}${roleClause}
+       ORDER BY ${orderClause}
+       LIMIT ? OFFSET ?`,
     )
+    .bind(...bindings, PAGE_SIZE, offset)
     .all<VerificationRow>();
-  return { user, verifications: verifications.results };
+
+  return {
+    user,
+    verifications: verifications.results,
+    view,
+    roleFilter,
+    page: currentPage,
+    total,
+    totalPages,
+    pageSize: PAGE_SIZE,
+  };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -86,14 +149,25 @@ export async function action({ request, context }: Route.ActionArgs) {
   const admin = await requireAdminScope(request, db, "verification");
   const form = await request.formData();
   const userId = formText(form.get("userId"));
-  const role = formText(form.get("role"));
+  const role = formText(form.get("role")) as VerificationRole;
   const intent = formText(form.get("intent"));
-  const decisionNote = formText(form.get("decisionNote")).trim();
-  const evidenceCategory = formText(form.get("evidenceCategory"));
+  const suppliedNote = formText(form.get("decisionNote")).trim();
+  const suppliedEvidence = formText(form.get("evidenceCategory"));
   const reviewMonths = Number(formText(form.get("reviewMonths")) || "12");
+
+  const defaultDecisionNote =
+    intent === "verify"
+      ? `Approved ${role} role from the verification queue.`
+      : intent === "hold"
+        ? `Held ${role} claim for further review.`
+        : `Rejected ${role} claim from the verification queue.`;
+  const decisionNote = suppliedNote || defaultDecisionNote;
+  const evidenceCategory =
+    suppliedEvidence || defaultEvidenceByRole[role] || "identity_and_profile";
+
   if (
-    !["founder", "creator", "investor"].includes(role) ||
-    !["verify", "hold", "decline", "revoke"].includes(intent) ||
+    !roles.includes(role) ||
+    !["verify", "hold", "decline"].includes(intent) ||
     decisionNote.length < 5 ||
     decisionNote.length > 500 ||
     (intent === "verify" &&
@@ -104,7 +178,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   )
     return {
       error:
-        "Choose a valid decision, evidence category, review period and a 5 to 500 character note.",
+        "Choose a valid claim, decision, evidence category and review period.",
     };
 
   const status =
@@ -112,25 +186,16 @@ export async function action({ request, context }: Route.ActionArgs) {
       ? "verified"
       : intent === "hold"
         ? "pending"
-        : intent === "revoke"
-          ? "revoked"
-          : "declined";
+        : "declined";
   const statements = [
     db
       .prepare(
         `UPDATE role_verifications SET status = ?, reviewed_by = ?,
          reviewed_at = datetime('now'), decision_note = ?,
          updated_at = datetime('now')
-         WHERE user_id = ? AND role = ?`,
+         WHERE user_id = ? AND role = ? AND status = 'pending'`,
       )
       .bind(status, admin.id, decisionNote, userId, role),
-    db
-      .prepare(
-        `UPDATE verification_provenance SET status = 'revoked',
-         updated_at = datetime('now')
-         WHERE user_id = ? AND role = ? AND status = 'active'`,
-      )
-      .bind(userId, role),
     db
       .prepare(
         `INSERT INTO notifications
@@ -140,14 +205,12 @@ export async function action({ request, context }: Route.ActionArgs) {
       .bind(
         crypto.randomUUID(),
         userId,
-        `${role[0].toUpperCase()}${role.slice(1)} verification updated`,
+        `${titleCase(role)} verification updated`,
         status === "verified"
-          ? `Your ${role} role is approved until its scheduled review.`
+          ? `Your ${role} role has been approved until its scheduled review.`
           : intent === "hold"
-            ? `Your ${role} verification is on hold while additional evidence is reviewed.`
-            : status === "revoked"
-              ? `Your ${role} verification was rejected and requires a fresh review.`
-              : `Your ${role} verification was not approved. Review your profile before requesting another review.`,
+            ? `Your ${role} claim is on hold while it receives further review.`
+            : `Your ${role} claim was not approved. You can update your profile before requesting another review.`,
       ),
     db
       .prepare(
@@ -169,10 +232,18 @@ export async function action({ request, context }: Route.ActionArgs) {
         }),
       ),
   ];
+
   if (intent === "verify")
     statements.splice(
-      2,
+      1,
       0,
+      db
+        .prepare(
+          `UPDATE verification_provenance SET status = 'revoked',
+           updated_at = datetime('now')
+           WHERE user_id = ? AND role = ? AND status = 'active'`,
+        )
+        .bind(userId, role),
       db
         .prepare(
           `INSERT INTO verification_provenance
@@ -190,8 +261,16 @@ export async function action({ request, context }: Route.ActionArgs) {
           decisionNote,
         ),
     );
+
   await db.batch(statements);
   return { saved: true };
+}
+
+function queueHref(view: VerificationView, role: string, page = 1) {
+  const params = new URLSearchParams({ view });
+  if (roles.includes(role as VerificationRole)) params.set("role", role);
+  if (page > 1) params.set("page", String(page));
+  return `/admin/verifications?${params.toString()}`;
 }
 
 export default function AdminVerifications({
@@ -200,6 +279,15 @@ export default function AdminVerifications({
 }: Route.ComponentProps) {
   const navigation = useNavigation();
   const busy = navigation.state !== "idle";
+  const firstResult =
+    loaderData.total === 0
+      ? 0
+      : (loaderData.page - 1) * loaderData.pageSize + 1;
+  const lastResult = Math.min(
+    loaderData.total,
+    loaderData.page * loaderData.pageSize,
+  );
+
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -209,14 +297,15 @@ export default function AdminVerifications({
             <span className="eyebrow">Identity and role review</span>
             <h1>Verification approval centre</h1>
             <p>
-              Review every role claim in one compact queue. Open a row only when
-              you need the evidence, note and decision controls.
+              A fast review queue for role claims. Approved and rejected claims
+              leave this queue immediately and remain available in history.
             </p>
           </div>
           <Link className="button button-quiet" to="/admin/operations">
             Operations centre
           </Link>
         </header>
+
         {actionData?.error && (
           <p className="form-error" role="alert">
             {actionData.error}
@@ -224,131 +313,127 @@ export default function AdminVerifications({
         )}
         {actionData?.saved && (
           <p className="notice success" role="status">
-            Verification decision and provenance saved.
+            Verification decision saved.
           </p>
         )}
 
         <div className="admin-queue-toolbar">
+          <nav className="admin-filter-tabs" aria-label="Verification view">
+            <Link
+              to={queueHref("queue", loaderData.roleFilter)}
+              aria-current={loaderData.view === "queue" ? "page" : undefined}
+            >
+              Active queue
+            </Link>
+            <Link
+              to={queueHref("history", loaderData.roleFilter)}
+              aria-current={loaderData.view === "history" ? "page" : undefined}
+            >
+              Reviewed history
+            </Link>
+          </nav>
           <p className="member-directory-summary" aria-live="polite">
-            <strong>{loaderData.verifications.length}</strong>{" "}
-            {loaderData.verifications.length === 1 ? "claim" : "claims"} in the
-            review centre
+            {loaderData.total === 0 ? (
+              "No claims"
+            ) : (
+              <>
+                <strong>{firstResult}</strong> to <strong>{lastResult}</strong>{" "}
+                of <strong>{loaderData.total}</strong>
+              </>
+            )}
           </p>
         </div>
 
-        <section className="admin-review-list" aria-label="Verification claims">
-          {loaderData.verifications.map((item) => {
-            const status = displayStatus(item);
-            const rejectIntent =
-              item.status === "verified" ? "revoke" : "decline";
-            return (
-              <details
-                className="admin-review-item"
-                key={`${item.userId}:${item.role}`}
-              >
-                <summary>
-                  <span className="admin-review-identity">
-                    <strong>{item.displayName}</strong>
+        <nav className="verification-role-filters" aria-label="Filter by role">
+          <Link
+            to={queueHref(loaderData.view, "all")}
+            aria-current={loaderData.roleFilter === "all" ? "page" : undefined}
+          >
+            All roles
+          </Link>
+          {roles.map((role) => (
+            <Link
+              key={role}
+              to={queueHref(loaderData.view, role)}
+              aria-current={loaderData.roleFilter === role ? "page" : undefined}
+            >
+              {titleCase(role)}
+            </Link>
+          ))}
+        </nav>
+
+        {loaderData.verifications.length === 0 ? (
+          <section className="verification-empty-state">
+            <span className="chapter">
+              {loaderData.view === "queue" ? "Queue clear" : "No history yet"}
+            </span>
+            <h2>
+              {loaderData.view === "queue"
+                ? "There are no role claims waiting for review."
+                : "No reviewed claims match this filter."}
+            </h2>
+          </section>
+        ) : (
+          <section
+            className="verification-list"
+            aria-label="Verification claims"
+          >
+            <div className="verification-list-head" aria-hidden="true">
+              <span>Member</span>
+              <span>Claim</span>
+              <span>Status</span>
+              <span>
+                {loaderData.view === "queue" ? "Decision" : "Reviewed"}
+              </span>
+            </div>
+            {loaderData.verifications.map((item) => {
+              const status = displayStatus(item);
+              return (
+                <article
+                  className="verification-row"
+                  key={`${item.userId}:${item.role}`}
+                >
+                  <div className="verification-person">
+                    <strong>
+                      <Link to={`/profiles/${item.username}`}>
+                        {item.displayName}
+                      </Link>
+                    </strong>
                     <span>@{item.username}</span>
-                  </span>
-                  <span className="admin-review-status">
-                    <strong>{item.role}</strong>
-                    <span>Role claim</span>
-                  </span>
-                  <span className="admin-review-status">
-                    <strong>{status}</strong>
+                  </div>
+                  <div className="verification-claim">
+                    <strong>Claims {titleCase(item.role)}</strong>
+                    <span>
+                      {item.decisionNote || "Awaiting administrator review"}
+                    </span>
+                  </div>
+                  <div className="verification-state">
+                    <strong>{titleCase(status)}</strong>
                     <span>
                       {item.evidenceCategory
                         ? item.evidenceCategory.replaceAll("_", " ")
-                        : "Evidence not recorded"}
+                        : item.reviewedAt
+                          ? `Updated ${new Date(item.updatedAt).toLocaleDateString()}`
+                          : "New claim"}
                     </span>
-                  </span>
-                  <time dateTime={item.reviewDueAt ?? item.updatedAt}>
-                    {item.reviewDueAt
-                      ? `Review ${new Date(item.reviewDueAt).toLocaleDateString()}`
-                      : `Updated ${new Date(item.updatedAt).toLocaleDateString()}`}
-                  </time>
-                </summary>
-
-                <div className="admin-review-body">
-                  <div className="admin-review-evidence">
-                    <span className="chapter">Current review record</span>
-                    <h2>
-                      <Link to={`/profiles/${item.username}`}>
-                        Open {item.displayName}&apos;s profile
-                      </Link>
-                    </h2>
-                    <p>
-                      <strong>Status:</strong> {status}
-                    </p>
-                    <p>
-                      <strong>Evidence:</strong>{" "}
-                      {item.evidenceCategory
-                        ? item.evidenceCategory.replaceAll("_", " ")
-                        : "No approved evidence category yet"}
-                    </p>
-                    {item.reviewDueAt && (
-                      <p>
-                        <strong>Review due:</strong>{" "}
-                        {new Date(item.reviewDueAt).toLocaleDateString()}
-                      </p>
-                    )}
-                    <p>
-                      <strong>Latest note:</strong>{" "}
-                      {item.decisionNote ||
-                        "No reviewer note has been recorded."}
-                    </p>
                   </div>
 
-                  <Form method="post" className="admin-review-form">
-                    <input type="hidden" name="userId" value={item.userId} />
-                    <input type="hidden" name="role" value={item.role} />
-                    <label>
-                      Evidence category
-                      <select
+                  {loaderData.view === "queue" ? (
+                    <Form method="post" className="verification-actions">
+                      <input type="hidden" name="userId" value={item.userId} />
+                      <input type="hidden" name="role" value={item.role} />
+                      <input
+                        type="hidden"
                         name="evidenceCategory"
-                        defaultValue={
-                          item.evidenceCategory ?? "identity_and_profile"
-                        }
-                      >
-                        {evidenceCategories.map((category) => (
-                          <option value={category} key={category}>
-                            {category.replaceAll("_", " ")}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Review again after approval
-                      <select name="reviewMonths" defaultValue="12">
-                        {[3, 6, 12, 24].map((months) => (
-                          <option value={months} key={months}>
-                            {months} months
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label>
-                      Decision note
-                      <textarea
-                        name="decisionNote"
-                        minLength={5}
-                        maxLength={500}
-                        defaultValue={item.decisionNote}
-                        required
+                        value={defaultEvidenceByRole[item.role]}
                       />
-                    </label>
-                    <p className="admin-scope-help">
-                      <strong>Hold</strong> keeps the claim in this queue.
-                      <strong> Reject</strong> declines a pending claim or
-                      revokes an active badge.
-                    </p>
-                    <div className="button-row">
+                      <input type="hidden" name="reviewMonths" value="12" />
                       <button
                         className="button button-primary"
                         name="intent"
                         value="verify"
                         disabled={busy}
+                        title={`Approve ${item.displayName} as ${item.role}`}
                       >
                         Approve
                       </button>
@@ -357,24 +442,70 @@ export default function AdminVerifications({
                         name="intent"
                         value="hold"
                         disabled={busy}
+                        title={`Hold ${item.displayName}'s ${item.role} claim`}
                       >
                         Hold
                       </button>
                       <button
-                        className="button button-quiet"
+                        className="button button-quiet verification-reject"
                         name="intent"
-                        value={rejectIntent}
+                        value="decline"
                         disabled={busy}
+                        title={`Reject ${item.displayName}'s ${item.role} claim`}
                       >
                         Reject
                       </button>
-                    </div>
-                  </Form>
-                </div>
-              </details>
-            );
-          })}
-        </section>
+                    </Form>
+                  ) : (
+                    <time
+                      className="verification-reviewed-at"
+                      dateTime={item.reviewedAt ?? item.updatedAt}
+                    >
+                      {new Date(
+                        item.reviewedAt ?? item.updatedAt,
+                      ).toLocaleDateString()}
+                    </time>
+                  )}
+                </article>
+              );
+            })}
+          </section>
+        )}
+
+        {loaderData.totalPages > 1 && (
+          <nav
+            className="verification-pagination"
+            aria-label="Verification pages"
+          >
+            {loaderData.page > 1 && (
+              <Link
+                className="button button-quiet"
+                to={queueHref(
+                  loaderData.view,
+                  loaderData.roleFilter,
+                  loaderData.page - 1,
+                )}
+              >
+                Previous
+              </Link>
+            )}
+            <span>
+              Page {loaderData.page} of {loaderData.totalPages}
+            </span>
+            {loaderData.page < loaderData.totalPages && (
+              <Link
+                className="button button-quiet"
+                to={queueHref(
+                  loaderData.view,
+                  loaderData.roleFilter,
+                  loaderData.page + 1,
+                )}
+              >
+                Next
+              </Link>
+            )}
+          </nav>
+        )}
       </main>
     </div>
   );
