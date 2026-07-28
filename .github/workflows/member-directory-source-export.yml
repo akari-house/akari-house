@@ -1,9 +1,9 @@
 name: Member Directory Source Export
 
 on:
-  push:
+  pull_request:
     branches:
-      - agent/member-directory-discovery
+      - main
 
 permissions:
   contents: read
@@ -13,8 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: agent/member-directory-discovery
       - name: Archive source
         run: git archive --format=tar.gz --output=akari-source.tar.gz HEAD
       - uses: actions/upload-artifact@v4
