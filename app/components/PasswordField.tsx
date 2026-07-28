@@ -45,7 +45,7 @@ export function PasswordField({
     .join(" ");
 
   return (
-    <div className="password-field">
+    <div className="password-field" data-password-field={name}>
       <label htmlFor={inputId}>{label}</label>
       <div className="password-input-shell">
         <input
@@ -76,7 +76,9 @@ export function PasswordField({
         <button
           className="password-visibility-toggle"
           type="button"
-          aria-label={`${visible ? "Hide" : "Show"} ${label.toLowerCase()}`}
+          aria-label={
+            visible ? "Hide entered characters" : "Show entered characters"
+          }
           aria-pressed={visible}
           onClick={() => setVisible((current) => !current)}
         >
