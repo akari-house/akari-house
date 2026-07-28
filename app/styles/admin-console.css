@@ -50,7 +50,9 @@
   background:
     radial-gradient(circle at 10% 10%, rgb(240 79 135 / 10%), transparent 30%),
     rgb(255 255 255 / 3%);
-  transition: transform 180ms ease, border-color 180ms ease;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease;
 }
 
 .admin-overview-card:hover,
@@ -127,7 +129,10 @@
 .admin-review-item > summary {
   padding: 0.9rem 1rem;
   display: grid;
-  grid-template-columns: minmax(190px, 1.25fr) minmax(120px, 0.6fr) minmax(130px, 0.65fr) auto;
+  grid-template-columns: minmax(190px, 1.25fr) minmax(120px, 0.6fr) minmax(
+      130px,
+      0.65fr
+    ) auto;
   gap: 1rem;
   align-items: center;
   cursor: pointer;

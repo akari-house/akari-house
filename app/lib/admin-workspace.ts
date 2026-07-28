@@ -1,9 +1,5 @@
 export type AdminScope =
-  | "membership"
-  | "verification"
-  | "projects"
-  | "campaigns"
-  | "moderation";
+  "membership" | "verification" | "projects" | "campaigns" | "moderation";
 
 export const adminScopes: AdminScope[] = [
   "membership",

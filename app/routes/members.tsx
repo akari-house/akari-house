@@ -243,8 +243,8 @@ export default function Members({ loaderData }: Route.ComponentProps) {
             <h1>Find the people your next chapter needs.</h1>
             <p>
               Approved members can discover one another without exposing
-              protected profile details. Full profiles and contact details follow
-              each member&apos;s privacy settings.
+              protected profile details. Full profiles and contact details
+              follow each member&apos;s privacy settings.
             </p>
           </div>
           <Link className="button button-quiet" to="/connections">

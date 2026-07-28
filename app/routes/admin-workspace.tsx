@@ -108,9 +108,9 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
             <span className="eyebrow">Scoped administration</span>
             <h1>Admin workspace</h1>
             <p>
-              Only the tools assigned to this account are shown. Superadmins retain
-              full access; scoped administrators remain limited to their explicit
-              responsibilities.
+              Only the tools assigned to this account are shown. Superadmins
+              retain full access; scoped administrators remain limited to their
+              explicit responsibilities.
             </p>
           </div>
           <Link className="button button-quiet" to="/app">
@@ -118,13 +118,18 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
           </Link>
         </header>
         <AdminWorkspaceNav access={loaderData.access} />
-        <section className="admin-overview-grid" aria-label="Available admin tools">
+        <section
+          className="admin-overview-grid"
+          aria-label="Available admin tools"
+        >
           {loaderData.items.map((item) => (
             <Link className="admin-overview-card" to={item.to} key={item.key}>
               <span className="chapter">{workspaceStatus(item)}</span>
               <h2>{item.label}</h2>
               <p>{item.description}</p>
-              <span className="admin-overview-card-action">Open workspace →</span>
+              <span className="admin-overview-card-action">
+                Open workspace →
+              </span>
             </Link>
           ))}
         </section>
