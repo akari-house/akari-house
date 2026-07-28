@@ -139,9 +139,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
           }>(),
       {
         sorsaScore: null,
-        sorsaSource: "unavailable" as SignalSource,
+        sorsaSource: "unavailable",
         xScore: null,
-        xScoreSource: "unavailable" as SignalSource,
+        xScoreSource: "unavailable",
       },
     ),
     safeFirst(
