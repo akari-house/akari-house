@@ -16,6 +16,15 @@ type PublicCampaignRow = {
   projectTitle: string;
 };
 
+export const meta: Route.MetaFunction = () => [
+  { title: "Creator Campaigns | AKARI House" },
+  {
+    name: "description",
+    content:
+      "Explore reviewed AKARI Creator campaigns and Initial Interest Offerings from published Founder projects.",
+  },
+];
+
 async function readPublishedCampaigns(db: D1Database) {
   try {
     const campaigns = await db
