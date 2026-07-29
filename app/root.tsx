@@ -28,6 +28,7 @@ import "./styles/house-workspace-shell.css";
 import "./styles/house-workspace-art.css";
 import "./styles/house-workspace-polish.css";
 import "./styles/admin-operations-spacing.css";
+import "./styles/launch-candidate-cleanup.css";
 
 export const headers: Route.HeadersFunction = () => productionSecurityHeaders();
 
@@ -43,6 +44,8 @@ export const links: Route.LinksFunction = () => [
     rel: "apple-touch-icon",
     href: "/assets/brand/apple-touch-icon.png",
   },
+  { rel: "manifest", href: "/site.webmanifest" },
+  { rel: "sitemap", type: "application/xml", href: "/sitemap.xml" },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
@@ -66,8 +69,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="theme-color" content="#080b13" />
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover"
+        />
+        <meta name="theme-color" content="#090b14" />
+        <meta name="color-scheme" content="dark" />
+        <meta name="application-name" content="AKARI House" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
+        <meta name="apple-mobile-web-app-title" content="AKARI House" />
+        <meta name="format-detection" content="telephone=no" />
         <Meta />
         <Links />
       </head>
