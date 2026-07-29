@@ -27,10 +27,14 @@ test("Blossom Journey connectors remain between adjacent nodes", async ({
     if (!previous || !connector || !next) continue;
 
     if (vertical) {
-      expect(connector.y).toBeGreaterThanOrEqual(previous.y + previous.height - 1);
+      expect(connector.y).toBeGreaterThanOrEqual(
+        previous.y + previous.height - 1,
+      );
       expect(connector.y + connector.height).toBeLessThanOrEqual(next.y + 1);
     } else {
-      expect(connector.x).toBeGreaterThanOrEqual(previous.x + previous.width - 1);
+      expect(connector.x).toBeGreaterThanOrEqual(
+        previous.x + previous.width - 1,
+      );
       expect(connector.x + connector.width).toBeLessThanOrEqual(next.x + 1);
     }
   }
@@ -48,7 +52,7 @@ test("public pages are canonical while private utility pages are noindex", async
     "content",
     /index, follow/,
   );
-  await expect(page.locator('script[type="application\/ld\+json"]')).toHaveCount(
+  await expect(page.locator('script[type="application/ld+json"]')).toHaveCount(
     1,
   );
 
