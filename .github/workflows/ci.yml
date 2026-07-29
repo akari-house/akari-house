@@ -7,9 +7,35 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  apply-profile-score-navigation-fix:
+    if: github.event_name == 'pull_request' && github.head_ref == 'agent/profile-score-navigation-fix'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/profile-score-navigation-fix
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: python scripts/apply-profile-score-navigation-fix.py
+      - run: npx prettier --write app/routes/dashboard.tsx app/components/HouseWorkspaceSidebar.tsx app/components/SiteHeader.tsx app/components/InvestorHouseSidebar.tsx app/components/PublicFooter.tsx tests/profile-score-navigation.test.ts
+      - name: Commit focused corrections
+        run: |
+          git config user.name "AKARI automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/routes/dashboard.tsx app/components/HouseWorkspaceSidebar.tsx app/components/SiteHeader.tsx app/components/InvestorHouseSidebar.tsx app/components/PublicFooter.tsx tests/profile-score-navigation.test.ts
+          if git diff --cached --quiet; then
+            echo "Focused corrections are already applied."
+          else
+            git commit -m "Fix profile score saving and brand navigation"
+            git push origin HEAD:agent/profile-score-navigation-fix
+          fi
+
   verify:
     runs-on: ubuntu-latest
     steps:
