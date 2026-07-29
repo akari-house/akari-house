@@ -19,6 +19,7 @@ export default defineConfig({
         command: "npm run test:e2e:serve",
         url: "http://127.0.0.1:5173",
         reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
       },
   projects: [
     { name: "desktop-chromium", use: { ...devices["Desktop Chrome"] } },
