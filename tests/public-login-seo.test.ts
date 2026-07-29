@@ -13,9 +13,7 @@ describe("Worker login SEO boundaries", () => {
 
     expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
     expect(response.headers.get("cache-control")).toContain("no-store");
-    expect(body).toContain(
-      '<meta name="robots" content="noindex, nofollow">',
-    );
+    expect(body).toContain('<meta name="robots" content="noindex, nofollow">');
     expect(body).toContain("<title>Log in · AKARI House</title>");
   });
 
@@ -28,9 +26,7 @@ describe("Worker login SEO boundaries", () => {
     const body = await response.text();
 
     expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
-    expect(body).toContain(
-      '<meta name="robots" content="noindex, nofollow">',
-    );
+    expect(body).toContain('<meta name="robots" content="noindex, nofollow">');
     expect(body).toContain("<title>Opening AKARI House</title>");
   });
 });
