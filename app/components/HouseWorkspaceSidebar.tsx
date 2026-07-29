@@ -217,6 +217,7 @@ export function HouseWorkspaceSidebar({
                 key={item.key}
                 item={{ label: item.label, href: item.to, glyph: "·" }}
                 pathname={pathname}
+                hash={hash}
               />
             ))}
           </>
