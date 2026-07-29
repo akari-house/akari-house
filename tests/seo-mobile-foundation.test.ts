@@ -17,20 +17,25 @@ describe("SEO and mobile discovery foundation", () => {
     expect(sitemap).not.toContain("/admin/");
   });
 
-  it("provides installable mobile metadata using official brand assets", () => {
+  it("provides mobile Web metadata using official brand assets", () => {
     const manifest = JSON.parse(readProjectFile("public/site.webmanifest")) as {
       name: string;
       display: string;
       theme_color: string;
-      icons: Array<{ src: string }>;
+      icons: Array<{ src: string; sizes: string }>;
     };
     const root = readProjectFile("app/root.tsx");
 
     expect(manifest.name).toBe("AKARI House");
     expect(manifest.display).toBe("standalone");
     expect(manifest.theme_color).toBe("#090b14");
-    expect(manifest.icons.some((icon) => icon.src.includes("/assets/brand/"))).toBe(
-      true,
+    expect(manifest.icons).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          src: "/assets/brand/app-icon.png",
+          sizes: "512x481",
+        }),
+      ]),
     );
     expect(root).toContain('rel: "manifest", href: "/site.webmanifest"');
     expect(root).toContain('name="apple-mobile-web-app-capable"');
