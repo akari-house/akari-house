@@ -83,7 +83,11 @@ export function PublicFooter() {
             <h2 id="footer-title" className="sr-only">
               AKARI House information
             </h2>
-            <Link className="footer-brand" to="/" aria-label="AKARI House home">
+            <Link
+              className="footer-brand"
+              to="/"
+              aria-label="AKARI House footer home"
+            >
               <img
                 src="/assets/optimized/akari-logo.webp"
                 alt="AKARI"
