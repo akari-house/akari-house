@@ -1,0 +1,10 @@
+/* Route-specific rhythm for the superadmin operations overview. */
+.admin-operations-main > section + section {
+  margin-top: var(--app-section-gap);
+}
+
+@media (max-width: 720px) {
+  .admin-operations-main > section + section {
+    margin-top: 1rem;
+  }
+}

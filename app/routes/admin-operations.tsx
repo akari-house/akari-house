@@ -287,7 +287,7 @@ export default function AdminOperations({
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
-      <main id="main-content" className="admin-main">
+      <main id="main-content" className="admin-main admin-operations-main">
         <header className="admin-heading">
           <div>
             <span className="eyebrow">Launch operations</span>

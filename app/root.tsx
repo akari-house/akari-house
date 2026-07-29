@@ -27,6 +27,7 @@ import "./styles/investor-house-reference.css";
 import "./styles/house-workspace-shell.css";
 import "./styles/house-workspace-art.css";
 import "./styles/house-workspace-polish.css";
+import "./styles/admin-operations-spacing.css";
 
 export const headers: Route.HeadersFunction = () => productionSecurityHeaders();
 
