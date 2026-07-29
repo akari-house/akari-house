@@ -48,6 +48,6 @@ describe("profile score and AKARI navigation consistency", () => {
     expect(siteHeader).toContain('to="/"');
     expect(authLayout).toContain('className="auth-brand" to="/"');
     expect(publicFooter).toContain('className="footer-brand"');
-    expect(publicFooter).toContain('aria-label="AKARI House home"');
+    expect(publicFooter).toContain('aria-label="AKARI House footer home"');
   });
 });
