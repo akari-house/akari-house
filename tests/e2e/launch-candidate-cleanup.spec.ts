@@ -76,7 +76,8 @@ test("public pages are canonical while private utility pages are noindex", async
     1,
   );
 
-  await page.goto("/login");
+  const loginResponse = await page.goto("/login");
+  expect(loginResponse?.headers()["x-robots-tag"]).toBe("noindex, nofollow");
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
     "content",
     "noindex, nofollow",
