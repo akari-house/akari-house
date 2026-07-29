@@ -1,4 +1,4 @@
-export const publicLoginRelease = "worker-login-2026-07-28-password-ux-v3";
+export const publicLoginRelease = "worker-login-2026-07-29-launch-seo-v4";
 
 function escapeHtml(value: string) {
   return value.replace(
@@ -23,6 +23,7 @@ function loginSecurityHeaders(request: Request) {
     "cache-control": "private, no-store, max-age=0",
     vary: "Cookie",
     "x-content-type-options": "nosniff",
+    "x-robots-tag": "noindex, nofollow",
     "referrer-policy": "strict-origin-when-cross-origin",
     "x-frame-options": "DENY",
     "permissions-policy":
@@ -92,6 +93,8 @@ export function publicLoginFallbackResponse(
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#090B14">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="description" content="Log in to your private AKARI House workspace.">
   <title>Log in · AKARI House</title>
   <link rel="icon" href="/assets/brand/favicon.ico">
   <style>
@@ -174,6 +177,7 @@ export function publicLoginSuccessResponse(
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#090B14">
+  <meta name="robots" content="noindex, nofollow">
   <meta http-equiv="refresh" content="0;url=${safeDestination}">
   <title>Opening AKARI House</title>
   <style>:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui;background:#090B14;color:#fff}body{margin:0;min-height:100vh;display:grid;place-items:center;text-align:center;padding:2rem}main{max-width:42rem}p{color:#B7BAC5}a{color:#FFD33D}</style>
