@@ -17,9 +17,11 @@ const publicFooter = readFileSync("app/components/PublicFooter.tsx", "utf8");
 describe("profile score and AKARI navigation consistency", () => {
   it("accepts the complete XScore scale in the browser and server action", () => {
     expect(dashboard).toContain("xScore > 1_000");
-    expect(dashboard).toContain("sorsaScore > 100");
+    expect(dashboard).not.toContain("sorsaScore > 100");
     expect(dashboard).toContain("max={1_000}");
     expect(dashboard).toContain('placeholder="0 to 1,000"');
+    expect(dashboard).toContain('placeholder="0 or higher"');
+    expect(dashboard).toContain("Values can exceed 100.");
     expect(dashboard).toContain('errorCode: "reputation" as const');
     expect(dashboard).toContain('actionData.errorCode === "reputation"');
   });

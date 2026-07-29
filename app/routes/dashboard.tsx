@@ -351,11 +351,11 @@ export async function action({ request, context }: Route.ActionArgs) {
     (xScore !== null &&
       (!Number.isFinite(xScore) || xScore < 0 || xScore > 1_000)) ||
     (sorsaScore !== null &&
-      (!Number.isFinite(sorsaScore) || sorsaScore < 0 || sorsaScore > 100))
+      (!Number.isFinite(sorsaScore) || sorsaScore < 0))
   ) {
     return {
       error:
-        "XScore must be between 0 and 1,000. Sorsa score must be between 0 and 100.",
+        "XScore must be between 0 and 1,000. Sorsa score must be zero or higher.",
       errorCode: "reputation" as const,
     };
   }
@@ -1012,11 +1012,14 @@ export default function Dashboard({
                     type="number"
                     inputMode="decimal"
                     min={0}
-                    max={100}
                     step="0.01"
                     defaultValue={loaderData.reputationSignals.sorsaScore ?? ""}
-                    placeholder="0 to 100"
+                    placeholder="0 or higher"
+                    aria-describedby="sorsa-score-help"
                   />
+                  <small id="sorsa-score-help">
+                    Enter the current Sorsa score. Values can exceed 100.
+                  </small>
                 </label>
               </div>
             </fieldset>
