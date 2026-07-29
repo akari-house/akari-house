@@ -34,6 +34,22 @@ describe("house interactions", () => {
     expect(screen.getByText(/Turn a broad ambition/)).toBeVisible();
   });
 
+  it("renders progress only in the spaces between Journey nodes", async () => {
+    const user = userEvent.setup();
+    const { container } = withRouter(<BlossomJourney />);
+    const connectors = container.querySelectorAll(".journey-connector");
+
+    expect(connectors).toHaveLength(4);
+    expect(container.querySelectorAll(".journey-connector.is-complete")).toHaveLength(
+      0,
+    );
+
+    await user.click(screen.getByRole("tab", { name: /Common Table/ }));
+    expect(container.querySelectorAll(".journey-connector.is-complete")).toHaveLength(
+      3,
+    );
+  });
+
   it("previews rooms before exposing one dedicated entry link", async () => {
     const user = userEvent.setup();
     withRouter(<HouseHall />);
