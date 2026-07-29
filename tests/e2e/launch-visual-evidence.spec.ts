@@ -66,6 +66,19 @@ function visualEvidenceProject(testInfo: TestInfo) {
   );
 }
 
+async function expectRoleEntry(
+  page: Page,
+  testInfo: TestInfo,
+  desktopName: string,
+  mobileName: RegExp,
+) {
+  const roleEntry =
+    testInfo.project.name === "mobile-chromium"
+      ? page.getByRole("link", { name: mobileName })
+      : page.getByRole("link", { name: desktopName });
+  await expect(roleEntry.first()).toBeVisible();
+}
+
 test.describe("launch visual evidence", () => {
   test.describe.configure({ mode: "serial" });
 
@@ -108,11 +121,12 @@ test.describe("launch visual evidence", () => {
   test("captures Creator workspace", async ({ page }, testInfo) => {
     await activatePersona(page, "creator", { reuseExisting: true });
     await page.goto("/app", { waitUntil: "networkidle" });
-    await expect(
-      page.getByRole("link", {
-        name: "Find campaigns, workspace navigation",
-      }),
-    ).toBeVisible();
+    await expectRoleEntry(
+      page,
+      testInfo,
+      "Find campaigns, workspace navigation",
+      /Find Creator campaigns/,
+    );
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-creator");
   });
@@ -120,11 +134,12 @@ test.describe("launch visual evidence", () => {
   test("captures Investor workspace", async ({ page }, testInfo) => {
     await activatePersona(page, "investor", { reuseExisting: true });
     await page.goto("/app", { waitUntil: "networkidle" });
-    await expect(
-      page.getByRole("link", {
-        name: "Explore matched Deals, workspace navigation",
-      }),
-    ).toBeVisible();
+    await expectRoleEntry(
+      page,
+      testInfo,
+      "Explore matched Deals, workspace navigation",
+      /Review matched Deals/,
+    );
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-investor");
   });
@@ -132,11 +147,12 @@ test.describe("launch visual evidence", () => {
   test("captures Founder workspace", async ({ page }, testInfo) => {
     await activatePersona(page, "founder", { reuseExisting: true });
     await page.goto("/app", { waitUntil: "networkidle" });
-    await expect(
-      page.getByRole("link", {
-        name: "Manage projects, workspace navigation",
-      }),
-    ).toBeVisible();
+    await expectRoleEntry(
+      page,
+      testInfo,
+      "Manage projects, workspace navigation",
+      /Manage your Founder work/,
+    );
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-founder");
   });
