@@ -88,7 +88,6 @@ export function InvestorHouseSidebar({
   activeView,
   counts,
 }: InvestorHouseSidebarProps) {
-  const houseHref = user ? "/app" : "/";
   const investorProfileHref = user
     ? "/settings/investor"
     : "/login?returnTo=/settings/investor";
