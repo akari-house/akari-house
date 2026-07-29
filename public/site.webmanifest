@@ -14,12 +14,19 @@
   "icons": [
     {
       "src": "/assets/brand/favicon.png",
-      "sizes": "64x64",
-      "type": "image/png"
+      "sizes": "64x60",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/assets/brand/apple-touch-icon.png",
-      "sizes": "180x180",
+      "sizes": "180x169",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/brand/app-icon.png",
+      "sizes": "512x481",
       "type": "image/png",
       "purpose": "any"
     }
