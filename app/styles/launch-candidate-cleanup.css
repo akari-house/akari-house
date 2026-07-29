@@ -155,6 +155,12 @@ main :where(p, li) {
   background: rgb(240 79 135 / 9%);
 }
 
+body:has(.membership-seal.status-approved)
+  .member-next-actions
+  > a.button-primary[href="/projects"] {
+  display: none;
+}
+
 /* Creator campaign discovery: make fit, deadline and next action explicit. */
 .directory-role-note {
   width: fit-content;
