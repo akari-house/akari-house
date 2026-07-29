@@ -161,7 +161,7 @@ test.describe("launch visual evidence", () => {
     await activatePersona(page, "superadmin", { reuseExisting: true });
     await page.goto("/admin", { waitUntil: "networkidle" });
     await expect(
-      page.getByText("Superadmin", { exact: true }).first(),
+      page.getByRole("heading", { name: "Admin workspace" }),
     ).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-superadmin");
