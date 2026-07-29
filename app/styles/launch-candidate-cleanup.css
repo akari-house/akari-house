@@ -133,6 +133,131 @@ main :where(p, li) {
   font-size: clamp(1.5rem, 2vw + 0.85rem, 2.25rem);
 }
 
+/* Creator campaign discovery: make fit, deadline and next action explicit. */
+.directory-role-note {
+  width: fit-content;
+  margin-top: var(--space-related);
+  padding: 0.65rem 0.8rem;
+  border: 1px solid rgb(255 211 61 / 24%);
+  border-radius: 12px;
+  background: rgb(255 211 61 / 7%);
+  color: #f6e9a9;
+  font-size: 0.9rem;
+}
+
+.campaign-directory-guide {
+  margin-block: var(--space-section);
+  padding: var(--space-panel);
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.7fr);
+  gap: var(--space-panel);
+  align-items: center;
+  border: 1px solid rgb(240 79 135 / 18%);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 6% 10%, rgb(240 79 135 / 10%), transparent 34%),
+    rgb(13 17 27 / 82%);
+}
+
+.campaign-directory-guide h2,
+.campaign-directory-section-heading h2 {
+  margin: 0.35rem 0 0;
+  font-size: var(--type-section-title);
+}
+
+.campaign-directory-guide ol {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-related);
+  list-style: none;
+}
+
+.campaign-directory-guide li {
+  min-width: 0;
+  padding: 0.9rem;
+  display: grid;
+  gap: var(--space-control);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 3%);
+}
+
+.campaign-directory-guide li strong {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(255 211 61 / 32%);
+  border-radius: 50%;
+  color: var(--yellow);
+}
+
+.campaign-directory-guide li span {
+  color: var(--inner-copy, #b8bdc8);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.campaign-directory-section-heading {
+  max-width: 720px;
+  margin-bottom: var(--space-panel);
+}
+
+.campaign-directory-section-heading p {
+  margin: 0.6rem 0 0;
+  color: var(--muted);
+}
+
+.campaign-directory-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-related);
+}
+
+.campaign-directory-card h3 {
+  margin: 0;
+  font-size: var(--type-card-title);
+  line-height: 1.25;
+}
+
+.campaign-directory-card > p {
+  margin: 0;
+}
+
+.campaign-directory-facts {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.campaign-directory-facts > div {
+  padding-top: 0.55rem;
+  display: grid;
+  grid-template-columns: minmax(88px, 0.35fr) minmax(0, 1fr);
+  gap: var(--space-related);
+  border-top: 1px solid rgb(255 255 255 / 8%);
+}
+
+.campaign-directory-facts dt {
+  color: var(--muted);
+  font-size: var(--type-metadata);
+  font-weight: 700;
+}
+
+.campaign-directory-facts dd {
+  min-width: 0;
+  margin: 0;
+  color: #f4f5f8;
+  overflow-wrap: anywhere;
+}
+
+.campaign-directory-action {
+  width: fit-content;
+  margin-top: auto;
+}
+
 @media (max-width: 700px) {
   .blossom-experience {
     gap: var(--space-card);
@@ -162,6 +287,24 @@ main :where(p, li) {
 
   .journey-outcome {
     min-height: 0;
+  }
+
+  .campaign-directory-guide {
+    grid-template-columns: 1fr;
+  }
+
+  .campaign-directory-guide ol {
+    grid-template-columns: 1fr;
+  }
+
+  .campaign-directory-facts > div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .campaign-directory-action {
+    width: 100%;
+    justify-content: center;
   }
 
   .button,
