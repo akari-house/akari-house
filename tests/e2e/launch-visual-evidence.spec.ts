@@ -42,8 +42,7 @@ async function capture(
   name: string,
   options: { fullPage?: boolean } = {},
 ) {
-  const directory =
-    `launch-gate-artifacts/visual-evidence/${testInfo.project.name}`;
+  const directory = `launch-gate-artifacts/visual-evidence/${testInfo.project.name}`;
   mkdirSync(directory, { recursive: true });
   await preparePage(page);
   await page.screenshot({
@@ -79,40 +78,38 @@ test.describe("launch visual evidence", () => {
     await page.context().clearCookies();
   });
 
-  test(
-    "captures public House and discovery routes",
-    async ({ page }, testInfo) => {
-      await activatePersona(page, "project_owner", {
-        seedResources: true,
-        reuseExisting: true,
-      });
-      await page.context().clearCookies();
+  test("captures public House and discovery routes", async ({
+    page,
+  }, testInfo) => {
+    await activatePersona(page, "project_owner", {
+      seedResources: true,
+      reuseExisting: true,
+    });
+    await page.context().clearCookies();
 
-      for (const [route, name] of [
-        ["/", "public-home"],
-        ["/projects", "public-projects"],
-        ["/campaigns", "public-campaigns"],
-        ["/deals", "public-deals"],
-      ] as const) {
-        await page.goto(route, { waitUntil: "networkidle" });
-        await expectNoHorizontalOverflow(page);
-        await capture(page, testInfo, name);
-      }
+    for (const [route, name] of [
+      ["/", "public-home"],
+      ["/projects", "public-projects"],
+      ["/campaigns", "public-campaigns"],
+      ["/deals", "public-deals"],
+    ] as const) {
+      await page.goto(route, { waitUntil: "networkidle" });
+      await expectNoHorizontalOverflow(page);
+      await capture(page, testInfo, name);
+    }
 
-      await page.goto("/", { waitUntil: "networkidle" });
-      const journey = page.locator(".blossom-experience");
-      await journey.scrollIntoViewIfNeeded();
-      await expect(journey).toBeVisible();
-      await preparePage(page);
-      const directory =
-        `launch-gate-artifacts/visual-evidence/${testInfo.project.name}`;
-      mkdirSync(directory, { recursive: true });
-      await journey.screenshot({
-        path: `${directory}/public-blossom-journey.png`,
-        animations: "disabled",
-      });
-    },
-  );
+    await page.goto("/", { waitUntil: "networkidle" });
+    const journey = page.locator(".blossom-experience");
+    await journey.scrollIntoViewIfNeeded();
+    await expect(journey).toBeVisible();
+    await preparePage(page);
+    const directory = `launch-gate-artifacts/visual-evidence/${testInfo.project.name}`;
+    mkdirSync(directory, { recursive: true });
+    await journey.screenshot({
+      path: `${directory}/public-blossom-journey.png`,
+      animations: "disabled",
+    });
+  });
 
   test("captures Creator workspace", async ({ page }, testInfo) => {
     await activatePersona(page, "creator");
