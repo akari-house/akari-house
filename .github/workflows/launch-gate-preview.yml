@@ -7,6 +7,7 @@ on:
       - "app/**"
       - "tests/e2e/launch-gate.spec.ts"
       - "tests/e2e/launch-gate-security.spec.ts"
+      - "tests/e2e/launch-visual-evidence.spec.ts"
       - "scripts/build-launch-gate-report.mjs"
       - "scripts/production-smoke.mjs"
       - "migrations/**"
@@ -48,6 +49,17 @@ jobs:
           node scripts/build-launch-gate-report.mjs \
             launch-gate-artifacts/playwright.json \
             launch-gate-artifacts/report.json
+      - name: Capture desktop and mobile visual evidence
+        id: visual-evidence
+        continue-on-error: true
+        env:
+          AKARI_CAPTURE_LAUNCH_EVIDENCE: "1"
+        run: |
+          npx playwright test \
+            tests/e2e/launch-visual-evidence.spec.ts \
+            --project=desktop-chromium \
+            --project=mobile-chromium \
+            --reporter=line
       - name: Upload launch-gate evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -56,9 +68,12 @@ jobs:
           path: |
             launch-gate-artifacts/playwright.json
             launch-gate-artifacts/report.json
+            launch-gate-artifacts/visual-evidence/**/*.png
             test-results/**/trace.zip
           if-no-files-found: error
           retention-days: 30
       - name: Enforce launch gate
-        if: steps.launch-tests.outcome != 'success'
+        if: >-
+          steps.launch-tests.outcome != 'success' ||
+          steps.visual-evidence.outcome != 'success'
         run: exit 1
