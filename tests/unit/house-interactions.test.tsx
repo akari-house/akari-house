@@ -40,14 +40,14 @@ describe("house interactions", () => {
     const connectors = container.querySelectorAll(".journey-connector");
 
     expect(connectors).toHaveLength(4);
-    expect(container.querySelectorAll(".journey-connector.is-complete")).toHaveLength(
-      0,
-    );
+    expect(
+      container.querySelectorAll(".journey-connector.is-complete"),
+    ).toHaveLength(0);
 
     await user.click(screen.getByRole("tab", { name: /Common Table/ }));
-    expect(container.querySelectorAll(".journey-connector.is-complete")).toHaveLength(
-      3,
-    );
+    expect(
+      container.querySelectorAll(".journey-connector.is-complete"),
+    ).toHaveLength(3);
   });
 
   it("previews rooms before exposing one dedicated entry link", async () => {
