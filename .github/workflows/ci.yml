@@ -7,29 +7,9 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  apply-xscore-copy-fix:
-    if: github.event_name == 'pull_request' && github.head_ref == 'agent/profile-score-navigation-fix'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: agent/profile-score-navigation-fix
-      - run: python scripts/fix-xscore-copy.py
-      - name: Commit copy correction
-        run: |
-          git config user.name "AKARI automation"
-          git config user.email "actions@users.noreply.github.com"
-          git add app/routes/dashboard.tsx
-          if git diff --cached --quiet; then
-            echo "XScore copy is already corrected."
-          else
-            git commit -m "Align XScore help text with interface style"
-            git push origin HEAD:agent/profile-score-navigation-fix
-          fi
-
   verify:
     runs-on: ubuntu-latest
     steps:
