@@ -82,7 +82,9 @@ describe("house interactions", () => {
     );
     const destinations = items.map((item) => item.href);
 
-    expect(destinations.filter((href) => href === "/campaigns")).toHaveLength(1);
+    expect(destinations.filter((href) => href === "/campaigns")).toHaveLength(
+      1,
+    );
     expect(destinations.filter((href) => href === "/deals")).toHaveLength(1);
     expect(destinations[0]).toBe("/projects/manage");
   });
@@ -103,7 +105,9 @@ describe("house interactions", () => {
       sections.indexOf("Network & discovery"),
     );
     expect(
-      screen.getByRole("link", { name: "Find campaigns, workspace navigation" }),
+      screen.getByRole("link", {
+        name: "Find campaigns, workspace navigation",
+      }),
     ).toHaveAttribute("href", "/campaigns");
   });
 
