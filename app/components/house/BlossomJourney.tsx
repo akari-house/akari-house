@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 const steps = [
   {
@@ -46,30 +46,39 @@ export function BlossomJourney() {
     <div className="blossom-experience">
       <div className="blossom-branch" role="tablist" aria-label="AKARI journey">
         {steps.map((item, index) => (
-          <button
-            id={`journey-step-${index}`}
-            type="button"
-            role="tab"
-            aria-selected={index === active}
-            aria-controls={`journey-panel-${index}`}
-            tabIndex={index === active ? 0 : -1}
-            className={index <= active ? "is-lit" : ""}
-            key={item.title}
-            onClick={() => setActive(index)}
-            onKeyDown={(event) => {
-              if (
-                !["ArrowRight", "ArrowLeft", "Home", "End"].includes(event.key)
-              )
-                return;
-              event.preventDefault();
-              if (event.key === "Home") move(0);
-              else if (event.key === "End") move(steps.length - 1);
-              else move(active + (event.key === "ArrowRight" ? 1 : -1));
-            }}
-          >
-            <span aria-hidden="true">{index + 1}</span>
-            <strong>{item.title}</strong>
-          </button>
+          <Fragment key={item.title}>
+            <button
+              id={`journey-step-${index}`}
+              type="button"
+              role="tab"
+              aria-selected={index === active}
+              aria-controls={`journey-panel-${index}`}
+              tabIndex={index === active ? 0 : -1}
+              className={index <= active ? "is-lit" : ""}
+              onClick={() => setActive(index)}
+              onKeyDown={(event) => {
+                if (
+                  !["ArrowRight", "ArrowLeft", "Home", "End"].includes(
+                    event.key,
+                  )
+                )
+                  return;
+                event.preventDefault();
+                if (event.key === "Home") move(0);
+                else if (event.key === "End") move(steps.length - 1);
+                else move(active + (event.key === "ArrowRight" ? 1 : -1));
+              }}
+            >
+              <span aria-hidden="true">{index + 1}</span>
+              <strong>{item.title}</strong>
+            </button>
+            {index < steps.length - 1 ? (
+              <span
+                className={`journey-connector${index < active ? " is-complete" : ""}`}
+                aria-hidden="true"
+              />
+            ) : null}
+          </Fragment>
         ))}
       </div>
       {steps.map((item, index) => (
