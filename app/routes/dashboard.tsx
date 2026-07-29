@@ -350,8 +350,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (
     (xScore !== null &&
       (!Number.isFinite(xScore) || xScore < 0 || xScore > 1_000)) ||
-    (sorsaScore !== null &&
-      (!Number.isFinite(sorsaScore) || sorsaScore < 0))
+    (sorsaScore !== null && (!Number.isFinite(sorsaScore) || sorsaScore < 0))
   ) {
     return {
       error:
