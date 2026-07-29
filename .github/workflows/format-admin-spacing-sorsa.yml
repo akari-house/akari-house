@@ -1,0 +1,35 @@
+name: Format admin spacing and Sorsa correction
+
+on:
+  push:
+    branches:
+      - agent/admin-spacing-sorsa-range
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/admin-spacing-sorsa-range
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write app/routes/dashboard.tsx tests/admin-operations-spacing.test.ts
+      - name: Commit formatting
+        run: |
+          git config user.name "AKARI automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add app/routes/dashboard.tsx tests/admin-operations-spacing.test.ts
+          if git diff --cached --quiet; then
+            echo "Formatting is already canonical."
+          else
+            git commit -m "Format admin spacing and Sorsa correction"
+            git push origin HEAD:agent/admin-spacing-sorsa-range
+          fi
