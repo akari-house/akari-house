@@ -6,7 +6,12 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
 import { HouseHall } from "~/components/house/HouseHall";
 import { BlossomJourney } from "~/components/house/BlossomJourney";
+import {
+  HouseWorkspaceSidebar,
+  workspaceRoleItems,
+} from "~/components/HouseWorkspaceSidebar";
 import { SiteHeader } from "~/components/SiteHeader";
+import type { SessionUser } from "~/lib/domain";
 
 afterEach(cleanup);
 
@@ -18,6 +23,16 @@ function withRouter(element: React.ReactNode, initialEntry = "/") {
       })}
     />,
   );
+}
+
+function memberWithRoles(roles: SessionUser["roles"]): SessionUser {
+  return {
+    id: "member-1",
+    username: "member",
+    displayName: "AKARI Member",
+    accessTier: "member",
+    roles,
+  };
 }
 
 describe("house interactions", () => {
@@ -32,6 +47,68 @@ describe("house interactions", () => {
       "true",
     );
     expect(screen.getByText(/Turn a broad ambition/)).toBeVisible();
+  });
+
+  it("renders progress only in the spaces between Journey nodes", async () => {
+    const user = userEvent.setup();
+    const { container } = withRouter(<BlossomJourney />);
+    const connectors = container.querySelectorAll(".journey-connector");
+
+    expect(connectors).toHaveLength(4);
+    expect(
+      container.querySelectorAll(".journey-connector.is-complete"),
+    ).toHaveLength(0);
+
+    await user.click(screen.getByRole("tab", { name: /Common Table/ }));
+    expect(
+      container.querySelectorAll(".journey-connector.is-complete"),
+    ).toHaveLength(3);
+  });
+
+  it("prioritises the real first task for Creators and Investors", () => {
+    expect(workspaceRoleItems(memberWithRoles(["creator"]))[0]).toMatchObject({
+      label: "Find campaigns",
+      href: "/campaigns",
+    });
+    expect(workspaceRoleItems(memberWithRoles(["investor"]))[0]).toMatchObject({
+      label: "Explore matched Deals",
+      href: "/deals",
+    });
+  });
+
+  it("deduplicates overlapping destinations for multi-role members", () => {
+    const items = workspaceRoleItems(
+      memberWithRoles(["founder", "creator", "investor"]),
+    );
+    const destinations = items.map((item) => item.href);
+
+    expect(destinations.filter((href) => href === "/campaigns")).toHaveLength(
+      1,
+    );
+    expect(destinations.filter((href) => href === "/deals")).toHaveLength(1);
+    expect(destinations[0]).toBe("/projects/manage");
+  });
+
+  it("places role tasks before general network discovery", () => {
+    const { container } = withRouter(
+      <HouseWorkspaceSidebar
+        user={memberWithRoles(["creator"])}
+        pathname="/app"
+      />,
+      "/app",
+    );
+    const sections = [
+      ...container.querySelectorAll(".house-workspace-sidebar-section"),
+    ].map((section) => section.textContent);
+
+    expect(sections.indexOf("Start with your role")).toBeLessThan(
+      sections.indexOf("Network & discovery"),
+    );
+    expect(
+      screen.getByRole("link", {
+        name: "Find campaigns, workspace navigation",
+      }),
+    ).toHaveAttribute("href", "/campaigns");
   });
 
   it("previews rooms before exposing one dedicated entry link", async () => {
@@ -130,15 +207,7 @@ describe("house interactions", () => {
   it("exposes authenticated destinations in mobile navigation", async () => {
     const user = userEvent.setup();
     withRouter(
-      <SiteHeader
-        user={{
-          id: "member-1",
-          username: "member",
-          displayName: "AKARI Member",
-          accessTier: "member",
-          roles: ["founder"],
-        }}
-      />,
+      <SiteHeader user={memberWithRoles(["founder"])} />,
       "/connections",
     );
     const menu = screen.getByRole("button", { name: "Open navigation" });

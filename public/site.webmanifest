@@ -1,0 +1,34 @@
+{
+  "name": "AKARI House",
+  "short_name": "AKARI",
+  "description": "A private Web3 professional network for Founders, Creators and Investors.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#090b14",
+  "theme_color": "#090b14",
+  "lang": "en-GB",
+  "categories": ["business", "social", "productivity"],
+  "icons": [
+    {
+      "src": "/assets/brand/favicon.png",
+      "sizes": "64x60",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/brand/apple-touch-icon.png",
+      "sizes": "180x169",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/brand/app-icon.png",
+      "sizes": "512x481",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

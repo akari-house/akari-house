@@ -38,15 +38,44 @@ describe("dashboard role actions", () => {
     renderWithRouter(<DashboardRoleActions user={user()} />);
 
     expect(
-      screen.getByRole("link", { name: /manage your projects/i }),
+      screen.getByRole("link", { name: /manage your founder work/i }),
     ).toHaveAttribute("href", "/projects/manage");
     expect(
-      screen.getByRole("link", { name: /meet people in the house/i }),
+      screen.getByRole("link", { name: /find people by role/i }),
     ).toHaveAttribute("href", "/members");
     expect(
       screen.getByRole("link", { name: /continue connections/i }),
     ).toHaveAttribute("href", "/connections");
     expect(screen.queryByText(/sample data/i)).not.toBeInTheDocument();
+  });
+
+  it("takes Creators directly to campaign discovery", () => {
+    const actions = dashboardRoleActions(user({ roles: ["creator"] }));
+    expect(actions[0]).toMatchObject({
+      eyebrow: "Creator workspace",
+      title: "Find Creator campaigns",
+      to: "/campaigns",
+    });
+  });
+
+  it("takes Investors directly to matched Deals", () => {
+    const actions = dashboardRoleActions(user({ roles: ["investor"] }));
+    expect(actions[0]).toMatchObject({
+      eyebrow: "Investor workspace",
+      title: "Review matched Deals",
+      to: "/deals",
+    });
+  });
+
+  it("keeps each selected role distinct for multi-role members", () => {
+    const actions = dashboardRoleActions(
+      user({ roles: ["founder", "creator", "investor"] }),
+    );
+    expect(actions.slice(0, 3).map((action) => action.to)).toEqual([
+      "/projects/manage",
+      "/campaigns",
+      "/deals",
+    ]);
   });
 
   it("keeps applicant actions within currently available routes", () => {

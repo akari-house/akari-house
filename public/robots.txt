@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+Disallow: /app
+Disallow: /admin/
+Disallow: /connections
+Disallow: /notifications
+Disallow: /settings/
+Disallow: /profile-card
+Disallow: /integrations/
+Disallow: /__test__/
+
+Sitemap: https://akarihouse.com/sitemap.xml

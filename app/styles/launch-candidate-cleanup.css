@@ -1,0 +1,367 @@
+/*
+ * Launch-candidate cleanup layer.
+ *
+ * This file is intentionally imported last. It standardises the final spacing
+ * and typography rhythm without replacing AKARI's cinematic public identity or
+ * the calmer CRM workspace system.
+ */
+
+:root {
+  --space-control: 0.5rem;
+  --space-related: 0.75rem;
+  --space-card: 1rem;
+  --space-panel: clamp(1.25rem, 2vw, 1.75rem);
+  --space-section: clamp(2rem, 4vw, 3.5rem);
+  --space-chapter: clamp(4rem, 7vw, 7rem);
+  --type-metadata: 0.8125rem;
+  --type-body: clamp(1rem, 0.18vw + 0.96rem, 1.0625rem);
+  --type-card-title: clamp(1.125rem, 0.8vw + 1rem, 1.5rem);
+  --type-section-title: clamp(1.75rem, 2.2vw + 1rem, 3rem);
+  --type-operational-title: clamp(1.875rem, 2.5vw + 1rem, 3rem);
+}
+
+body {
+  font-size: var(--type-body);
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+main :where(h1, h2, h3) {
+  text-wrap: balance;
+}
+
+main :where(p, li) {
+  text-wrap: pretty;
+}
+
+.chapter,
+.eyebrow {
+  font-size: var(--type-metadata);
+}
+
+.section-intro,
+.directory-heading,
+.dashboard-heading,
+.admin-heading {
+  column-gap: var(--space-panel);
+  row-gap: var(--space-related);
+}
+
+.project-lantern-gallery,
+.event-invitation-list,
+.admin-scope-grid {
+  gap: var(--space-card);
+}
+
+.form-grid,
+.field-grid,
+.filter-grid {
+  gap: var(--space-related);
+}
+
+/* Blossom Journey: use discrete segments so no connector ever crosses a node. */
+.blossom-experience {
+  gap: var(--space-panel);
+}
+
+.blossom-branch {
+  display: grid;
+  grid-template-columns:
+    minmax(82px, 1fr) minmax(20px, 0.55fr)
+    minmax(82px, 1fr) minmax(20px, 0.55fr)
+    minmax(82px, 1fr) minmax(20px, 0.55fr)
+    minmax(82px, 1fr) minmax(20px, 0.55fr)
+    minmax(82px, 1fr);
+  gap: 0;
+  align-items: start;
+}
+
+.blossom-branch::before {
+  display: none;
+  content: none;
+}
+
+.blossom-branch button {
+  min-width: 0;
+  padding-inline: 0.25rem;
+}
+
+.blossom-branch button strong,
+.journey-outcome > span,
+.journey-outcome small {
+  font-size: var(--type-metadata);
+}
+
+.blossom-branch .journey-connector {
+  width: 100%;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  pointer-events: none;
+}
+
+.blossom-branch .journey-connector::before {
+  width: 100%;
+  height: 2px;
+  display: block;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 12%);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 18%);
+  content: "";
+  transition:
+    background-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.blossom-branch .journey-connector.is-complete::before {
+  background: linear-gradient(
+    90deg,
+    rgb(240 79 135 / 68%),
+    rgb(255 211 61 / 82%)
+  );
+  box-shadow: 0 0 18px rgb(255 211 61 / 14%);
+}
+
+.journey-outcome {
+  min-height: 220px;
+  padding: var(--space-panel);
+}
+
+.journey-outcome h3 {
+  font-size: clamp(1.5rem, 2vw + 0.85rem, 2.25rem);
+}
+
+/* Role workspaces: make the first relevant task unmistakable. */
+.dashboard-role-card.is-primary {
+  grid-column: 1 / -1;
+  border-color: rgb(240 79 135 / 42%);
+  background:
+    radial-gradient(circle at 92% 12%, rgb(255 211 61 / 12%), transparent 34%),
+    linear-gradient(135deg, rgb(240 79 135 / 13%), rgb(18 22 33 / 96%));
+  box-shadow: 0 18px 44px rgb(0 0 0 / 20%);
+}
+
+.dashboard-role-card.is-primary strong {
+  font-size: clamp(1.35rem, 1.4vw + 1rem, 1.85rem);
+}
+
+.dashboard-role-card.is-primary small {
+  width: fit-content;
+  padding: 0.42rem 0.65rem;
+  border: 1px solid rgb(240 79 135 / 32%);
+  border-radius: 999px;
+  background: rgb(240 79 135 / 9%);
+}
+
+body:has(.membership-seal.status-approved)
+  .member-next-actions
+  > a.button-primary[href="/projects"] {
+  display: none;
+}
+
+/* Creator campaign discovery: make fit, deadline and next action explicit. */
+.directory-role-note {
+  width: fit-content;
+  margin-top: var(--space-related);
+  padding: 0.65rem 0.8rem;
+  border: 1px solid rgb(255 211 61 / 24%);
+  border-radius: 12px;
+  background: rgb(255 211 61 / 7%);
+  color: #f6e9a9;
+  font-size: 0.9rem;
+}
+
+.campaign-directory-guide {
+  margin-block: var(--space-section);
+  padding: var(--space-panel);
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.7fr);
+  gap: var(--space-panel);
+  align-items: center;
+  border: 1px solid rgb(240 79 135 / 18%);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 6% 10%, rgb(240 79 135 / 10%), transparent 34%),
+    rgb(13 17 27 / 82%);
+}
+
+.campaign-directory-guide h2,
+.campaign-directory-section-heading h2 {
+  margin: 0.35rem 0 0;
+  font-size: var(--type-section-title);
+}
+
+.campaign-directory-guide ol {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-related);
+  list-style: none;
+}
+
+.campaign-directory-guide li {
+  min-width: 0;
+  padding: 0.9rem;
+  display: grid;
+  gap: var(--space-control);
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 14px;
+  background: rgb(255 255 255 / 3%);
+}
+
+.campaign-directory-guide li strong {
+  width: 2rem;
+  height: 2rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgb(255 211 61 / 32%);
+  border-radius: 50%;
+  color: var(--yellow);
+}
+
+.campaign-directory-guide li span {
+  color: var(--inner-copy, #b8bdc8);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.campaign-directory-section-heading {
+  max-width: 720px;
+  margin-bottom: var(--space-panel);
+}
+
+.campaign-directory-section-heading p {
+  margin: 0.6rem 0 0;
+  color: var(--muted);
+}
+
+.campaign-directory-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-related);
+}
+
+.campaign-directory-card h3 {
+  margin: 0;
+  font-size: var(--type-card-title);
+  line-height: 1.25;
+}
+
+.campaign-directory-card > p {
+  margin: 0;
+}
+
+.campaign-directory-facts {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.campaign-directory-facts > div {
+  padding-top: 0.55rem;
+  display: grid;
+  grid-template-columns: minmax(88px, 0.35fr) minmax(0, 1fr);
+  gap: var(--space-related);
+  border-top: 1px solid rgb(255 255 255 / 8%);
+}
+
+.campaign-directory-facts dt {
+  color: var(--muted);
+  font-size: var(--type-metadata);
+  font-weight: 700;
+}
+
+.campaign-directory-facts dd {
+  min-width: 0;
+  margin: 0;
+  color: #f4f5f8;
+  overflow-wrap: anywhere;
+}
+
+.campaign-directory-action {
+  width: fit-content;
+  margin-top: auto;
+}
+
+@media (max-width: 700px) {
+  .blossom-experience {
+    gap: var(--space-card);
+  }
+
+  .blossom-branch {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .blossom-branch button {
+    min-height: 68px;
+  }
+
+  .blossom-branch .journey-connector {
+    width: 46px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    justify-self: start;
+  }
+
+  .blossom-branch .journey-connector::before {
+    width: 2px;
+    height: 100%;
+  }
+
+  .journey-outcome {
+    min-height: 0;
+  }
+
+  .dashboard-role-card.is-primary {
+    grid-column: auto;
+  }
+
+  .campaign-directory-guide {
+    grid-template-columns: 1fr;
+  }
+
+  .campaign-directory-guide ol {
+    grid-template-columns: 1fr;
+  }
+
+  .campaign-directory-facts > div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .campaign-directory-action {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .button,
+  button,
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 390px) {
+  :root {
+    --space-panel: 1.125rem;
+    --space-section: 1.75rem;
+    --space-chapter: 3.5rem;
+  }
+
+  .journey-outcome {
+    border-radius: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blossom-branch .journey-connector::before {
+    transition: none;
+  }
+}

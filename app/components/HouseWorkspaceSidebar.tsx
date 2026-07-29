@@ -2,15 +2,21 @@ import { Form, Link } from "react-router";
 import { visibleAdminWorkspaceItems } from "~/lib/admin-workspace";
 import type { SessionUser } from "~/lib/domain";
 
-type WorkspaceItem = {
+export type WorkspaceItem = {
   label: string;
   href: string;
   glyph: string;
   exact?: boolean;
 };
 
-const houseItems: WorkspaceItem[] = [
-  { label: "House", href: "/app", glyph: "⌂", exact: true },
+const houseHomeItem: WorkspaceItem = {
+  label: "House",
+  href: "/app",
+  glyph: "⌂",
+  exact: true,
+};
+
+const discoveryItems: WorkspaceItem[] = [
   { label: "Members", href: "/members", glyph: "◎" },
   { label: "Connections", href: "/connections", glyph: "∞" },
   { label: "Projects", href: "/projects", glyph: "◇" },
@@ -26,6 +32,62 @@ const profileItems: WorkspaceItem[] = [
   { label: "Telegram", href: "/settings/telegram", glyph: "↗" },
   { label: "Account & Privacy", href: "/settings/account", glyph: "⚙" },
 ];
+
+function uniqueWorkspaceItems(items: WorkspaceItem[]) {
+  return items.filter(
+    (item, index) =>
+      items.findIndex((candidate) => candidate.href === item.href) === index,
+  );
+}
+
+export function workspaceRoleItems(user: SessionUser): WorkspaceItem[] {
+  if (user.accessTier !== "member") return [];
+
+  return uniqueWorkspaceItems([
+    ...(user.roles.includes("founder")
+      ? [
+          {
+            label: "Manage projects",
+            href: "/projects/manage",
+            glyph: "◈",
+          },
+          {
+            label: "Creator campaigns",
+            href: "/campaigns",
+            glyph: "✦",
+          },
+          {
+            label: "Deals & investors",
+            href: "/deals",
+            glyph: "❀",
+          },
+        ]
+      : []),
+    ...(user.roles.includes("creator")
+      ? [
+          {
+            label: "Find campaigns",
+            href: "/campaigns",
+            glyph: "✦",
+          },
+        ]
+      : []),
+    ...(user.roles.includes("investor")
+      ? [
+          {
+            label: "Explore matched Deals",
+            href: "/deals",
+            glyph: "❀",
+          },
+          {
+            label: "Investor preferences",
+            href: "/settings/investor",
+            glyph: "◫",
+          },
+        ]
+      : []),
+  ]);
+}
 
 /**
  * These routes keep the cinematic, chapter-led public House experience.
@@ -124,21 +186,11 @@ export function HouseWorkspaceSidebar({
   const adminItems = user.adminAccess
     ? visibleAdminWorkspaceItems(user.adminAccess)
     : [];
-
-  const roleItems: WorkspaceItem[] = [
-    ...(user.roles.includes("founder")
-      ? [{ label: "My projects", href: "/projects/manage", glyph: "◈" }]
-      : []),
-    ...(user.roles.includes("investor")
-      ? [
-          {
-            label: "Investor profile",
-            href: "/settings/investor",
-            glyph: "◫",
-          },
-        ]
-      : []),
-  ];
+  const roleItems = workspaceRoleItems(user);
+  const roleHrefs = new Set(roleItems.map((item) => item.href));
+  const remainingDiscoveryItems = discoveryItems.filter(
+    (item) => !roleHrefs.has(item.href),
+  );
 
   return (
     <aside className="house-workspace-sidebar" aria-label="AKARI workspace">
@@ -158,19 +210,12 @@ export function HouseWorkspaceSidebar({
 
       <nav aria-label="House navigation">
         <span className="house-workspace-sidebar-section">Your House</span>
-        {houseItems.map((item) => (
-          <SidebarLink
-            key={item.label}
-            item={item}
-            pathname={pathname}
-            hash={hash}
-          />
-        ))}
+        <SidebarLink item={houseHomeItem} pathname={pathname} hash={hash} />
 
         {roleItems.length > 0 && (
           <>
             <span className="house-workspace-sidebar-section">
-              Role workspaces
+              Start with your role
             </span>
             {roleItems.map((item) => (
               <SidebarLink
@@ -182,6 +227,18 @@ export function HouseWorkspaceSidebar({
             ))}
           </>
         )}
+
+        <span className="house-workspace-sidebar-section">
+          Network & discovery
+        </span>
+        {remainingDiscoveryItems.map((item) => (
+          <SidebarLink
+            key={item.label}
+            item={item}
+            pathname={pathname}
+            hash={hash}
+          />
+        ))}
 
         <span className="house-workspace-sidebar-section">
           Profile & settings

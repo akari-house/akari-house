@@ -13,6 +13,17 @@ import {
 } from "~/lib/turnstile.server";
 import { consumeAuthLimit } from "~/lib/rate-limit.server";
 
+export function meta() {
+  return [
+    { title: "Log in | AKARI House" },
+    {
+      name: "description",
+      content: "Log in to your private AKARI House workspace.",
+    },
+    { name: "robots", content: "noindex, nofollow" },
+  ];
+}
+
 export type LoginEnvironment = CloudflareEnvironment &
   TurnstileEnvironment & { TURNSTILE_SITE_KEY?: string };
 
