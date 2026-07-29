@@ -1,0 +1,55 @@
+name: Temporary PR136 Production Evidence
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/pr136-production-evidence.yml"
+      - "scripts/pr136-release-smoke.mjs"
+
+permissions:
+  contents: read
+
+jobs:
+  production-evidence:
+    environment: production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Run existing production launch gate
+        id: production-smoke
+        continue-on-error: true
+        env:
+          AKARI_PRODUCTION_URL: https://akarihouse.com
+          AKARI_EXPECTED_RELEASE: launch-completion-2026-07-26
+          AKARI_SMOKE_SESSION_COOKIE: ${{ secrets.AKARI_SMOKE_SESSION_COOKIE }}
+        run: |
+          mkdir -p launch-gate-artifacts
+          node scripts/production-smoke.mjs \
+            launch-gate-artifacts/production-report.json
+      - name: Verify PR136 release-specific markers
+        id: release-markers
+        continue-on-error: true
+        env:
+          AKARI_PRODUCTION_URL: https://akarihouse.com
+        run: |
+          node scripts/pr136-release-smoke.mjs \
+            launch-gate-artifacts/pr136-release-report.json
+      - name: Upload temporary production evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr136-production-evidence-${{ github.sha }}
+          path: |
+            launch-gate-artifacts/production-report.json
+            launch-gate-artifacts/pr136-release-report.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Enforce temporary production evidence gate
+        if: ${{ always() && (steps.production-smoke.outcome != 'success' || steps.release-markers.outcome != 'success') }}
+        run: exit 1
