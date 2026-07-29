@@ -59,6 +59,7 @@ jobs:
             tests/e2e/launch-visual-evidence.spec.ts \
             --project=desktop-chromium \
             --project=mobile-chromium \
+            --workers=1 \
             --reporter=line
       - name: Upload launch-gate evidence
         if: always()
@@ -73,7 +74,5 @@ jobs:
           if-no-files-found: error
           retention-days: 30
       - name: Enforce launch gate
-        if: >-
-          steps.launch-tests.outcome != 'success' ||
-          steps.visual-evidence.outcome != 'success'
+        if: ${{ steps.launch-tests.outcome != 'success' || steps.visual-evidence.outcome != 'success' }}
         run: exit 1
