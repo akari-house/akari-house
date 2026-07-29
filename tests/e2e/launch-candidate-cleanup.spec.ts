@@ -1,4 +1,24 @@
-import { expect, test } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test, type Page } from "@playwright/test";
+
+const fixtureHeaders = { "x-akari-test-fixture": "launch-gate-v1" };
+
+async function activatePersona(page: Page, persona: string) {
+  await page.context().clearCookies();
+  const response = await page.request.post(`/__test__/personas/${persona}`, {
+    headers: fixtureHeaders,
+    form: { session: "true" },
+  });
+  expect(response.status()).toBe(201);
+}
+
+async function expectNoHorizontalOverflow(page: Page) {
+  const widths = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    client: document.documentElement.clientWidth,
+  }));
+  expect(widths.scroll).toBeLessThanOrEqual(widths.client);
+}
 
 test("Blossom Journey connectors remain between adjacent nodes", async ({
   page,
@@ -62,4 +82,65 @@ test("public pages are canonical while private utility pages are noindex", async
     "noindex, nofollow",
   );
   await expect(page.locator('link[rel="canonical"]')).toHaveCount(0);
+});
+
+test("Creator and Investor workspaces expose their primary task first", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "desktop-chromium",
+    "Role-first navigation evidence runs once on desktop Chromium.",
+  );
+
+  await activatePersona(page, "creator");
+  await page.goto("/app");
+  await expect(
+    page.getByRole("link", {
+      name: "Find campaigns, workspace navigation",
+    }),
+  ).toHaveAttribute("href", "/campaigns");
+  await expect(
+    page.getByRole("link", { name: /Find Creator campaigns/ }),
+  ).toHaveAttribute("href", "/campaigns");
+
+  await activatePersona(page, "investor");
+  await page.goto("/app");
+  await expect(
+    page.getByRole("link", {
+      name: "Explore matched Deals, workspace navigation",
+    }),
+  ).toHaveAttribute("href", "/deals");
+  await expect(
+    page.getByRole("link", { name: /Review matched Deals/ }),
+  ).toHaveAttribute("href", "/deals");
+});
+
+test("key mobile discovery and member pages remain accessible without overflow", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "mobile-chromium",
+    "Representative mobile accessibility evidence runs once on Chromium.",
+  );
+
+  for (const route of ["/campaigns", "/deals"]) {
+    await page.goto(route);
+    await expectNoHorizontalOverflow(page);
+    const results = await new AxeBuilder({ page }).analyze();
+    expect(
+      results.violations.filter((violation) =>
+        ["serious", "critical"].includes(violation.impact ?? ""),
+      ),
+    ).toEqual([]);
+  }
+
+  await activatePersona(page, "creator");
+  await page.goto("/app");
+  await expectNoHorizontalOverflow(page);
+  const memberResults = await new AxeBuilder({ page }).analyze();
+  expect(
+    memberResults.violations.filter((violation) =>
+      ["serious", "critical"].includes(violation.impact ?? ""),
+    ),
+  ).toEqual([]);
 });
