@@ -14,15 +14,31 @@ permissions:
 jobs:
   pagespeed-evidence:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Capture Google PageSpeed evidence
-        env:
-          AKARI_PRODUCTION_URL: https://akarihouse.com
+      - name: Capture mobile Lighthouse evidence
+        run: |
+          mkdir -p launch-gate-artifacts/pagespeed
+          npx --yes lighthouse https://akarihouse.com \
+            --output=json \
+            --output-path=launch-gate-artifacts/pagespeed/mobile-full.json \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
+            --quiet
+      - name: Capture desktop Lighthouse evidence
+        run: |
+          npx --yes lighthouse https://akarihouse.com \
+            --preset=desktop \
+            --output=json \
+            --output-path=launch-gate-artifacts/pagespeed/desktop-full.json \
+            --only-categories=performance,accessibility,best-practices,seo \
+            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
+            --quiet
+      - name: Build concise performance summary
         run: |
           node scripts/pr136-pagespeed.mjs \
             launch-gate-artifacts/pagespeed
