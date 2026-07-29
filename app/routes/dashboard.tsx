@@ -1002,7 +1002,7 @@ export default function Dashboard({
                     aria-describedby="x-score-help"
                   />
                   <small id="x-score-help">
-                    Enter your current XScore on its 0–1,000 scale.
+                    Enter your current XScore on its 0 to 1,000 scale.
                   </small>
                 </label>
                 <label>
