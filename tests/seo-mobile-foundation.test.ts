@@ -36,4 +36,15 @@ describe("SEO and mobile discovery foundation", () => {
     expect(root).toContain('name="apple-mobile-web-app-capable"');
     expect(root).toContain("viewport-fit=cover");
   });
+
+  it("publishes canonical and social metadata while noindexing private routes", () => {
+    const root = readProjectFile("app/root.tsx");
+
+    expect(root).toContain('<link rel="canonical" href={canonicalUrl} />');
+    expect(root).toContain('content="summary_large_image"');
+    expect(root).toContain('type="application/ld+json"');
+    expect(root).toContain('"/admin"');
+    expect(root).toContain('"noindex, nofollow"');
+    expect(root).toContain('/^\\/deals\\/[^/]+(?:\\/|$)/');
+  });
 });
