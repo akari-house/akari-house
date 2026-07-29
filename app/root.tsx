@@ -5,6 +5,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
 } from "react-router";
 import type { Route } from "./+types/root";
 import { RouteScrollReset } from "~/components/RouteScrollReset";
@@ -29,6 +30,71 @@ import "./styles/house-workspace-art.css";
 import "./styles/house-workspace-polish.css";
 import "./styles/admin-operations-spacing.css";
 import "./styles/launch-candidate-cleanup.css";
+
+const productionOrigin = "https://akarihouse.com";
+const socialImage = `${productionOrigin}/assets/optimized/arrival.webp`;
+const siteDescription =
+  "A private Web3 professional network where Founders, Creators and Investors build trusted relationships and measurable traction.";
+
+const noIndexPrefixes = [
+  "/app",
+  "/admin",
+  "/connections",
+  "/notifications",
+  "/settings",
+  "/profile-card",
+  "/integrations",
+  "/__test__",
+  "/media",
+  "/logout",
+  "/login",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+  "/register",
+  "/membership/check-email",
+  "/report",
+];
+
+function shouldNoIndex(pathname: string) {
+  if (
+    noIndexPrefixes.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    )
+  )
+    return true;
+
+  return [
+    /^\/projects\/(?:new|manage)(?:\/|$)/,
+    /^\/projects\/[^/]+\/(?:edit|needs|opportunity|diligence|documents)(?:\/|$)/,
+    /^\/events\/(?:new|manage)(?:\/|$)/,
+    /^\/events\/[^/]+\/edit(?:\/|$)/,
+    /^\/campaigns\/[^/]+\/(?:work|settlement)(?:\/|$)/,
+    /^\/deals\/[^/]+(?:\/|$)/,
+  ].some((pattern) => pattern.test(pathname));
+}
+
+const homepageStructuredData = JSON.stringify({
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": `${productionOrigin}/#website`,
+      name: "AKARI House",
+      url: `${productionOrigin}/`,
+      description: siteDescription,
+      inLanguage: "en-GB",
+    },
+    {
+      "@type": "Organization",
+      "@id": `${productionOrigin}/#organization`,
+      name: "AKARI House",
+      url: `${productionOrigin}/`,
+      logo: `${productionOrigin}/assets/brand/favicon.png`,
+      description: siteDescription,
+    },
+  ],
+});
 
 export const headers: Route.HeadersFunction = () => productionSecurityHeaders();
 
@@ -65,6 +131,12 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  const noIndex = shouldNoIndex(pathname);
+  const canonicalPath =
+    pathname === "/" ? "/" : pathname.replace(/\/+$/, "") || "/";
+  const canonicalUrl = `${productionOrigin}${canonicalPath}`;
+
   return (
     <html lang="en">
       <head>
@@ -84,6 +156,33 @@ export function Layout({ children }: { children: React.ReactNode }) {
         />
         <meta name="apple-mobile-web-app-title" content="AKARI House" />
         <meta name="format-detection" content="telephone=no" />
+        <meta
+          name="robots"
+          content={
+            noIndex
+              ? "noindex, nofollow"
+              : "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+          }
+        />
+        {!noIndex && <link rel="canonical" href={canonicalUrl} />}
+        <meta property="og:site_name" content="AKARI House" />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="en_GB" />
+        <meta property="og:title" content="AKARI House" />
+        <meta property="og:description" content={siteDescription} />
+        {!noIndex && <meta property="og:url" content={canonicalUrl} />}
+        <meta property="og:image" content={socialImage} />
+        <meta property="og:image:alt" content="The entrance to AKARI House" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="AKARI House" />
+        <meta name="twitter:description" content={siteDescription} />
+        <meta name="twitter:image" content={socialImage} />
+        {pathname === "/" && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: homepageStructuredData }}
+          />
+        )}
         <Meta />
         <Links />
       </head>
