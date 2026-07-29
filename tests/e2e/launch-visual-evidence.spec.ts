@@ -42,7 +42,8 @@ async function capture(
   name: string,
   options: { fullPage?: boolean } = {},
 ) {
-  const directory = `launch-gate-artifacts/visual-evidence/${testInfo.project.name}`;
+  const directory =
+    `launch-gate-artifacts/visual-evidence/${testInfo.project.name}`;
   mkdirSync(directory, { recursive: true });
   await preparePage(page);
   await page.screenshot({
@@ -103,7 +104,8 @@ test.describe("launch visual evidence", () => {
       await journey.scrollIntoViewIfNeeded();
       await expect(journey).toBeVisible();
       await preparePage(page);
-      const directory = `launch-gate-artifacts/visual-evidence/${testInfo.project.name}`;
+      const directory =
+        `launch-gate-artifacts/visual-evidence/${testInfo.project.name}`;
       mkdirSync(directory, { recursive: true });
       await journey.screenshot({
         path: `${directory}/public-blossom-journey.png`,
