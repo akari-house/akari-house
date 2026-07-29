@@ -133,6 +133,28 @@ main :where(p, li) {
   font-size: clamp(1.5rem, 2vw + 0.85rem, 2.25rem);
 }
 
+/* Role workspaces: make the first relevant task unmistakable. */
+.dashboard-role-card.is-primary {
+  grid-column: 1 / -1;
+  border-color: rgb(240 79 135 / 42%);
+  background:
+    radial-gradient(circle at 92% 12%, rgb(255 211 61 / 12%), transparent 34%),
+    linear-gradient(135deg, rgb(240 79 135 / 13%), rgb(18 22 33 / 96%));
+  box-shadow: 0 18px 44px rgb(0 0 0 / 20%);
+}
+
+.dashboard-role-card.is-primary strong {
+  font-size: clamp(1.35rem, 1.4vw + 1rem, 1.85rem);
+}
+
+.dashboard-role-card.is-primary small {
+  width: fit-content;
+  padding: 0.42rem 0.65rem;
+  border: 1px solid rgb(240 79 135 / 32%);
+  border-radius: 999px;
+  background: rgb(240 79 135 / 9%);
+}
+
 /* Creator campaign discovery: make fit, deadline and next action explicit. */
 .directory-role-note {
   width: fit-content;
@@ -287,6 +309,10 @@ main :where(p, li) {
 
   .journey-outcome {
     min-height: 0;
+  }
+
+  .dashboard-role-card.is-primary {
+    grid-column: auto;
   }
 
   .campaign-directory-guide {
