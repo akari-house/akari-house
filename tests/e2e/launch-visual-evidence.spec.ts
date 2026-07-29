@@ -81,12 +81,6 @@ test.describe("launch visual evidence", () => {
   test("captures public House and discovery routes", async ({
     page,
   }, testInfo) => {
-    await activatePersona(page, "project_owner", {
-      seedResources: true,
-      reuseExisting: true,
-    });
-    await page.context().clearCookies();
-
     for (const [route, name] of [
       ["/", "public-home"],
       ["/projects", "public-projects"],
@@ -112,7 +106,7 @@ test.describe("launch visual evidence", () => {
   });
 
   test("captures Creator workspace", async ({ page }, testInfo) => {
-    await activatePersona(page, "creator");
+    await activatePersona(page, "creator", { reuseExisting: true });
     await page.goto("/app", { waitUntil: "networkidle" });
     await expect(
       page.getByRole("link", {
@@ -124,7 +118,7 @@ test.describe("launch visual evidence", () => {
   });
 
   test("captures Investor workspace", async ({ page }, testInfo) => {
-    await activatePersona(page, "investor");
+    await activatePersona(page, "investor", { reuseExisting: true });
     await page.goto("/app", { waitUntil: "networkidle" });
     await expect(
       page.getByRole("link", {
@@ -136,7 +130,7 @@ test.describe("launch visual evidence", () => {
   });
 
   test("captures Founder workspace", async ({ page }, testInfo) => {
-    await activatePersona(page, "founder");
+    await activatePersona(page, "founder", { reuseExisting: true });
     await page.goto("/app", { waitUntil: "networkidle" });
     await expect(
       page.getByRole("link", {
@@ -148,7 +142,7 @@ test.describe("launch visual evidence", () => {
   });
 
   test("captures Superadmin workspace", async ({ page }, testInfo) => {
-    await activatePersona(page, "superadmin");
+    await activatePersona(page, "superadmin", { reuseExisting: true });
     await page.goto("/admin", { waitUntil: "networkidle" });
     await expect(
       page.getByText("Superadmin", { exact: true }).first(),
