@@ -106,8 +106,12 @@ export function DashboardRoleActions({ user }: { user: SessionUser }) {
 
   return (
     <div className="dashboard-role-actions">
-      {actions.map((action) => (
-        <Link className="dashboard-role-card" to={action.to} key={action.title}>
+      {actions.map((action, index) => (
+        <Link
+          className={`dashboard-role-card${index === 0 ? " is-primary" : ""}`}
+          to={action.to}
+          key={action.title}
+        >
           <span>{action.eyebrow}</span>
           <strong>{action.title}</strong>
           <p>{action.description}</p>
