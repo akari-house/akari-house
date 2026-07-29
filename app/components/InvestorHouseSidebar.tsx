@@ -97,7 +97,7 @@ export function InvestorHouseSidebar({
     <aside className="investor-house-sidebar" aria-label="Investor House">
       <Link
         className="investor-house-sidebar-brand"
-        to={houseHref}
+        to="/"
         aria-label="AKARI House"
       >
         <img

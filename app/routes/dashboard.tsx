@@ -348,6 +348,18 @@ export async function action({ request, context }: Route.ActionArgs) {
     "connections_and_project_interests",
   ].includes(contactVisibility);
   if (
+    (xScore !== null &&
+      (!Number.isFinite(xScore) || xScore < 0 || xScore > 1_000)) ||
+    (sorsaScore !== null &&
+      (!Number.isFinite(sorsaScore) || sorsaScore < 0 || sorsaScore > 100))
+  ) {
+    return {
+      error:
+        "XScore must be between 0 and 1,000. Sorsa score must be between 0 and 100.",
+      errorCode: "reputation" as const,
+    };
+  }
+  if (
     displayName.length < 2 ||
     displayName.length > 80 ||
     headline.length > 120 ||
@@ -972,6 +984,13 @@ export default function Dashboard({
                 score before applying to a campaign. Member-reported scores are
                 clearly labelled until a partner or Admin verifies them.
               </p>
+              {actionData &&
+                "errorCode" in actionData &&
+                actionData.errorCode === "reputation" && (
+                  <p className="field-error" role="alert">
+                    {actionData.error}
+                  </p>
+                )}
               <div className="form-row">
                 <label>
                   XScore
@@ -980,11 +999,15 @@ export default function Dashboard({
                     type="number"
                     inputMode="decimal"
                     min={0}
-                    max={100}
+                    max={1_000}
                     step="0.01"
                     defaultValue={loaderData.reputationSignals.xScore ?? ""}
-                    placeholder="0 to 100"
+                    placeholder="0 to 1,000"
+                    aria-describedby="x-score-help"
                   />
+                  <small id="x-score-help">
+                    Enter your current XScore on its 0–1,000 scale.
+                  </small>
                 </label>
                 <label>
                   Sorsa score
