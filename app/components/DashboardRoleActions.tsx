@@ -6,6 +6,7 @@ type WorkspaceAction = {
   title: string;
   description: string;
   to: string;
+  actionLabel: string;
 };
 
 export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
@@ -17,13 +18,15 @@ export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
         description:
           "Keep your roles, biography and interests current while your request is reviewed.",
         to: "/app",
+        actionLabel: "Continue profile",
       },
       {
         eyebrow: "Explore the House",
         title: "Discover projects",
         description:
-          "See the public founder projects already gathering collaborators.",
+          "See the public Founder projects already gathering collaborators.",
         to: "/projects",
+        actionLabel: "Browse projects",
       },
       {
         eyebrow: "Upcoming gatherings",
@@ -31,6 +34,7 @@ export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
         description:
           "Read the invitations currently open across the AKARI community.",
         to: "/events",
+        actionLabel: "Browse events",
       },
     ];
   }
@@ -39,38 +43,42 @@ export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
   if (user.roles.includes("founder")) {
     actions.push({
       eyebrow: "Founder workspace",
-      title: "Manage your projects",
+      title: "Manage your Founder work",
       description:
-        "Create, refine and review the project lanterns connected to your profile.",
+        "Keep project readiness, support needs, campaigns and investor-facing information in one place.",
       to: "/projects/manage",
+      actionLabel: "Open Founder workspace",
     });
   }
   if (user.roles.includes("creator")) {
     actions.push({
       eyebrow: "Creator workspace",
-      title: "Find projects to follow",
+      title: "Find Creator campaigns",
       description:
-        "Discover founder work seeking thoughtful creative collaborators.",
-      to: "/projects",
+        "Review eligibility, apply to relevant campaigns and return to active deliverables and deadlines.",
+      to: "/campaigns",
+      actionLabel: "Browse campaigns",
     });
   }
   if (user.roles.includes("investor")) {
     actions.push({
       eyebrow: "Investor workspace",
-      title: "Review opportunities",
+      title: "Review matched Deals",
       description:
-        "Explore published projects and open a considered conversation.",
-      to: "/projects",
+        "Open recommended opportunities, saved Deals, access requests and granted Deal Rooms.",
+      to: "/deals",
+      actionLabel: "Open Investor House",
     });
   }
 
   actions.push(
     {
       eyebrow: "Member directory",
-      title: "Meet people in the House",
+      title: "Find people by role",
       description:
-        "Find members by role, expertise or location without exposing private profiles.",
+        "Discover Founders, Creators and Investors by role, expertise or location without exposing private profiles.",
       to: "/members",
+      actionLabel: "Discover members",
     },
     {
       eyebrow: "Your network",
@@ -78,6 +86,7 @@ export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
       description:
         "Review mutual connections and respond to requests waiting for you.",
       to: "/connections",
+      actionLabel: "Open connections",
     },
     {
       eyebrow: "Gatherings",
@@ -85,6 +94,7 @@ export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
       description:
         "Reserve a place at approved online and in-person gatherings.",
       to: "/events",
+      actionLabel: "Browse events",
     },
   );
 
@@ -101,7 +111,7 @@ export function DashboardRoleActions({ user }: { user: SessionUser }) {
           <span>{action.eyebrow}</span>
           <strong>{action.title}</strong>
           <p>{action.description}</p>
-          <small>Open workspace</small>
+          <small>{action.actionLabel}</small>
         </Link>
       ))}
     </div>
