@@ -41,7 +41,9 @@ jobs:
             --project=mobile-chromium \
             --reporter=json > launch-gate-artifacts/playwright.json
       - name: Build machine-readable evidence
+        id: launch-report
         if: always()
+        continue-on-error: true
         env:
           LAUNCH_GATE_SOURCE: automated_preview
           LAUNCH_GATE_ENV: github-actions-preview
@@ -51,6 +53,7 @@ jobs:
             launch-gate-artifacts/report.json
       - name: Capture desktop and mobile visual evidence
         id: visual-evidence
+        if: always()
         continue-on-error: true
         env:
           AKARI_CAPTURE_LAUNCH_EVIDENCE: "1"
@@ -74,5 +77,5 @@ jobs:
           if-no-files-found: error
           retention-days: 30
       - name: Enforce launch gate
-        if: ${{ steps.launch-tests.outcome != 'success' || steps.visual-evidence.outcome != 'success' }}
+        if: ${{ always() && (steps.launch-tests.outcome != 'success' || steps.launch-report.outcome != 'success' || steps.visual-evidence.outcome != 'success') }}
         run: exit 1
