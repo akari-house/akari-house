@@ -35,7 +35,8 @@ const profileItems: WorkspaceItem[] = [
 
 function uniqueWorkspaceItems(items: WorkspaceItem[]) {
   return items.filter(
-    (item, index) => items.findIndex((candidate) => candidate.href === item.href) === index,
+    (item, index) =>
+      items.findIndex((candidate) => candidate.href === item.href) === index,
   );
 }
 
@@ -209,11 +210,7 @@ export function HouseWorkspaceSidebar({
 
       <nav aria-label="House navigation">
         <span className="house-workspace-sidebar-section">Your House</span>
-        <SidebarLink
-          item={houseHomeItem}
-          pathname={pathname}
-          hash={hash}
-        />
+        <SidebarLink item={houseHomeItem} pathname={pathname} hash={hash} />
 
         {roleItems.length > 0 && (
           <>
