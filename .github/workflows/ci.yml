@@ -22,16 +22,15 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: python scripts/apply-profile-score-navigation-fix.py
       - run: python scripts/remove-legacy-xscore-cap.py
-      - run: npx prettier --write app/routes/dashboard.tsx app/components/HouseWorkspaceSidebar.tsx app/components/SiteHeader.tsx app/components/InvestorHouseSidebar.tsx app/components/PublicFooter.tsx tests/profile-score-navigation.test.ts
-      - name: Commit focused corrections
+      - run: npx prettier --write app/routes/dashboard.tsx
+      - name: Commit focused correction
         run: |
           git config user.name "AKARI automation"
           git config user.email "actions@users.noreply.github.com"
-          git add app/routes/dashboard.tsx app/components/HouseWorkspaceSidebar.tsx app/components/SiteHeader.tsx app/components/InvestorHouseSidebar.tsx app/components/PublicFooter.tsx tests/profile-score-navigation.test.ts
+          git add app/routes/dashboard.tsx
           if git diff --cached --quiet; then
-            echo "Focused corrections are already applied."
+            echo "The legacy XScore cap is already removed."
           else
             git commit -m "Remove legacy XScore cap"
             git push origin HEAD:agent/profile-score-navigation-fix
