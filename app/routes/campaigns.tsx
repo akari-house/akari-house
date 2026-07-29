@@ -108,8 +108,8 @@ export default function Campaigns({ loaderData }: Route.ComponentProps) {
             </p>
             {isCreator && (
               <p className="directory-role-note">
-                Your Creator profile is active. Open a campaign to check your fit
-                and application status.
+                Your Creator profile is active. Open a campaign to check your
+                fit and application status.
               </p>
             )}
           </div>
