@@ -1,0 +1,188 @@
+/*
+ * Launch-candidate cleanup layer.
+ *
+ * This file is intentionally imported last. It standardises the final spacing
+ * and typography rhythm without replacing AKARI's cinematic public identity or
+ * the calmer CRM workspace system.
+ */
+
+:root {
+  --space-control: 0.5rem;
+  --space-related: 0.75rem;
+  --space-card: 1rem;
+  --space-panel: clamp(1.25rem, 2vw, 1.75rem);
+  --space-section: clamp(2rem, 4vw, 3.5rem);
+  --space-chapter: clamp(4rem, 7vw, 7rem);
+  --type-metadata: 0.8125rem;
+  --type-body: clamp(1rem, 0.18vw + 0.96rem, 1.0625rem);
+  --type-card-title: clamp(1.125rem, 0.8vw + 1rem, 1.5rem);
+  --type-section-title: clamp(1.75rem, 2.2vw + 1rem, 3rem);
+  --type-operational-title: clamp(1.875rem, 2.5vw + 1rem, 3rem);
+}
+
+body {
+  font-size: var(--type-body);
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+main :where(h1, h2, h3) {
+  text-wrap: balance;
+}
+
+main :where(p, li) {
+  text-wrap: pretty;
+}
+
+.chapter,
+.eyebrow {
+  font-size: var(--type-metadata);
+}
+
+.section-intro,
+.directory-heading,
+.dashboard-heading,
+.admin-heading {
+  column-gap: var(--space-panel);
+  row-gap: var(--space-related);
+}
+
+.project-lantern-gallery,
+.event-invitation-list,
+.admin-scope-grid {
+  gap: var(--space-card);
+}
+
+.form-grid,
+.field-grid,
+.filter-grid {
+  gap: var(--space-related);
+}
+
+/* Blossom Journey: use discrete segments so no connector ever crosses a node. */
+.blossom-experience {
+  gap: var(--space-panel);
+}
+
+.blossom-branch {
+  display: grid;
+  grid-template-columns:
+    minmax(82px, 1fr) minmax(20px, 0.55fr)
+    minmax(82px, 1fr) minmax(20px, 0.55fr)
+    minmax(82px, 1fr) minmax(20px, 0.55fr)
+    minmax(82px, 1fr) minmax(20px, 0.55fr)
+    minmax(82px, 1fr);
+  gap: 0;
+  align-items: start;
+}
+
+.blossom-branch::before {
+  display: none;
+  content: none;
+}
+
+.blossom-branch button {
+  min-width: 0;
+  padding-inline: 0.25rem;
+}
+
+.blossom-branch button strong,
+.journey-outcome > span,
+.journey-outcome small {
+  font-size: var(--type-metadata);
+}
+
+.blossom-branch .journey-connector {
+  width: 100%;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  pointer-events: none;
+}
+
+.blossom-branch .journey-connector::before {
+  width: 100%;
+  height: 2px;
+  display: block;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 12%);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 18%);
+  content: "";
+  transition:
+    background-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.blossom-branch .journey-connector.is-complete::before {
+  background: linear-gradient(90deg, rgb(240 79 135 / 68%), rgb(255 211 61 / 82%));
+  box-shadow: 0 0 18px rgb(255 211 61 / 14%);
+}
+
+.journey-outcome {
+  min-height: 220px;
+  padding: var(--space-panel);
+}
+
+.journey-outcome h3 {
+  font-size: clamp(1.5rem, 2vw + 0.85rem, 2.25rem);
+}
+
+@media (max-width: 700px) {
+  .blossom-experience {
+    gap: var(--space-card);
+  }
+
+  .blossom-branch {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .blossom-branch button {
+    min-height: 68px;
+  }
+
+  .blossom-branch .journey-connector {
+    width: 46px;
+    height: 20px;
+    display: grid;
+    place-items: center;
+    justify-self: start;
+  }
+
+  .blossom-branch .journey-connector::before {
+    width: 2px;
+    height: 100%;
+  }
+
+  .journey-outcome {
+    min-height: 0;
+  }
+
+  .button,
+  button,
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 390px) {
+  :root {
+    --space-panel: 1.125rem;
+    --space-section: 1.75rem;
+    --space-chapter: 3.5rem;
+  }
+
+  .journey-outcome {
+    border-radius: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blossom-branch .journey-connector::before {
+    transition: none;
+  }
+}
