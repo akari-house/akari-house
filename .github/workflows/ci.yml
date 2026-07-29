@@ -23,6 +23,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: python scripts/apply-profile-score-navigation-fix.py
+      - run: python scripts/remove-legacy-xscore-cap.py
       - run: npx prettier --write app/routes/dashboard.tsx app/components/HouseWorkspaceSidebar.tsx app/components/SiteHeader.tsx app/components/InvestorHouseSidebar.tsx app/components/PublicFooter.tsx tests/profile-score-navigation.test.ts
       - name: Commit focused corrections
         run: |
@@ -32,7 +33,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "Focused corrections are already applied."
           else
-            git commit -m "Fix profile score saving and brand navigation"
+            git commit -m "Remove legacy XScore cap"
             git push origin HEAD:agent/profile-score-navigation-fix
           fi
 
