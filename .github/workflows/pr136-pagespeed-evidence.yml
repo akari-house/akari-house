@@ -1,0 +1,36 @@
+name: Temporary PR136 PageSpeed Evidence
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/pr136-pagespeed-evidence.yml"
+      - "scripts/pr136-pagespeed.mjs"
+
+permissions:
+  contents: read
+
+jobs:
+  pagespeed-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Capture Google PageSpeed evidence
+        env:
+          AKARI_PRODUCTION_URL: https://akarihouse.com
+        run: |
+          node scripts/pr136-pagespeed.mjs \
+            launch-gate-artifacts/pagespeed
+      - name: Upload PageSpeed evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr136-pagespeed-evidence-${{ github.sha }}
+          path: launch-gate-artifacts/pagespeed/**
+          if-no-files-found: error
+          retention-days: 30
