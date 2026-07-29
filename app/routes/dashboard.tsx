@@ -370,10 +370,6 @@ export async function action({ request, context }: Route.ActionArgs) {
     openTo.length > 240 ||
     selected.length === 0 ||
     languages.some((language) => language.length > 40) ||
-    [xScore, sorsaScore].some(
-      (score) =>
-        score !== null && (!Number.isFinite(score) || score < 0 || score > 100),
-    ) ||
     socialAccounts.some(
       ({ profileUrl, followerCount }) =>
         profileUrl === null ||
