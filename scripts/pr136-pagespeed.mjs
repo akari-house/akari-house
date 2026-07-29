@@ -1,7 +1,6 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
-const targetUrl = process.env.AKARI_PRODUCTION_URL ?? "https://akarihouse.com";
 const outputDirectory =
   process.argv[2] ?? "launch-gate-artifacts/pagespeed";
 const strategies = ["mobile", "desktop"];
@@ -22,57 +21,20 @@ function auditMetric(audits, id) {
     : null;
 }
 
-function fieldMetric(metrics, id) {
-  const metric = metrics?.[id];
-  return metric
-    ? {
-        percentile: metric.percentile ?? null,
-        category: metric.category ?? null,
-        distributions: metric.distributions ?? [],
-      }
-    : null;
-}
-
-await mkdir(outputDirectory, { recursive: true });
 const summaries = [];
 
 for (const strategy of strategies) {
-  const endpoint = new URL(
-    "https://www.googleapis.com/pagespeedonline/v5/runPagespeed",
-  );
-  endpoint.searchParams.set("url", targetUrl);
-  endpoint.searchParams.set("strategy", strategy);
-  for (const category of [
-    "performance",
-    "accessibility",
-    "best-practices",
-    "seo",
-  ]) {
-    endpoint.searchParams.append("category", category);
-  }
-
-  const response = await fetch(endpoint);
-  const body = await response.json();
-  if (!response.ok) {
-    throw new Error(
-      `PageSpeed ${strategy} failed with ${response.status}: ${JSON.stringify(body)}`,
-    );
-  }
-
-  await writeFile(
-    path.join(outputDirectory, `${strategy}-full.json`),
-    `${JSON.stringify(body, null, 2)}\n`,
-  );
-
-  const categories = body.lighthouseResult?.categories ?? {};
-  const audits = body.lighthouseResult?.audits ?? {};
-  const loadingMetrics = body.loadingExperience?.metrics ?? {};
-  const originMetrics = body.originLoadingExperience?.metrics ?? {};
+  const reportPath = path.join(outputDirectory, `${strategy}-full.json`);
+  const body = JSON.parse(await readFile(reportPath, "utf8"));
+  const categories = body.categories ?? {};
+  const audits = body.audits ?? {};
   const summary = {
     strategy,
-    targetUrl,
-    fetchedAt: body.analysisUTCTimestamp ?? new Date().toISOString(),
-    finalUrl: body.lighthouseResult?.finalDisplayedUrl ?? body.id ?? targetUrl,
+    targetUrl: body.requestedUrl ?? "https://akarihouse.com",
+    finalUrl: body.finalDisplayedUrl ?? body.finalUrl ?? null,
+    fetchedAt: body.fetchTime ?? new Date().toISOString(),
+    lighthouseVersion: body.lighthouseVersion ?? null,
+    userAgent: body.userAgent ?? null,
     scores: {
       performance: score(categories.performance),
       accessibility: score(categories.accessibility),
@@ -85,39 +47,16 @@ for (const strategy of strategies) {
       totalBlockingTime: auditMetric(audits, "total-blocking-time"),
       cumulativeLayoutShift: auditMetric(audits, "cumulative-layout-shift"),
       speedIndex: auditMetric(audits, "speed-index"),
-      interactionToNextPaint: auditMetric(audits, "interaction-to-next-paint"),
+      timeToInteractive: auditMetric(audits, "interactive"),
     },
-    field: {
-      url: {
-        largestContentfulPaint: fieldMetric(
-          loadingMetrics,
-          "LARGEST_CONTENTFUL_PAINT_MS",
-        ),
-        interactionToNextPaint: fieldMetric(
-          loadingMetrics,
-          "INTERACTION_TO_NEXT_PAINT",
-        ),
-        cumulativeLayoutShift: fieldMetric(
-          loadingMetrics,
-          "CUMULATIVE_LAYOUT_SHIFT_SCORE",
-        ),
-      },
-      origin: {
-        largestContentfulPaint: fieldMetric(
-          originMetrics,
-          "LARGEST_CONTENTFUL_PAINT_MS",
-        ),
-        interactionToNextPaint: fieldMetric(
-          originMetrics,
-          "INTERACTION_TO_NEXT_PAINT",
-        ),
-        cumulativeLayoutShift: fieldMetric(
-          originMetrics,
-          "CUMULATIVE_LAYOUT_SHIFT_SCORE",
-        ),
-      },
+    coreWebVitalsInterpretation: {
+      largestContentfulPaintTargetMs: 2500,
+      cumulativeLayoutShiftTarget: 0.1,
+      interactionToNextPaintTargetMs: 200,
+      note:
+        "Lighthouse is controlled lab evidence. It reports LCP and CLS directly; Total Blocking Time is a lab responsiveness diagnostic, not field INP. Field Core Web Vitals require CrUX data.",
     },
-    warnings: body.lighthouseResult?.runWarnings ?? [],
+    warnings: body.runWarnings ?? [],
   };
   summaries.push(summary);
   await writeFile(
@@ -126,23 +65,22 @@ for (const strategy of strategies) {
   );
 }
 
+const combined = {
+  schemaVersion: 1,
+  source: "lighthouse_cli_controlled_lab",
+  targetUrl: "https://akarihouse.com",
+  generatedAt: new Date().toISOString(),
+  fieldDataAvailable: false,
+  results: summaries,
+};
+
 await writeFile(
   path.join(outputDirectory, "summary.json"),
-  `${JSON.stringify(
-    {
-      schemaVersion: 1,
-      source: "google_pagespeed_insights_api_v5",
-      targetUrl,
-      generatedAt: new Date().toISOString(),
-      results: summaries,
-    },
-    null,
-    2,
-  )}\n`,
+  `${JSON.stringify(combined, null, 2)}\n`,
 );
 
 for (const result of summaries) {
   process.stdout.write(
-    `${result.strategy}: performance ${result.scores.performance}, accessibility ${result.scores.accessibility}, best practices ${result.scores.bestPractices}, SEO ${result.scores.seo}\n`,
+    `${result.strategy}: performance ${result.scores.performance}, accessibility ${result.scores.accessibility}, best practices ${result.scores.bestPractices}, SEO ${result.scores.seo}, LCP ${result.lab.largestContentfulPaint?.displayValue}, CLS ${result.lab.cumulativeLayoutShift?.displayValue}, TBT ${result.lab.totalBlockingTime?.displayValue}\n`,
   );
 }
