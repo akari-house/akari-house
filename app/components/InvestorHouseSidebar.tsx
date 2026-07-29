@@ -88,7 +88,6 @@ export function InvestorHouseSidebar({
   activeView,
   counts,
 }: InvestorHouseSidebarProps) {
-  const houseHref = user ? "/app" : "/";
   const investorProfileHref = user
     ? "/settings/investor"
     : "/login?returnTo=/settings/investor";
@@ -97,7 +96,7 @@ export function InvestorHouseSidebar({
     <aside className="investor-house-sidebar" aria-label="Investor House">
       <Link
         className="investor-house-sidebar-brand"
-        to={houseHref}
+        to="/"
         aria-label="AKARI House"
       >
         <img

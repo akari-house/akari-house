@@ -167,7 +167,11 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
         Skip to content
       </a>
       {workspaceSidebar && user && (
-        <HouseWorkspaceSidebar user={user} pathname={location.pathname} />
+        <HouseWorkspaceSidebar
+          user={user}
+          pathname={location.pathname}
+          hash={location.hash}
+        />
       )}
       <header className="site-header">
         <Link to="/" className="wordmark" aria-label="AKARI House home">

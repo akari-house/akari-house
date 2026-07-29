@@ -79,20 +79,23 @@ export function isHouseWorkspacePath(pathname: string) {
   return false;
 }
 
-function isActive(pathname: string, item: WorkspaceItem) {
-  const [path] = item.href.split("#");
-  if (item.exact) return pathname === path;
+function isActive(pathname: string, hash: string, item: WorkspaceItem) {
+  const [path, itemHash] = item.href.split("#");
+  if (itemHash) return pathname === path && hash === `#${itemHash}`;
+  if (item.exact) return pathname === path && hash === "";
   return pathname === path || pathname.startsWith(`${path}/`);
 }
 
 function SidebarLink({
   item,
   pathname,
+  hash,
 }: {
   item: WorkspaceItem;
   pathname: string;
+  hash: string;
 }) {
-  const active = isActive(pathname, item);
+  const active = isActive(pathname, hash, item);
   return (
     <Link
       className={`house-workspace-sidebar-link${active ? " is-active" : ""}`}
@@ -111,9 +114,11 @@ function SidebarLink({
 export function HouseWorkspaceSidebar({
   user,
   pathname,
+  hash = "",
 }: {
   user: SessionUser;
   pathname: string;
+  hash?: string;
 }) {
   const adminMode = pathname.startsWith("/admin");
   const adminItems = user.adminAccess
@@ -139,8 +144,8 @@ export function HouseWorkspaceSidebar({
     <aside className="house-workspace-sidebar" aria-label="AKARI workspace">
       <Link
         className="house-workspace-sidebar-brand"
-        to="/app"
-        aria-label="AKARI House dashboard"
+        to="/"
+        aria-label="AKARI House home"
       >
         <img
           src="/assets/optimized/akari-logo.webp"
@@ -154,7 +159,12 @@ export function HouseWorkspaceSidebar({
       <nav aria-label="House navigation">
         <span className="house-workspace-sidebar-section">Your House</span>
         {houseItems.map((item) => (
-          <SidebarLink key={item.label} item={item} pathname={pathname} />
+          <SidebarLink
+            key={item.label}
+            item={item}
+            pathname={pathname}
+            hash={hash}
+          />
         ))}
 
         {roleItems.length > 0 && (
@@ -163,7 +173,12 @@ export function HouseWorkspaceSidebar({
               Role workspaces
             </span>
             {roleItems.map((item) => (
-              <SidebarLink key={item.label} item={item} pathname={pathname} />
+              <SidebarLink
+                key={item.label}
+                item={item}
+                pathname={pathname}
+                hash={hash}
+              />
             ))}
           </>
         )}
@@ -172,7 +187,12 @@ export function HouseWorkspaceSidebar({
           Profile & settings
         </span>
         {profileItems.map((item) => (
-          <SidebarLink key={item.label} item={item} pathname={pathname} />
+          <SidebarLink
+            key={item.label}
+            item={item}
+            pathname={pathname}
+            hash={hash}
+          />
         ))}
 
         {user.adminAccess && (
@@ -190,12 +210,14 @@ export function HouseWorkspaceSidebar({
                 exact: true,
               }}
               pathname={pathname}
+              hash={hash}
             />
             {adminItems.map((item) => (
               <SidebarLink
                 key={item.key}
                 item={{ label: item.label, href: item.to, glyph: "·" }}
                 pathname={pathname}
+                hash={hash}
               />
             ))}
           </>

@@ -83,7 +83,11 @@ export function PublicFooter() {
             <h2 id="footer-title" className="sr-only">
               AKARI House information
             </h2>
-            <span className="footer-brand">
+            <Link
+              className="footer-brand"
+              to="/"
+              aria-label="AKARI House footer home"
+            >
               <img
                 src="/assets/optimized/akari-logo.webp"
                 alt="AKARI"
@@ -92,7 +96,7 @@ export function PublicFooter() {
                 loading="lazy"
               />
               <span>House</span>
-            </span>
+            </Link>
             <p>
               A private professional network for Founders, Creators, Investors
               and Angels to build trusted relationships, collaborations and
