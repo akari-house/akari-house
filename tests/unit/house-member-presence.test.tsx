@@ -19,21 +19,26 @@ function members(count: number): HouseMemberPreview[] {
 }
 
 describe("homepage member presence", () => {
-  it("shows ten compact previews and the remaining public-member count", () => {
+  it("shows approved totals while previewing public profiles only", () => {
     const { container } = render(
       <HouseMemberPresence
-        creators={{ totalCount: 300, members: members(10) }}
-        investors={{ totalCount: 42, members: members(10) }}
+        creators={{ totalCount: 300, publicCount: 12, members: members(10) }}
+        investors={{ totalCount: 42, publicCount: 10, members: members(10) }}
       />,
     );
 
-    expect(screen.getByText("+290")).toBeInTheDocument();
-    expect(screen.getByText("+32")).toBeInTheDocument();
+    expect(screen.getByText("+2")).toBeInTheDocument();
+    expect(screen.queryByText("+290")).not.toBeInTheDocument();
     expect(
       container.querySelectorAll('article[data-role="creator"] img'),
     ).toHaveLength(10);
     expect(
-      screen.getByLabelText("300 approved creators with public profiles"),
+      screen.getByLabelText("300 approved creators; 12 public profiles"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Counts include every approved member. Portraits appear only for members with public profiles.",
+      ),
     ).toBeInTheDocument();
   });
 
