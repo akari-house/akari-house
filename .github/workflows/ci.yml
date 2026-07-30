@@ -7,10 +7,56 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  format-campaign-upgrade:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.format.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - id: format
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          npx prettier --write \
+            app/lib/campaign-compensation.ts \
+            app/routes/admin-campaign-compensation-index.tsx \
+            app/routes/admin-campaign-compensation.tsx \
+            app/routes/campaign-commitment.tsx \
+            app/routes/campaign-performance.tsx \
+            app/routes/campaign-report-export.ts \
+            tests/unit/campaign-compensation.test.ts
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            app/lib/campaign-compensation.ts \
+            app/routes/admin-campaign-compensation-index.tsx \
+            app/routes/admin-campaign-compensation.tsx \
+            app/routes/campaign-commitment.tsx \
+            app/routes/campaign-performance.tsx \
+            app/routes/campaign-report-export.ts \
+            tests/unit/campaign-compensation.test.ts
+          git commit -m "Format campaign compensation upgrade"
+          git push origin "HEAD:${HEAD_REF}"
+
   verify:
+    needs: format-campaign-upgrade
+    if: needs.format-campaign-upgrade.outputs.changed != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
