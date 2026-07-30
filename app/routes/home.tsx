@@ -44,6 +44,10 @@ interface HomepageMemberRow {
   username: string;
   displayName: string;
   avatarKey: string;
+  publicCount: number;
+}
+
+interface HomepageRoleCountRow {
   totalCount: number;
 }
 
@@ -51,34 +55,48 @@ export async function loadHomepageRolePresence(
   db: D1Database,
   role: Extract<Role, "creator" | "investor">,
 ): Promise<HouseRolePresence> {
-  const rows = await db
-    .prepare(
-      `WITH visible_members AS (
-         SELECT u.username, p.display_name AS displayName,
-                COALESCE(p.avatar_key, '') AS avatarKey,
-                p.updated_at AS updatedAt
+  const [total, rows] = await Promise.all([
+    db
+      .prepare(
+        `SELECT COUNT(DISTINCT u.id) AS totalCount
          FROM users u
          JOIN membership_applications ma
            ON ma.user_id = u.id AND ma.status = 'approved'
-         JOIN profiles p ON p.user_id = u.id
-         LEFT JOIN profile_visibility pv ON pv.user_id = u.id
          JOIN user_roles ur ON ur.user_id = u.id
-         WHERE u.status = 'active'
-           AND ur.role = ?
-           AND COALESCE(pv.visibility, p.visibility) = 'public'
-       )
-       SELECT username, displayName, avatarKey,
-              COUNT(*) OVER() AS totalCount
-       FROM visible_members
-       ORDER BY CASE WHEN avatarKey = '' THEN 1 ELSE 0 END,
-                updatedAt DESC, displayName COLLATE NOCASE
-       LIMIT 10`,
-    )
-    .bind(role)
-    .all<HomepageMemberRow>();
+         WHERE u.status = 'active' AND ur.role = ?`,
+      )
+      .bind(role)
+      .first<HomepageRoleCountRow>(),
+    db
+      .prepare(
+        `WITH visible_members AS (
+           SELECT u.username, p.display_name AS displayName,
+                  COALESCE(p.avatar_key, '') AS avatarKey,
+                  p.updated_at AS updatedAt
+           FROM users u
+           JOIN membership_applications ma
+             ON ma.user_id = u.id AND ma.status = 'approved'
+           JOIN profiles p ON p.user_id = u.id
+           LEFT JOIN profile_visibility pv ON pv.user_id = u.id
+           JOIN user_roles ur ON ur.user_id = u.id
+           WHERE u.status = 'active'
+             AND ur.role = ?
+             AND COALESCE(pv.visibility, p.visibility) = 'public'
+         )
+         SELECT username, displayName, avatarKey,
+                COUNT(*) OVER() AS publicCount
+         FROM visible_members
+         ORDER BY CASE WHEN avatarKey = '' THEN 1 ELSE 0 END,
+                  updatedAt DESC, displayName COLLATE NOCASE
+         LIMIT 10`,
+      )
+      .bind(role)
+      .all<HomepageMemberRow>(),
+  ]);
 
   return {
-    totalCount: rows.results[0]?.totalCount ?? 0,
+    totalCount: total?.totalCount ?? 0,
+    publicCount: rows.results[0]?.publicCount ?? 0,
     members: rows.results.map((member) => ({
       username: member.username,
       displayName: member.displayName,
@@ -152,7 +170,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       optionalHomepageValue(() => loadHomepageRolePresence(db, "creator")),
       optionalHomepageValue(() => loadHomepageRolePresence(db, "investor")),
     ]);
-  const emptyPresence: HouseRolePresence = { totalCount: 0, members: [] };
+  const emptyPresence: HouseRolePresence = {
+    totalCount: 0,
+    publicCount: 0,
+    members: [],
+  };
   return {
     user,
     project: project ?? null,
