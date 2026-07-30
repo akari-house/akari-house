@@ -23,7 +23,9 @@ export function enhanceProjectBrandMedia(root: ParentNode = document) {
       'h3 a[href^="/projects/"]',
     );
     const mark = card.querySelector<HTMLElement>(".project-lantern-mark");
-    const slug = link ? slugFromHref(link.getAttribute("href") ?? "", "/projects/") : "";
+    const slug = link
+      ? slugFromHref(link.getAttribute("href") ?? "", "/projects/")
+      : "";
     if (!mark || !slug || mark.dataset.brandEnhanced === "true") return;
 
     mark.dataset.brandEnhanced = "true";
@@ -50,13 +52,15 @@ export function enhanceProjectBrandMedia(root: ParentNode = document) {
       mark.style.background = "rgba(8, 11, 19, 0.82)";
     });
     image.addEventListener("error", () => image.remove());
-    mark.append(image);
+    mark.appendChild(image);
   });
 
   root.querySelectorAll<HTMLElement>(".deal-card").forEach((card) => {
     const link = card.querySelector<HTMLAnchorElement>('h2 a[href^="/deals/"]');
     const art = card.querySelector<HTMLElement>(".deal-card-art");
-    const slug = link ? slugFromHref(link.getAttribute("href") ?? "", "/deals/") : "";
+    const slug = link
+      ? slugFromHref(link.getAttribute("href") ?? "", "/deals/")
+      : "";
     if (!art || !slug || art.dataset.brandEnhanced === "true") return;
 
     art.dataset.brandEnhanced = "true";
@@ -80,7 +84,7 @@ export function enhanceProjectBrandMedia(root: ParentNode = document) {
       art.classList.add("has-project-banner");
     });
     banner.addEventListener("error", () => banner.remove());
-    art.prepend(banner);
+    art.insertBefore(banner, art.firstChild);
 
     const logoFrame = art.querySelector<HTMLElement>(":scope > span");
     if (!logoFrame) return;
@@ -107,7 +111,7 @@ export function enhanceProjectBrandMedia(root: ParentNode = document) {
       art.classList.add("has-project-logo");
     });
     logo.addEventListener("error", () => logo.remove());
-    logoFrame.append(logo);
+    logoFrame.appendChild(logo);
   });
 }
 
