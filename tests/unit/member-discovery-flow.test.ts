@@ -18,9 +18,7 @@ describe("member discovery connection flow", () => {
   it("makes newly approved members public while preserving the historical migration", () => {
     const approval = read("app/routes/admin-applications.tsx");
     const migration = read("migrations/0107_member_directory_discovery.sql");
-    expect(approval).toContain(
-      "WHEN visibility = 'private' THEN 'public'",
-    );
+    expect(approval).toContain("WHEN visibility = 'private' THEN 'public'");
     expect(migration).toContain("SET visibility = 'connections'");
     expect(migration).toContain("closure.status = 'cooling_off'");
   });
