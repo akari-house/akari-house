@@ -11,12 +11,14 @@ describe("public Inari homepage isolation", () => {
     expect(homeSource).not.toContain("PublicCommunityProof");
   });
 
-  it("uses only approved public profiles for compact member presence", () => {
+  it("counts every approved role while previewing public profiles only", () => {
     expect(homeSource).toContain("HouseMemberPresence");
     expect(homeSource).toContain("ma.status = 'approved'");
+    expect(homeSource).toContain("COUNT(DISTINCT u.id) AS totalCount");
     expect(homeSource).toContain(
       "COALESCE(pv.visibility, p.visibility) = 'public'",
     );
+    expect(homeSource).toContain("COUNT(*) OVER() AS publicCount");
     expect(homeSource).toContain("LIMIT 10");
   });
 
