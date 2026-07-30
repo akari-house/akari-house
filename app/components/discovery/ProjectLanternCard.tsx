@@ -10,6 +10,7 @@ export type ProjectLantern = {
   founderName: string;
   founderUsername: string;
   followerCount: number;
+  logoKey?: string | null;
 };
 
 export function ProjectLanternCard({
@@ -21,9 +22,20 @@ export function ProjectLanternCard({
 }) {
   return (
     <article className={`project-lantern-card${compact ? " is-compact" : ""}`}>
-      <div className="project-lantern-mark" aria-hidden="true">
-        <span />
-      </div>
+      {project.logoKey ? (
+        <div className="project-lantern-mark has-project-logo">
+          <img
+            src={`/media/projects/${project.slug}/logo`}
+            alt={`${project.title} logo`}
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      ) : (
+        <div className="project-lantern-mark" aria-hidden="true">
+          <span />
+        </div>
+      )}
       <div className="project-lantern-body">
         <div className="discovery-card-meta">
           <span>{project.stage.replaceAll("_", " ")}</span>
