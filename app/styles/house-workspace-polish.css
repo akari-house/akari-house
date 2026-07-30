@@ -53,6 +53,54 @@
     linear-gradient(180deg, rgba(16, 19, 31, 0.995), rgba(7, 10, 18, 0.998));
 }
 
+/* The public footer is designed for the full viewport. When it follows any
+   fixed workspace sidebar, give it the remaining canvas explicitly so its
+   content never renders behind navigation or gets clipped at the left edge. */
+@media (min-width: 901px) {
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+    > .akari-footer,
+  .investor-house-shell > .akari-footer {
+    width: auto;
+    margin-right: 0;
+    margin-left: 248px;
+    padding-right: clamp(1.35rem, 3vw, 3.5rem);
+    padding-left: clamp(1.35rem, 3vw, 3.5rem);
+    container-type: inline-size;
+  }
+
+  :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
+    > .akari-footer
+    .akari-footer__inner,
+  .investor-house-shell > .akari-footer .akari-footer__inner {
+    width: 100%;
+    max-width: 1280px;
+  }
+
+  @container (max-width: 1120px) {
+    .akari-footer__navigation,
+    .akari-footer__disclosure {
+      grid-template-columns: 1fr;
+    }
+
+    .akari-footer__navigation {
+      gap: 2.5rem;
+    }
+
+    .akari-footer .akari-footer__links {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1.75rem 1.25rem;
+    }
+
+    .akari-footer__disclosure {
+      gap: 1.4rem;
+    }
+
+    .akari-footer__disclosure-copy {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
 .house-workspace-sidebar-brand,
 .investor-house-sidebar-brand {
   min-height: 58px;

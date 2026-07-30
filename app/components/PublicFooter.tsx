@@ -114,7 +114,7 @@ export function PublicFooter() {
                   href={social.href}
                   key={social.label}
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                 >
                   <span aria-hidden="true">{social.mark}</span>
                   {social.label}
@@ -168,8 +168,7 @@ export function PublicFooter() {
             <p>
               AKARI does not custody investment funds or member assets through
               this platform. It supports professional profiles, controlled
-              information sharing, introductions and collaboration. This wording
-              remains subject to final legal review.
+              information sharing, introductions and collaboration.
             </p>
           </div>
         </section>

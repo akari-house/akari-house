@@ -20,6 +20,7 @@ import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { getPublishedHouseDirectory } from "~/lib/house-directory.server";
 import type { Role } from "~/lib/domain";
+import { Link } from "react-router";
 
 export const meta: Route.MetaFunction = () => [
   { title: "AKARI House | A private Web3 professional network" },
@@ -207,13 +208,17 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <div className="arrival-copy">
               <span className="chapter">Chapter 01 · The invitation</span>
               <h1 id="arrival-title">Welcome to AKARI House</h1>
-              <p>A private place for people building what comes next.</p>
+              <p>
+                A private Web3 professional network where Founders, Creators
+                and Investors discover relevant people, opportunities and
+                trusted collaborations.
+              </p>
               <div>
-                <ScrollTo className="button button-primary" targetId="hall">
-                  Enter the House <span aria-hidden="true">→</span>
-                </ScrollTo>
-                <ScrollTo className="quiet-link" targetId="common">
-                  Explore the experience
+                <Link className="button button-primary" to="/register">
+                  Apply to join <span aria-hidden="true">→</span>
+                </Link>
+                <ScrollTo className="quiet-link" targetId="hall">
+                  Explore the House
                 </ScrollTo>
               </div>
             </div>
@@ -238,24 +243,28 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           className="role-orientation"
           aria-label="What AKARI makes possible"
         >
-          <p>
-            Three paths enter the same trusted House. Choose the work that
-            matters to you.
-          </p>
+          <p>Choose the role that best reflects how you participate.</p>
           <div>
-            <ScrollTo targetId="hall">
+            <Link to="/register?role=founder">
               <span>Founder</span>
               <strong>Find relevant support</strong>
-            </ScrollTo>
-            <ScrollTo targetId="hall">
+            </Link>
+            <Link to="/register?role=creator">
               <span>Creator</span>
               <strong>Present work with context</strong>
-            </ScrollTo>
-            <ScrollTo targetId="hall">
+            </Link>
+            <Link to="/register?role=investor">
               <span>Investor</span>
               <strong>Review considered opportunities</strong>
-            </ScrollTo>
+            </Link>
           </div>
+        </section>
+
+        <section className="home-trust-strip" aria-label="AKARI membership principles">
+          <span>Human-reviewed membership</span>
+          <span>Private by default</span>
+          <span>Permission-controlled introductions</span>
+          <span>Authorized outcomes in the Archive</span>
         </section>
 
         <HouseMemberPresence

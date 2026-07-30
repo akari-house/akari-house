@@ -139,7 +139,7 @@ describe("public discovery surfaces", () => {
         /does not provide investment, financial, legal or tax advice/i,
       ),
     ).toBeVisible();
-    expect(screen.getByText(/subject to final legal review/i)).toBeVisible();
+    expect(screen.queryByText(/subject to final legal review/i)).toBeNull();
 
     const landscape = container.querySelector("[data-footer-landscape]");
     expect(landscape).toHaveAttribute("aria-hidden", "true");
