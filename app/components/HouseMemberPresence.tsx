@@ -91,8 +91,8 @@ export function HouseMemberPresence({
       <div className="house-member-presence__intro">
         <span>The people inside</span>
         <p id="house-member-presence-title">
-          Counts include every approved member. Portraits appear only for members
-          with public profiles.
+          Counts include every approved member. Portraits appear only for
+          members with public profiles.
         </p>
       </div>
       <div className="house-member-presence__groups">
