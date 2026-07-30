@@ -110,7 +110,7 @@ export async function action({ request, context }: Route.ActionArgs) {
             .prepare(
               `UPDATE profiles
                SET visibility = CASE
-                     WHEN visibility = 'private' THEN 'connections'
+                     WHEN visibility = 'private' THEN 'public'
                      ELSE visibility
                    END,
                    updated_at = datetime('now')
@@ -121,7 +121,7 @@ export async function action({ request, context }: Route.ActionArgs) {
             .prepare(
               `UPDATE profile_visibility
                SET visibility = CASE
-                     WHEN visibility = 'private' THEN 'connections'
+                     WHEN visibility = 'private' THEN 'public'
                      ELSE visibility
                    END,
                    updated_at = datetime('now')
