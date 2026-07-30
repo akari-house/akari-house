@@ -30,6 +30,8 @@ export default [
   route("deals/:dealSlug", "routes/deal-room.tsx"),
   route("campaigns", "routes/campaigns.tsx"),
   route("campaigns/:slug", "routes/campaign-detail.tsx"),
+  route("campaigns/:slug/commitment", "routes/campaign-commitment.tsx"),
+  route("campaigns/:slug/performance", "routes/campaign-performance.tsx"),
   route("campaigns/:slug/work", "routes/campaign-workspace.tsx"),
   route("campaigns/:slug/settlement", "routes/iio-settlement.tsx"),
   route("events", "routes/events.tsx"),
@@ -50,6 +52,18 @@ export default [
   route("admin/production", "routes/admin-production.tsx"),
   route("admin/resilience", "routes/admin-resilience.tsx"),
   route("admin/campaign-operations", "routes/admin-campaign-operations.tsx"),
+  route(
+    "admin/campaign-compensation",
+    "routes/admin-campaign-compensation-index.tsx",
+  ),
+  route(
+    "admin/campaign-compensation/:slug",
+    "routes/admin-campaign-compensation.tsx",
+  ),
+  route(
+    "admin/campaign-compensation/:slug/report.xls",
+    "routes/campaign-report-export.ts",
+  ),
   route("admin/launch-gate", "routes/admin-launch-gate.tsx"),
   route("admin/applications", "routes/admin-applications.tsx"),
   route("admin/interests", "routes/admin-interests.tsx"),
