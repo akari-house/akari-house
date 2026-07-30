@@ -36,7 +36,8 @@ export function ProjectLanternCard({
             border: "1px solid rgba(255, 209, 102, 0.4)",
             borderRadius: "18px",
             background: "rgba(8, 11, 19, 0.82)",
-            boxShadow: "inset 0 0 18px rgba(255, 209, 102, 0.09), 0 12px 30px rgba(0, 0, 0, 0.45)",
+            boxShadow:
+              "inset 0 0 18px rgba(255, 209, 102, 0.09), 0 12px 30px rgba(0, 0, 0, 0.45)",
           }}
         >
           <img

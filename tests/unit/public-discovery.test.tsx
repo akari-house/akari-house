@@ -63,10 +63,9 @@ describe("public discovery surfaces", () => {
         project={{ ...project, logoKey: "project-documents/brand/logo.png" }}
       />,
     );
-    expect(screen.getByRole("img", { name: "Paper Lantern logo" })).toHaveAttribute(
-      "src",
-      "/media/projects/paper-lantern/logo",
-    );
+    expect(
+      screen.getByRole("img", { name: "Paper Lantern logo" }),
+    ).toHaveAttribute("src", "/media/projects/paper-lantern/logo");
   });
 
   it("makes date and capacity the event invitation hierarchy", () => {
