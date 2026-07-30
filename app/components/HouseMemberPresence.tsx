@@ -6,14 +6,15 @@ export interface HouseMemberPreview {
 
 export interface HouseRolePresence {
   totalCount: number;
+  publicCount: number;
   members: HouseMemberPreview[];
 }
 
 export function remainingMemberCount(
-  totalCount: number,
+  publicCount: number,
   displayedCount: number,
 ) {
-  return Math.max(0, totalCount - displayedCount);
+  return Math.max(0, publicCount - displayedCount);
 }
 
 function PresenceGroup({
@@ -26,7 +27,7 @@ function PresenceGroup({
   presence: HouseRolePresence;
 }) {
   const remaining = remainingMemberCount(
-    presence.totalCount,
+    presence.publicCount,
     presence.members.length,
   );
 
@@ -34,7 +35,7 @@ function PresenceGroup({
     <article
       className="house-member-presence__group"
       data-role={role}
-      aria-label={`${presence.totalCount.toLocaleString()} approved ${label.toLowerCase()} with public profiles`}
+      aria-label={`${presence.totalCount.toLocaleString()} approved ${label.toLowerCase()}; ${presence.publicCount.toLocaleString()} public profiles`}
     >
       <div className="house-member-presence__meta">
         <span>{label}</span>
@@ -65,7 +66,7 @@ function PresenceGroup({
         {remaining > 0 && (
           <span
             className="house-member-presence__remaining"
-            title={`${remaining.toLocaleString()} more ${label.toLowerCase()}`}
+            title={`${remaining.toLocaleString()} more public ${label.toLowerCase()}`}
           >
             +{remaining.toLocaleString()}
           </span>
@@ -90,7 +91,8 @@ export function HouseMemberPresence({
       <div className="house-member-presence__intro">
         <span>The people inside</span>
         <p id="house-member-presence-title">
-          A glimpse of approved members who chose to be publicly visible.
+          Counts include every approved member. Portraits appear only for
+          members with public profiles.
         </p>
       </div>
       <div className="house-member-presence__groups">
