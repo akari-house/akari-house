@@ -243,7 +243,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       !workUrl ||
       !/^\d{4}-\d{2}-\d{2}$/.test(publishedAt)
     )
-      return { error: "Choose a committed channel, date and valid public URL." };
+      return {
+        error: "Choose a committed channel, date and valid public URL.",
+      };
     try {
       await db.batch([
         db
@@ -376,7 +378,12 @@ export async function action({ request, context, params }: Route.ActionArgs) {
            (id, actor_user_id, action, subject_type, subject_id, metadata_json)
            VALUES (?, ?, 'campaign.metrics_recorded', 'campaign_content', ?, ?)`,
         )
-        .bind(crypto.randomUUID(), user.id, content.id, JSON.stringify(metrics)),
+        .bind(
+          crypto.randomUUID(),
+          user.id,
+          content.id,
+          JSON.stringify(metrics),
+        ),
     ]);
     throw redirect(`/campaigns/${campaign.slug}/performance?saved=1`);
   }
@@ -517,7 +524,8 @@ export default function CampaignPerformance({
             <h1>{campaign.title}</h1>
             <p>
               Submit every public content URL. AKARI records final engagement
-              manually now and can use the same evidence structure for APIs later.
+              manually now and can use the same evidence structure for APIs
+              later.
             </p>
           </div>
           {operator && (
@@ -566,11 +574,13 @@ export default function CampaignPerformance({
             <section className="admin-panel">
               <span className="chapter">Your private campaign package</span>
               <h2>
-                Expected {paymentLabel}: {money.format(ownApplication.payoutCents / 100)}
+                Expected {paymentLabel}:{" "}
+                {money.format(ownApplication.payoutCents / 100)}
               </h2>
               <p>
                 Approved bonuses: {money.format(ownBonusTotal / 100)} · current
-                potential total: {money.format(
+                potential total:{" "}
+                {money.format(
                   (ownApplication.payoutCents + ownBonusTotal) / 100,
                 )}
               </p>
@@ -653,16 +663,21 @@ export default function CampaignPerformance({
                 0,
               );
               return (
-                <article className="application-card" key={participant.applicationId}>
+                <article
+                  className="application-card"
+                  key={participant.applicationId}
+                >
                   <div>
                     <span className="chapter">Private payment</span>
                     <h3>{participant.displayName}</h3>
                     <p>
-                      Base: {money.format(participant.payoutCents / 100)} · bonus: {money.format(bonusTotal / 100)}
+                      Base: {money.format(participant.payoutCents / 100)} ·
+                      bonus: {money.format(bonusTotal / 100)}
                     </p>
                     {bonuses.map((bonus) => (
                       <small key={bonus.id}>
-                        {bonus.bonusType}: {money.format(bonus.amountCents / 100)} · {bonus.reason}
+                        {bonus.bonusType}:{" "}
+                        {money.format(bonus.amountCents / 100)} · {bonus.reason}
                       </small>
                     ))}
                   </div>
@@ -700,12 +715,21 @@ export default function CampaignPerformance({
                     </div>
                     <label>
                       Performance reason
-                      <textarea name="reason" minLength={10} maxLength={500} required />
+                      <textarea
+                        name="reason"
+                        minLength={10}
+                        maxLength={500}
+                        required
+                      />
                     </label>
                     <div className="form-row">
                       <label>
                         Period label
-                        <input name="periodLabel" maxLength={100} placeholder="Week 2" />
+                        <input
+                          name="periodLabel"
+                          maxLength={100}
+                          placeholder="Week 2"
+                        />
                       </label>
                       <label>
                         Evidence URL
@@ -732,7 +756,9 @@ export default function CampaignPerformance({
                 <span className="chapter">
                   {platformLabels[content.platform]} · {content.status}
                 </span>
-                <h3>{operator ? content.creatorName : "Your submitted content"}</h3>
+                <h3>
+                  {operator ? content.creatorName : "Your submitted content"}
+                </h3>
                 <a
                   className="quiet-link"
                   href={content.workUrl}
@@ -742,9 +768,11 @@ export default function CampaignPerformance({
                   Open content
                 </a>
                 <p>
-                  {content.publishedAt} · {content.views.toLocaleString()} views ·{" "}
-                  {content.likes.toLocaleString()} likes · {content.comments.toLocaleString()} comments ·{" "}
-                  {content.reposts.toLocaleString()} reposts · {content.bookmarks.toLocaleString()} bookmarks
+                  {content.publishedAt} · {content.views.toLocaleString()} views
+                  · {content.likes.toLocaleString()} likes ·{" "}
+                  {content.comments.toLocaleString()} comments ·{" "}
+                  {content.reposts.toLocaleString()} reposts ·{" "}
+                  {content.bookmarks.toLocaleString()} bookmarks
                 </p>
                 {content.metricSource && (
                   <small>

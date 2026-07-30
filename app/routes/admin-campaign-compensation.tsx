@@ -135,7 +135,10 @@ async function getApplicants(db: D1Database, campaignId: string) {
 
 function campaignClosedForApplications(campaign: Campaign) {
   if (!campaign.applicationDeadline) return false;
-  return new Date().toISOString().slice(0, 10) > campaign.applicationDeadline.slice(0, 10);
+  return (
+    new Date().toISOString().slice(0, 10) >
+    campaign.applicationDeadline.slice(0, 10)
+  );
 }
 
 function numberField(form: FormData, name: string) {
@@ -187,7 +190,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     const maximumBonus = numberField(form, "maximumBonus");
     const paymentFrequency = formText(form.get("paymentFrequency"));
     const customPaymentLabel = formText(form.get("customPaymentLabel")).trim();
-    const dailyEngagementRequired = form.get("dailyEngagementRequired") === "yes";
+    const dailyEngagementRequired =
+      form.get("dailyEngagementRequired") === "yes";
     const engagementActions = ["Comment", "Like", "Repost", "Bookmark"].filter(
       (action) => form.get(`engagement_${action.toLowerCase()}`) === "yes",
     );
@@ -300,7 +304,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
           xScore < 0 ||
           sorsaScore < 0))
     )
-      return { error: "Enter verified non-negative metrics and a review note." };
+      return {
+        error: "Enter verified non-negative metrics and a review note.",
+      };
     const urls: Record<CampaignPlatform, string> = {
       x: application.xUrl,
       youtube: application.youtubeUrl,
@@ -416,7 +422,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         .map((value) => formText(value))
         .filter(Boolean),
     );
-    if (!selectedIds.size) return { error: "Select at least one verified Creator." };
+    if (!selectedIds.size)
+      return { error: "Select at least one verified Creator." };
     const applicants = await getApplicants(db, campaign.id);
     const selected = applicants.filter((item) => selectedIds.has(item.id));
     if (
@@ -461,17 +468,16 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     const paymentLabel =
       campaign.paymentFrequency === "custom"
         ? campaign.customPaymentLabel
-        : paymentFrequencyLabels[campaign.paymentFrequency] ?? "per campaign";
+        : (paymentFrequencyLabels[campaign.paymentFrequency] ?? "per campaign");
     const statements: D1PreparedStatement[] = [];
     for (const applicant of applicants) {
       const allocation = allocationMap.get(applicant.id);
       if (allocation) {
         let commitments = "the campaign deliverables";
         try {
-          const parsed = JSON.parse(applicant.platformCommitmentsJson) as Record<
-            string,
-            string
-          >;
+          const parsed = JSON.parse(
+            applicant.platformCommitmentsJson,
+          ) as Record<string, string>;
           const values = Object.values(parsed).filter(Boolean);
           if (values.length) commitments = values.join(" · ").slice(0, 700);
         } catch {
@@ -583,7 +589,9 @@ export default function AdminCampaignCompensation({
   try {
     const parsed: unknown = JSON.parse(campaign.engagementActionsJson);
     if (Array.isArray(parsed))
-      actions = parsed.filter((item): item is string => typeof item === "string");
+      actions = parsed.filter(
+        (item): item is string => typeof item === "string",
+      );
   } catch {
     actions = [];
   }
@@ -751,16 +759,19 @@ export default function AdminCampaignCompensation({
             <button
               className="button button-primary"
               disabled={
-                navigation.state !== "idle" || Boolean(campaign.rosterFinalizedAt)
+                navigation.state !== "idle" ||
+                Boolean(campaign.rosterFinalizedAt)
               }
             >
               Save compensation rules
             </button>
           </Form>
           <p>
-            Base allocation pool: {money.format(
+            Base allocation pool:{" "}
+            {money.format(
               Math.max(0, campaign.budgetCents - campaign.bonusPoolCents) / 100,
-            )}. The system scales allocations before saving, so the campaign can
+            )}
+            . The system scales allocations before saving, so the campaign can
             never exceed this amount.
           </p>
         </section>
@@ -792,19 +803,31 @@ export default function AdminCampaignCompensation({
                       </Link>
                     </h3>
                     <p>
-                      Channels: {selected.map((platform) => platformLabels[platform]).join(", ")}
+                      Channels:{" "}
+                      {selected
+                        .map((platform) => platformLabels[platform])
+                        .join(", ")}
                     </p>
                     {applicant.status === "accepted" && (
                       <p>
-                        Private allocation: {money.format(applicant.payoutCents / 100)} ·
-                        bonuses: {money.format((bonusMap.get(applicant.id) ?? 0) / 100)}
+                        Private allocation:{" "}
+                        {money.format(applicant.payoutCents / 100)} · bonuses:{" "}
+                        {money.format((bonusMap.get(applicant.id) ?? 0) / 100)}
                       </p>
                     )}
                   </div>
                   {!campaign.rosterFinalizedAt && (
                     <Form method="post" className="profile-form">
-                      <input type="hidden" name="intent" value="verify-metrics" />
-                      <input type="hidden" name="applicationId" value={applicant.id} />
+                      <input
+                        type="hidden"
+                        name="intent"
+                        value="verify-metrics"
+                      />
+                      <input
+                        type="hidden"
+                        name="applicationId"
+                        value={applicant.id}
+                      />
                       <div className="form-row form-row-three">
                         <label>
                           X followers
@@ -913,7 +936,9 @@ export default function AdminCampaignCompensation({
                       <span>
                         <strong>{applicant.creatorName}</strong>
                         <small>
-                          {parseCampaignPlatforms(applicant.selectedPlatformsJson)
+                          {parseCampaignPlatforms(
+                            applicant.selectedPlatformsJson,
+                          )
                             .map((platform) => platformLabels[platform])
                             .join(", ")}
                         </small>

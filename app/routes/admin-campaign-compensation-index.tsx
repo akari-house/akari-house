@@ -72,12 +72,13 @@ export default function AdminCampaignCompensationIndex({
                 </span>
                 <h2>{campaign.title}</h2>
                 <p>
-                  {campaign.projectTitle} · {campaign.applicationCount} applicants ·{" "}
-                  {campaign.acceptedCount} accepted
+                  {campaign.projectTitle} · {campaign.applicationCount}{" "}
+                  applicants · {campaign.acceptedCount} accepted
                 </p>
                 <small>
-                  Registration closes {campaign.applicationDeadline ?? "not set"} ·
-                  campaign ends {campaign.endsAt ?? "not set"}
+                  Registration closes{" "}
+                  {campaign.applicationDeadline ?? "not set"} · campaign ends{" "}
+                  {campaign.endsAt ?? "not set"}
                 </small>
               </div>
               <Link

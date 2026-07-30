@@ -65,7 +65,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     }>();
   if (!campaign) throw new Response("Campaign not found.", { status: 404 });
   await requireCampaignOperator(request, db, campaign.id);
-  const projectView = new URL(request.url).searchParams.get("view") === "project";
+  const projectView =
+    new URL(request.url).searchParams.get("view") === "project";
 
   const [participants, content, bonuses, applicationCount] = await Promise.all([
     db
@@ -197,7 +198,9 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     ["Total engagements", totalEngagements],
     [
       "Overall engagement rate",
-      totalViews ? Number(((totalEngagements / totalViews) * 100).toFixed(4)) : 0,
+      totalViews
+        ? Number(((totalEngagements / totalViews) * 100).toFixed(4))
+        : 0,
     ],
   ];
   if (!projectView)
@@ -207,7 +210,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       ["Reserved bonus pool", campaign.bonusPoolCents / 100],
       ["Base expected payments", totalExpectedPayments / 100],
       ["Bonuses awarded", totalBonuses / 100],
-      ["Current potential payable", (totalExpectedPayments + totalBonuses) / 100],
+      [
+        "Current potential payable",
+        (totalExpectedPayments + totalBonuses) / 100,
+      ],
     );
 
   const creatorHeaders = [
@@ -237,7 +243,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       `Current final amount (${campaign.currency})`,
     );
   const creatorRows = participants.results.map((participant) => {
-    const items = contentByApplication.get(String(participant.applicationId)) ?? [];
+    const items =
+      contentByApplication.get(String(participant.applicationId)) ?? [];
     const views = items.reduce((sum, item) => sum + Number(item.views ?? 0), 0);
     const likes = items.reduce((sum, item) => sum + Number(item.likes ?? 0), 0);
     const comments = items.reduce(
@@ -257,7 +264,9 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     const values: Array<string | number | null | undefined> = [
       participant.creatorName,
       participant.username,
-      parseCampaignPlatforms(String(participant.selectedPlatformsJson)).join(", "),
+      parseCampaignPlatforms(String(participant.selectedPlatformsJson)).join(
+        ", ",
+      ),
       Number(participant.xFollowers ?? 0),
       Number(participant.youtubeFollowers ?? 0),
       Number(participant.tiktokFollowers ?? 0),
@@ -351,7 +360,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
           "Payment frequency",
         ],
         participants.results.map((participant) => {
-          const bonusCents = bonusMap.get(String(participant.applicationId)) ?? 0;
+          const bonusCents =
+            bonusMap.get(String(participant.applicationId)) ?? 0;
           return [
             participant.creatorName,
             participant.username,

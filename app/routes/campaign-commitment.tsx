@@ -69,7 +69,11 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
        WHERE user_id = ? AND platform IN ('x','youtube','tiktok','instagram')`,
     )
     .bind(user.id)
-    .all<{ platform: CampaignPlatform; profileUrl: string; followerCount: number }>();
+    .all<{
+      platform: CampaignPlatform;
+      profileUrl: string;
+      followerCount: number;
+    }>();
   return {
     user,
     campaign,
@@ -107,7 +111,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const selected = campaignPlatforms.filter(
     (platform) => form.get(`platform_${platform}`) === "yes",
   );
-  if (!selected.length) return { error: "Choose at least one campaign channel." };
+  if (!selected.length)
+    return { error: "Choose at least one campaign channel." };
   const socials = await db
     .prepare(
       `SELECT platform, profile_url AS profileUrl
@@ -137,7 +142,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     )
   )
     return {
-      error: "Describe the work for every selected channel in 5 to 500 characters.",
+      error:
+        "Describe the work for every selected channel in 5 to 500 characters.",
     };
   const engagementAccepted = form.get("engagementAccepted") === "yes" ? 1 : 0;
   if (campaign.dailyEngagementRequired && !engagementAccepted)
@@ -190,7 +196,9 @@ export default function CampaignCommitment({
   );
   let engagementActions: string[] = [];
   try {
-    const parsed: unknown = JSON.parse(loaderData.campaign.engagementActionsJson);
+    const parsed: unknown = JSON.parse(
+      loaderData.campaign.engagementActionsJson,
+    );
     if (Array.isArray(parsed))
       engagementActions = parsed.filter(
         (item): item is string => typeof item === "string",
@@ -202,7 +210,10 @@ export default function CampaignCommitment({
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
       <main id="main-content" className="editor-main">
-        <Link className="quiet-link" to={`/campaigns/${loaderData.campaign.slug}`}>
+        <Link
+          className="quiet-link"
+          to={`/campaigns/${loaderData.campaign.slug}`}
+        >
           Back to campaign
         </Link>
         <span className="eyebrow">Creator campaign commitment</span>

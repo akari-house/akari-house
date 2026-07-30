@@ -83,9 +83,9 @@ describe("campaign compensation", () => {
         dailyEngagementRequired: true,
       },
     );
-    expect(result.reduce((sum, item) => sum + item.payoutCents, 0)).toBeLessThanOrEqual(
-      85_000,
-    );
+    expect(
+      result.reduce((sum, item) => sum + item.payoutCents, 0),
+    ).toBeLessThanOrEqual(85_000);
     expect(result.every((item) => item.payoutCents <= 10_000)).toBe(true);
   });
 
@@ -114,7 +114,9 @@ describe("campaign compensation", () => {
         dailyEngagementRequired: false,
       },
     );
-    expect(result.find((item) => item.id === "youtube-a")!.payoutCents).toBeGreaterThan(
+    expect(
+      result.find((item) => item.id === "youtube-a")!.payoutCents,
+    ).toBeGreaterThan(
       result.find((item) => item.id === "youtube-b")!.payoutCents,
     );
   });

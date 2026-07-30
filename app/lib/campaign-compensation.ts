@@ -74,7 +74,10 @@ export function parsePlatformWeights(value: string | null | undefined) {
         return [platform, Number.isFinite(number) && number >= 0 ? number : 0];
       }),
     ) as CampaignPlatformWeights;
-    return campaignPlatforms.reduce((sum, platform) => sum + weights[platform], 0)
+    return campaignPlatforms.reduce(
+      (sum, platform) => sum + weights[platform],
+      0,
+    )
       ? weights
       : fallback;
   } catch {
@@ -131,7 +134,9 @@ export function allocateCampaignBudget(
   const xCandidates = candidates.filter((candidate) =>
     candidate.selectedPlatforms.includes("x"),
   );
-  const xScoreValues = xCandidates.map((candidate) => Math.max(0, candidate.xScore));
+  const xScoreValues = xCandidates.map((candidate) =>
+    Math.max(0, candidate.xScore),
+  );
   const sorsaValues = xCandidates.map((candidate) =>
     Math.max(0, candidate.sorsaScore),
   );
@@ -190,15 +195,27 @@ export function allocateCampaignBudget(
     };
   });
 
-  const highestScore = Math.max(...scored.map((candidate) => candidate.selectionScore));
-  const baseBudgetCents = Math.max(0, config.budgetCents - config.bonusPoolCents);
+  const highestScore = Math.max(
+    ...scored.map((candidate) => candidate.selectionScore),
+  );
+  const baseBudgetCents = Math.max(
+    0,
+    config.budgetCents - config.bonusPoolCents,
+  );
   const provisional = scored.map((candidate) => {
     const exact = highestScore
-      ? (config.maximumAllocationCents * candidate.selectionScore) / highestScore
+      ? (config.maximumAllocationCents * candidate.selectionScore) /
+        highestScore
       : 0;
-    return { ...candidate, exact: Math.min(config.maximumAllocationCents, exact) };
+    return {
+      ...candidate,
+      exact: Math.min(config.maximumAllocationCents, exact),
+    };
   });
-  const provisionalTotal = provisional.reduce((sum, item) => sum + item.exact, 0);
+  const provisionalTotal = provisional.reduce(
+    (sum, item) => sum + item.exact,
+    0,
+  );
   const budgetFactor = provisionalTotal
     ? Math.min(1, baseBudgetCents / provisionalTotal)
     : 0;
