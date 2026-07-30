@@ -209,9 +209,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               <span className="chapter">Chapter 01 · The invitation</span>
               <h1 id="arrival-title">Welcome to AKARI House</h1>
               <p>
-                A private Web3 professional network where Founders, Creators
-                and Investors discover relevant people, opportunities and
-                trusted collaborations.
+                A private Web3 professional network where Founders, Creators and
+                Investors discover relevant people, opportunities and trusted
+                collaborations.
               </p>
               <div>
                 <Link className="button button-primary" to="/register">
@@ -260,7 +260,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           </div>
         </section>
 
-        <section className="home-trust-strip" aria-label="AKARI membership principles">
+        <section
+          className="home-trust-strip"
+          aria-label="AKARI membership principles"
+        >
           <span>Human-reviewed membership</span>
           <span>Private by default</span>
           <span>Permission-controlled introductions</span>

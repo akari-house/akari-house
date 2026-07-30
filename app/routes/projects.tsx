@@ -20,6 +20,7 @@ type PublicProjectRow = {
   founderName: string;
   founderUsername: string;
   followerCount: number;
+  logoKey: string | null;
 };
 
 export const meta: Route.MetaFunction = () => [
@@ -36,6 +37,7 @@ async function readPublishedProjects(db: D1Database) {
     const projects = await db
       .prepare(
         `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
+                pr.logo_key AS logoKey,
                 p.display_name AS founderName, u.username AS founderUsername,
                 COUNT(DISTINCT pf.user_id) AS followerCount
          FROM projects pr
@@ -56,6 +58,7 @@ async function readPublishedProjects(db: D1Database) {
     const projects = await db
       .prepare(
         `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
+                pr.logo_key AS logoKey,
                 COALESCE(p.display_name, u.username, 'AKARI Founder') AS founderName,
                 u.username AS founderUsername,
                 0 AS followerCount

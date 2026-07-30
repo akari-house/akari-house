@@ -57,6 +57,17 @@ describe("public discovery surfaces", () => {
     expect(screen.getByText("A thoughtful creator partner")).toBeVisible();
   });
 
+  it("renders an uploaded project logo as the discovery identity", () => {
+    renderWithRouter(
+      <ProjectLanternCard
+        project={{ ...project, logoKey: "project-documents/brand/logo.png" }}
+      />,
+    );
+    expect(
+      screen.getByRole("img", { name: "Paper Lantern logo" }),
+    ).toHaveAttribute("src", "/media/projects/paper-lantern/logo");
+  });
+
   it("makes date and capacity the event invitation hierarchy", () => {
     const { container } = renderWithRouter(
       <EventInvitationCard event={event} />,
