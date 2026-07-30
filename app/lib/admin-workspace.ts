@@ -62,6 +62,14 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     scope: "campaigns",
   },
   {
+    key: "creator-compensation",
+    label: "Creator compensation",
+    description:
+      "Verify campaign metrics, finalize private allocations, award bonuses and export reports.",
+    to: "/admin/campaign-compensation",
+    scope: "campaigns",
+  },
+  {
     key: "contact",
     label: "Contact desk",
     description: "Handle inbound support and trust enquiries.",
