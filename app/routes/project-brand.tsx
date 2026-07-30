@@ -130,7 +130,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   if (!validImage)
     return { error: "Use a JPG, PNG or WebP image no larger than 2 MB." };
 
-  const objectKey = `project-brand/${project.id}/${selection.asset}-${crypto.randomUUID()}.${validImage.extension}`;
+  const objectKey = `project-documents/brand/${project.id}/${selection.asset}-${crypto.randomUUID()}.${validImage.extension}`;
   await env.MEDIA.put(objectKey, file.stream(), {
     httpMetadata: {
       contentType: validImage.contentType,
@@ -146,8 +146,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   try {
     await registerManagedR2Object(db, {
       objectKey,
-      sourceType:
-        selection.asset === "logo" ? "project_logo" : "project_banner",
+      sourceType: "project_document",
       sourceId: project.id,
       ownerUserId: user.id,
     });
