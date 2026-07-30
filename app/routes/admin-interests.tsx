@@ -251,7 +251,9 @@ export async function action({ request, context }: Route.ActionArgs) {
         .bind(
           crypto.randomUUID(),
           project.founderUserId,
-          decision === "approve" ? "Project published" : "Project needs revision",
+          decision === "approve"
+            ? "Project published"
+            : "Project needs revision",
           `${project.title} was ${status}. Review note: ${decisionNote}`,
           `/projects/${project.slug}`,
         ),
