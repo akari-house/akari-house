@@ -120,7 +120,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       await env.MEDIA.delete(oldKey);
       await markManagedR2ObjectDeleted(db, oldKey);
     }
-    throw redirect(`/projects/${project.slug}/edit/brand?saved=${selection.asset}`);
+    throw redirect(
+      `/projects/${project.slug}/edit/brand?saved=${selection.asset}`,
+    );
   }
 
   const file = form.get(selection.asset);
@@ -192,7 +194,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     await markManagedR2ObjectDeleted(db, oldKey);
   }
 
-  throw redirect(`/projects/${project.slug}/edit/brand?saved=${selection.asset}`);
+  throw redirect(
+    `/projects/${project.slug}/edit/brand?saved=${selection.asset}`,
+  );
 }
 
 export default function ProjectBrand({
@@ -233,8 +237,8 @@ export default function ProjectBrand({
           <span className="eyebrow">Project logo</span>
           <h2>Recognition across the House</h2>
           <p>
-            Use a square logo with a transparent or simple background. Recommended
-            size: 800 × 800 px.
+            Use a square logo with a transparent or simple background.
+            Recommended size: 800 × 800 px.
           </p>
           {project.logoKey && (
             <img
@@ -251,7 +255,11 @@ export default function ProjectBrand({
               }}
             />
           )}
-          <Form method="post" encType="multipart/form-data" className="profile-form">
+          <Form
+            method="post"
+            encType="multipart/form-data"
+            className="profile-form"
+          >
             <label>
               Upload project logo
               <input
@@ -290,7 +298,8 @@ export default function ProjectBrand({
           <h2>A stronger investor-facing header</h2>
           <p>
             Use a clean landscape image that represents the project without
-            placing essential text near the edges. Recommended size: 1600 × 600 px.
+            placing essential text near the edges. Recommended size: 1600 × 600
+            px.
           </p>
           {project.bannerKey && (
             <img
@@ -306,7 +315,11 @@ export default function ProjectBrand({
               }}
             />
           )}
-          <Form method="post" encType="multipart/form-data" className="profile-form">
+          <Form
+            method="post"
+            encType="multipart/form-data"
+            className="profile-form"
+          >
             <label>
               Upload project banner
               <input

@@ -18,42 +18,44 @@ function createBrandImage(src: string, className: string) {
 }
 
 export function enhanceProjectBrandMedia(root: ParentNode = document) {
-  root.querySelectorAll<HTMLElement>(".project-lantern-card").forEach((card) => {
-    const link = card.querySelector<HTMLAnchorElement>(
-      'h3 a[href^="/projects/"]',
-    );
-    const mark = card.querySelector<HTMLElement>(".project-lantern-mark");
-    const slug = link
-      ? slugFromHref(link.getAttribute("href") ?? "", "/projects/")
-      : "";
-    if (!mark || !slug || mark.dataset.brandEnhanced === "true") return;
+  root
+    .querySelectorAll<HTMLElement>(".project-lantern-card")
+    .forEach((card) => {
+      const link = card.querySelector<HTMLAnchorElement>(
+        'h3 a[href^="/projects/"]',
+      );
+      const mark = card.querySelector<HTMLElement>(".project-lantern-mark");
+      const slug = link
+        ? slugFromHref(link.getAttribute("href") ?? "", "/projects/")
+        : "";
+      if (!mark || !slug || mark.dataset.brandEnhanced === "true") return;
 
-    mark.dataset.brandEnhanced = "true";
-    const fallback = mark.querySelector<HTMLElement>("span");
-    const image = createBrandImage(
-      `/media/projects/${encodeURIComponent(slug)}/logo`,
-      "project-brand-logo",
-    );
-    Object.assign(image.style, {
-      position: "absolute",
-      inset: "7px",
-      width: "calc(100% - 14px)",
-      height: "calc(100% - 14px)",
-      objectFit: "contain",
-      borderRadius: "14px",
-      opacity: "0",
-      transition: "opacity 180ms ease",
+      mark.dataset.brandEnhanced = "true";
+      const fallback = mark.querySelector<HTMLElement>("span");
+      const image = createBrandImage(
+        `/media/projects/${encodeURIComponent(slug)}/logo`,
+        "project-brand-logo",
+      );
+      Object.assign(image.style, {
+        position: "absolute",
+        inset: "7px",
+        width: "calc(100% - 14px)",
+        height: "calc(100% - 14px)",
+        objectFit: "contain",
+        borderRadius: "14px",
+        opacity: "0",
+        transition: "opacity 180ms ease",
+      });
+      image.addEventListener("load", () => {
+        fallback?.style.setProperty("display", "none");
+        image.style.opacity = "1";
+        mark.classList.add("has-project-logo");
+        mark.style.borderRadius = "18px";
+        mark.style.background = "rgba(8, 11, 19, 0.82)";
+      });
+      image.addEventListener("error", () => image.remove());
+      mark.appendChild(image);
     });
-    image.addEventListener("load", () => {
-      fallback?.style.setProperty("display", "none");
-      image.style.opacity = "1";
-      mark.classList.add("has-project-logo");
-      mark.style.borderRadius = "18px";
-      mark.style.background = "rgba(8, 11, 19, 0.82)";
-    });
-    image.addEventListener("error", () => image.remove());
-    mark.appendChild(image);
-  });
 
   root.querySelectorAll<HTMLElement>(".deal-card").forEach((card) => {
     const link = card.querySelector<HTMLAnchorElement>('h2 a[href^="/deals/"]');

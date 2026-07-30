@@ -20,7 +20,9 @@ describe("project brand media enhancement", () => {
 
     const mark = document.querySelector<HTMLElement>(".project-lantern-mark")!;
     const fallback = mark.querySelector<HTMLElement>("span")!;
-    const image = mark.querySelector<HTMLImageElement>("img.project-brand-logo")!;
+    const image = mark.querySelector<HTMLImageElement>(
+      "img.project-brand-logo",
+    )!;
     expect(image.getAttribute("src")).toBe(
       "/media/projects/paper-lantern/logo",
     );
@@ -43,7 +45,9 @@ describe("project brand media enhancement", () => {
     enhanceProjectBrandMedia(document);
 
     const art = document.querySelector<HTMLElement>(".deal-card-art")!;
-    const banner = art.querySelector<HTMLImageElement>("img.project-brand-banner")!;
+    const banner = art.querySelector<HTMLImageElement>(
+      "img.project-brand-banner",
+    )!;
     const logo = art.querySelector<HTMLImageElement>("img.project-brand-logo")!;
     const logoFrame = art.querySelector<HTMLElement>(":scope > span")!;
 
@@ -77,6 +81,8 @@ describe("project brand media enhancement", () => {
     expect(images).toHaveLength(2);
     images.forEach((image) => image.dispatchEvent(new Event("error")));
     expect(document.querySelectorAll(".deal-card-art img")).toHaveLength(0);
-    expect(document.querySelector(".deal-card-art span")?.textContent).toBe("AK");
+    expect(document.querySelector(".deal-card-art span")?.textContent).toBe(
+      "AK",
+    );
   });
 });
