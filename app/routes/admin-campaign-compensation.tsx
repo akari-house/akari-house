@@ -714,7 +714,7 @@ export default function AdminCampaignCompensation({
               </label>
             </div>
             <fieldset>
-              <legend>Campaign platform importance — total 100</legend>
+              <legend>Campaign platform importance: total 100</legend>
               <div className="form-row form-row-three">
                 {campaignPlatforms.map((platform) => (
                   <label key={platform}>
