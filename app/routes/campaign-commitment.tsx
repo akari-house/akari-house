@@ -6,7 +6,7 @@ import {
   parseCampaignPlatforms,
   type CampaignPlatform,
 } from "~/lib/campaign-compensation";
-import { parseJsonObject } from "~/lib/campaign-operations.server";
+import { parseJsonObject } from "~/lib/campaign-json";
 import { requireUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { assertSameOrigin } from "~/lib/security.server";

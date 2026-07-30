@@ -6,10 +6,8 @@ import {
   parseCampaignPlatforms,
   type CampaignPlatform,
 } from "~/lib/campaign-compensation";
-import {
-  canOperateCampaign,
-  parseJsonObject,
-} from "~/lib/campaign-operations.server";
+import { parseJsonObject } from "~/lib/campaign-json";
+import { canOperateCampaign } from "~/lib/campaign-operations.server";
 import { parsePostingDays, postingDays } from "~/lib/campaign-posting-days";
 import { requireUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
