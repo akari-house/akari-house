@@ -7,68 +7,10 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  fix-campaign-imports:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    outputs:
-      changed: ${{ steps.fix.outputs.changed }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - id: fix
-        env:
-          HEAD_REF: ${{ github.head_ref }}
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          performance = Path("app/routes/campaign-performance.tsx")
-          content = performance.read_text()
-          content = content.replace(
-              'import {\n  canOperateCampaign,\n  parseJsonObject,\n} from "~/lib/campaign-operations.server";',
-              'import { parseJsonObject } from "~/lib/campaign-json";\nimport { canOperateCampaign } from "~/lib/campaign-operations.server";',
-          )
-          performance.write_text(content)
-
-          commitment = Path("app/routes/campaign-commitment.tsx")
-          content = commitment.read_text().replace(
-              'import { parseJsonObject } from "~/lib/campaign-operations.server";',
-              'import { parseJsonObject } from "~/lib/campaign-json";',
-          )
-          commitment.write_text(content)
-          PY
-          npx prettier --write \
-            app/lib/campaign-json.ts \
-            app/lib/campaign-operations.server.ts \
-            app/routes/campaign-performance.tsx \
-            app/routes/campaign-commitment.tsx
-          if git diff --quiet; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo "changed=true" >> "$GITHUB_OUTPUT"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            app/lib/campaign-json.ts \
-            app/lib/campaign-operations.server.ts \
-            app/routes/campaign-performance.tsx \
-            app/routes/campaign-commitment.tsx
-          git commit -m "Separate campaign client and server modules"
-          git push origin "HEAD:${HEAD_REF}"
-
   verify:
-    needs: fix-campaign-imports
-    if: needs.fix-campaign-imports.outputs.changed != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
