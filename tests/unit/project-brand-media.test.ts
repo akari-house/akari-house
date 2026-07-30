@@ -1,39 +1,14 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { afterEach, describe, expect, it } from "vitest";
-import { enhanceProjectBrandMedia } from "~/components/RouteScrollReset";
+import { enhanceDealBrandMedia } from "~/components/RouteScrollReset";
 
 afterEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("project brand media enhancement", () => {
-  it("loads a project logo without removing the lantern fallback before success", () => {
-    document.body.innerHTML = `
-      <article class="project-lantern-card">
-        <div class="project-lantern-mark"><span></span></div>
-        <h3><a href="/projects/paper-lantern">Paper Lantern</a></h3>
-      </article>
-    `;
-
-    enhanceProjectBrandMedia(document);
-
-    const mark = document.querySelector<HTMLElement>(".project-lantern-mark")!;
-    const fallback = mark.querySelector<HTMLElement>("span")!;
-    const image = mark.querySelector<HTMLImageElement>(
-      "img.project-brand-logo",
-    )!;
-    expect(image.getAttribute("src")).toBe(
-      "/media/projects/paper-lantern/logo",
-    );
-    expect(fallback.style.display).toBe("");
-
-    image.dispatchEvent(new Event("load"));
-    expect(fallback.style.display).toBe("none");
-    expect(mark).toHaveClass("has-project-logo");
-  });
-
-  it("adds a deal banner and logo while retaining fallbacks when media is absent", () => {
+describe("Deal Room project brand media enhancement", () => {
+  it("adds a deal banner and logo while retaining fallbacks before success", () => {
     document.body.innerHTML = `
       <article class="deal-card">
         <div class="deal-card-art"><span>CO</span><i></i><b>AKARI REVIEWED</b></div>
@@ -41,8 +16,8 @@ describe("project brand media enhancement", () => {
       </article>
     `;
 
-    enhanceProjectBrandMedia(document);
-    enhanceProjectBrandMedia(document);
+    enhanceDealBrandMedia(document);
+    enhanceDealBrandMedia(document);
 
     const art = document.querySelector<HTMLElement>(".deal-card-art")!;
     const banner = art.querySelector<HTMLImageElement>(
@@ -76,7 +51,7 @@ describe("project brand media enhancement", () => {
       </article>
     `;
 
-    enhanceProjectBrandMedia(document);
+    enhanceDealBrandMedia(document);
     const images = Array.from(document.querySelectorAll(".deal-card-art img"));
     expect(images).toHaveLength(2);
     images.forEach((image) => image.dispatchEvent(new Event("error")));
