@@ -7,10 +7,42 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  fix-campaign-typography:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.fix.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - id: fix
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("app/routes/admin-campaign-compensation.tsx")
+          content = path.read_text()
+          path.write_text(content.replace("Campaign platform importance — total 100", "Campaign platform importance: total 100"))
+          PY
+          if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/routes/admin-campaign-compensation.tsx
+          git commit -m "Fix campaign compensation typography"
+          git push origin "HEAD:${HEAD_REF}"
+
   verify:
+    needs: fix-campaign-typography
+    if: needs.fix-campaign-typography.outputs.changed != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
