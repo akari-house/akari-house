@@ -75,7 +75,11 @@ export function ProjectLanternCard({
       <div className="project-lantern-body">
         <div className="discovery-card-meta">
           <span>{project.stage.replaceAll("_", " ")}</span>
-          <span>{hasOpenNeeds ? "Approved project" : "Not currently seeking support"}</span>
+          <span>
+            {hasOpenNeeds
+              ? "Approved project"
+              : "Not currently seeking support"}
+          </span>
         </div>
         <h3>
           <Link to={`/projects/${project.slug}`}>{project.title}</Link>

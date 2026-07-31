@@ -1,8 +1,11 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/project-detail";
+import { ProjectNeedChips } from "~/components/projects/ProjectNeedChips";
 import { SiteHeader } from "~/components/SiteHeader";
 import { getOptionalUser, requireUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import { projectHasOpenNeed } from "~/lib/project-need-status";
+import { projectHasNeed } from "~/lib/project-needs";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
@@ -19,6 +22,7 @@ type ProjectRow = {
   description: string;
   stage: string;
   seeking: string;
+  supportStatus: string;
   status: string;
 };
 
@@ -28,7 +32,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const project = await db
     .prepare(
       `SELECT pr.id, pr.slug, pr.founder_user_id AS founderUserId, pr.title,
-              pr.summary, pr.description, pr.stage, pr.seeking, pr.status,
+              pr.summary, pr.description, pr.stage, pr.seeking,
+              pr.support_status_json AS supportStatus, pr.status,
               p.display_name AS founderName, u.username AS founderUsername
        FROM projects pr
        JOIN users u ON u.id = pr.founder_user_id
@@ -190,7 +195,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const user = await requireUser(request, db);
   const project = await db
     .prepare(
-      `SELECT id, founder_user_id AS founderUserId, title, status
+      `SELECT id, founder_user_id AS founderUserId, title, status, seeking,
+              support_status_json AS supportStatus
        FROM projects WHERE slug = ?`,
     )
     .bind(params.slug)
@@ -199,10 +205,15 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       founderUserId: string;
       title: string;
       status: string;
+      seeking: string;
+      supportStatus: string;
     }>();
   if (!project) throw new Response("Project not found.", { status: 404 });
   if (project.status !== "published" && user.id !== project.founderUserId)
     throw new Response("Project not found.", { status: 404 });
+  const fundraisingClosed =
+    projectHasNeed(project.seeking, "fundraising") &&
+    !projectHasOpenNeed(project.seeking, project.supportStatus, "fundraising");
   const form = await request.formData();
   const intent = formText(form.get("intent"));
   await requireActionRateLimit(
@@ -235,6 +246,11 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   }
 
   if (intent === "interest") {
+    if (fundraisingClosed)
+      return {
+        error:
+          "This Founder has marked fundraising as paused, completed or no longer open.",
+      };
     if (!(await isVerifiedInvestor(db, user)))
       throw new Response("Verified Investor access required.", { status: 403 });
     if (user.id === project.founderUserId)
@@ -334,6 +350,9 @@ export default function ProjectDetail({
   const { project, user } = loaderData;
   const navigation = useNavigation();
   const isFounder = user?.id === project.founderUserId;
+  const fundraisingClosed =
+    projectHasNeed(project.seeking, "fundraising") &&
+    !projectHasOpenNeed(project.seeking, project.supportStatus, "fundraising");
   return (
     <div className="site-shell">
       <SiteHeader user={user} />
@@ -352,8 +371,25 @@ export default function ProjectDetail({
         <p className="project-story">{project.description}</p>
         {project.seeking && (
           <aside className="project-seeking-panel">
-            <strong>Looking for</strong>
-            <p>{project.seeking}</p>
+            <strong>Support status</strong>
+            <div className="project-support-groups">
+              <div>
+                <span className="eyebrow">Open</span>
+                <ProjectNeedChips
+                  value={project.seeking}
+                  statusValue={project.supportStatus}
+                  mode="open"
+                />
+              </div>
+              <div>
+                <span className="eyebrow">Progress</span>
+                <ProjectNeedChips
+                  value={project.seeking}
+                  statusValue={project.supportStatus}
+                  mode="closed"
+                />
+              </div>
+            </div>
           </aside>
         )}
         <p>
@@ -442,55 +478,65 @@ export default function ProjectDetail({
         {user?.roles.includes("investor") && !isFounder && (
           <section className="project-action-panel">
             <h2>Express investment interest</h2>
-            {!loaderData.verifiedInvestor && (
+            {fundraisingClosed ? (
               <p className="notice">
-                Admin verification is required before an Investor can send an
-                interest request.
+                Fundraising is not currently open. The Founder-reported outcome
+                remains visible above for context.
               </p>
+            ) : (
+              <>
+                {!loaderData.verifiedInvestor && (
+                  <p className="notice">
+                    Admin verification is required before an Investor can send
+                    an interest request.
+                  </p>
+                )}
+                {actionData?.error && (
+                  <p className="form-error" role="alert">
+                    {actionData.error}
+                  </p>
+                )}
+                <Form method="post" className="form-stack">
+                  <label>
+                    Why would a conversation be useful?
+                    <textarea
+                      name="message"
+                      minLength={10}
+                      maxLength={800}
+                      rows={4}
+                      required
+                    />
+                  </label>
+                  <label className="inline-choice">
+                    <input type="checkbox" name="shareContact" value="yes" />
+                    Allow the founder to see contact methods I marked for
+                    project interests
+                  </label>
+                  <button
+                    className="button button-primary"
+                    name="intent"
+                    value="interest"
+                    disabled={
+                      navigation.state !== "idle" ||
+                      !loaderData.verifiedInvestor
+                    }
+                  >
+                    {loaderData.ownInterest
+                      ? "Update my interest"
+                      : "Show interest"}
+                  </button>
+                  {loaderData.ownInterest?.status !== "withdrawn" && (
+                    <button
+                      className="text-button"
+                      name="intent"
+                      value="withdraw-interest"
+                    >
+                      Withdraw interest
+                    </button>
+                  )}
+                </Form>
+              </>
             )}
-            {actionData?.error && (
-              <p className="form-error" role="alert">
-                {actionData.error}
-              </p>
-            )}
-            <Form method="post" className="form-stack">
-              <label>
-                Why would a conversation be useful?
-                <textarea
-                  name="message"
-                  minLength={10}
-                  maxLength={800}
-                  rows={4}
-                  required
-                />
-              </label>
-              <label className="inline-choice">
-                <input type="checkbox" name="shareContact" value="yes" />
-                Allow the founder to see contact methods I marked for project
-                interests
-              </label>
-              <button
-                className="button button-primary"
-                name="intent"
-                value="interest"
-                disabled={
-                  navigation.state !== "idle" || !loaderData.verifiedInvestor
-                }
-              >
-                {loaderData.ownInterest
-                  ? "Update my interest"
-                  : "Show interest"}
-              </button>
-              {loaderData.ownInterest?.status !== "withdrawn" && (
-                <button
-                  className="text-button"
-                  name="intent"
-                  value="withdraw-interest"
-                >
-                  Withdraw interest
-                </button>
-              )}
-            </Form>
           </section>
         )}
         {loaderData.founderSharedContacts.length > 0 && (

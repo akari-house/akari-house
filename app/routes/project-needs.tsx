@@ -189,9 +189,9 @@ export default function ProjectNeeds({
             <span className="eyebrow">Founder-reported progress</span>
             <h2>Keep each support need accurate.</h2>
             <p>
-              Closing, pausing or completing an approved need updates immediately
-              and does not send the whole project back for review. Reopen it at
-              any time when conversations should resume.
+              Closing, pausing or completing an approved need updates
+              immediately and does not send the whole project back for review.
+              Reopen it at any time when conversations should resume.
             </p>
             {loaderData.statusSaved && (
               <p className="notice success" role="status">

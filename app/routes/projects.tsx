@@ -6,10 +6,7 @@ import { ProjectLanternCard } from "~/components/discovery/ProjectLanternCard";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { projectHasOpenNeed } from "~/lib/project-need-status";
-import {
-  projectNeedOptions,
-  type ProjectNeed,
-} from "~/lib/project-needs";
+import { projectNeedOptions, type ProjectNeed } from "~/lib/project-needs";
 
 type PublicProjectRow = {
   slug: string;

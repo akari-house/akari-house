@@ -26,13 +26,17 @@ export function ProjectNeedChips({
   return (
     <div
       className={`project-need-chips${compact ? " is-compact" : ""}`}
-      aria-label={mode === "closed" ? "Project support progress" : "Project support needs"}
+      aria-label={
+        mode === "closed" ? "Project support progress" : "Project support needs"
+      }
     >
       {visibleNeeds.map((need) => {
         const record = projectNeedStatus(statusValue, need);
         return (
           <span
-            className={record.status === "open" ? undefined : `is-${record.status}`}
+            className={
+              record.status === "open" ? undefined : `is-${record.status}`
+            }
             key={need}
             title={record.note || undefined}
           >

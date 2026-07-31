@@ -37,7 +37,8 @@ export function parseProjectNeedStatuses(
   if (!raw?.trim()) return {};
   try {
     const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed))
+      return {};
     const result: ProjectNeedStatusMap = {};
     for (const [need, value] of Object.entries(parsed)) {
       if (!value || typeof value !== "object" || Array.isArray(value)) continue;
@@ -141,7 +142,8 @@ export function projectNeedPublicLabel(
     if (record.status === "paused") return "Fundraising paused";
     return "No longer raising";
   }
-  if (record.status === "completed") return `${projectNeedLabel(need)} completed`;
+  if (record.status === "completed")
+    return `${projectNeedLabel(need)} completed`;
   if (record.status === "paused") return `${projectNeedLabel(need)} paused`;
   return `${projectNeedLabel(need)} closed`;
 }

@@ -13,6 +13,12 @@ import {
   type OpportunityAccessState,
 } from "~/lib/opportunity-access.server";
 import { hasAdminScope } from "~/lib/membership.server";
+import {
+  projectHasOpenNeed,
+  projectNeedPublicLabel,
+  projectNeedStatus,
+} from "~/lib/project-need-status";
+import { projectHasNeed } from "~/lib/project-needs";
 import { isOpportunitySchemaUnavailable } from "~/lib/opportunity-schema.server";
 import { loadOpportunitySections } from "~/lib/opportunity-sections.server";
 import { getVisibleProfile } from "~/lib/profile.server";
@@ -42,6 +48,8 @@ type PreviewRow = {
   accessMode: "verified_investors" | "approved_only";
   founderName: string;
   founderUsername: string;
+  seeking: string;
+  supportStatus: string;
 };
 
 type DocumentRow = {
@@ -129,7 +137,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   const preview = await db
     .prepare(
       `SELECT pr.id AS projectId, pr.founder_user_id AS founderUserId,
-              pr.slug, pr.title, pr.summary,
+              pr.slug, pr.title, pr.summary, pr.seeking,
+              pr.support_status_json AS supportStatus,
               ol.public_summary AS publicSummary,
               ol.public_highlights AS publicHighlights,
               ol.risk_summary AS riskSummary,
@@ -352,7 +361,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const listing = await db
     .prepare(
       `SELECT pr.id AS projectId, pr.founder_user_id AS founderUserId,
-              pr.title, ol.access_mode AS accessMode
+              pr.title, pr.seeking,
+              pr.support_status_json AS supportStatus,
+              ol.access_mode AS accessMode
        FROM opportunity_listings ol
        JOIN projects pr ON pr.id = ol.project_id
        WHERE pr.slug = ? AND pr.status = 'published'
@@ -363,6 +374,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       projectId: string;
       founderUserId: string;
       title: string;
+      seeking: string;
+      supportStatus: string;
       accessMode: "verified_investors" | "approved_only";
     }>();
   if (!listing) throw new Response("Opportunity not found.", { status: 404 });
@@ -373,6 +386,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const isAdmin =
     (await hasAdminScope(db, user.id, "projects")) ||
     (await hasAdminScope(db, user.id, "moderation"));
+  const fundraisingClosed =
+    projectHasNeed(listing.seeking, "fundraising") &&
+    !projectHasOpenNeed(listing.seeking, listing.supportStatus, "fundraising");
 
   if (["save", "pass", "clear-state"].includes(intent)) {
     if (!verifiedInvestor)
@@ -412,6 +428,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   }
 
   if (intent === "request-access") {
+    if (fundraisingClosed)
+      return { error: "This fundraising round is not currently open." };
     if (!verifiedInvestor)
       throw new Response("Verified Investor access required.", { status: 403 });
     if (user.id === listing.founderUserId)
@@ -485,6 +503,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   }
 
   if (intent === "interest" || intent === "withdraw-interest") {
+    if (intent === "interest" && fundraisingClosed)
+      return { error: "This fundraising round is not currently open." };
     if (!verifiedInvestor)
       throw new Response("Verified Investor access required.", { status: 403 });
     if (intent === "withdraw-interest") {
@@ -543,6 +563,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   }
 
   if (intent === "request-introduction") {
+    if (fundraisingClosed)
+      return { error: "New introductions are closed for this round." };
     if (!verifiedInvestor)
       throw new Response("Verified Investor access required.", { status: 403 });
     if (
@@ -717,7 +739,15 @@ export default function DealRoom({
     money(preview.raiseMinimum, preview.raiseCurrency),
     money(preview.raiseMaximum, preview.raiseCurrency),
   ].filter(Boolean);
+  const fundraisingClosed =
+    projectHasNeed(preview.seeking, "fundraising") &&
+    !projectHasOpenNeed(preview.seeking, preview.supportStatus, "fundraising");
+  const fundraisingRecord = projectNeedStatus(
+    preview.supportStatus,
+    "fundraising",
+  );
   const accessRequestable =
+    !fundraisingClosed &&
     loaderData.verifiedInvestor &&
     loaderData.accessState === "request_required";
 
@@ -745,6 +775,16 @@ export default function DealRoom({
                 preview.founderName
               )}
             </p>
+            {fundraisingClosed && (
+              <div className="deal-round-closed" role="status">
+                <strong>
+                  {projectNeedPublicLabel("fundraising", fundraisingRecord)}
+                </strong>
+                <span>
+                  Founder-reported · New investment requests are closed.
+                </span>
+              </div>
+            )}
           </div>
           <aside className="deal-access-card">
             <span className={`status-pill status-${loaderData.accessState}`}>
@@ -954,26 +994,35 @@ export default function DealRoom({
                 </button>
               </Form>
             </div>
-            <Form method="post" className="form-stack">
-              <label>
-                Non-binding interest note
-                <textarea
-                  name="message"
-                  minLength={10}
-                  maxLength={800}
-                  required
-                />
-              </label>
-              <button
-                className="button button-primary"
-                name="intent"
-                value="interest"
-              >
-                {loaderData.ownInterest?.status === "active"
-                  ? "Update non-binding interest"
-                  : "Register non-binding interest"}
-              </button>
-              {loaderData.ownInterest?.status === "active" && (
+            {fundraisingClosed ? (
+              <p className="notice">
+                This round is not accepting new non-binding interest. Existing
+                saved records and authorised access remain available.
+              </p>
+            ) : (
+              <Form method="post" className="form-stack">
+                <label>
+                  Non-binding interest note
+                  <textarea
+                    name="message"
+                    minLength={10}
+                    maxLength={800}
+                    required
+                  />
+                </label>
+                <button
+                  className="button button-primary"
+                  name="intent"
+                  value="interest"
+                >
+                  {loaderData.ownInterest?.status === "active"
+                    ? "Update non-binding interest"
+                    : "Register non-binding interest"}
+                </button>
+              </Form>
+            )}
+            {loaderData.ownInterest?.status === "active" && (
+              <Form method="post">
                 <button
                   className="text-button"
                   name="intent"
@@ -981,8 +1030,8 @@ export default function DealRoom({
                 >
                   Withdraw interest
                 </button>
-              )}
-            </Form>
+              </Form>
+            )}
           </section>
         )}
 
@@ -1065,9 +1114,12 @@ export default function DealRoom({
                       name="message"
                       minLength={10}
                       maxLength={800}
-                      disabled={["pending", "approved"].includes(
-                        loaderData.introduction?.status ?? "",
-                      )}
+                      disabled={
+                        fundraisingClosed ||
+                        ["pending", "approved"].includes(
+                          loaderData.introduction?.status ?? "",
+                        )
+                      }
                       required
                     />
                   </label>
@@ -1075,15 +1127,20 @@ export default function DealRoom({
                     className="button button-quiet"
                     name="intent"
                     value="request-introduction"
-                    disabled={["pending", "approved"].includes(
-                      loaderData.introduction?.status ?? "",
-                    )}
+                    disabled={
+                      fundraisingClosed ||
+                      ["pending", "approved"].includes(
+                        loaderData.introduction?.status ?? "",
+                      )
+                    }
                   >
-                    {loaderData.introduction?.status === "pending"
-                      ? "Introduction requested"
-                      : loaderData.introduction?.status === "approved"
-                        ? "Introduction approved"
-                        : "Request Founder introduction"}
+                    {fundraisingClosed
+                      ? "Introductions closed for this round"
+                      : loaderData.introduction?.status === "pending"
+                        ? "Introduction requested"
+                        : loaderData.introduction?.status === "approved"
+                          ? "Introduction approved"
+                          : "Request Founder introduction"}
                   </button>
                 </Form>
               </div>
