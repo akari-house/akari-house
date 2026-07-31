@@ -1,0 +1,32 @@
+name: Format Project Need Status Test
+
+on:
+  push:
+    branches:
+      - feature/project-need-status
+    paths:
+      - .github/workflows/format-project-need-status-test.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/project-need-status
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write tests/project-need-status.test.ts
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/project-need-status.test.ts
+          git commit -m "Format project need status test" || exit 0
+          git push origin HEAD:feature/project-need-status
