@@ -56,6 +56,9 @@ jobs:
 
           editor = Path('app/routes/project-edit.tsx')
           editor.write_text(editor.read_text().replace('projectId!.id', 'projectId.id'))
+
+          admin = Path('app/routes/admin-interests.tsx')
+          admin.write_text(admin.read_text().replace(' — ', ' - '))
           PY
           npx prettier --write \
             app/lib/project-access.server.ts \
