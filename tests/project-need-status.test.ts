@@ -95,7 +95,9 @@ describe("Founder-reported project support outcomes", () => {
     expect(dealRoom).toContain(
       'return { error: "This fundraising round is not currently open." }',
     );
-    expect(dealRoom).toContain("Existing saved records and authorised access");
+    expect(dealRoom).toContain(
+      "saved records and authorised access remain available.",
+    );
     expect(projects).toContain("projectHasOpenNeed");
   });
 
