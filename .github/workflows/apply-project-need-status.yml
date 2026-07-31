@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feature/project-need-status
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
