@@ -43,6 +43,17 @@ jobs:
           PY
           sed -i 's/ORDER BY updated_at DESC`,/ORDER BY updated_at DESC`",/' /tmp/apply-project-ownership-transfer.py
           python /tmp/apply-project-ownership-transfer.py
+          python <<'PY'
+          from pathlib import Path
+
+          path = Path('app/routes/project-detail.tsx')
+          text = path.read_text()
+          old = "AND (status = 'published' OR created_by = ? OR ? = 1)\n       ORDER BY updated_at DESC,\n    )"
+          new = "AND (status = 'published' OR created_by = ? OR ? = 1)\n       ORDER BY updated_at DESC`,\n    )"
+          if old not in text:
+              raise RuntimeError('Unable to restore the project campaign query delimiter.')
+          path.write_text(text.replace(old, new, 1))
+          PY
           npx prettier --write \
             app/lib/project-access.server.ts \
             app/routes/admin-interests.tsx \
