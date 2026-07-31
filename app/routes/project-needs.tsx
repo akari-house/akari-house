@@ -69,7 +69,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const intent = formText(form.get("intent"));
   if (intent === "update-need-status") {
     const result = projectNeedStatusFromForm(form, project.seeking);
-    if (result.error) return { error: result.error };
+    if (result.error !== null) return { error: result.error };
     const updatedAt = new Date().toISOString();
     const supportStatus = updateProjectNeedStatus(
       project.supportStatus,
