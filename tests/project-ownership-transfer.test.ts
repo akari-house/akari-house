@@ -16,6 +16,7 @@ describe("Superadmin project ownership transfer", () => {
     expect(route).toContain("rv.status = 'verified'");
     expect(route).toContain("previousOwnerAccess");
     expect(route).toContain("project.ownership_transferred");
+    expect(route).toContain("project.ownership_received");
   });
 
   it("supports retaining or removing the previous owner's access", () => {
