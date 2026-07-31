@@ -1,5 +1,9 @@
 import { Link } from "react-router";
 import { ProjectNeedChips } from "~/components/projects/ProjectNeedChips";
+import {
+  projectHasAnyClosedNeed,
+  projectHasAnyOpenNeed,
+} from "~/lib/project-need-status";
 
 export type ProjectLantern = {
   slug: string;
@@ -7,6 +11,7 @@ export type ProjectLantern = {
   summary: string;
   stage: string;
   seeking: string;
+  supportStatus?: string | null;
   founderName: string;
   founderUsername: string;
   followerCount: number;
@@ -20,6 +25,15 @@ export function ProjectLanternCard({
   project: ProjectLantern;
   compact?: boolean;
 }) {
+  const hasOpenNeeds = projectHasAnyOpenNeed(
+    project.seeking,
+    project.supportStatus,
+  );
+  const hasClosedNeeds = projectHasAnyClosedNeed(
+    project.seeking,
+    project.supportStatus,
+  );
+
   return (
     <article className={`project-lantern-card${compact ? " is-compact" : ""}`}>
       {project.logoKey ? (
@@ -61,16 +75,32 @@ export function ProjectLanternCard({
       <div className="project-lantern-body">
         <div className="discovery-card-meta">
           <span>{project.stage.replaceAll("_", " ")}</span>
-          <span>Approved project</span>
+          <span>{hasOpenNeeds ? "Approved project" : "Not currently seeking support"}</span>
         </div>
         <h3>
           <Link to={`/projects/${project.slug}`}>{project.title}</Link>
         </h3>
         <p>{project.summary}</p>
-        {project.seeking && (
+        {hasOpenNeeds && (
           <div className="project-lantern-seeking">
             <strong>Looking for</strong>
-            <ProjectNeedChips value={project.seeking} compact />
+            <ProjectNeedChips
+              value={project.seeking}
+              statusValue={project.supportStatus}
+              compact
+              mode="open"
+            />
+          </div>
+        )}
+        {hasClosedNeeds && (
+          <div className="project-lantern-seeking is-progress">
+            <strong>Progress</strong>
+            <ProjectNeedChips
+              value={project.seeking}
+              statusValue={project.supportStatus}
+              compact
+              mode="closed"
+            />
           </div>
         )}
         <footer>
