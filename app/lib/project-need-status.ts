@@ -18,6 +18,16 @@ export type ProjectNeedStatusMap = Partial<
   Record<ProjectNeed, ProjectNeedStatusRecord>
 >;
 
+type ProjectNeedStatusFormResult =
+  | { error: string }
+  | {
+      error: null;
+      need: ProjectNeed;
+      status: ProjectNeedState;
+      source: FundraisingSource | undefined;
+      note: string;
+    };
+
 const validStates = new Set<ProjectNeedState>([
   "open",
   "completed",
@@ -184,7 +194,7 @@ export function retainSelectedProjectNeedStatuses(
 export function projectNeedStatusFromForm(
   form: FormData,
   seeking: string | null | undefined,
-) {
+): ProjectNeedStatusFormResult {
   const selectedNeeds = parseProjectSeeking(seeking).needs;
   const needValue = form.get("projectNeed");
   const statusValue = form.get("needStatus");
