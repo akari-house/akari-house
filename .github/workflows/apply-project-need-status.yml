@@ -39,7 +39,6 @@ jobs:
           app/routes/deals.tsx
           app/routes/deal-room.tsx
           app/styles/app.css
-          migrations/0110_project_need_status.sql
       - name: Commit generated integration
         run: |
           git config user.name "github-actions[bot]"
