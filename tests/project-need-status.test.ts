@@ -63,10 +63,7 @@ describe("Founder-reported project support outcomes", () => {
       partnerships: { status: "completed" },
     });
     expect(
-      projectHasAnyOpenNeed(
-        "Fundraising · Strategic partnerships",
-        status,
-      ),
+      projectHasAnyOpenNeed("Fundraising · Strategic partnerships", status),
     ).toBe(false);
   });
 
@@ -76,9 +73,9 @@ describe("Founder-reported project support outcomes", () => {
     form.set("needStatus", "completed");
     form.set("fundraisingSource", "");
 
-    expect(
-      projectNeedStatusFromForm(form, "Fundraising").error,
-    ).toContain("Choose where");
+    expect(projectNeedStatusFromForm(form, "Fundraising").error).toContain(
+      "Choose where",
+    );
 
     form.set("fundraisingSource", "mixed");
     expect(projectNeedStatusFromForm(form, "Fundraising")).toMatchObject({
