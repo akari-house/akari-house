@@ -1,0 +1,66 @@
+name: Bootstrap Project Ownership Transfer
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/bootstrap-project-ownership-transfer.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/project-ownership-transfer
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Extract and run reviewed integration script
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          source = Path('.github/workflows/apply-project-ownership-transfer.yml').read_text().splitlines()
+          start = next(i for i, line in enumerate(source) if "python <<'PY'" in line) + 1
+          end = next(i for i in range(start, len(source)) if source[i].strip() == 'PY')
+          script = []
+          for line in source[start:end]:
+              script.append(line[10:] if line.startswith('          ') else line)
+          Path('/tmp/apply-project-ownership-transfer.py').write_text('\n'.join(script) + '\n')
+          PY
+          python /tmp/apply-project-ownership-transfer.py
+      - name: Format changed application files
+        run: |
+          npx prettier --write \
+            app/lib/project-access.server.ts \
+            app/routes/admin-interests.tsx \
+            app/routes/project-manage.tsx \
+            app/routes/project-edit.tsx \
+            app/routes/project-needs.tsx \
+            app/routes/project-brand.tsx \
+            app/routes/project-brand-media.ts \
+            app/routes/project-opportunity.tsx \
+            app/routes/opportunity-manage.tsx \
+            app/routes/project-diligence.tsx \
+            app/routes/project-document.ts \
+            app/routes/campaign-new.tsx \
+            app/routes/project-detail.tsx \
+            app/routes/deal-room.tsx \
+            tests/project-ownership-transfer.test.ts
+      - name: Remove feature-only workflows and push implementation
+        run: |
+          rm .github/workflows/apply-project-ownership-transfer.yml
+          rm .github/workflows/trigger-project-ownership-transfer.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add audited project ownership transfers"
+          git push origin HEAD:feature/project-ownership-transfer
