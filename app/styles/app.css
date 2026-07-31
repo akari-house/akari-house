@@ -7686,3 +7686,79 @@ select:disabled {
     max-width: 280px;
   }
 }
+
+.project-need-status-section {
+  margin-top: 2rem;
+}
+
+.project-need-status-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin-top: 1rem;
+}
+
+.project-need-status-card {
+  background: rgba(15, 18, 30, 0.82);
+  border: 1px solid rgba(236, 72, 153, 0.24);
+  border-radius: 18px;
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+}
+
+.project-need-status-card > div {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.project-need-status-card small,
+.project-need-chips span small,
+.deal-round-status small {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-top: 0.2rem;
+  opacity: 0.72;
+}
+
+.project-need-chips span.is-completed,
+.project-need-chips span.is-closed,
+.project-need-chips span.is-paused,
+.deal-round-status,
+.deal-round-closed {
+  border-color: rgba(255, 209, 102, 0.42);
+  background: rgba(255, 209, 102, 0.08);
+}
+
+.project-lantern-seeking.is-progress {
+  border-left-color: rgba(255, 209, 102, 0.72);
+}
+
+.project-support-groups {
+  display: grid;
+  gap: 1rem;
+  margin-top: 0.8rem;
+}
+
+.project-support-groups > div {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.deal-round-status {
+  align-items: flex-start;
+  display: inline-flex;
+  flex-direction: column;
+  margin-bottom: 0.9rem;
+}
+
+.deal-round-closed {
+  border: 1px solid rgba(255, 209, 102, 0.42);
+  border-radius: 14px;
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+}

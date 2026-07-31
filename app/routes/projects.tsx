@@ -5,11 +5,8 @@ import { PublicFooter } from "~/components/PublicFooter";
 import { ProjectLanternCard } from "~/components/discovery/ProjectLanternCard";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import {
-  projectHasNeed,
-  projectNeedOptions,
-  type ProjectNeed,
-} from "~/lib/project-needs";
+import { projectHasOpenNeed } from "~/lib/project-need-status";
+import { projectNeedOptions, type ProjectNeed } from "~/lib/project-needs";
 
 type PublicProjectRow = {
   slug: string;
@@ -17,6 +14,7 @@ type PublicProjectRow = {
   summary: string;
   stage: string;
   seeking: string;
+  supportStatus: string;
   founderName: string;
   founderUsername: string;
   followerCount: number;
@@ -37,6 +35,7 @@ async function readPublishedProjects(db: D1Database) {
     const projects = await db
       .prepare(
         `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
+                pr.support_status_json AS supportStatus,
                 pr.logo_key AS logoKey,
                 p.display_name AS founderName, u.username AS founderUsername,
                 COUNT(DISTINCT pf.user_id) AS followerCount
@@ -58,6 +57,7 @@ async function readPublishedProjects(db: D1Database) {
     const projects = await db
       .prepare(
         `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
+                COALESCE(pr.support_status_json, '{}') AS supportStatus,
                 pr.logo_key AS logoKey,
                 COALESCE(p.display_name, u.username, 'AKARI Founder') AS founderName,
                 u.username AS founderUsername,
@@ -92,7 +92,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     degraded: projects.degraded,
     projects: selectedNeed
       ? projects.items.filter((project) =>
-          projectHasNeed(project.seeking, selectedNeed),
+          projectHasOpenNeed(
+            project.seeking,
+            project.supportStatus,
+            selectedNeed,
+          ),
         )
       : projects.items,
   };
@@ -124,9 +128,9 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
         </header>
         <Form method="get" className="project-directory-filter">
           <label>
-            Filter by support need
+            Filter by open support need
             <select name="need" defaultValue={loaderData.selectedNeed}>
-              <option value="">All project needs</option>
+              <option value="">All projects</option>
               {projectNeedOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -161,7 +165,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
                   {loaderData.degraded
                     ? "Project lanterns could not be loaded."
                     : loaderData.selectedNeed
-                      ? "No published projects currently request this support."
+                      ? "No published projects currently have this support need open."
                       : "The first project lanterns are being prepared."}
                 </h2>
                 <p>

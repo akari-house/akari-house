@@ -6,6 +6,12 @@ import { InvestorHouseSidebar } from "~/components/InvestorHouseSidebar";
 import { getOptionalUser, requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import {
+  projectHasOpenNeed,
+  projectNeedPublicLabel,
+  projectNeedStatus,
+} from "~/lib/project-need-status";
+import { projectHasNeed } from "~/lib/project-needs";
+import {
   loadInvestorPreferenceProfile,
   matchOpportunityToInvestor,
 } from "~/lib/investor-matching.server";
@@ -40,6 +46,8 @@ type OpportunityRow = {
   passedAt: string | null;
   requestStatus: string | null;
   listingStatus: string;
+  seeking: string;
+  supportStatus: string;
 };
 
 type OpportunityWithMatch = OpportunityRow & {
@@ -312,6 +320,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const result = await db
     .prepare(
       `SELECT pr.id AS projectId, pr.slug, pr.title, pr.summary,
+              pr.seeking, pr.support_status_json AS supportStatus,
               ol.public_summary AS publicSummary, pr.stage, ol.sector,
               ol.geography, ol.funding_instrument AS fundingInstrument,
               ol.raise_minimum AS raiseMinimum,
@@ -779,6 +788,17 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                 money(opportunity.raiseMinimum, opportunity.raiseCurrency),
                 money(opportunity.raiseMaximum, opportunity.raiseCurrency),
               ].filter(Boolean);
+              const fundraisingClosed =
+                projectHasNeed(opportunity.seeking, "fundraising") &&
+                !projectHasOpenNeed(
+                  opportunity.seeking,
+                  opportunity.supportStatus,
+                  "fundraising",
+                );
+              const fundraisingRecord = projectNeedStatus(
+                opportunity.supportStatus,
+                "fundraising",
+              );
               return (
                 <article
                   className="deal-card"
@@ -796,6 +816,12 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                     <span>{opportunity.sector || "Selected opportunity"}</span>
                     <span>{opportunity.stage.replaceAll("_", " ")}</span>
                   </div>
+                  {fundraisingClosed && (
+                    <span className="status-pill status-closed deal-round-status">
+                      {projectNeedPublicLabel("fundraising", fundraisingRecord)}
+                      <small>Founder-reported</small>
+                    </span>
+                  )}
                   {opportunity.matchScore !== null && (
                     <div className="deal-profile-match">
                       <strong>{opportunity.matchScore}% profile match</strong>
