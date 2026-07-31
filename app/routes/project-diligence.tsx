@@ -4,6 +4,7 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { ensureDiligenceSchema } from "~/lib/diligence-schema.server";
+import { userCanManageProject } from "~/lib/project-access.server";
 import {
   isVerifiedInvestor,
   isVerifiedInvestorId,
@@ -30,7 +31,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       founderUserId: string;
     }>();
   if (!project) throw new Response("Project not found.", { status: 404 });
-  const isFounder = project.founderUserId === user.id;
+  const isFounder = await userCanManageProject(db, project.id, user.id);
   const isInvestor = user.roles.includes("investor");
   if (!isFounder && !isInvestor)
     throw new Response("Founder or Investor access required.", { status: 403 });
@@ -241,13 +242,14 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       dataRoomUrl: string;
     }>();
   if (!project) throw new Response("Project not found.", { status: 404 });
+  const isFounder = await userCanManageProject(db, project.id, user.id);
   const form = await request.formData();
   const intent = formText(form.get("intent"));
 
   if (intent === "request-data-room") {
     if (
       !user.roles.includes("investor") ||
-      user.id === project.founderUserId ||
+      isFounder ||
       !(await isVerifiedInvestor(db, user))
     )
       throw new Response("Verified Investor access required.", { status: 403 });
@@ -283,8 +285,10 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     throw redirect(`/projects/${project.slug}/diligence?requested=1`);
   }
 
-  if (user.id !== project.founderUserId)
-    throw new Response("Project owner required.", { status: 403 });
+  if (!isFounder)
+    throw new Response("Project owner or collaborator required.", {
+      status: 403,
+    });
 
   if (intent === "grant-document") {
     const documentId = formText(form.get("documentId"));

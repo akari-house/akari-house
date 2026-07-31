@@ -4,6 +4,7 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { postingCadences } from "~/lib/campaign-delivery";
+import { requireProjectManagerBySlug } from "~/lib/project-access.server";
 import { slugifyProject } from "~/lib/projects.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
@@ -13,16 +14,17 @@ async function ownedVerifiedProject(
   userId: string,
   slug: string | undefined,
 ) {
+  const access = await requireProjectManagerBySlug(db, slug, userId);
   return db
     .prepare(
       `SELECT p.id, p.slug, p.title
        FROM projects p
        JOIN role_verifications rv
-         ON rv.user_id = p.founder_user_id AND rv.role = 'founder'
-       WHERE p.slug = ? AND p.founder_user_id = ?
-         AND p.status = 'published' AND rv.status = 'verified'`,
+         ON rv.user_id = ? AND rv.role = 'founder'
+       WHERE p.id = ? AND p.status = 'published'
+         AND rv.status = 'verified'`,
     )
-    .bind(slug, userId)
+    .bind(userId, access.projectId)
     .first<{ id: string; slug: string; title: string }>();
 }
 

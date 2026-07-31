@@ -4,6 +4,7 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { recordOpportunityAudit } from "~/lib/opportunity-access.server";
+import { requireProjectManagerBySlug } from "~/lib/project-access.server";
 import { opportunitySectionDefinitions } from "~/lib/opportunity-sections";
 import {
   loadOpportunitySections,
@@ -66,12 +67,13 @@ async function founderProject(
   slug: string | undefined,
   userId: string,
 ) {
+  const access = await requireProjectManagerBySlug(db, slug, userId);
   const project = await db
     .prepare(
       `SELECT id, slug, title, founder_user_id AS founderUserId
-       FROM projects WHERE slug = ? AND founder_user_id = ?`,
+       FROM projects WHERE id = ?`,
     )
-    .bind(slug, userId)
+    .bind(access.projectId)
     .first<ProjectRow>();
   if (!project) throw new Response("Project not found.", { status: 404 });
   return project;

@@ -3,6 +3,7 @@ import type { Route } from "./+types/project-edit";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import { requireProjectManagerBySlug } from "~/lib/project-access.server";
 import {
   markManagedR2ObjectDeleted,
   registerManagedR2Object,
@@ -13,13 +14,14 @@ import { formText } from "~/lib/validation";
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const user = await requireApprovedMember(request, db);
+  const access = await requireProjectManagerBySlug(db, params.slug, user.id);
   const project = await db
     .prepare(
       `SELECT slug, title, summary, description, stage, seeking, status,
               data_room_url AS dataRoomUrl
-       FROM projects WHERE slug = ? AND founder_user_id = ?`,
+       FROM projects WHERE id = ?`,
     )
-    .bind(params.slug, user.id)
+    .bind(access.projectId)
     .first<{
       slug: string;
       title: string;
@@ -31,17 +33,14 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       dataRoomUrl: string;
     }>();
   if (!project) throw new Response("Project not found.", { status: 404 });
-  const projectId = await db
-    .prepare("SELECT id FROM projects WHERE slug = ? AND founder_user_id = ?")
-    .bind(params.slug, user.id)
-    .first<{ id: string }>();
+  const projectId = { id: access.projectId };
   const [socials, team, documents] = await Promise.all([
     db
       .prepare(
         `SELECT platform, url FROM project_social_links
          WHERE project_id = ? ORDER BY platform`,
       )
-      .bind(projectId!.id)
+      .bind(projectId.id)
       .all<{ platform: string; url: string }>(),
     db
       .prepare(
@@ -52,7 +51,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
          LEFT JOIN users u ON u.id = ptm.linked_user_id
          WHERE ptm.project_id = ? ORDER BY ptm.created_at`,
       )
-      .bind(projectId!.id)
+      .bind(projectId.id)
       .all<{
         id: string;
         displayName: string;
@@ -67,7 +66,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
          FROM project_documents WHERE project_id = ?
          ORDER BY created_at DESC`,
       )
-      .bind(projectId!.id)
+      .bind(projectId.id)
       .all<{
         id: string;
         title: string;
@@ -92,16 +91,15 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const env = context.get(cloudflareContext).env;
   const db = env.DB;
   const user = await requireApprovedMember(request, db);
+  const access = await requireProjectManagerBySlug(db, params.slug, user.id);
   const contentLength = Number(request.headers.get("content-length") ?? "0");
   if (contentLength > 5_500_000)
     return { error: "Project documents must be 5 MB or smaller." };
   const form = await request.formData();
   const intent = formText(form.get("intent"));
   const current = await db
-    .prepare(
-      "SELECT id, status FROM projects WHERE slug = ? AND founder_user_id = ?",
-    )
-    .bind(params.slug, user.id)
+    .prepare("SELECT id, status FROM projects WHERE id = ?")
+    .bind(access.projectId)
     .first<{ id: string; status: string }>();
   if (!current) throw new Response("Project not found.", { status: 404 });
 
