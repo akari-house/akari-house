@@ -1,5 +1,6 @@
 name: Bootstrap Project Ownership Transfer
 
+# This second commit triggers the workflow after it exists on the default branch.
 on:
   push:
     branches:
