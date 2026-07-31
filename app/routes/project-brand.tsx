@@ -3,6 +3,7 @@ import type { Route } from "./+types/project-brand";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import { requireProjectManagerBySlug } from "~/lib/project-access.server";
 import { validateProfilePhoto } from "~/lib/profile-photo.server";
 import {
   markManagedR2ObjectDeleted,
@@ -38,13 +39,14 @@ async function readOwnedProject(
   slug: string | undefined,
   userId: string,
 ) {
+  const access = await requireProjectManagerBySlug(db, slug, userId);
   return db
     .prepare(
       `SELECT id, slug, title, status, logo_key AS logoKey,
-              banner_key AS bannerKey
-       FROM projects WHERE slug = ? AND founder_user_id = ?`,
+    banner_key AS bannerKey
+       FROM projects WHERE id = ?`,
     )
-    .bind(slug, userId)
+    .bind(access.projectId)
     .first<ProjectBrandRow>();
 }
 

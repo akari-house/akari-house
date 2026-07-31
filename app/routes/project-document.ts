@@ -3,6 +3,7 @@ import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { ensureDiligenceSchema } from "~/lib/diligence-schema.server";
 import { opportunityAccessState } from "~/lib/opportunity-access.server";
+import { userCanManageProject } from "~/lib/project-access.server";
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const { env } = context.get(cloudflareContext);
@@ -39,7 +40,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     }>();
 
   if (!document) throw new Response("Document not found.", { status: 404 });
-  const owner = document.founderUserId === user.id;
+  const owner = await userCanManageProject(env.DB, document.projectId, user.id);
   const opportunityDocument = Boolean(document.opportunityProjectId);
   const roomState = opportunityDocument
     ? await opportunityAccessState(env.DB, document.projectId, user)

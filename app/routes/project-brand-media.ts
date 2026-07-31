@@ -1,6 +1,7 @@
 import type { Route } from "./+types/project-brand-media";
 import { getOptionalUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import { userCanManageProject } from "~/lib/project-access.server";
 
 const allowedAssets = ["logo", "banner"] as const;
 type ProjectBrandAsset = (typeof allowedAssets)[number];
@@ -29,25 +30,28 @@ export async function loader({ request, params, context }: Route.LoaderArgs) {
     : false;
 
   const project = await env.DB.prepare(
-    `SELECT logo_key AS logoKey, banner_key AS bannerKey, status,
+    `SELECT id, logo_key AS logoKey, banner_key AS bannerKey, status,
             founder_user_id AS founderUserId
      FROM projects WHERE slug = ?`,
   )
     .bind(params.slug)
     .first<{
+      id: string;
       logoKey: string | null;
       bannerKey: string | null;
       status: string;
       founderUserId: string;
     }>();
 
+  const canManage =
+    user && project
+      ? await userCanManageProject(env.DB, project.id, user.id)
+      : false;
   const objectKey = asset === "logo" ? project?.logoKey : project?.bannerKey;
   if (
     !project ||
     !objectKey ||
-    (project.status !== "published" &&
-      user?.id !== project.founderUserId &&
-      !canReview)
+    (project.status !== "published" && !canManage && !canReview)
   )
     throw new Response("Project image not found.", { status: 404 });
 

@@ -5,6 +5,7 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { getOptionalUser, requireUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { projectHasOpenNeed } from "~/lib/project-need-status";
+import { userCanManageProject } from "~/lib/project-access.server";
 import { projectHasNeed } from "~/lib/project-needs";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
@@ -42,10 +43,11 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     )
     .bind(params.slug)
     .first<ProjectRow>();
-  if (
-    !project ||
-    (project.status !== "published" && user?.id !== project.founderUserId)
-  )
+  if (!project) throw new Response("Project not found.", { status: 404 });
+  const canManage = user
+    ? await userCanManageProject(db, project.id, user.id)
+    : false;
+  if (project.status !== "published" && !canManage)
     throw new Response("Project not found.", { status: 404 });
 
   const following = user
@@ -75,11 +77,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
           founderSharesContact: number;
         }>()
     : null;
-  const interests =
-    user?.id === project.founderUserId
-      ? await db
-          .prepare(
-            `SELECT pi.id, pi.message, pi.status,
+  const interests = canManage
+    ? await db
+        .prepare(
+          `SELECT pi.id, pi.message, pi.status,
                     pi.investor_shares_contact AS investorSharesContact,
                     pi.founder_shares_contact AS founderSharesContact,
                     u.id AS investorUserId, u.username,
@@ -99,20 +100,20 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
              LEFT JOIN profile_contacts pc ON pc.user_id = u.id
              WHERE pi.project_id = ? AND pi.status <> 'withdrawn'
              GROUP BY pi.id ORDER BY pi.created_at DESC`,
-          )
-          .bind(project.id)
-          .all<{
-            id: string;
-            message: string;
-            status: string;
-            investorSharesContact: number;
-            founderSharesContact: number;
-            investorUserId: string;
-            username: string;
-            displayName: string;
-            sharedContacts: string | null;
-          }>()
-      : null;
+        )
+        .bind(project.id)
+        .all<{
+          id: string;
+          message: string;
+          status: string;
+          investorSharesContact: number;
+          founderSharesContact: number;
+          investorUserId: string;
+          username: string;
+          displayName: string;
+          sharedContacts: string | null;
+        }>()
+    : null;
   const founderSharedContacts =
     user &&
     ownInterest?.founderSharesContact &&
@@ -135,10 +136,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       `SELECT slug, title, summary, status
        FROM ambassador_campaigns
        WHERE project_id = ?
-         AND (status = 'published' OR created_by = ?)
+         AND (status = 'published' OR created_by = ? OR ? = 1)
        ORDER BY updated_at DESC`,
     )
-    .bind(project.id, user?.id ?? "")
+    .bind(project.id, user?.id ?? "", canManage ? 1 : 0)
     .all<{ slug: string; title: string; summary: string; status: string }>();
   const [socials, team] = await Promise.all([
     db
@@ -185,6 +186,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     socials: socials.results,
     team: team.results,
     verifiedInvestor: await isVerifiedInvestor(db, user),
+    canManage,
     submitted: new URL(request.url).searchParams.has("submitted"),
   };
 }
@@ -209,7 +211,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       supportStatus: string;
     }>();
   if (!project) throw new Response("Project not found.", { status: 404 });
-  if (project.status !== "published" && user.id !== project.founderUserId)
+  const canManage = await userCanManageProject(db, project.id, user.id);
+  if (project.status !== "published" && !canManage)
     throw new Response("Project not found.", { status: 404 });
   const fundraisingClosed =
     projectHasNeed(project.seeking, "fundraising") &&
@@ -253,7 +256,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       };
     if (!(await isVerifiedInvestor(db, user)))
       throw new Response("Verified Investor access required.", { status: 403 });
-    if (user.id === project.founderUserId)
+    if (canManage)
       throw new Response("You cannot invest in your own project here.", {
         status: 400,
       });
@@ -305,8 +308,10 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   if (intent === "share-founder-contact") {
     if (user.accessTier !== "member")
       throw new Response("Approved membership is required.", { status: 403 });
-    if (user.id !== project.founderUserId)
-      throw new Response("Project owner required.", { status: 403 });
+    if (!canManage)
+      throw new Response("Project owner or collaborator required.", {
+        status: 403,
+      });
     const interestId = formText(form.get("interestId"));
     const interest = await db
       .prepare(
@@ -349,7 +354,7 @@ export default function ProjectDetail({
 }: Route.ComponentProps) {
   const { project, user } = loaderData;
   const navigation = useNavigation();
-  const isFounder = user?.id === project.founderUserId;
+  const isFounder = loaderData.canManage;
   const fundraisingClosed =
     projectHasNeed(project.seeking, "fundraising") &&
     !projectHasOpenNeed(project.seeking, project.supportStatus, "fundraising");

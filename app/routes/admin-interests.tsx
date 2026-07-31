@@ -18,6 +18,7 @@ type ProjectReviewRow = {
   status: string;
   createdAt: string;
   founderName: string;
+  founderUsername: string;
   opportunityStatus: string | null;
 };
 
@@ -29,8 +30,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       .prepare(
         `SELECT pr.id, pr.slug, pr.title, pr.summary, pr.stage, pr.status,
                 pr.created_at AS createdAt, p.display_name AS founderName,
-                NULL AS opportunityStatus
-         FROM projects pr JOIN profiles p ON p.user_id = pr.founder_user_id
+                u.username AS founderUsername, NULL AS opportunityStatus
+         FROM projects pr
+         JOIN users u ON u.id = pr.founder_user_id
+         JOIN profiles p ON p.user_id = pr.founder_user_id
          WHERE pr.status = 'submitted' ORDER BY pr.created_at`,
       )
       .all<ProjectReviewRow>(),
@@ -38,8 +41,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       .prepare(
         `SELECT pr.id, pr.slug, pr.title, pr.summary, pr.stage, pr.status,
                 pr.created_at AS createdAt, p.display_name AS founderName,
-                ol.status AS opportunityStatus
+                u.username AS founderUsername, ol.status AS opportunityStatus
          FROM projects pr
+         JOIN users u ON u.id = pr.founder_user_id
          JOIN profiles p ON p.user_id = pr.founder_user_id
          LEFT JOIN opportunity_listings ol ON ol.project_id = pr.id
          WHERE pr.status IN ('published', 'archived')
@@ -117,12 +121,159 @@ export async function action({ request, context }: Route.ActionArgs) {
   const subjectId = formText(form.get("subjectId"));
   const decision = formText(form.get("decision"));
   const decisionNote = formText(form.get("decisionNote")).trim();
-  if (!["approve", "decline", "delist", "restore"].includes(decision))
+  if (
+    !["approve", "decline", "delist", "restore", "transfer"].includes(decision)
+  )
     throw new Response("Invalid decision.", { status: 400 });
   if (!isValidDecisionNote(decisionNote))
     return { error: "Add a decision note between 5 and 500 characters." };
 
   if (subjectType === "project") {
+    if (decision === "transfer") {
+      const newOwnerUsername = formText(form.get("newOwnerUsername"))
+        .trim()
+        .replace(/^@/, "")
+        .toLowerCase();
+      const previousOwnerAccess = formText(form.get("previousOwnerAccess"));
+      if (!newOwnerUsername)
+        return { error: "Enter the new owner's AKARI username." };
+      if (!["collaborator", "remove"].includes(previousOwnerAccess))
+        return { error: "Choose what happens to the previous owner's access." };
+
+      const project = await db
+        .prepare(
+          `SELECT pr.founder_user_id AS oldOwnerId, pr.slug, pr.title, pr.status,
+        u.username AS oldOwnerUsername,
+        p.display_name AS oldOwnerName
+ FROM projects pr
+ JOIN users u ON u.id = pr.founder_user_id
+ JOIN profiles p ON p.user_id = pr.founder_user_id
+ WHERE pr.id = ?`,
+        )
+        .bind(subjectId)
+        .first<{
+          oldOwnerId: string;
+          slug: string;
+          title: string;
+          status: string;
+          oldOwnerUsername: string;
+          oldOwnerName: string;
+        }>();
+      if (!project) throw new Response("Project not found.", { status: 404 });
+
+      const newOwner = await db
+        .prepare(
+          `SELECT u.id, u.username, p.display_name AS displayName
+ FROM users u
+ JOIN profiles p ON p.user_id = u.id
+ JOIN membership_applications ma
+   ON ma.user_id = u.id AND ma.status = 'approved'
+ JOIN user_roles ur ON ur.user_id = u.id AND ur.role = 'founder'
+ JOIN role_verifications rv
+   ON rv.user_id = u.id AND rv.role = 'founder'
+  AND rv.status = 'verified'
+ WHERE u.username = ? COLLATE NOCASE AND u.status = 'active'
+ LIMIT 1`,
+        )
+        .bind(newOwnerUsername)
+        .first<{ id: string; username: string; displayName: string }>();
+      if (!newOwner)
+        return {
+          error:
+            "The new owner must be an active, approved and verified AKARI Founder.",
+        };
+      if (newOwner.id === project.oldOwnerId)
+        return { error: "That member already owns this project." };
+
+      const keepPreviousOwner = previousOwnerAccess === "collaborator";
+      const statements: D1PreparedStatement[] = [
+        db
+          .prepare(
+            `UPDATE projects SET founder_user_id = ?, updated_at = datetime('now')
+   WHERE id = ? AND founder_user_id = ?`,
+          )
+          .bind(newOwner.id, subjectId, project.oldOwnerId),
+        db
+          .prepare(
+            `DELETE FROM project_collaborators
+   WHERE project_id = ? AND user_id = ?`,
+          )
+          .bind(subjectId, newOwner.id),
+        keepPreviousOwner
+          ? db
+              .prepare(
+                `INSERT INTO project_collaborators
+         (project_id, user_id, access_level, granted_by, updated_at)
+       VALUES (?, ?, 'manager', ?, datetime('now'))
+       ON CONFLICT(project_id, user_id) DO UPDATE SET
+         access_level = 'manager', granted_by = excluded.granted_by,
+         updated_at = datetime('now')`,
+              )
+              .bind(subjectId, project.oldOwnerId, admin.id)
+          : db
+              .prepare(
+                `DELETE FROM project_collaborators
+       WHERE project_id = ? AND user_id = ?`,
+              )
+              .bind(subjectId, project.oldOwnerId),
+        db
+          .prepare(
+            `INSERT INTO notifications
+     (id, user_id, kind, title, body, action_url)
+   VALUES (?, ?, 'project.ownership_transferred', ?, ?, ?)`,
+          )
+          .bind(
+            crypto.randomUUID(),
+            project.oldOwnerId,
+            keepPreviousOwner
+              ? "Project ownership transferred - collaborator access retained"
+              : "Project ownership transferred",
+            keepPreviousOwner
+              ? `${project.title} is now owned by ${newOwner.displayName}. You retain project collaborator access. Reason: ${decisionNote}`
+              : `${project.title} is now owned by ${newOwner.displayName}. Your project management access was removed. Reason: ${decisionNote}`,
+            keepPreviousOwner ? `/projects/${project.slug}/edit` : "/app",
+          ),
+        db
+          .prepare(
+            `INSERT INTO notifications
+     (id, user_id, kind, title, body, action_url)
+   VALUES (?, ?, 'project.ownership_received',
+           'Project ownership transferred to you', ?, ?)`,
+          )
+          .bind(
+            crypto.randomUUID(),
+            newOwner.id,
+            `${project.title} was transferred to you by AKARI. Previous owner access: ${keepPreviousOwner ? "collaborator retained" : "removed"}. Reason: ${decisionNote}`,
+            `/projects/${project.slug}/edit`,
+          ),
+        db
+          .prepare(
+            `INSERT INTO audit_logs
+     (id, actor_user_id, action, subject_type, subject_id, metadata_json)
+   VALUES (?, ?, 'project.ownership_transferred', 'project', ?, ?)`,
+          )
+          .bind(
+            crypto.randomUUID(),
+            admin.id,
+            subjectId,
+            JSON.stringify({
+              oldOwnerId: project.oldOwnerId,
+              oldOwnerUsername: project.oldOwnerUsername,
+              newOwnerId: newOwner.id,
+              newOwnerUsername: newOwner.username,
+              previousOwnerAccess,
+              projectStatus: project.status,
+              decisionNote,
+            }),
+          ),
+      ];
+      await db.batch(statements);
+      return {
+        saved: keepPreviousOwner
+          ? `Ownership transferred to @${newOwner.username}; @${project.oldOwnerUsername} remains a collaborator.`
+          : `Ownership transferred to @${newOwner.username}; previous owner access was removed.`,
+      };
+    }
     if (["delist", "restore"].includes(decision)) {
       const project = await db
         .prepare(
@@ -372,7 +523,13 @@ export async function action({ request, context }: Route.ActionArgs) {
   throw new Response("Invalid subject.", { status: 400 });
 }
 
-function ProjectSummary({ project }: { project: ProjectReviewRow }) {
+function ProjectSummary({
+  project,
+  pending,
+}: {
+  project: ProjectReviewRow;
+  pending: boolean;
+}) {
   return (
     <div>
       <span className="chapter">
@@ -381,7 +538,7 @@ function ProjectSummary({ project }: { project: ProjectReviewRow }) {
       <h3>{project.title}</h3>
       <p>{project.summary}</p>
       <small>
-        Founder: {project.founderName}
+        Founder: {project.founderName} (@{project.founderUsername})
         {project.opportunityStatus
           ? ` · Deal Room: ${project.opportunityStatus}`
           : ""}
@@ -391,6 +548,65 @@ function ProjectSummary({ project }: { project: ProjectReviewRow }) {
           Review project
         </Link>
       </div>
+      <details className="application-actions">
+        <summary>Transfer project ownership</summary>
+        <Form method="post" className="form-stack">
+          <input type="hidden" name="subjectType" value="project" />
+          <input type="hidden" name="subjectId" value={project.id} />
+          <label>
+            New owner's AKARI username
+            <input
+              name="newOwnerUsername"
+              placeholder="username"
+              autoComplete="off"
+              required
+            />
+          </label>
+          <fieldset>
+            <legend>Previous owner's access</legend>
+            <label className="inline-choice">
+              <input
+                type="radio"
+                name="previousOwnerAccess"
+                value="collaborator"
+                defaultChecked
+              />
+              Keep @{project.founderUsername} as a project collaborator
+            </label>
+            <label className="inline-choice">
+              <input type="radio" name="previousOwnerAccess" value="remove" />
+              Remove @{project.founderUsername}'s project access
+            </label>
+          </fieldset>
+          <label>
+            Transfer reason
+            <textarea
+              name="decisionNote"
+              minLength={5}
+              maxLength={500}
+              rows={3}
+              required
+              placeholder="Example: Primary project representative changed."
+            />
+          </label>
+          <button
+            className="button button-quiet"
+            name="decision"
+            value="transfer"
+            disabled={pending}
+            onClick={(event) => {
+              if (
+                !window.confirm(
+                  `Transfer ${project.title} away from @${project.founderUsername}?`,
+                )
+              )
+                event.preventDefault();
+            }}
+          >
+            Transfer ownership
+          </button>
+        </Form>
+      </details>
     </div>
   );
 }
@@ -440,7 +656,7 @@ export default function AdminInterests({
             {loaderData.publishedProjects.length ? (
               loaderData.publishedProjects.map((project) => (
                 <article className="application-card" key={project.id}>
-                  <ProjectSummary project={project} />
+                  <ProjectSummary project={project} pending={pending} />
                   <Form method="post" className="application-actions">
                     <input type="hidden" name="subjectType" value="project" />
                     <input type="hidden" name="subjectId" value={project.id} />
@@ -489,7 +705,7 @@ export default function AdminInterests({
             {loaderData.projects.length ? (
               loaderData.projects.map((project) => (
                 <article className="application-card" key={project.id}>
-                  <ProjectSummary project={project} />
+                  <ProjectSummary project={project} pending={pending} />
                   <Form method="post" className="application-actions">
                     <input type="hidden" name="subjectType" value="project" />
                     <input type="hidden" name="subjectId" value={project.id} />
@@ -541,7 +757,7 @@ export default function AdminInterests({
             <div className="application-list" aria-busy={pending}>
               {loaderData.archivedProjects.map((project) => (
                 <article className="application-card" key={project.id}>
-                  <ProjectSummary project={project} />
+                  <ProjectSummary project={project} pending={pending} />
                   <Form method="post" className="application-actions">
                     <input type="hidden" name="subjectType" value="project" />
                     <input type="hidden" name="subjectId" value={project.id} />

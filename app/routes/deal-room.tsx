@@ -13,6 +13,7 @@ import {
   type OpportunityAccessState,
 } from "~/lib/opportunity-access.server";
 import { hasAdminScope } from "~/lib/membership.server";
+import { userCanManageProject } from "~/lib/project-access.server";
 import {
   projectHasOpenNeed,
   projectNeedPublicLabel,
@@ -187,7 +188,9 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   };
 
   const admin = user ? await hasAdminScope(db, user.id, "projects") : false;
-  const founder = user?.id === preview.founderUserId;
+  const founder = user
+    ? await userCanManageProject(db, preview.projectId, user.id)
+    : false;
   const investorState =
     founder || admin
       ? "approved"
@@ -382,7 +385,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const form = await request.formData();
   const intent = formText(form.get("intent"));
   const verifiedInvestor = await isVerifiedInvestor(db, user);
-  const isFounder = user.id === listing.founderUserId;
+  const isFounder = await userCanManageProject(db, listing.projectId, user.id);
   const isAdmin =
     (await hasAdminScope(db, user.id, "projects")) ||
     (await hasAdminScope(db, user.id, "moderation"));
@@ -432,7 +435,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       return { error: "This fundraising round is not currently open." };
     if (!verifiedInvestor)
       throw new Response("Verified Investor access required.", { status: 403 });
-    if (user.id === listing.founderUserId)
+    if (isFounder)
       throw new Response("Project owners already control this room.", {
         status: 400,
       });

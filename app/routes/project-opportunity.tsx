@@ -4,6 +4,7 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { recordOpportunityAudit } from "~/lib/opportunity-access.server";
+import { requireProjectManagerBySlug } from "~/lib/project-access.server";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
@@ -47,14 +48,15 @@ function optionalAmount(value: FormDataEntryValue | null) {
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const user = await requireApprovedMember(request, db);
+  const access = await requireProjectManagerBySlug(db, params.slug, user.id);
   if (!user.roles.includes("founder"))
     throw new Response("Founder role required.", { status: 403 });
   const project = await db
     .prepare(
       `SELECT id, slug, title, status
-       FROM projects WHERE slug = ? AND founder_user_id = ?`,
+       FROM projects WHERE id = ?`,
     )
-    .bind(params.slug, user.id)
+    .bind(access.projectId)
     .first<{ id: string; slug: string; title: string; status: string }>();
   if (!project) throw new Response("Project not found.", { status: 404 });
   const listing = await db
@@ -84,6 +86,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
   const user = await requireApprovedMember(request, db);
+  const access = await requireProjectManagerBySlug(db, params.slug, user.id);
   if (!user.roles.includes("founder"))
     throw new Response("Founder role required.", { status: 403 });
   await requireActionRateLimit(
@@ -97,9 +100,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const project = await db
     .prepare(
       `SELECT id, status FROM projects
-       WHERE slug = ? AND founder_user_id = ?`,
+       WHERE id = ?`,
     )
-    .bind(params.slug, user.id)
+    .bind(access.projectId)
     .first<{ id: string; status: string }>();
   if (!project) throw new Response("Project not found.", { status: 404 });
   const form = await request.formData();

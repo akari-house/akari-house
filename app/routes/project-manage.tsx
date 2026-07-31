@@ -13,15 +13,19 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const projects = await db
     .prepare(
       `SELECT pr.slug, pr.title, pr.summary, pr.status, pr.stage, pr.seeking,
+              CASE WHEN pr.founder_user_id = ? THEN 'owner'
+                   ELSE 'collaborator' END AS accessRole,
               pr.updated_at AS updatedAt,
               ol.status AS opportunityStatus,
               COALESCE(pr.data_room_url, '') AS dataRoomUrl
        FROM projects pr
        LEFT JOIN opportunity_listings ol ON ol.project_id = pr.id
-       WHERE pr.founder_user_id = ?
+       LEFT JOIN project_collaborators pc
+         ON pc.project_id = pr.id AND pc.user_id = ?
+       WHERE pr.founder_user_id = ? OR pc.user_id = ?
        ORDER BY pr.updated_at DESC`,
     )
-    .bind(user.id)
+    .bind(user.id, user.id, user.id, user.id)
     .all<{
       slug: string;
       title: string;
@@ -29,6 +33,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       status: string;
       stage: string;
       seeking: string;
+      accessRole: "owner" | "collaborator";
       updatedAt: string;
       opportunityStatus: string | null;
       dataRoomUrl: string;
@@ -58,6 +63,7 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
                   {project.stage.replaceAll("_", " ")} · {project.status}
                 </span>
                 <h2>{project.title}</h2>
+                <small>Access: {project.accessRole}</small>
                 <p>{project.summary}</p>
                 <ProjectNeedChips value={project.seeking} compact />
                 {project.opportunityStatus && (

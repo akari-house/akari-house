@@ -4,6 +4,7 @@ import { ProjectNeedsFieldset } from "~/components/projects/ProjectNeedsFieldset
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import { requireProjectManagerBySlug } from "~/lib/project-access.server";
 import {
   fundraisingSourceLabel,
   projectNeedPublicLabel,
@@ -23,13 +24,14 @@ import { formText } from "~/lib/validation";
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const user = await requireApprovedMember(request, db);
+  const access = await requireProjectManagerBySlug(db, params.slug, user.id);
   const project = await db
     .prepare(
       `SELECT id, slug, title, seeking, support_status_json AS supportStatus,
               status
-       FROM projects WHERE slug = ? AND founder_user_id = ?`,
+       FROM projects WHERE id = ?`,
     )
-    .bind(params.slug, user.id)
+    .bind(access.projectId)
     .first<{
       id: string;
       slug: string;
@@ -50,12 +52,13 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
   const user = await requireApprovedMember(request, db);
+  const access = await requireProjectManagerBySlug(db, params.slug, user.id);
   const project = await db
     .prepare(
       `SELECT id, slug, seeking, support_status_json AS supportStatus, status
-       FROM projects WHERE slug = ? AND founder_user_id = ?`,
+       FROM projects WHERE id = ?`,
     )
-    .bind(params.slug, user.id)
+    .bind(access.projectId)
     .first<{
       id: string;
       slug: string;
