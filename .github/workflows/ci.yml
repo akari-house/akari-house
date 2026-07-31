@@ -32,6 +32,7 @@ jobs:
               script.append(line[10:] if line.startswith('          ') else line)
           Path('/tmp/apply-project-ownership-transfer.py').write_text('\n'.join(script) + '\n')
           PY
+          sed -i 's/ORDER BY updated_at DESC`,/ORDER BY updated_at DESC`",/' /tmp/apply-project-ownership-transfer.py
           python /tmp/apply-project-ownership-transfer.py
           npx prettier --write \
             app/lib/project-access.server.ts \
