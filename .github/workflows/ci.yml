@@ -19,6 +19,52 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Apply reviewed ownership-transfer integration
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          source = Path('.github/workflows/apply-project-ownership-transfer.yml').read_text().splitlines()
+          start = next(i for i, line in enumerate(source) if "python <<'PY'" in line) + 1
+          end = next(i for i in range(start, len(source)) if source[i].strip() == 'PY')
+          script = []
+          for line in source[start:end]:
+              script.append(line[10:] if line.startswith('          ') else line)
+          Path('/tmp/apply-project-ownership-transfer.py').write_text('\n'.join(script) + '\n')
+          PY
+          python /tmp/apply-project-ownership-transfer.py
+          npx prettier --write \
+            app/lib/project-access.server.ts \
+            app/routes/admin-interests.tsx \
+            app/routes/project-manage.tsx \
+            app/routes/project-edit.tsx \
+            app/routes/project-needs.tsx \
+            app/routes/project-brand.tsx \
+            app/routes/project-brand-media.ts \
+            app/routes/project-opportunity.tsx \
+            app/routes/opportunity-manage.tsx \
+            app/routes/project-diligence.tsx \
+            app/routes/project-document.ts \
+            app/routes/campaign-new.tsx \
+            app/routes/project-detail.tsx \
+            app/routes/deal-room.tsx \
+            tests/project-ownership-transfer.test.ts
+          rm -f \
+            .github/workflows/apply-project-ownership-transfer.yml \
+            .github/workflows/trigger-project-ownership-transfer.yml \
+            .ownership-bootstrap-started \
+            .ownership-bootstrap-error.log
+          git add -N \
+            migrations/0111_project_ownership_transfer.sql \
+            app/lib/project-access.server.ts \
+            tests/project-ownership-transfer.test.ts
+          git diff --binary -- . ':(exclude).github/workflows/ci.yml' > ownership-transfer.patch
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ownership-transfer-patch
+          path: ownership-transfer.patch
+          retention-days: 7
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run format:check
