@@ -1,6 +1,6 @@
 name: Bootstrap Project Ownership Transfer
 
-# This second commit triggers the workflow after it exists on the default branch.
+# Temporary diagnostic bootstrap. Remove after PR #151 is updated.
 on:
   push:
     branches:
@@ -19,6 +19,14 @@ jobs:
         with:
           ref: feature/project-ownership-transfer
           fetch-depth: 0
+      - name: Mark bootstrap start on the feature branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          echo "Bootstrap reached feature branch at $(date -u +%FT%TZ)" > .ownership-bootstrap-started
+          git add .ownership-bootstrap-started
+          git commit -m "Mark ownership bootstrap start" || true
+          git push origin HEAD:feature/project-ownership-transfer
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -56,12 +64,11 @@ jobs:
             app/routes/project-detail.tsx \
             app/routes/deal-room.tsx \
             tests/project-ownership-transfer.test.ts
-      - name: Remove feature-only workflows and push implementation
+      - name: Remove temporary files and push implementation
         run: |
           rm .github/workflows/apply-project-ownership-transfer.yml
           rm .github/workflows/trigger-project-ownership-transfer.yml
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f .ownership-bootstrap-started
           git add -A
           git commit -m "Add audited project ownership transfers"
           git push origin HEAD:feature/project-ownership-transfer
