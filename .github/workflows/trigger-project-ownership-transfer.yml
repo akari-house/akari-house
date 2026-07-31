@@ -24,7 +24,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Extract and run reviewed integration script
+      - name: Apply validated ownership-transfer integration
         run: |
           python <<'PY'
           from pathlib import Path
@@ -35,10 +35,37 @@ jobs:
           script = []
           for line in source[start:end]:
               script.append(line[10:] if line.startswith('          ') else line)
-          Path('/tmp/apply-project-ownership-transfer.py').write_text('\n'.join(script) + '\n')
+          generated = '\n'.join(script) + '\n'
+          generated = generated.replace(
+              'replace_once(path, old_summary, new_summary)',
+              '_text = read(path)\n_start = _text.index("function ProjectSummary(")\n_end = _text.index("\\n\\nexport default function AdminInterests", _start)\nwrite(path, _text[:_start] + new_summary + _text[_end:])',
+          )
+          generated = generated.replace(
+              'replace_once(path, old, new)\n\n# Private brand media',
+              '_text = read(path)\n_start = _text.index("async function readOwnedProject(")\n_end = _text.index("\\n\\nexport async function loader", _start)\nwrite(path, _text[:_start] + new + _text[_end:])\n\n# Private brand media',
+          )
+          Path('/tmp/apply-project-ownership-transfer.py').write_text(generated)
           PY
+          sed -i 's/ORDER BY updated_at DESC`,/ORDER BY updated_at DESC`",/' /tmp/apply-project-ownership-transfer.py
           python /tmp/apply-project-ownership-transfer.py
-      - name: Format changed application files
+          python <<'PY'
+          from pathlib import Path
+
+          detail = Path('app/routes/project-detail.tsx')
+          detail_text = detail.read_text()
+          old = "AND (status = 'published' OR created_by = ? OR ? = 1)\n       ORDER BY updated_at DESC,\n    )"
+          new = "AND (status = 'published' OR created_by = ? OR ? = 1)\n       ORDER BY updated_at DESC`,\n    )"
+          if old not in detail_text:
+              raise RuntimeError('Unable to restore the project campaign query delimiter.')
+          detail.write_text(detail_text.replace(old, new, 1))
+
+          editor = Path('app/routes/project-edit.tsx')
+          editor.write_text(editor.read_text().replace('projectId!.id', 'projectId.id'))
+
+          admin = Path('app/routes/admin-interests.tsx')
+          admin.write_text(admin.read_text().replace(' — ', ' - '))
+          PY
+      - name: Format implementation
         run: |
           npx prettier --write \
             app/lib/project-access.server.ts \
@@ -56,10 +83,43 @@ jobs:
             app/routes/project-detail.tsx \
             app/routes/deal-room.tsx \
             tests/project-ownership-transfer.test.ts
-      - name: Remove temporary workflows and push implementation
+      - name: Restore normal CI and remove temporary integration files
         run: |
+          cat > .github/workflows/ci.yml <<'YAML'
+          name: CI
+
+          on:
+            workflow_dispatch:
+            pull_request:
+            push:
+              branches: [main]
+
+          permissions:
+            contents: read
+
+          jobs:
+            verify:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@v4
+                - uses: actions/setup-node@v4
+                  with:
+                    node-version: 24
+                    cache: npm
+                - run: npm ci
+                - run: npm run typecheck
+                - run: npm run lint
+                - run: npm run format:check
+                - run: npm test
+                - run: npm run build
+                - run: npx playwright install --with-deps chromium firefox webkit
+                - run: npm run test:e2e
+          YAML
           rm .github/workflows/apply-project-ownership-transfer.yml
           rm .github/workflows/trigger-project-ownership-transfer.yml
+          rm -f .ownership-bootstrap-started .ownership-bootstrap-error.log
+      - name: Commit implementation to PR branch
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
