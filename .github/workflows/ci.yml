@@ -35,6 +35,10 @@ jobs:
               'replace_once(path, old_summary, new_summary)',
               '_text = read(path)\n_start = _text.index("function ProjectSummary(")\n_end = _text.index("\\n\\nexport default function AdminInterests", _start)\nwrite(path, _text[:_start] + new_summary + _text[_end:])',
           )
+          generated = generated.replace(
+              'replace_once(path, old, new)\n\n# Private brand media',
+              '_text = read(path)\n_start = _text.index("async function readOwnedProject(")\n_end = _text.index("\\n\\nexport async function loader", _start)\nwrite(path, _text[:_start] + new + _text[_end:])\n\n# Private brand media',
+          )
           Path('/tmp/apply-project-ownership-transfer.py').write_text(generated)
           PY
           sed -i 's/ORDER BY updated_at DESC`,/ORDER BY updated_at DESC`",/' /tmp/apply-project-ownership-transfer.py
