@@ -19,21 +19,15 @@ jobs:
         with:
           ref: feature/project-ownership-transfer
           fetch-depth: 0
-      - name: Mark bootstrap start on the feature branch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          echo "Bootstrap reached feature branch at $(date -u +%FT%TZ)" > .ownership-bootstrap-started
-          git add .ownership-bootstrap-started
-          git commit -m "Mark ownership bootstrap start" || true
-          git push origin HEAD:feature/project-ownership-transfer
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Extract and run reviewed integration script
+      - name: Extract and apply reviewed integration script
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           python <<'PY'
           from pathlib import Path
 
@@ -45,9 +39,21 @@ jobs:
               script.append(line[10:] if line.startswith('          ') else line)
           Path('/tmp/apply-project-ownership-transfer.py').write_text('\n'.join(script) + '\n')
           PY
-          python /tmp/apply-project-ownership-transfer.py
+          set +e
+          python /tmp/apply-project-ownership-transfer.py > /tmp/ownership-bootstrap.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            git reset --hard HEAD
+            cp /tmp/ownership-bootstrap.log .ownership-bootstrap-error.log
+            git add .ownership-bootstrap-error.log
+            git commit -m "Record ownership bootstrap failure"
+            git push origin HEAD:feature/project-ownership-transfer
+            exit "$status"
+          fi
       - name: Format changed application files
         run: |
+          set +e
           npx prettier --write \
             app/lib/project-access.server.ts \
             app/routes/admin-interests.tsx \
@@ -63,12 +69,22 @@ jobs:
             app/routes/campaign-new.tsx \
             app/routes/project-detail.tsx \
             app/routes/deal-room.tsx \
-            tests/project-ownership-transfer.test.ts
+            tests/project-ownership-transfer.test.ts > /tmp/ownership-format.log 2>&1
+          status=$?
+          set -e
+          if [ "$status" -ne 0 ]; then
+            git reset --hard HEAD
+            cp /tmp/ownership-format.log .ownership-bootstrap-error.log
+            git add .ownership-bootstrap-error.log
+            git commit -m "Record ownership formatting failure"
+            git push origin HEAD:feature/project-ownership-transfer
+            exit "$status"
+          fi
       - name: Remove temporary files and push implementation
         run: |
           rm .github/workflows/apply-project-ownership-transfer.yml
           rm .github/workflows/trigger-project-ownership-transfer.yml
-          rm -f .ownership-bootstrap-started
+          rm -f .ownership-bootstrap-started .ownership-bootstrap-error.log
           git add -A
           git commit -m "Add audited project ownership transfers"
           git push origin HEAD:feature/project-ownership-transfer
