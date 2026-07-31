@@ -1,6 +1,6 @@
 name: Bootstrap Project Ownership Transfer
 
-# Temporary diagnostic bootstrap. Remove after PR #151 is updated.
+# Trigger diagnostic capture for PR #151. Remove after the branch is updated.
 on:
   push:
     branches:
