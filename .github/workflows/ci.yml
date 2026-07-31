@@ -46,13 +46,16 @@ jobs:
           python <<'PY'
           from pathlib import Path
 
-          path = Path('app/routes/project-detail.tsx')
-          text = path.read_text()
+          detail = Path('app/routes/project-detail.tsx')
+          detail_text = detail.read_text()
           old = "AND (status = 'published' OR created_by = ? OR ? = 1)\n       ORDER BY updated_at DESC,\n    )"
           new = "AND (status = 'published' OR created_by = ? OR ? = 1)\n       ORDER BY updated_at DESC`,\n    )"
-          if old not in text:
+          if old not in detail_text:
               raise RuntimeError('Unable to restore the project campaign query delimiter.')
-          path.write_text(text.replace(old, new, 1))
+          detail.write_text(detail_text.replace(old, new, 1))
+
+          editor = Path('app/routes/project-edit.tsx')
+          editor.write_text(editor.read_text().replace('projectId!.id', 'projectId.id'))
           PY
           npx prettier --write \
             app/lib/project-access.server.ts \
