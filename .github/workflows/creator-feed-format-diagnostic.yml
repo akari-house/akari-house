@@ -1,0 +1,21 @@
+name: Creator feed format diagnostic
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write app/lib/crm-creator-feed.server.ts tests/unit/crm-creator-feed.test.ts
+      - name: Print exact formatter diff
+        run: git diff -- app/lib/crm-creator-feed.server.ts tests/unit/crm-creator-feed.test.ts
