@@ -95,8 +95,7 @@ export function mapPublicCreatorRow(
       ? `https://akarihouse.com/media/profile/${encodeURIComponent(username)}?v=${encodeURIComponent(row.avatarKey)}`
       : null,
     languages: safeLanguages(row.languagesJson, row.showLanguages === 1),
-    creatorVerificationStatus:
-      row.creatorVerificationStatus ?? "unverified",
+    creatorVerificationStatus: row.creatorVerificationStatus ?? "unverified",
     sorsaScore: row.sorsaScore,
     sorsaSource: row.sorsaSource ?? "unavailable",
     xScore: row.xScore,
@@ -111,7 +110,9 @@ export async function loadPublicCrmCreatorFeed(
   db: D1Database,
   options: { after?: string; limit?: number } = {},
 ) {
-  const after = String(options.after ?? "").trim().toLowerCase();
+  const after = String(options.after ?? "")
+    .trim()
+    .toLowerCase();
   const limit = Math.max(
     1,
     Math.min(500, Math.floor(Number(options.limit) || 200)),
@@ -192,7 +193,6 @@ export async function loadPublicCrmCreatorFeed(
     profileDataStatus: "PROFILE_PROVIDED" as const,
     publicProfilesOnly: true,
     items,
-    nextAfter:
-      items.length === limit ? items.at(-1)?.username ?? null : null,
+    nextAfter: items.length === limit ? (items.at(-1)?.username ?? null) : null,
   };
 }
