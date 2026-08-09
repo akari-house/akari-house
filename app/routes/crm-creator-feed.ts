@@ -16,7 +16,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     },
     {
       headers: {
-        "Cache-Control": "public, max-age=60, s-maxage=120, stale-while-revalidate=300",
+        "Cache-Control":
+          "public, max-age=60, s-maxage=120, stale-while-revalidate=300",
         "X-Robots-Tag": "noindex, nofollow",
         "Content-Type": "application/json; charset=utf-8",
       },
