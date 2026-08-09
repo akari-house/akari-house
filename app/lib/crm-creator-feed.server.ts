@@ -1,9 +1,4 @@
-export type CrmCreatorSocialSource =
-  | "member_reported"
-  | "official_api"
-  | "partner_verified"
-  | "unavailable"
-  | string;
+export type CrmCreatorSocialSource = string;
 
 export interface CrmCreatorSocial {
   platform: string;
