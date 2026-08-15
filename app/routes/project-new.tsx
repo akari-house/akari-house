@@ -64,6 +64,17 @@ export async function action({ request, context }: Route.ActionArgs) {
       ),
     db
       .prepare(
+        `INSERT INTO project_relationships
+         (project_id, user_id, relationship_type, claim_status, evidence_note)
+         VALUES (?, ?, 'founder', 'self_declared', ?)`,
+      )
+      .bind(
+        id,
+        user.id,
+        "Declared automatically when this Founder created the project in AKARI House.",
+      ),
+    db
+      .prepare(
         `INSERT INTO audit_logs
          (id, actor_user_id, action, subject_type, subject_id, metadata_json)
          VALUES (?, ?, 'project.submitted', 'project', ?, ?)`,
