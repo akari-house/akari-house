@@ -92,8 +92,8 @@ describe("public onboarding launch rules", () => {
     const register = read("app/routes/register.tsx");
     expect(register).toContain("Start with the essentials");
     expect(register).toContain("full professional profile can be completed");
-    expect(register).toContain('minLength={20}');
-    expect(register).toContain('maxLength={300}');
+    expect(register).toContain("minLength={20}");
+    expect(register).toContain("maxLength={300}");
     expect(register).toContain("Apply to AKARI");
     expect(register).not.toContain("auth-journey");
   });
