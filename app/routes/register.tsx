@@ -86,9 +86,9 @@ export async function action({ request, context }: Route.ActionArgs) {
     errors.password = "Use 12 to 128 characters.";
   if (password !== passwordConfirmation)
     errors.passwordConfirmation = "The passwords do not match.";
-  if (applicantNote.length < 30 || applicantNote.length > 600)
+  if (applicantNote.length < 20 || applicantNote.length > 300)
     errors.applicantNote =
-      "Tell us what brings you to AKARI in 30 to 600 characters.";
+      "Give us a short introduction between 20 and 300 characters.";
   if (!legalTerms)
     errors.legalTerms =
       "Agree to the Terms and Community Guidelines and acknowledge the Privacy Notice.";
@@ -227,25 +227,12 @@ export default function Register({
           };
 
   return (
-    <AuthLayout eyebrow="Membership desk" title="Request a place in the House">
+    <AuthLayout eyebrow="Membership desk" title="Apply to AKARI House">
       <p className="form-intro">
-        Every request is reviewed by a person. Applying does not create member
-        access immediately, and your profile begins private.
+        Start with the essentials. Choose how you participate and give us a
+        short introduction. Your full professional profile can be completed
+        after you apply, and it stays private while your request is reviewed.
       </p>
-      <ol className="auth-journey" aria-label="Membership request steps">
-        <li>
-          <strong>Step 1</strong>
-          <span>Create your private account details.</span>
-        </li>
-        <li>
-          <strong>Step 2</strong>
-          <span>Choose your roles and introduce yourself.</span>
-        </li>
-        <li>
-          <strong>Step 3</strong>
-          <span>Confirm your email, then await human review.</span>
-        </li>
-      </ol>
       <Form method="post" className="form-stack">
         {actionData?.errors.form && (
           <p className="form-error" role="alert">
@@ -258,12 +245,9 @@ export default function Register({
           aria-labelledby="account-details-title"
         >
           <header className="auth-section-heading">
-            <span>Step 1</span>
-            <h2 id="account-details-title">Account details</h2>
-            <p>
-              Your password is checked as you type and is never shown by
-              default.
-            </p>
+            <span>1 · Account</span>
+            <h2 id="account-details-title">Create your private account</h2>
+            <p>Only the information needed to create and secure your account.</p>
           </header>
           <label>
             Display name
@@ -285,65 +269,69 @@ export default function Register({
               {actionData.errors.displayName}
             </small>
           )}
-          <label>
-            Username
-            <input
-              name="username"
-              autoComplete="username"
-              defaultValue={actionData?.values.username}
-              placeholder="your-name"
-              required
-              aria-invalid={Boolean(actionData?.errors.username)}
-              aria-describedby={
-                actionData?.errors.username ? "username-error" : undefined
-              }
-            />
-          </label>
+          <div className="form-row">
+            <label>
+              Username
+              <input
+                name="username"
+                autoComplete="username"
+                defaultValue={actionData?.values.username}
+                placeholder="your-name"
+                required
+                aria-invalid={Boolean(actionData?.errors.username)}
+                aria-describedby={
+                  actionData?.errors.username ? "username-error" : undefined
+                }
+              />
+            </label>
+            <label>
+              Email
+              <input
+                name="email"
+                type="email"
+                autoComplete="email"
+                defaultValue={actionData?.values.email}
+                required
+                aria-invalid={Boolean(actionData?.errors.email)}
+                aria-describedby={
+                  actionData?.errors.email ? "email-error" : undefined
+                }
+              />
+            </label>
+          </div>
           {actionData?.errors.username && (
             <small id="username-error" className="field-error">
               {actionData.errors.username}
             </small>
           )}
-          <label>
-            Email
-            <input
-              name="email"
-              type="email"
-              autoComplete="email"
-              defaultValue={actionData?.values.email}
-              required
-              aria-invalid={Boolean(actionData?.errors.email)}
-              aria-describedby={
-                actionData?.errors.email ? "email-error" : undefined
-              }
-            />
-          </label>
           {actionData?.errors.email && (
             <small id="email-error" className="field-error">
               {actionData.errors.email}
             </small>
           )}
-          <PasswordField
-            name="password"
-            label="Password"
-            autoComplete="new-password"
-            minLength={12}
-            maxLength={128}
-            hint="A memorable passphrase is welcome. No special symbol is required."
-            status={passwordStatus}
-            error={actionData?.errors.password}
-            onValueChange={setPassword}
-          />
-          <PasswordField
-            name="passwordConfirmation"
-            label="Confirm password"
-            autoComplete="new-password"
-            minLength={12}
-            maxLength={128}
-            status={confirmationStatus}
-            error={actionData?.errors.passwordConfirmation}
-            onValueChange={setPasswordConfirmation}
-          />
+          <div className="form-row">
+            <PasswordField
+              name="password"
+              label="Password"
+              autoComplete="new-password"
+              minLength={12}
+              maxLength={128}
+              hint="A memorable passphrase is welcome. No special symbol is required."
+              status={passwordStatus}
+              error={actionData?.errors.password}
+              onValueChange={setPassword}
+            />
+            <PasswordField
+              name="passwordConfirmation"
+              label="Confirm password"
+              autoComplete="new-password"
+              minLength={12}
+              maxLength={128}
+              status={confirmationStatus}
+              error={actionData?.errors.passwordConfirmation}
+              onValueChange={setPasswordConfirmation}
+            />
+          </div>
         </section>
 
         <section
@@ -351,10 +339,11 @@ export default function Register({
           aria-labelledby="membership-fit-title"
         >
           <header className="auth-section-heading">
-            <span>Step 2</span>
-            <h2 id="membership-fit-title">Your place in AKARI</h2>
+            <span>2 · Participation</span>
+            <h2 id="membership-fit-title">How will you use AKARI?</h2>
             <p>
-              Select every role that genuinely describes how you participate.
+              Select Founder, Creator, Investor, or any combination. You can
+              update your roles later.
             </p>
           </header>
           <RoleSelector
@@ -367,22 +356,26 @@ export default function Register({
             </small>
           )}
           <label>
-            What brings you to AKARI?
+            Short introduction
             <textarea
               name="applicantNote"
-              rows={5}
-              minLength={30}
-              maxLength={600}
+              rows={3}
+              minLength={20}
+              maxLength={300}
               defaultValue={actionData?.values.applicantNote}
-              placeholder="Share what you are building, creating or investing in, and how you hope to participate."
+              placeholder="What are you building, creating or investing in, and what would you like to find in AKARI?"
               required
               aria-invalid={Boolean(actionData?.errors.applicantNote)}
               aria-describedby={
                 actionData?.errors.applicantNote
                   ? "applicant-note-error"
-                  : undefined
+                  : "applicant-note-help"
               }
             />
+            <small id="applicant-note-help">
+              Keep it brief. You can add your full profile, socials and project
+              details after applying.
+            </small>
           </label>
           {actionData?.errors.applicantNote && (
             <small id="applicant-note-error" className="field-error">
@@ -392,15 +385,15 @@ export default function Register({
         </section>
 
         <section
-          className="auth-form-section"
+          className="auth-form-section auth-form-section-compact"
           aria-labelledby="review-consent-title"
         >
           <header className="auth-section-heading">
-            <span>Step 3</span>
-            <h2 id="review-consent-title">Consent and review</h2>
+            <span>Before you apply</span>
+            <h2 id="review-consent-title">Human-reviewed membership</h2>
             <p>
-              Submitting creates a private application, not immediate member
-              access.
+              Applying creates a private account. It does not automatically
+              grant AKARI House membership.
             </p>
           </header>
           <label className="consent-row">
@@ -418,8 +411,7 @@ export default function Register({
               I agree to the <Link to="/terms">Terms</Link> and{" "}
               <Link to="/community-guidelines">Community Guidelines</Link>. I
               acknowledge that I have read the{" "}
-              <Link to="/privacy">Privacy Notice</Link>. I understand that
-              submitting this form does not guarantee membership.
+              <Link to="/privacy">Privacy Notice</Link>.
             </span>
           </label>
           {actionData?.errors.legalTerms && (
@@ -438,15 +430,16 @@ export default function Register({
           disabled={pending}
           type="submit"
         >
-          {pending ? "Sending request..." : "Send membership request"}
+          {pending ? "Applying..." : "Apply to AKARI"}
         </button>
         <p className="auth-submit-note">
-          Next, we will email you a confirmation link before the Membership Desk
-          reviews your request.
+          We will confirm your email first. While your application is reviewed,
+          you can privately add your photo, socials, professional information
+          and interests.
         </p>
       </Form>
       <p className="form-footer">
-        Already a member? <Link to="/login">Log in</Link>
+        Already have an account? <Link to="/login">Log in</Link>
       </p>
     </AuthLayout>
   );
