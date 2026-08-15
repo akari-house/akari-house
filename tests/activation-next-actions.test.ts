@@ -13,18 +13,24 @@ const baseMember: MemberActivationSnapshot = {
   profileMissing: [],
   founderProjectCount: 0,
   founderDraftProjectCount: 0,
+  founderPublishedProjectCount: 0,
   founderPendingClaimCount: 0,
+  founderOutcomeActivationCount: 0,
   xProfileUrl: "",
   xFollowerCount: null,
   xScore: null,
   sorsaScore: null,
+  creatorApplicationCount: 0,
+  creatorAcceptedCampaignCount: 0,
   investorProfileStatus: null,
   investorPreferencesComplete: false,
+  investorInterestCount: 0,
+  investorProgressedCount: 0,
   unreadNotifications: 0,
   pendingConnections: 0,
 };
 
-describe("R76F member next action engine", () => {
+describe("R76F/R76H member next action engine", () => {
   it("puts a Founder's first Project ahead of generic profile work", () => {
     const actions = buildMemberNextActions({
       ...baseMember,
@@ -57,7 +63,7 @@ describe("R76F member next action engine", () => {
     );
   });
 
-  it("moves a ready Creator to Ambassador Campaign discovery", () => {
+  it("moves a ready Creator with no application to Ambassador Campaign discovery", () => {
     const actions = buildMemberNextActions({
       ...baseMember,
       roles: ["creator"],
@@ -69,6 +75,34 @@ describe("R76F member next action engine", () => {
 
     expect(actions[0]?.key).toBe("creator-campaigns");
     expect(actions[0]?.to).toBe("/campaigns");
+  });
+
+  it("moves an accepted Creator back to campaign delivery instead of discovery", () => {
+    const actions = buildMemberNextActions({
+      ...baseMember,
+      roles: ["creator"],
+      xProfileUrl: "https://x.com/example",
+      xFollowerCount: 0,
+      xScore: 420,
+      sorsaScore: 15,
+      creatorApplicationCount: 2,
+      creatorAcceptedCampaignCount: 1,
+    });
+
+    expect(actions[0]?.key).toBe("creator-campaign-status");
+    expect(actions[0]?.title).toContain("accepted campaign work");
+  });
+
+  it("prompts a Founder to activate a published Project without a GTM or raise workflow", () => {
+    const actions = buildMemberNextActions({
+      ...baseMember,
+      roles: ["founder"],
+      founderProjectCount: 1,
+      founderPublishedProjectCount: 1,
+    });
+
+    expect(actions[0]?.key).toBe("founder-activate-project");
+    expect(actions[0]?.to).toBe("/projects/manage");
   });
 
   it("prioritizes incomplete Investor preferences for multi-role members", () => {
@@ -83,11 +117,26 @@ describe("R76F member next action engine", () => {
     expect(actions[0]?.to).toBe("/settings/investor");
   });
 
+  it("keeps a verified Investor focused on progressed relationships", () => {
+    const actions = buildMemberNextActions({
+      ...baseMember,
+      roles: ["investor"],
+      investorProfileStatus: "verified",
+      investorPreferencesComplete: true,
+      investorInterestCount: 2,
+      investorProgressedCount: 1,
+    });
+
+    expect(actions[0]?.key).toBe("investor-interest-status");
+    expect(actions[0]?.title).toContain("active Founder relationships");
+  });
+
   it("surfaces pending connection decisions before low-priority discovery", () => {
     const actions = buildMemberNextActions({
       ...baseMember,
       roles: ["founder"],
       founderProjectCount: 1,
+      founderOutcomeActivationCount: 1,
       pendingConnections: 2,
     });
 

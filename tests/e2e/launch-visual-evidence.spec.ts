@@ -125,7 +125,7 @@ test.describe("launch visual evidence", () => {
       page,
       testInfo,
       "Find campaigns, workspace navigation",
-      /Keep your Creator profile campaign-ready|Become campaign-ready|Discover Ambassador Campaigns/,
+      /Keep your Creator profile campaign-ready|Become campaign-ready|Discover Ambassador Campaigns|Track your campaign applications|Continue your accepted campaign work/,
     );
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-creator");
@@ -138,7 +138,7 @@ test.describe("launch visual evidence", () => {
       page,
       testInfo,
       "Explore matched Deals, workspace navigation",
-      /Set your investment preferences|Complete your investment preferences|Submit your Investor profile for verification|Review relevant opportunities/,
+      /Set your investment preferences|Complete your investment preferences|Submit your Investor profile for verification|Your Investor verification is under review|Review relevant opportunities|Track your expressed Project interest|Continue your active Founder relationships/,
     );
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-investor");
@@ -151,7 +151,7 @@ test.describe("launch visual evidence", () => {
       page,
       testInfo,
       "Manage projects, workspace navigation",
-      /Create or manage your projects|Create your first Project|Track your Project relationship claim|Finish your Project profile|Keep your Project needs current/,
+      /Create or manage your projects|Create your first Project|Track your Project relationship claim|Finish your Project profile|Activate your published Project|Keep your Project needs current/,
     );
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-founder");
@@ -175,7 +175,9 @@ test.describe("launch visual evidence", () => {
 
     await page.goto("/admin/activation", { waitUntil: "networkidle" });
     await expect(
-      page.getByRole("heading", { name: "Activation analytics" }),
+      page.getByRole("heading", {
+        name: "Activation and outcome intelligence",
+      }),
     ).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-superadmin-activation");
