@@ -1,0 +1,32 @@
+name: R76F Format
+
+on:
+  push:
+    branches:
+      - feature/r76f-activation-next-action
+    paths:
+      - .github/workflows/r76f-format.yml
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/r76f-activation-next-action
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write app/components/DashboardRoleActions.tsx app/lib/activation-next-actions.ts app/routes.ts app/routes/admin-workspace.tsx tests/activation-next-actions.test.ts
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/components/DashboardRoleActions.tsx app/lib/activation-next-actions.ts app/routes.ts app/routes/admin-workspace.tsx tests/activation-next-actions.test.ts
+          git diff --cached --quiet || git commit -m "R76F apply repository formatting"
+          git push origin HEAD:feature/r76f-activation-next-action
