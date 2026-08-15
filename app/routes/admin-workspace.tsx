@@ -135,11 +135,15 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
             <strong>{loaderData.attentionCount}</strong> items need attention
           </span>
           <span>
-            <strong>{loaderData.nextAction.activeQueueCount}</strong> active queues
+            <strong>{loaderData.nextAction.activeQueueCount}</strong> active
+            queues
           </span>
         </section>
 
-        <section className="status-card" aria-labelledby="admin-next-action-title">
+        <section
+          className="status-card"
+          aria-labelledby="admin-next-action-title"
+        >
           <span className="chapter">Next action</span>
           {next ? (
             <>
@@ -162,7 +166,9 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
             </>
           ) : (
             <>
-              <h2 id="admin-next-action-title">No review queue needs action.</h2>
+              <h2 id="admin-next-action-title">
+                No review queue needs action.
+              </h2>
               <p>
                 Membership, verification, Project claims, moderation and the
                 operational queues are currently clear.

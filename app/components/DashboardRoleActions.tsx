@@ -148,7 +148,8 @@ export function DashboardRoleActions({ user }: { user: SessionUser }) {
         if (next.length) setActions(next);
       })
       .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
         setActions(fallbackActions);
       });
 

@@ -30,7 +30,8 @@ export type MemberActivationSnapshot = {
 };
 
 function addUnique(actions: ActivationAction[], action: ActivationAction) {
-  if (!actions.some((candidate) => candidate.key === action.key)) actions.push(action);
+  if (!actions.some((candidate) => candidate.key === action.key))
+    actions.push(action);
 }
 
 export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
@@ -55,7 +56,8 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
       key: "applicant-projects",
       eyebrow: "Explore the House",
       title: "Discover Founder projects",
-      description: "See the public projects already gathering collaborators and support.",
+      description:
+        "See the public projects already gathering collaborators and support.",
       to: "/projects",
       actionLabel: "Browse projects",
       priority: 40,
@@ -65,7 +67,8 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
       key: "applicant-events",
       eyebrow: "Upcoming gatherings",
       title: "Explore AKARI events",
-      description: "Read the invitations currently open across the AKARI community.",
+      description:
+        "Read the invitations currently open across the AKARI community.",
       to: "/events",
       actionLabel: "Browse events",
       priority: 30,
@@ -95,7 +98,8 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
         key: "founder-first-project",
         eyebrow: "Founder next action",
         title: "Create your first Project",
-        description: "Add the Project you are building so AKARI can connect your Founder identity to real work, needs and opportunities.",
+        description:
+          "Add the Project you are building so AKARI can connect your Founder identity to real work, needs and opportunities.",
         to: "/projects/new",
         actionLabel: "Create Project",
         priority: 110,
@@ -117,7 +121,7 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
         key: "founder-draft-project",
         eyebrow: "Founder next action",
         title: "Finish your Project profile",
-        description: `${snapshot.founderDraftProjectCount} Project${snapshot.founderDraftProjectCount === 1 ? " is" : "s are"} still in draft. Complete the strongest Project before creating more.` ,
+        description: `${snapshot.founderDraftProjectCount} Project${snapshot.founderDraftProjectCount === 1 ? " is" : "s are"} still in draft. Complete the strongest Project before creating more.`,
         to: "/projects/manage",
         actionLabel: "Continue Project",
         priority: 88,
@@ -128,7 +132,8 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
         key: "founder-project-needs",
         eyebrow: "Founder workspace",
         title: "Keep your Project needs current",
-        description: "Review what your active Projects need now so Creators, Investors and AKARI operators see relevant requests.",
+        description:
+          "Review what your active Projects need now so Creators, Investors and AKARI operators see relevant requests.",
         to: "/projects/manage",
         actionLabel: "Review Projects",
         priority: 58,
@@ -160,7 +165,8 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
         key: "creator-campaigns",
         eyebrow: "Creator workspace",
         title: "Discover Ambassador Campaigns",
-        description: "Your minimum Creator profile data is complete. Review open campaigns and participate where the fit is relevant.",
+        description:
+          "Your minimum Creator profile data is complete. Review open campaigns and participate where the fit is relevant.",
         to: "/campaigns",
         actionLabel: "Browse campaigns",
         priority: 64,
@@ -170,12 +176,16 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
   }
 
   if (snapshot.roles.includes("investor")) {
-    if (!snapshot.investorPreferencesComplete || snapshot.investorProfileStatus === "claimed") {
+    if (
+      !snapshot.investorPreferencesComplete ||
+      snapshot.investorProfileStatus === "claimed"
+    ) {
       addUnique(actions, {
         key: "investor-preferences",
         eyebrow: "Investor next action",
         title: "Complete your investment preferences",
-        description: "Add sectors, stages, regions, cheque range and eligibility context before reviewing matched opportunities.",
+        description:
+          "Add sectors, stages, regions, cheque range and eligibility context before reviewing matched opportunities.",
         to: "/settings/investor",
         actionLabel: "Set Investor preferences",
         priority: 103,
@@ -186,7 +196,8 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
         key: "investor-verification",
         eyebrow: "Investor trust",
         title: "Submit your Investor profile for verification",
-        description: "Your preferences are complete. Submit the professional context required for AKARI verification.",
+        description:
+          "Your preferences are complete. Submit the professional context required for AKARI verification.",
         to: "/settings/investor",
         actionLabel: "Open Investor profile",
         priority: 82,
@@ -197,7 +208,8 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
         key: "investor-review-pending",
         eyebrow: "Investor trust",
         title: "Your Investor verification is under review",
-        description: "No action is required unless AKARI requests additional information. You can keep your preferences current meanwhile.",
+        description:
+          "No action is required unless AKARI requests additional information. You can keep your preferences current meanwhile.",
         to: "/settings/investor",
         actionLabel: "Review profile",
         priority: 48,
@@ -208,7 +220,8 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
         key: "investor-opportunities",
         eyebrow: "Investor workspace",
         title: "Review relevant opportunities",
-        description: "Use your investment preferences to evaluate Founder Projects and opportunities inside the House.",
+        description:
+          "Use your investment preferences to evaluate Founder Projects and opportunities inside the House.",
         to: "/deals",
         actionLabel: "Review opportunities",
         priority: 62,
@@ -248,7 +261,8 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
       key: "discover-members",
       eyebrow: "Your network",
       title: "Discover relevant members",
-      description: "Your essential setup is complete. Find Founders, Creators and Investors relevant to what you are doing now.",
+      description:
+        "Your essential setup is complete. Find Founders, Creators and Investors relevant to what you are doing now.",
       to: "/members",
       actionLabel: "Discover members",
       priority: 40,
@@ -283,8 +297,12 @@ const adminPriority: Record<string, number> = {
 
 export function buildAdminNextAction(items: AdminQueueSnapshot[]) {
   const active = items
-    .filter((item) => item.count > 0 && !["team", "directory"].includes(item.key))
-    .sort((a, b) => (adminPriority[b.key] ?? 50) - (adminPriority[a.key] ?? 50));
+    .filter(
+      (item) => item.count > 0 && !["team", "directory"].includes(item.key),
+    )
+    .sort(
+      (a, b) => (adminPriority[b.key] ?? 50) - (adminPriority[a.key] ?? 50),
+    );
   const next = active[0] ?? null;
   return {
     next,

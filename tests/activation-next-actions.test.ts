@@ -52,7 +52,9 @@ describe("R76F member next action engine", () => {
 
     expect(actions[0]?.key).toBe("creator-readiness");
     expect(actions[0]?.description).toContain("XScore");
-    expect(actions[0]?.description).toContain("does not apply a follower threshold");
+    expect(actions[0]?.description).toContain(
+      "does not apply a follower threshold",
+    );
   });
 
   it("moves a ready Creator to Ambassador Campaign discovery", () => {
@@ -150,7 +152,10 @@ describe("R76F Superadmin next action engine", () => {
 
 describe("R76F endpoint wiring", () => {
   it("keeps activation responses private and registers the endpoint", () => {
-    const endpoint = readFileSync("app/routes/activation-next-actions.ts", "utf8");
+    const endpoint = readFileSync(
+      "app/routes/activation-next-actions.ts",
+      "utf8",
+    );
     const routes = readFileSync("app/routes.ts", "utf8");
 
     expect(endpoint).toContain('"Cache-Control": "private, no-store"');
