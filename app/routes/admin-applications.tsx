@@ -273,7 +273,10 @@ export default function AdminApplications({
               className="application-review-list"
               aria-label="Membership requests"
             >
-              <div className="application-review-list-head" aria-hidden="true">
+              <div
+                className="application-review-list-head"
+                aria-hidden="true"
+              >
                 <span>Applicant</span>
                 <span>Roles</span>
                 <span>Status</span>
@@ -418,7 +421,9 @@ export default function AdminApplications({
                 <div className="application-review-panel-empty">
                   <span className="chapter">Review panel</span>
                   <h2>Select an applicant</h2>
-                  <p>The full context will appear here without leaving the queue.</p>
+                  <p>
+                    The full context will appear here without leaving the queue.
+                  </p>
                 </div>
               )}
             </aside>
