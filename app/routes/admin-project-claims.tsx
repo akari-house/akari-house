@@ -6,7 +6,7 @@ import { requireAdminScope } from "~/lib/membership.server";
 import {
   projectClaimStatusLabel,
   projectRelationshipLabel,
-} from "~/lib/project-relationships.server";
+} from "~/lib/project-relationships";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 
