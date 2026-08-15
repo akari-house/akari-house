@@ -9,7 +9,8 @@ export type ReviewSlaResult = {
   dueAt: string;
 };
 
-function parseUtc(value: string) {
+function parseUtc(value: string | null | undefined) {
+  if (!value) return 0;
   const normalized = value.includes("T") ? value : value.replace(" ", "T") + "Z";
   const parsed = Date.parse(normalized);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -19,18 +20,31 @@ export function calculateReviewSla({
   submittedAt,
   targetHours,
   waitingOn,
+  pausedHours = 0,
+  waitingSince = null,
   now = Date.now(),
 }: {
   submittedAt: string;
   targetHours: number;
   waitingOn: ReviewWaitingOn;
+  pausedHours?: number;
+  waitingSince?: string | null;
   now?: number;
 }): ReviewSlaResult {
   const started = parseUtc(submittedAt);
   const safeTarget = Math.max(1, Math.round(targetHours));
-  const ageHours = started ? Math.max(0, Math.floor((now - started) / 3_600_000)) : 0;
-  const dueMs = started + safeTarget * 3_600_000;
-  const remainingHours = started ? Math.ceil((dueMs - now) / 3_600_000) : safeTarget;
+  const storedPauseMs = Math.max(0, pausedHours) * 3_600_000;
+  const currentPauseStarted = waitingOn === "user" ? parseUtc(waitingSince) : 0;
+  const currentPauseMs = currentPauseStarted
+    ? Math.max(0, now - currentPauseStarted)
+    : 0;
+  const totalPauseMs = storedPauseMs + currentPauseMs;
+  const effectiveAgeMs = started ? Math.max(0, now - started - totalPauseMs) : 0;
+  const ageHours = Math.floor(effectiveAgeMs / 3_600_000);
+  const dueMs = started + safeTarget * 3_600_000 + totalPauseMs;
+  const remainingHours = started
+    ? Math.ceil((dueMs - now) / 3_600_000)
+    : safeTarget;
   const dueSoonWindow = Math.max(4, Math.ceil(safeTarget * 0.25));
 
   let state: ReviewSlaState = "on_track";
@@ -49,7 +63,8 @@ export function calculateReviewSla({
 
 export function reviewSlaPriorityBoost(result: ReviewSlaResult) {
   if (result.state === "waiting_user") return -40;
-  if (result.state === "overdue") return 80 + Math.min(72, Math.abs(result.remainingHours));
+  if (result.state === "overdue")
+    return 80 + Math.min(72, Math.abs(result.remainingHours));
   if (result.state === "due_soon") return 40;
   return Math.min(24, Math.floor(result.ageHours / 12));
 }
