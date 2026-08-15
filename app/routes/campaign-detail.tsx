@@ -95,6 +95,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
             `SELECT ca.id, ca.message, ca.portfolio_url AS portfolioUrl,
                     ca.contact_sharing AS contactSharing, ca.status,
                     ca.posting_days_json AS postingDaysJson,
+                    ca.x_url AS xUrl, ca.x_followers AS xFollowers,
+                    ca.x_score AS xScore, ca.sorsa_score AS sorsaScore,
                     u.id AS creatorUserId, u.username,
                     p.display_name AS displayName,
                     rv.status AS verificationStatus
@@ -118,6 +120,10 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
             displayName: string;
             verificationStatus: string | null;
             postingDaysJson: string;
+            xUrl: string | null;
+            xFollowers: number | null;
+            xScore: number | null;
+            sorsaScore: number | null;
           }>()
       : null;
   const reputationSignals = user
@@ -168,6 +174,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     creatorReady: Boolean(
       xAccount &&
       isXProfileUrl(xAccount.profileUrl) &&
+      xAccount.followerCount !== null &&
       reputationSignals?.xScore !== null &&
       reputationSignals?.sorsaScore !== null &&
       reputationSignals?.xScoreSource !== "unavailable" &&
@@ -324,6 +331,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   if (
     !readiness?.xUrl ||
     !isXProfileUrl(readiness.xUrl) ||
+    readiness.xFollowers === null ||
     readiness.xScore === null ||
     readiness.sorsaScore === null ||
     readiness.xScoreSource === "unavailable" ||
@@ -331,7 +339,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   )
     return {
       error:
-        "Update your primary X link, XScore and Sorsa score in your AKARI profile before applying.",
+        "Complete your primary X link, follower count, XScore and Sorsa score in your AKARI profile before applying.",
     };
   if (campaign.campaignKind === "iio" && !deliverablesAccepted)
     return { error: "Accept the campaign deliverables before applying." };
@@ -402,7 +410,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         optionalByPlatform.get("tiktok")?.profileUrl ?? "",
         optionalByPlatform.get("instagram")?.profileUrl ?? "",
         optionalByPlatform.get("youtube")?.profileUrl ?? "",
-        Math.round(readiness.xFollowers ?? 0),
+        Math.round(readiness.xFollowers),
         Math.round(optionalByPlatform.get("tiktok")?.followerCount ?? 0),
         Math.round(optionalByPlatform.get("instagram")?.followerCount ?? 0),
         Math.round(optionalByPlatform.get("youtube")?.followerCount ?? 0),
@@ -499,7 +507,8 @@ export default function CampaignDetail({
             <h2>Join AKARI before entering this offering.</h2>
             <p>
               Create one AKARI identity, add the Creator role, then return here
-              to submit your socials and interest.
+              to submit your socials and interest. AKARI House membership
+              approval is not required to apply to an open Ambassador Campaign.
             </p>
             <div className="button-row">
               <Link className="button button-primary" to="/register">
@@ -563,10 +572,11 @@ export default function CampaignDetail({
               )}
               {!loaderData.creatorReady && (
                 <div className="notice">
-                  <strong>Creator profile update required.</strong> Add your
-                  primary X link, XScore and Sorsa score before applying.
+                  <strong>Creator campaign profile incomplete.</strong> Add a
+                  valid primary X profile, follower count, XScore and Sorsa
+                  score before applying. There is no minimum follower count.
                   <Link className="quiet-link" to="/app#creator-readiness">
-                    Update Creator readiness
+                    Complete campaign profile
                   </Link>
                 </div>
               )}
@@ -579,6 +589,9 @@ export default function CampaignDetail({
                     <strong>Application identity</strong>
                     <span>
                       Primary X: {socials.get("x")?.profileUrl || "Missing"}
+                    </span>
+                    <span>
+                      Followers: {socials.get("x")?.followerCount ?? "Missing"}
                     </span>
                     <span>
                       XScore:{" "}
@@ -691,6 +704,23 @@ export default function CampaignDetail({
                       {application.displayName}
                     </Link>
                   </h3>
+                  <div className="status-card creator-readiness-summary">
+                    <span>
+                      Followers: {application.xFollowers ?? "Unknown"}
+                    </span>
+                    <span>XScore: {application.xScore ?? "Unknown"}</span>
+                    <span>Sorsa: {application.sorsaScore ?? "Unknown"}</span>
+                    {application.xUrl && (
+                      <a
+                        className="quiet-link"
+                        href={application.xUrl}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Open X profile
+                      </a>
+                    )}
+                  </div>
                   <p>{application.message}</p>
                   <p>
                     Posting days:{" "}
