@@ -87,7 +87,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     count: counts[item.key as keyof QueueCounts] ?? 0,
   }));
 
-  return { user, access, items };
+  const attentionCount = items
+    .filter((item) => !["team", "directory"].includes(item.key))
+    .reduce((total, item) => total + item.count, 0);
+
+  return { user, access, items, attentionCount };
 }
 
 function workspaceStatus(item: AdminWorkspaceItem & { count: number }) {
@@ -105,12 +109,11 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
       <main id="main-content" className="admin-main admin-workspace-main">
         <header className="admin-heading">
           <div>
-            <span className="eyebrow">Scoped administration</span>
+            <span className="eyebrow">Superadmin operations</span>
             <h1>Admin workspace</h1>
             <p>
-              Only the tools assigned to this account are shown. Superadmins
-              retain full access; scoped administrators remain limited to their
-              explicit responsibilities.
+              Start with what needs a decision. The operational views stay dense
+              and practical while the public House keeps the cinematic brand.
             </p>
           </div>
           <Link className="button button-quiet" to="/app">
@@ -118,18 +121,32 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
           </Link>
         </header>
         <AdminWorkspaceNav access={loaderData.access} />
+
         <section
-          className="admin-overview-grid"
+          className="application-queue-summary"
+          aria-label="Admin summary"
+        >
+          <span>
+            <strong>{loaderData.attentionCount}</strong> items need attention
+          </span>
+          <span>
+            <strong>
+              {loaderData.items.filter((item) => item.count > 0).length}
+            </strong>{" "}
+            active queues
+          </span>
+        </section>
+
+        <section
+          className="admin-overview-list"
           aria-label="Available admin tools"
         >
           {loaderData.items.map((item) => (
-            <Link className="admin-overview-card" to={item.to} key={item.key}>
-              <span className="chapter">{workspaceStatus(item)}</span>
-              <h2>{item.label}</h2>
+            <Link className="admin-overview-row" to={item.to} key={item.key}>
+              <strong>{item.label}</strong>
               <p>{item.description}</p>
-              <span className="admin-overview-card-action">
-                Open workspace →
-              </span>
+              <span className="chapter">{workspaceStatus(item)}</span>
+              <span className="admin-overview-row-action">Open →</span>
             </Link>
           ))}
         </section>

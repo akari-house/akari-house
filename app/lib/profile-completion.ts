@@ -12,7 +12,6 @@ const fields: Array<[keyof CompletionProfile, string]> = [
   ["displayName", "display name"],
   ["headline", "professional headline"],
   ["bio", "biography"],
-  ["location", "location"],
   ["websiteUrl", "website"],
   ["expertise", "expertise"],
   ["openTo", "what you are open to"],
