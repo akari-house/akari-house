@@ -18,13 +18,19 @@ export type MemberActivationSnapshot = {
   profileMissing: string[];
   founderProjectCount: number;
   founderDraftProjectCount: number;
+  founderPublishedProjectCount: number;
   founderPendingClaimCount: number;
+  founderOutcomeActivationCount: number;
   xProfileUrl: string;
   xFollowerCount: number | null;
   xScore: number | null;
   sorsaScore: number | null;
+  creatorApplicationCount: number;
+  creatorAcceptedCampaignCount: number;
   investorProfileStatus: string | null;
   investorPreferencesComplete: boolean;
+  investorInterestCount: number;
+  investorProgressedCount: number;
   unreadNotifications: number;
   pendingConnections: number;
 };
@@ -127,6 +133,21 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
         priority: 88,
         role: "founder",
       });
+    } else if (
+      snapshot.founderPublishedProjectCount > 0 &&
+      snapshot.founderOutcomeActivationCount === 0
+    ) {
+      addUnique(actions, {
+        key: "founder-activate-project",
+        eyebrow: "Founder outcome",
+        title: "Activate your published Project",
+        description:
+          "Your Project is published but has not entered an Ambassador Campaign or Investor opportunity workflow yet. Choose the next GTM or raise path.",
+        to: "/projects/manage",
+        actionLabel: "Activate Project",
+        priority: 72,
+        role: "founder",
+      });
     } else {
       addUnique(actions, {
         key: "founder-project-needs",
@@ -158,6 +179,28 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
         to: "/app#creator-readiness",
         actionLabel: "Complete Creator data",
         priority: 105,
+        role: "creator",
+      });
+    } else if (snapshot.creatorAcceptedCampaignCount > 0) {
+      addUnique(actions, {
+        key: "creator-campaign-status",
+        eyebrow: "Creator outcome",
+        title: "Continue your accepted campaign work",
+        description: `${snapshot.creatorAcceptedCampaignCount} accepted campaign${snapshot.creatorAcceptedCampaignCount === 1 ? " is" : "s are"} active in your Creator workflow. Keep delivery and approval status current.`,
+        to: "/campaigns",
+        actionLabel: "Open campaign work",
+        priority: 76,
+        role: "creator",
+      });
+    } else if (snapshot.creatorApplicationCount > 0) {
+      addUnique(actions, {
+        key: "creator-campaign-status",
+        eyebrow: "Creator outcome",
+        title: "Track your campaign applications",
+        description: `You have ${snapshot.creatorApplicationCount} campaign application${snapshot.creatorApplicationCount === 1 ? "" : "s"}. Review status before applying to more opportunities.`,
+        to: "/campaigns",
+        actionLabel: "Review applications",
+        priority: 70,
         role: "creator",
       });
     } else {
@@ -213,6 +256,28 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
         to: "/settings/investor",
         actionLabel: "Review profile",
         priority: 48,
+        role: "investor",
+      });
+    } else if (snapshot.investorProgressedCount > 0) {
+      addUnique(actions, {
+        key: "investor-interest-status",
+        eyebrow: "Investor outcome",
+        title: "Continue your active Founder relationships",
+        description: `${snapshot.investorProgressedCount} Investor relationship${snapshot.investorProgressedCount === 1 ? " has" : "s have"} progressed beyond initial interest. Continue the strongest conversations before widening the pipeline.`,
+        to: "/deals",
+        actionLabel: "Open active relationships",
+        priority: 68,
+        role: "investor",
+      });
+    } else if (snapshot.investorInterestCount > 0) {
+      addUnique(actions, {
+        key: "investor-interest-status",
+        eyebrow: "Investor outcome",
+        title: "Track your expressed Project interest",
+        description: `You have ${snapshot.investorInterestCount} active interest or introduction signal${snapshot.investorInterestCount === 1 ? "" : "s"}. Review those before adding more opportunities.`,
+        to: "/deals",
+        actionLabel: "Review interest",
+        priority: 66,
         role: "investor",
       });
     } else {
