@@ -7,7 +7,7 @@ import { cloudflareContext } from "~/lib/cloudflare-context";
 import {
   projectClaimStatusLabel,
   projectRelationshipLabel,
-} from "~/lib/project-relationships.server";
+} from "~/lib/project-relationships";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
