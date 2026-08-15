@@ -99,6 +99,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 }
 
 function workspaceStatus(item: AdminWorkspaceItem & { count: number }) {
+  if (item.key === "reviews") return "Unified trust queue";
+  if (item.key === "activation") return "Live activation analytics";
   if (item.key === "team")
     return `${item.count} scoped administrator${item.count === 1 ? "" : "s"}`;
   if (item.key === "directory")
