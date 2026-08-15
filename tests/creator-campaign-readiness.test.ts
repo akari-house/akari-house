@@ -25,7 +25,9 @@ describe("Creator campaign readiness", () => {
     expect(source).toContain("ca.x_followers AS xFollowers");
     expect(source).toContain("ca.x_score AS xScore");
     expect(source).toContain("ca.sorsa_score AS sorsaScore");
-    expect(source).toContain('Followers: {application.xFollowers ?? "Unknown"}');
+    expect(source).toContain(
+      'Followers: {application.xFollowers ?? "Unknown"}',
+    );
     expect(source).toContain('XScore: {application.xScore ?? "Unknown"}');
     expect(source).toContain('Sorsa: {application.sorsaScore ?? "Unknown"}');
   });

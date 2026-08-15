@@ -591,8 +591,7 @@ export default function CampaignDetail({
                       Primary X: {socials.get("x")?.profileUrl || "Missing"}
                     </span>
                     <span>
-                      Followers:{" "}
-                      {socials.get("x")?.followerCount ?? "Missing"}
+                      Followers: {socials.get("x")?.followerCount ?? "Missing"}
                     </span>
                     <span>
                       XScore:{" "}
@@ -706,7 +705,9 @@ export default function CampaignDetail({
                     </Link>
                   </h3>
                   <div className="status-card creator-readiness-summary">
-                    <span>Followers: {application.xFollowers ?? "Unknown"}</span>
+                    <span>
+                      Followers: {application.xFollowers ?? "Unknown"}
+                    </span>
                     <span>XScore: {application.xScore ?? "Unknown"}</span>
                     <span>Sorsa: {application.sorsaScore ?? "Unknown"}</span>
                     {application.xUrl && (
