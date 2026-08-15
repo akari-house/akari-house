@@ -4,13 +4,15 @@ on:
   pull_request:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   format-preview:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -18,9 +20,14 @@ jobs:
       - run: npm ci
       - name: Format R76C files
         run: npx prettier --write app/routes/campaign-detail.tsx tests/creator-campaign-readiness.test.ts
-      - name: Package formatted files
-        run: tar -czf r76c-formatted.tgz app/routes/campaign-detail.tsx tests/creator-campaign-readiness.test.ts
-      - uses: actions/upload-artifact@v4
-        with:
-          name: r76c-formatted
-          path: r76c-formatted.tgz
+      - name: Commit exact formatting when needed
+        run: |
+          if git diff --quiet; then
+            echo "R76C files already match repository formatting."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/routes/campaign-detail.tsx tests/creator-campaign-readiness.test.ts
+          git commit -m "R76C apply repository formatting"
+          git push origin HEAD:${{ github.head_ref }}
