@@ -11,9 +11,9 @@ export type ActivationMilestone = {
 function creatorReady(snapshot: MemberActivationSnapshot) {
   return Boolean(
     snapshot.xProfileUrl &&
-      snapshot.xFollowerCount !== null &&
-      snapshot.xScore !== null &&
-      snapshot.sorsaScore !== null,
+    snapshot.xFollowerCount !== null &&
+    snapshot.xScore !== null &&
+    snapshot.sorsaScore !== null,
   );
 }
 
@@ -25,10 +25,7 @@ export function completedActivationMilestones(
   if (snapshot.profilePercent === 100) {
     milestones.push({ key: "profile-complete", role: "account" });
   }
-  if (
-    snapshot.roles.includes("founder") &&
-    snapshot.founderProjectCount > 0
-  ) {
+  if (snapshot.roles.includes("founder") && snapshot.founderProjectCount > 0) {
     milestones.push({ key: "founder-first-project", role: "founder" });
   }
   if (snapshot.roles.includes("creator") && creatorReady(snapshot)) {
@@ -91,13 +88,7 @@ export async function recordActivationClick(
          (id, user_id, action_key, event_type, role, target_path)
        VALUES (?, ?, ?, 'clicked', ?, ?)`,
     )
-    .bind(
-      crypto.randomUUID(),
-      userId,
-      action.key,
-      action.role ?? "",
-      action.to,
-    )
+    .bind(crypto.randomUUID(), userId, action.key, action.role ?? "", action.to)
     .run();
 }
 

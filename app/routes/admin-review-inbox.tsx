@@ -6,7 +6,8 @@ import { loadAdminWorkspaceAccess } from "~/lib/admin-workspace.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { requireSuperAdmin } from "~/lib/membership.server";
 
-type ReviewKind = "membership" | "verification" | "project_claim" | "moderation";
+type ReviewKind =
+  "membership" | "verification" | "project_claim" | "moderation";
 
 type ReviewInboxItem = {
   key: string;
@@ -34,10 +35,14 @@ function itemAgeHours(value: string) {
   return Math.max(0, Math.floor((Date.now() - timestamp) / 3_600_000));
 }
 
-function withAgePriority(item: Omit<ReviewInboxItem, "priority">): ReviewInboxItem {
+function withAgePriority(
+  item: Omit<ReviewInboxItem, "priority">,
+): ReviewInboxItem {
   return {
     ...item,
-    priority: kindPriority[item.kind] + Math.min(72, Math.floor(itemAgeHours(item.submittedAt) / 12)),
+    priority:
+      kindPriority[item.kind] +
+      Math.min(72, Math.floor(itemAgeHours(item.submittedAt) / 12)),
   };
 }
 
@@ -45,7 +50,8 @@ export const meta: Route.MetaFunction = () => [
   { title: "Unified Review Inbox | AKARI House" },
   {
     name: "description",
-    content: "Superadmin triage across AKARI House trust and governance queues.",
+    content:
+      "Superadmin triage across AKARI House trust and governance queues.",
   },
 ];
 
@@ -193,7 +199,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         subject: `${row.relationshipType.replaceAll("_", " ")} · @${row.username}`,
         status: "pending",
         evidence:
-          row.evidenceNote || row.evidenceUrl || "No supporting evidence note supplied.",
+          row.evidenceNote ||
+          row.evidenceUrl ||
+          "No supporting evidence note supplied.",
         submittedAt: row.submittedAt,
         to: "/admin/project-claims",
       }),
@@ -225,13 +233,18 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   };
 
   const requestedKind = new URL(request.url).searchParams.get("kind");
-  const kindFilter = ["membership", "verification", "project_claim", "moderation"].includes(
-    requestedKind ?? "",
-  )
+  const kindFilter = [
+    "membership",
+    "verification",
+    "project_claim",
+    "moderation",
+  ].includes(requestedKind ?? "")
     ? (requestedKind as ReviewKind)
     : "all";
   const visibleItems =
-    kindFilter === "all" ? items : items.filter((item) => item.kind === kindFilter);
+    kindFilter === "all"
+      ? items
+      : items.filter((item) => item.kind === kindFilter);
 
   return {
     user,
@@ -251,13 +264,24 @@ function displayTime(value: string) {
   const date = new Date(value.replace(" ", "T") + "Z");
   return Number.isNaN(date.getTime())
     ? value
-    : date.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+    : date.toLocaleString(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      });
 }
 
 export default function AdminReviewInbox({ loaderData }: Route.ComponentProps) {
-  const filters: Array<{ key: "all" | ReviewKind; label: string; count: number }> = [
+  const filters: Array<{
+    key: "all" | ReviewKind;
+    label: string;
+    count: number;
+  }> = [
     { key: "all", label: "All", count: loaderData.total },
-    { key: "membership", label: "Membership", count: loaderData.counts.membership },
+    {
+      key: "membership",
+      label: "Membership",
+      count: loaderData.counts.membership,
+    },
     {
       key: "verification",
       label: "Verification",
@@ -268,7 +292,11 @@ export default function AdminReviewInbox({ loaderData }: Route.ComponentProps) {
       label: "Project claims",
       count: loaderData.counts.projectClaims,
     },
-    { key: "moderation", label: "Moderation", count: loaderData.counts.moderation },
+    {
+      key: "moderation",
+      label: "Moderation",
+      count: loaderData.counts.moderation,
+    },
   ];
 
   return (
@@ -280,9 +308,9 @@ export default function AdminReviewInbox({ loaderData }: Route.ComponentProps) {
             <span className="eyebrow">R76G governance inbox</span>
             <h1>Unified review inbox</h1>
             <p>
-              Triage the House trust queues from one place, then open the existing
-              governed desk for the actual decision. This keeps one source of truth
-              for every approval workflow.
+              Triage the House trust queues from one place, then open the
+              existing governed desk for the actual decision. This keeps one
+              source of truth for every approval workflow.
             </p>
           </div>
           <Link className="button button-quiet" to="/admin/activation">
@@ -292,7 +320,10 @@ export default function AdminReviewInbox({ loaderData }: Route.ComponentProps) {
 
         <AdminWorkspaceNav access={loaderData.access} />
 
-        <section className="application-queue-summary" aria-label="Review queue summary">
+        <section
+          className="application-queue-summary"
+          aria-label="Review queue summary"
+        >
           <span>
             <strong>{loaderData.total}</strong> trust decisions waiting
           </span>
@@ -316,7 +347,9 @@ export default function AdminReviewInbox({ loaderData }: Route.ComponentProps) {
               <Link
                 key={filter.key}
                 to={kindHref(filter.key)}
-                aria-current={loaderData.kindFilter === filter.key ? "page" : undefined}
+                aria-current={
+                  loaderData.kindFilter === filter.key ? "page" : undefined
+                }
               >
                 {filter.label} · {filter.count}
               </Link>
@@ -324,7 +357,10 @@ export default function AdminReviewInbox({ loaderData }: Route.ComponentProps) {
           </nav>
         </div>
 
-        <section className="admin-review-list" aria-label="Unified review queue">
+        <section
+          className="admin-review-list"
+          aria-label="Unified review queue"
+        >
           {loaderData.items.length ? (
             loaderData.items.map((item) => (
               <details className="admin-review-item" key={item.key}>
@@ -337,7 +373,9 @@ export default function AdminReviewInbox({ loaderData }: Route.ComponentProps) {
                     <strong>{item.queueLabel}</strong>
                     <span>{item.status}</span>
                   </span>
-                  <time dateTime={item.submittedAt}>{displayTime(item.submittedAt)}</time>
+                  <time dateTime={item.submittedAt}>
+                    {displayTime(item.submittedAt)}
+                  </time>
                 </summary>
                 <div className="admin-review-body">
                   <div className="admin-review-evidence">
@@ -347,8 +385,9 @@ export default function AdminReviewInbox({ loaderData }: Route.ComponentProps) {
                   <div className="admin-review-form">
                     <span className="chapter">Governed decision</span>
                     <p className="admin-scope-help">
-                      Open the specialist desk to approve, hold, reject or resolve
-                      this item with the existing audit and notification workflow.
+                      Open the specialist desk to approve, hold, reject or
+                      resolve this item with the existing audit and notification
+                      workflow.
                     </p>
                     <div className="button-row">
                       <Link className="button button-primary" to={item.to}>

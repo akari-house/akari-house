@@ -49,11 +49,17 @@ export async function action({ request, context }: Route.ActionArgs) {
   try {
     payload = await request.json();
   } catch {
-    return Response.json({ error: "Invalid activation event." }, { status: 400 });
+    return Response.json(
+      { error: "Invalid activation event." },
+      { status: 400 },
+    );
   }
 
   if (!payload || typeof payload !== "object") {
-    return Response.json({ error: "Invalid activation event." }, { status: 400 });
+    return Response.json(
+      { error: "Invalid activation event." },
+      { status: 400 },
+    );
   }
 
   const candidate = payload as Record<string, unknown>;
@@ -68,7 +74,10 @@ export async function action({ request, context }: Route.ActionArgs) {
     to.startsWith("//") ||
     to.length > 240
   ) {
-    return Response.json({ error: "Invalid activation event." }, { status: 400 });
+    return Response.json(
+      { error: "Invalid activation event." },
+      { status: 400 },
+    );
   }
 
   await recordActivationClick(db, user.id, {

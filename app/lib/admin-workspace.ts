@@ -29,14 +29,16 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
   {
     key: "reviews",
     label: "Review inbox",
-    description: "Triage Membership, Verification, Project Claims and Moderation together.",
+    description:
+      "Triage Membership, Verification, Project Claims and Moderation together.",
     to: "/admin/reviews",
     superadminOnly: true,
   },
   {
     key: "activation",
     label: "Activation analytics",
-    description: "Measure next-action engagement and role readiness without copying profile content.",
+    description:
+      "Measure next-action engagement and role readiness without copying profile content.",
     to: "/admin/activation",
     superadminOnly: true,
   },

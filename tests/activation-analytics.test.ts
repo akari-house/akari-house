@@ -65,9 +65,9 @@ describe("R76G activation milestones", () => {
       sorsaScore: 10,
     });
 
-    expect(milestones.some((item) => item.key === "creator-campaign-ready")).toBe(
-      false,
-    );
+    expect(
+      milestones.some((item) => item.key === "creator-campaign-ready"),
+    ).toBe(false);
   });
 });
 

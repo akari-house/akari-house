@@ -176,7 +176,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   const actionMap = new Map<
     string,
-    { shownUsers: number; clickedUsers: number; shownEvents: number; clickedEvents: number }
+    {
+      shownUsers: number;
+      clickedUsers: number;
+      shownEvents: number;
+      clickedEvents: number;
+    }
   >();
   for (const row of events.results) {
     const current = actionMap.get(row.actionKey) ?? {
@@ -202,7 +207,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       ...value,
       clickRate: percent(value.clickedUsers, value.shownUsers),
     }))
-    .sort((a, b) => b.shownUsers - a.shownUsers || b.clickedUsers - a.clickedUsers);
+    .sort(
+      (a, b) => b.shownUsers - a.shownUsers || b.clickedUsers - a.clickedUsers,
+    );
 
   return {
     user,
@@ -264,31 +271,42 @@ export default function AdminActivation({ loaderData }: Route.ComponentProps) {
 
         <AdminWorkspaceNav access={loaderData.access} />
 
-        <section className="application-queue-summary" aria-label="Activation summary">
+        <section
+          className="application-queue-summary"
+          aria-label="Activation summary"
+        >
           <span>
             <strong>{Number(readiness.members)}</strong> active members
           </span>
           <span>
-            <strong>{Number(engagement.shownUsers)}</strong> reached by next actions
+            <strong>{Number(engagement.shownUsers)}</strong> reached by next
+            actions
           </span>
           <span>
-            <strong>{Number(engagement.clickedUsers)}</strong> clicked a next action
+            <strong>{Number(engagement.clickedUsers)}</strong> clicked a next
+            action
           </span>
           <span>
             <strong>{loaderData.clickThroughRate}%</strong> member click-through
           </span>
         </section>
 
-        <section className="status-card" aria-labelledby="activation-readiness-title">
+        <section
+          className="status-card"
+          aria-labelledby="activation-readiness-title"
+        >
           <span className="chapter">Current readiness</span>
           <h2 id="activation-readiness-title">Role activation health</h2>
           <p>
-            These numbers come from current account state, so they include members
-            who completed setup before R76G event tracking started.
+            These numbers come from current account state, so they include
+            members who completed setup before R76G event tracking started.
           </p>
         </section>
 
-        <section className="admin-overview-list" aria-label="Role activation readiness">
+        <section
+          className="admin-overview-list"
+          aria-label="Role activation readiness"
+        >
           {readinessRows.map((row) => (
             <div className="admin-overview-row" key={row.label}>
               <strong>{row.label}</strong>
@@ -303,7 +321,10 @@ export default function AdminActivation({ loaderData }: Route.ComponentProps) {
           ))}
         </section>
 
-        <section className="status-card" aria-labelledby="activation-actions-title">
+        <section
+          className="status-card"
+          aria-labelledby="activation-actions-title"
+        >
           <span className="chapter">Last 30 days</span>
           <h2 id="activation-actions-title">Next-action engagement</h2>
           <p>
@@ -312,39 +333,55 @@ export default function AdminActivation({ loaderData }: Route.ComponentProps) {
           </p>
         </section>
 
-        <section className="admin-overview-list" aria-label="Activation action engagement">
+        <section
+          className="admin-overview-list"
+          aria-label="Activation action engagement"
+        >
           {loaderData.actions.length ? (
             loaderData.actions.map((action) => (
               <div className="admin-overview-row" key={action.key}>
                 <strong>{action.label}</strong>
                 <p>
-                  {action.shownUsers} unique shown, {action.clickedUsers} unique clicked.
-                  {" "}{action.shownEvents} impressions and {action.clickedEvents} clicks recorded.
+                  {action.shownUsers} unique shown, {action.clickedUsers} unique
+                  clicked. {action.shownEvents} impressions and{" "}
+                  {action.clickedEvents} clicks recorded.
                 </p>
-                <span className="chapter">{action.clickRate}% click-through</span>
+                <span className="chapter">
+                  {action.clickRate}% click-through
+                </span>
                 <span className="admin-overview-row-action">{action.key}</span>
               </div>
             ))
           ) : (
             <div className="status-card">
               <h2>No activation events recorded yet.</h2>
-              <p>R76G starts collecting privacy-minimal activation events after deployment.</p>
+              <p>
+                R76G starts collecting privacy-minimal activation events after
+                deployment.
+              </p>
             </div>
           )}
         </section>
 
-        <section className="status-card" aria-labelledby="activation-milestones-title">
+        <section
+          className="status-card"
+          aria-labelledby="activation-milestones-title"
+        >
           <span className="chapter">Recorded since R76G</span>
-          <h2 id="activation-milestones-title">Durable activation milestones</h2>
+          <h2 id="activation-milestones-title">
+            Durable activation milestones
+          </h2>
           <p>
-            A milestone is stored once per member when AKARI observes the completed
-            state. Historical readiness remains represented by the live counts above.
+            A milestone is stored once per member when AKARI observes the
+            completed state. Historical readiness remains represented by the
+            live counts above.
           </p>
           <div className="application-queue-summary">
             {loaderData.milestones.length ? (
               loaderData.milestones.map((milestone) => (
                 <span key={milestone.milestoneKey}>
-                  <strong>{Number(milestone.total)}</strong> {milestone.milestoneKey}
+                  <strong>{Number(milestone.total)}</strong>{" "}
+                  {milestone.milestoneKey}
                 </span>
               ))
             ) : (
