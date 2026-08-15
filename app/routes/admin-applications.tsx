@@ -273,10 +273,7 @@ export default function AdminApplications({
               className="application-review-list"
               aria-label="Membership requests"
             >
-              <div
-                className="application-review-list-head"
-                aria-hidden="true"
-              >
+              <div className="application-review-list-head" aria-hidden="true">
                 <span>Applicant</span>
                 <span>Roles</span>
                 <span>Status</span>
@@ -331,7 +328,8 @@ export default function AdminApplications({
                     </span>
                     <h2>{selectedApplication.displayName}</h2>
                     <p>
-                      @{selectedApplication.username} · {selectedApplication.roles}
+                      @{selectedApplication.username} ·{" "}
+                      {selectedApplication.roles}
                     </p>
                   </header>
 
@@ -353,7 +351,8 @@ export default function AdminApplications({
                             rel="noreferrer"
                             target="_blank"
                           >
-                            {selectedApplication.evidencePlatform ?? "Profile"} ↗
+                            {selectedApplication.evidencePlatform ?? "Profile"}{" "}
+                            ↗
                           </a>
                         ) : (
                           "Not added yet"
