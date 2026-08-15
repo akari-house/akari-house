@@ -44,6 +44,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         `SELECT pr.slug, pr.title,
                 rel.relationship_type AS relationshipType,
                 rel.claim_status AS claimStatus,
+                rel.evidence_url AS evidenceUrl,
+                rel.evidence_note AS evidenceNote,
                 rel.updated_at AS updatedAt,
                 rel.decision_note AS decisionNote
          FROM project_relationships rel
@@ -57,6 +59,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         title: string;
         relationshipType: string;
         claimStatus: string;
+        evidenceUrl: string;
+        evidenceNote: string;
         updatedAt: string;
         decisionNote: string;
       }>(),
@@ -122,18 +126,23 @@ export async function action({ request, context }: Route.ActionArgs) {
   const existing = await db
     .prepare(
       `SELECT relationship_type AS relationshipType,
-              claim_status AS claimStatus
+              claim_status AS claimStatus,
+              decision_note AS decisionNote
        FROM project_relationships
        WHERE project_id = ? AND user_id = ?`,
     )
     .bind(project.id, user.id)
-    .first<{ relationshipType: string; claimStatus: string }>();
+    .first<{
+      relationshipType: string;
+      claimStatus: string;
+      decisionNote: string;
+    }>();
 
   if (existing?.claimStatus === "verified")
     return {
       error: "Your relationship with this project is already verified.",
     };
-  if (existing?.claimStatus === "pending")
+  if (existing?.claimStatus === "pending" && !existing.decisionNote.trim())
     return { error: "This project relationship is already awaiting review." };
 
   const relationshipType =
@@ -172,6 +181,7 @@ export async function action({ request, context }: Route.ActionArgs) {
           relationshipType,
           evidenceUrl,
           resubmitted: Boolean(existing),
+          previousDecisionNote: existing?.decisionNote ?? "",
         }),
       ),
   ]);
@@ -184,6 +194,9 @@ export default function ProjectClaim({
   actionData,
 }: Route.ComponentProps) {
   const navigation = useNavigation();
+  const needsInfoClaims = loaderData.claims.filter(
+    (claim) => claim.claimStatus === "pending" && claim.decisionNote.trim(),
+  );
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -200,6 +213,22 @@ export default function ProjectClaim({
           <p className="notice success" role="status">
             Project relationship submitted for AKARI review.
           </p>
+        )}
+        {needsInfoClaims.length > 0 && (
+          <section className="project-action-panel">
+            <span className="eyebrow">Action required</span>
+            <h2>AKARI needs more information.</h2>
+            {needsInfoClaims.map((claim) => (
+              <article key={claim.slug}>
+                <strong>{claim.title}</strong>
+                <p>{claim.decisionNote}</p>
+                <small>
+                  Update the evidence below using project slug {claim.slug} and
+                  submit again.
+                </small>
+              </article>
+            ))}
+          </section>
         )}
         {actionData?.error && (
           <p className="form-error" role="alert">
@@ -289,7 +318,9 @@ export default function ProjectClaim({
                   </div>
                   <div>
                     <strong>
-                      {projectClaimStatusLabel(claim.claimStatus)}
+                      {claim.claimStatus === "pending" && claim.decisionNote
+                        ? "Needs information"
+                        : projectClaimStatusLabel(claim.claimStatus)}
                     </strong>
                     {claim.decisionNote && <span>{claim.decisionNote}</span>}
                   </div>

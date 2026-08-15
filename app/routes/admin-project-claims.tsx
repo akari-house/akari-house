@@ -1,4 +1,4 @@
-import { Form, Link, useNavigation } from "react-router";
+import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/admin-project-claims";
 import { SiteHeader } from "~/components/SiteHeader";
 import { cloudflareContext } from "~/lib/cloudflare-context";
@@ -112,14 +112,16 @@ export async function action({ request, context }: Route.ActionArgs) {
   const userId = formText(form.get("userId"));
   const intent = formText(form.get("intent"));
   const suppliedNote = formText(form.get("decisionNote")).trim();
+  const allowedIntents = ["verify", "verify_next", "hold", "decline", "revoke"];
 
-  if (!projectId || !userId || !["verify", "hold", "decline"].includes(intent))
+  if (!projectId || !userId || !allowedIntents.includes(intent))
     return { error: "Choose a valid project relationship decision." };
 
   const claim = await db
     .prepare(
       `SELECT rel.relationship_type AS relationshipType,
               rel.claim_status AS claimStatus,
+              rel.reviewed_by AS previousReviewerId,
               pr.title AS projectTitle,
               pr.slug AS projectSlug,
               pr.founder_user_id AS canonicalOwnerId
@@ -131,36 +133,51 @@ export async function action({ request, context }: Route.ActionArgs) {
     .first<{
       relationshipType: string;
       claimStatus: string;
+      previousReviewerId: string | null;
       projectTitle: string;
       projectSlug: string;
       canonicalOwnerId: string;
     }>();
-  if (!claim || claim.claimStatus !== "pending")
+  if (!claim) return { error: "That project relationship no longer exists." };
+
+  const isVerify = intent === "verify" || intent === "verify_next";
+  if (intent === "revoke") {
+    if (claim.claimStatus !== "verified")
+      return { error: "Only a verified relationship can be revoked." };
+  } else if (claim.claimStatus !== "pending") {
     return { error: "That project claim is no longer waiting for review." };
+  }
+
+  if (intent === "hold" && suppliedNote.length < 10)
+    return {
+      error:
+        "Add a short note explaining what information the Founder should provide.",
+    };
+  if (suppliedNote.length > 500)
+    return { error: "Keep the decision note under 500 characters." };
 
   const decisionNote =
     suppliedNote ||
-    (intent === "verify"
+    (isVerify
       ? `AKARI verified the ${projectRelationshipLabel(claim.relationshipType).toLowerCase()} relationship.`
       : intent === "hold"
         ? "AKARI needs more information before verifying this project relationship."
-        : "AKARI could not verify this project relationship from the supplied evidence.");
-  if (decisionNote.length > 500)
-    return { error: "Keep the decision note under 500 characters." };
+        : intent === "revoke"
+          ? "AKARI revoked this previously verified project relationship."
+          : "AKARI could not verify this project relationship from the supplied evidence.");
+  const status = isVerify
+    ? "verified"
+    : intent === "hold"
+      ? "pending"
+      : "revoked";
 
-  const status =
-    intent === "verify"
-      ? "verified"
-      : intent === "hold"
-        ? "pending"
-        : "revoked";
   const statements = [
     db
       .prepare(
         `UPDATE project_relationships
          SET claim_status = ?, reviewed_by = ?, reviewed_at = datetime('now'),
              decision_note = ?, updated_at = datetime('now')
-         WHERE project_id = ? AND user_id = ? AND claim_status = 'pending'`,
+         WHERE project_id = ? AND user_id = ?`,
       )
       .bind(status, admin.id, decisionNote, projectId, userId),
     db
@@ -173,12 +190,16 @@ export async function action({ request, context }: Route.ActionArgs) {
         crypto.randomUUID(),
         userId,
         `${claim.projectTitle} relationship updated`,
-        intent === "verify"
+        isVerify
           ? `AKARI verified your ${projectRelationshipLabel(claim.relationshipType)} relationship with ${claim.projectTitle}.`
           : intent === "hold"
-            ? `AKARI needs more information before verifying your relationship with ${claim.projectTitle}.`
-            : `AKARI could not verify your relationship with ${claim.projectTitle} from the supplied evidence.`,
-        `/projects/${claim.projectSlug}`,
+            ? `AKARI needs more information before verifying your relationship with ${claim.projectTitle}. Open your Project claim desk to update the evidence.`
+            : intent === "revoke"
+              ? `AKARI revoked your previously verified relationship with ${claim.projectTitle}.`
+              : `AKARI could not verify your relationship with ${claim.projectTitle} from the supplied evidence.`,
+        intent === "hold"
+          ? "/projects/claim"
+          : `/projects/${claim.projectSlug}`,
       ),
     db
       .prepare(
@@ -200,11 +221,16 @@ export async function action({ request, context }: Route.ActionArgs) {
       ),
   ];
 
-  if (
-    intent === "verify" &&
+  const grantsManagerAccess =
+    isVerify &&
     claim.canonicalOwnerId !== userId &&
-    managementRelationships.has(claim.relationshipType)
-  )
+    managementRelationships.has(claim.relationshipType);
+  const removesManagerAccess =
+    intent === "revoke" &&
+    claim.canonicalOwnerId !== userId &&
+    managementRelationships.has(claim.relationshipType);
+
+  if (grantsManagerAccess)
     statements.splice(
       1,
       0,
@@ -221,7 +247,21 @@ export async function action({ request, context }: Route.ActionArgs) {
         .bind(projectId, userId, admin.id),
     );
 
+  if (removesManagerAccess)
+    statements.splice(
+      1,
+      0,
+      db
+        .prepare(
+          `DELETE FROM project_collaborators
+           WHERE project_id = ? AND user_id = ? AND access_level = 'manager'
+             AND granted_by = ?`,
+        )
+        .bind(projectId, userId, claim.previousReviewerId ?? admin.id),
+    );
+
   await db.batch(statements);
+  if (intent === "verify_next") throw redirect(queueHref("queue"));
   return { saved: true };
 }
 
@@ -257,7 +297,8 @@ export default function AdminProjectClaims({
             <p>
               Review project evidence without changing the canonical owner.
               Verified Founder, Co-Founder and authorized representative claims
-              receive project manager access.
+              receive project manager access. Revoking one removes that manager
+              access again.
             </p>
           </div>
           <Link className="button button-quiet" to="/admin">
@@ -368,8 +409,23 @@ export default function AdminProjectClaims({
                       value={claim.projectId}
                     />
                     <input type="hidden" name="userId" value={claim.userId} />
+                    <textarea
+                      name="decisionNote"
+                      rows={2}
+                      maxLength={500}
+                      placeholder="Decision note. Required for Needs info."
+                      aria-label={`Decision note for ${claim.displayName}`}
+                    />
                     <button
                       className="button button-primary"
+                      name="intent"
+                      value="verify_next"
+                      disabled={busy}
+                    >
+                      Approve & next
+                    </button>
+                    <button
+                      className="button button-quiet"
                       name="intent"
                       value="verify"
                       disabled={busy}
@@ -399,6 +455,39 @@ export default function AdminProjectClaims({
                       {projectClaimStatusLabel(claim.claimStatus)}
                     </strong>
                     {claim.decisionNote && <span>{claim.decisionNote}</span>}
+                    {claim.reviewedAt && (
+                      <span>
+                        Reviewed{" "}
+                        {new Date(claim.reviewedAt).toLocaleDateString()}
+                      </span>
+                    )}
+                    {claim.claimStatus === "verified" && (
+                      <Form method="post">
+                        <input
+                          type="hidden"
+                          name="projectId"
+                          value={claim.projectId}
+                        />
+                        <input
+                          type="hidden"
+                          name="userId"
+                          value={claim.userId}
+                        />
+                        <input
+                          type="hidden"
+                          name="decisionNote"
+                          value="AKARI revoked this previously verified project relationship."
+                        />
+                        <button
+                          className="button button-quiet verification-reject"
+                          name="intent"
+                          value="revoke"
+                          disabled={busy}
+                        >
+                          Revoke verification
+                        </button>
+                      </Form>
+                    )}
                   </div>
                 )}
               </article>

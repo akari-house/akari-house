@@ -11,6 +11,7 @@ import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
 import { isVerifiedInvestor } from "~/lib/opportunity-access.server";
+import { projectRelationshipLabel } from "~/lib/project-relationships";
 
 type ProjectRow = {
   id: string;
@@ -175,6 +176,34 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
         linkedUsername: string | null;
       }>(),
   ]);
+  const verifiedRelationships = await db
+    .prepare(
+      `SELECT rel.relationship_type AS relationshipType,
+              u.username, p.display_name AS displayName
+       FROM project_relationships rel
+       JOIN users u ON u.id = rel.user_id
+       JOIN profiles p ON p.user_id = u.id
+       LEFT JOIN profile_visibility pv ON pv.user_id = u.id
+       JOIN membership_applications ma
+         ON ma.user_id = u.id AND ma.status = 'approved'
+       WHERE rel.project_id = ?
+         AND rel.claim_status = 'verified'
+         AND u.status = 'active'
+         AND COALESCE(pv.visibility, p.visibility) = 'public'
+       ORDER BY CASE rel.relationship_type
+         WHEN 'founder' THEN 1
+         WHEN 'cofounder' THEN 2
+         WHEN 'authorized_representative' THEN 3
+         WHEN 'team_member' THEN 4
+         ELSE 5 END, p.display_name`,
+    )
+    .bind(project.id)
+    .all<{
+      relationshipType: string;
+      username: string;
+      displayName: string;
+    }>();
+
   return {
     user,
     project,
@@ -185,6 +214,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     campaigns: campaigns.results,
     socials: socials.results,
     team: team.results,
+    verifiedRelationships: verifiedRelationships.results,
     verifiedInvestor: await isVerifiedInvestor(db, user),
     canManage,
     submitted: new URL(request.url).searchParams.has("submitted"),
@@ -403,6 +433,32 @@ export default function ProjectDetail({
             {project.founderName}
           </Link>
         </p>
+        {loaderData.verifiedRelationships.length > 0 && (
+          <section
+            className="project-action-panel"
+            aria-label="Verified project relationships"
+          >
+            <span className="eyebrow">AKARI verified</span>
+            <h2>Verified project relationships</h2>
+            <p>
+              AKARI has reviewed evidence supporting these professional
+              relationships with this project.
+            </p>
+            {loaderData.verifiedRelationships.map((relationship) => (
+              <article
+                key={`${relationship.username}:${relationship.relationshipType}`}
+              >
+                <h3>
+                  <Link to={`/profiles/${relationship.username}`}>
+                    {relationship.displayName}
+                  </Link>{" "}
+                  <span className="chapter">✓ Verified by AKARI</span>
+                </h3>
+                <p>{projectRelationshipLabel(relationship.relationshipType)}</p>
+              </article>
+            ))}
+          </section>
+        )}
         {loaderData.socials.length > 0 && (
           <nav className="profile-socials" aria-label="Project links">
             {loaderData.socials.map((social) => (

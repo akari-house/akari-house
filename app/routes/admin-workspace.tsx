@@ -13,6 +13,7 @@ import { requireAdmin } from "~/lib/membership.server";
 interface QueueCounts {
   membership: number;
   verification: number;
+  "project-claims": number;
   moderation: number;
   projects: number;
   campaigns: number;
@@ -53,6 +54,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
                  AND vp.status = 'active'
                  AND (vp.review_due_at IS NULL OR vp.review_due_at > datetime('now'))
              )) AS verification,
+        (SELECT COUNT(*) FROM project_relationships
+          WHERE claim_status = 'pending') AS "project-claims",
         (SELECT COUNT(*) FROM moderation_reports
           WHERE status IN ('open', 'reviewing')) AS moderation,
         ((SELECT COUNT(*) FROM projects WHERE status = 'submitted') +
@@ -72,6 +75,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const counts: QueueCounts = rawCounts ?? {
     membership: 0,
     verification: 0,
+    "project-claims": 0,
     moderation: 0,
     projects: 0,
     campaigns: 0,
