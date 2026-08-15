@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import type { SessionUser } from "~/lib/domain";
+import type { ActivationAction } from "~/lib/activation-next-actions";
 
 type WorkspaceAction = {
   eyebrow: string;
@@ -101,16 +103,66 @@ export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
   return actions;
 }
 
+function isActivationAction(value: unknown): value is ActivationAction {
+  if (!value || typeof value !== "object") return false;
+  const action = value as Record<string, unknown>;
+  return (
+    typeof action.key === "string" &&
+    typeof action.eyebrow === "string" &&
+    typeof action.title === "string" &&
+    typeof action.description === "string" &&
+    typeof action.to === "string" &&
+    typeof action.actionLabel === "string" &&
+    typeof action.priority === "number"
+  );
+}
+
+function activationActionsFromPayload(payload: unknown) {
+  if (!payload || typeof payload !== "object" || !("actions" in payload)) {
+    return [];
+  }
+  const candidate = payload.actions;
+  return Array.isArray(candidate) ? candidate.filter(isActivationAction) : [];
+}
+
 export function DashboardRoleActions({ user }: { user: SessionUser }) {
-  const actions = dashboardRoleActions(user);
+  const [actions, setActions] = useState<WorkspaceAction[]>(() =>
+    dashboardRoleActions(user),
+  );
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const fallbackActions = dashboardRoleActions(user);
+    void fetch("/api/activation/next-actions", {
+      credentials: "same-origin",
+      headers: { Accept: "application/json" },
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Activation actions unavailable");
+        const payload: unknown = await response.json();
+        return payload;
+      })
+      .then((payload) => {
+        const next = activationActionsFromPayload(payload);
+        if (next.length) setActions(next);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError")
+          return;
+        setActions(fallbackActions);
+      });
+
+    return () => controller.abort();
+  }, [user]);
 
   return (
-    <div className="dashboard-role-actions">
+    <div className="dashboard-role-actions" aria-live="polite">
       {actions.map((action, index) => (
         <Link
           className={`dashboard-role-card${index === 0 ? " is-primary" : ""}`}
           to={action.to}
-          key={action.title}
+          key={`${action.eyebrow}:${action.title}`}
         >
           <span>{action.eyebrow}</span>
           <strong>{action.title}</strong>
