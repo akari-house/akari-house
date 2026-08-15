@@ -10,13 +10,19 @@ const baseMember: MemberActivationSnapshot = {
   profileMissing: ["profile"],
   founderProjectCount: 0,
   founderDraftProjectCount: 0,
+  founderPublishedProjectCount: 0,
   founderPendingClaimCount: 0,
+  founderOutcomeActivationCount: 0,
   xProfileUrl: "",
   xFollowerCount: null,
   xScore: null,
   sorsaScore: null,
+  creatorApplicationCount: 0,
+  creatorAcceptedCampaignCount: 0,
   investorProfileStatus: null,
   investorPreferencesComplete: false,
+  investorInterestCount: 0,
+  investorProgressedCount: 0,
   unreadNotifications: 0,
   pendingConnections: 0,
 };
@@ -71,7 +77,7 @@ describe("R76G activation milestones", () => {
   });
 });
 
-describe("R76G privacy and route security", () => {
+describe("R76G/R76H privacy and route security", () => {
   it("uses an additive privacy-minimal activation schema", () => {
     const migration = readFileSync(
       "migrations/0113_activation_analytics.sql",
@@ -81,6 +87,22 @@ describe("R76G privacy and route security", () => {
     expect(migration).toContain("CREATE TABLE activation_action_events");
     expect(migration).toContain("CREATE TABLE activation_milestones");
     expect(migration).toContain("event_type IN ('shown', 'clicked')");
+    expect(migration).not.toContain("email");
+    expect(migration).not.toContain("bio");
+    expect(migration).not.toContain("location");
+  });
+
+  it("keeps the R76H SLA schema additive and operational only", () => {
+    const migration = readFileSync(
+      "migrations/0114_outcome_intelligence_sla.sql",
+      "utf8",
+    );
+
+    expect(migration).toContain("CREATE TABLE review_sla_policies");
+    expect(migration).toContain("CREATE TABLE review_queue_state");
+    expect(migration).toContain("paused_seconds");
+    expect(migration).not.toContain("ALTER TABLE membership_applications");
+    expect(migration).not.toContain("ALTER TABLE role_verifications");
     expect(migration).not.toContain("email");
     expect(migration).not.toContain("bio");
     expect(migration).not.toContain("location");
@@ -103,6 +125,7 @@ describe("R76G privacy and route security", () => {
 
     expect(analytics).toContain("requireSuperAdmin(request, db)");
     expect(inbox).toContain("requireSuperAdmin(request, db)");
+    expect(inbox).toContain("assertSameOrigin(request)");
     expect(routes).toContain(
       'route("api/activation/events", "routes/activation-events.ts")',
     );
@@ -114,17 +137,18 @@ describe("R76G privacy and route security", () => {
     );
   });
 
-  it("triages existing governed review sources without duplicating decision state", () => {
+  it("triages governed review sources without duplicating decision writes", () => {
     const inbox = readFileSync("app/routes/admin-review-inbox.tsx", "utf8");
 
     expect(inbox).toContain("membership_applications");
     expect(inbox).toContain("role_verifications");
     expect(inbox).toContain("project_relationships");
     expect(inbox).toContain("moderation_reports");
-    expect(inbox).toContain('to: "/admin/applications"');
-    expect(inbox).toContain("/admin/verifications?role=");
-    expect(inbox).toContain('to: "/admin/project-claims"');
-    expect(inbox).toContain('to: "/admin/moderation"');
-    expect(inbox).not.toContain("export async function action");
+    expect(inbox).toContain("review_queue_state");
+    expect(inbox).toContain("review_sla_policies");
+    expect(inbox).not.toContain("UPDATE membership_applications");
+    expect(inbox).not.toContain("UPDATE role_verifications");
+    expect(inbox).not.toContain("UPDATE project_relationships");
+    expect(inbox).not.toContain("UPDATE moderation_reports");
   });
 });
