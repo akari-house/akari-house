@@ -12,10 +12,23 @@ const emptyProfile = {
 };
 
 describe("profile completion", () => {
-  it("reports the missing introduction fields", () => {
+  it("reports the missing professional introduction fields", () => {
     const result = profileCompletion(emptyProfile);
-    expect(result.percent).toBe(14);
+    expect(result.percent).toBe(17);
     expect(result.missing).toContain("professional headline");
+    expect(result.missing).not.toContain("location");
+  });
+
+  it("does not penalize members who choose to leave location blank", () => {
+    const profile = {
+      ...emptyProfile,
+      headline: "Founder building useful infrastructure",
+      bio: "Building products with the AKARI network.",
+      websiteUrl: "https://example.com",
+      expertise: "GTM and product",
+      openTo: "Collaborations",
+    };
+    expect(profileCompletion(profile)).toEqual({ percent: 100, missing: [] });
   });
 
   it("recognizes a complete professional profile", () => {
