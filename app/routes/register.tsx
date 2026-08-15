@@ -247,7 +247,9 @@ export default function Register({
           <header className="auth-section-heading">
             <span>1 · Account</span>
             <h2 id="account-details-title">Create your private account</h2>
-            <p>Only the information needed to create and secure your account.</p>
+            <p>
+              Only the information needed to create and secure your account.
+            </p>
           </header>
           <label>
             Display name
