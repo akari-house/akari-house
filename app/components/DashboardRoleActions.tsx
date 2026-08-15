@@ -14,9 +14,9 @@ export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
     return [
       {
         eyebrow: "Your introduction",
-        title: "Continue your profile",
+        title: "Continue your private profile",
         description:
-          "Keep your roles, biography and interests current while your request is reviewed.",
+          "Add professional context, socials and interests only when you are ready. Your applicant profile remains private while your membership request is reviewed.",
         to: "/app",
         actionLabel: "Continue profile",
       },
@@ -43,9 +43,9 @@ export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
   if (user.roles.includes("founder")) {
     actions.push({
       eyebrow: "Founder workspace",
-      title: "Manage your Founder work",
+      title: "Create or manage your projects",
       description:
-        "Keep project readiness, support needs, campaigns and investor-facing information in one place.",
+        "One Founder account can manage multiple project profiles, support needs, campaigns and investor-facing information.",
       to: "/projects/manage",
       actionLabel: "Open Founder workspace",
     });
@@ -53,21 +53,21 @@ export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
   if (user.roles.includes("creator")) {
     actions.push({
       eyebrow: "Creator workspace",
-      title: "Find Creator campaigns",
+      title: "Keep your Creator profile campaign-ready",
       description:
-        "Review eligibility, apply to relevant campaigns and return to active deliverables and deadlines.",
+        "Keep your X profile, follower count, XScore and Sorsa score current, then discover relevant Ambassador Campaigns.",
       to: "/campaigns",
-      actionLabel: "Browse campaigns",
+      actionLabel: "Browse Creator campaigns",
     });
   }
   if (user.roles.includes("investor")) {
     actions.push({
       eyebrow: "Investor workspace",
-      title: "Review matched Deals",
+      title: "Set your investment preferences",
       description:
-        "Open recommended opportunities, saved Deals, access requests and granted Deal Rooms.",
-      to: "/deals",
-      actionLabel: "Open Investor House",
+        "Define the sectors, stages, regions and privacy choices that should shape your Investor experience before reviewing opportunities.",
+      to: "/settings/investor",
+      actionLabel: "Set Investor preferences",
     });
   }
 
@@ -76,7 +76,7 @@ export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
       eyebrow: "Member directory",
       title: "Find people by role",
       description:
-        "Discover Founders, Creators and Investors by role, expertise or location without exposing private profiles.",
+        "Discover Founders, Creators and Investors by role, expertise or optional shared location without exposing private profiles.",
       to: "/members",
       actionLabel: "Discover members",
     },
