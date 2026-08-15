@@ -39,6 +39,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
               `SELECT
                  COUNT(DISTINCT p.id) AS projectCount,
                  COUNT(DISTINCT CASE WHEN p.status = 'draft' THEN p.id END) AS draftProjectCount,
+                 COUNT(DISTINCT CASE WHEN p.status = 'published' THEN p.id END) AS publishedProjectCount,
+                 COUNT(DISTINCT CASE WHEN
+                   EXISTS (SELECT 1 FROM ambassador_campaigns ac
+                     WHERE ac.project_id = p.id AND ac.status IN ('submitted','published','closed'))
+                   OR EXISTS (SELECT 1 FROM opportunity_listings ol
+                     WHERE ol.project_id = p.id AND ol.status IN ('submitted','published','closed'))
+                   THEN p.id END) AS outcomeActivationCount,
                  (SELECT COUNT(*) FROM project_relationships pr
                     WHERE pr.user_id = ? AND pr.claim_status = 'pending') AS pendingClaimCount
                FROM projects p
@@ -50,6 +57,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
             .first<{
               projectCount: number;
               draftProjectCount: number;
+              publishedProjectCount: number;
+              outcomeActivationCount: number;
               pendingClaimCount: number;
             }>()
         : Promise.resolve(null),
@@ -60,7 +69,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
                  COALESCE(x.profile_url, '') AS xProfileUrl,
                  x.follower_count AS xFollowerCount,
                  r.x_score AS xScore,
-                 r.sorsa_score AS sorsaScore
+                 r.sorsa_score AS sorsaScore,
+                 (SELECT COUNT(*) FROM campaign_applications ca
+                    WHERE ca.creator_user_id = p.user_id
+                      AND ca.status <> 'withdrawn') AS applicationCount,
+                 (SELECT COUNT(*) FROM campaign_applications ca
+                    WHERE ca.creator_user_id = p.user_id
+                      AND ca.status = 'accepted') AS acceptedCampaignCount
                FROM profiles p
                LEFT JOIN profile_social_accounts x
                  ON x.user_id = p.user_id AND x.platform = 'x'
@@ -73,6 +88,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
               xFollowerCount: number | null;
               xScore: number | null;
               sorsaScore: number | null;
+              applicationCount: number;
+              acceptedCampaignCount: number;
             }>()
         : Promise.resolve(null),
       user.roles.includes("investor")
@@ -83,7 +100,19 @@ export async function loader({ request, context }: Route.LoaderArgs) {
                       stages_json AS stagesJson,
                       geographies_json AS geographiesJson,
                       minimum_ticket AS minimumTicket,
-                      maximum_ticket AS maximumTicket
+                      maximum_ticket AS maximumTicket,
+                      ((SELECT COUNT(*) FROM project_interests pi
+                         WHERE pi.investor_user_id = investor_profiles.user_id
+                           AND pi.status <> 'withdrawn') +
+                       (SELECT COUNT(*) FROM introduction_requests ir
+                         WHERE ir.investor_user_id = investor_profiles.user_id
+                           AND ir.status NOT IN ('withdrawn','declined'))) AS interestCount,
+                      ((SELECT COUNT(*) FROM project_interests pi
+                         WHERE pi.investor_user_id = investor_profiles.user_id
+                           AND pi.status IN ('contacted','closed')) +
+                       (SELECT COUNT(*) FROM introduction_requests ir
+                         WHERE ir.investor_user_id = investor_profiles.user_id
+                           AND ir.status IN ('approved','completed'))) AS progressedCount
                FROM investor_profiles WHERE user_id = ?`,
             )
             .bind(user.id)
@@ -94,6 +123,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
               geographiesJson: string;
               minimumTicket: number | null;
               maximumTicket: number | null;
+              interestCount: number;
+              progressedCount: number;
             }>()
         : Promise.resolve(null),
       db
@@ -145,13 +176,25 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     profileMissing: completion.missing,
     founderProjectCount: Number(founderState?.projectCount ?? 0),
     founderDraftProjectCount: Number(founderState?.draftProjectCount ?? 0),
+    founderPublishedProjectCount: Number(
+      founderState?.publishedProjectCount ?? 0,
+    ),
     founderPendingClaimCount: Number(founderState?.pendingClaimCount ?? 0),
+    founderOutcomeActivationCount: Number(
+      founderState?.outcomeActivationCount ?? 0,
+    ),
     xProfileUrl: creatorState?.xProfileUrl ?? "",
     xFollowerCount: creatorState?.xFollowerCount ?? null,
     xScore: creatorState?.xScore ?? null,
     sorsaScore: creatorState?.sorsaScore ?? null,
+    creatorApplicationCount: Number(creatorState?.applicationCount ?? 0),
+    creatorAcceptedCampaignCount: Number(
+      creatorState?.acceptedCampaignCount ?? 0,
+    ),
     investorProfileStatus: investorState?.status ?? null,
     investorPreferencesComplete,
+    investorInterestCount: Number(investorState?.interestCount ?? 0),
+    investorProgressedCount: Number(investorState?.progressedCount ?? 0),
     unreadNotifications: Number(inboxState?.unreadNotifications ?? 0),
     pendingConnections: Number(inboxState?.pendingConnections ?? 0),
   };
