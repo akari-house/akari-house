@@ -37,8 +37,9 @@ describe("authentication password experience", () => {
     expect(register).toContain("Passwords do not match yet.");
     expect(register).toContain("Passwords match.");
     expect(register).toContain("12 to 128 characters required.");
-    expect(register).toContain('aria-label="Membership request steps"');
-    expect(register).toContain("Confirm your email, then await human review.");
+    expect(register).toContain("Start with the essentials");
+    expect(register).toContain("Human-reviewed membership");
+    expect(register).toContain("We will confirm your email first.");
   });
 
   it("places rejected login credentials beside the password field", () => {
