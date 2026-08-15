@@ -41,6 +41,13 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     scope: "verification",
   },
   {
+    key: "project-claims",
+    label: "Project claims",
+    description: "Verify Founder and representative relationships to projects.",
+    to: "/admin/project-claims",
+    scope: "projects",
+  },
+  {
     key: "moderation",
     label: "Moderation",
     description: "Resolve reports and apply proportionate enforcement.",
