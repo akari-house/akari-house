@@ -166,12 +166,12 @@ test("membership request remains gated before human approval", async ({
   await page.getByLabel(/Founder/).check();
   await page.getByLabel(/Creator/).check();
   await page
-    .getByLabel("What brings you to AKARI?")
+    .getByLabel("Short introduction")
     .fill(
       "I am building a trusted community product and want to contribute thoughtful partnerships.",
     );
   await page.getByLabel(/I agree to the Terms/).check();
-  await page.getByRole("button", { name: "Send membership request" }).click();
+  await page.getByRole("button", { name: "Apply to AKARI" }).click();
 
   await expect(page).toHaveURL(/\/membership\/check-email$/);
   await expect(
