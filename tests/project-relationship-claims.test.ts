@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   isClaimableProjectRelationshipType,
   projectSlugFromReference,
-} from "../app/lib/project-relationships.server";
+} from "../app/lib/project-relationships";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
