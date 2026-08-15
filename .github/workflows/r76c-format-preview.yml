@@ -1,0 +1,26 @@
+name: R76C Format Preview
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  format-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Format R76C files
+        run: npx prettier --write app/routes/campaign-detail.tsx tests/creator-campaign-readiness.test.ts
+      - name: Package formatted files
+        run: tar -czf r76c-formatted.tgz app/routes/campaign-detail.tsx tests/creator-campaign-readiness.test.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: r76c-formatted
+          path: r76c-formatted.tgz
