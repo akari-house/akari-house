@@ -1,5 +1,6 @@
 export type ReviewWaitingOn = "akari" | "user";
-export type ReviewSlaState = "on_track" | "due_soon" | "overdue" | "waiting_user";
+export type ReviewSlaState =
+  "on_track" | "due_soon" | "overdue" | "waiting_user";
 
 export type ReviewSlaResult = {
   state: ReviewSlaState;
@@ -11,7 +12,9 @@ export type ReviewSlaResult = {
 
 function parseUtc(value: string | null | undefined) {
   if (!value) return 0;
-  const normalized = value.includes("T") ? value : value.replace(" ", "T") + "Z";
+  const normalized = value.includes("T")
+    ? value
+    : value.replace(" ", "T") + "Z";
   const parsed = Date.parse(normalized);
   return Number.isFinite(parsed) ? parsed : 0;
 }
@@ -39,7 +42,9 @@ export function calculateReviewSla({
     ? Math.max(0, now - currentPauseStarted)
     : 0;
   const totalPauseMs = storedPauseMs + currentPauseMs;
-  const effectiveAgeMs = started ? Math.max(0, now - started - totalPauseMs) : 0;
+  const effectiveAgeMs = started
+    ? Math.max(0, now - started - totalPauseMs)
+    : 0;
   const ageHours = Math.floor(effectiveAgeMs / 3_600_000);
   const dueMs = started + safeTarget * 3_600_000 + totalPauseMs;
   const remainingHours = started

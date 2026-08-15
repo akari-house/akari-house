@@ -471,46 +471,137 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       (a, b) => b.shownUsers - a.shownUsers || b.clickedUsers - a.clickedUsers,
     );
 
-  const funnels: Array<{ key: string; title: string; stages: FunnelStage[] }> = [
-    {
-      key: "founder",
-      title: "Founder outcome funnel",
-      stages: [
-        { label: "Founder role", count: Number(safeOutcomes.founderTotal), description: "Active accounts carrying the Founder role." },
-        { label: "Project managed", count: Number(safeOutcomes.founderProject), description: "Founder owns or collaborates on at least one Project." },
-        { label: "Project published", count: Number(safeOutcomes.founderPublished), description: "At least one managed Project is published." },
-        { label: "Relationship verified", count: Number(safeOutcomes.founderVerified), description: "AKARI verified a Founder, Co-Founder or authorized representative relationship." },
-        { label: "GTM or raise activated", count: Number(safeOutcomes.founderActivated), description: "A campaign or Investor opportunity entered an active workflow." },
-        { label: "Meaningful engagement", count: Number(safeOutcomes.founderEngaged), description: "The Project received Creator applications or Investor intent." },
-      ],
-    },
-    {
-      key: "creator",
-      title: "Creator outcome funnel",
-      stages: [
-        { label: "Creator role", count: Number(safeOutcomes.creatorTotal), description: "All active Creator accounts, including campaign participants who are not House members." },
-        { label: "Campaign ready", count: Number(safeOutcomes.creatorReady), description: "X profile, follower count, XScore and Sorsa Score are present. No follower threshold." },
-        { label: "Applied", count: Number(safeOutcomes.creatorApplied), description: "Applied to at least one Ambassador Campaign." },
-        { label: "Shortlisted or accepted", count: Number(safeOutcomes.creatorShortlisted), description: "Moved beyond initial application review." },
-        { label: "Accepted", count: Number(safeOutcomes.creatorAccepted), description: "Accepted into at least one campaign roster." },
-        { label: "Delivered", count: Number(safeOutcomes.creatorDelivered), description: "Submitted campaign work or content." },
-        { label: "Approved delivery", count: Number(safeOutcomes.creatorApproved), description: "At least one submitted deliverable was approved." },
-        { label: "Compensation allocated", count: Number(safeOutcomes.creatorCompensated), description: "Base campaign compensation was allocated or a recorded bonus was paid. This is not a base-payment settlement metric." },
-      ],
-    },
-    {
-      key: "investor",
-      title: "Investor outcome funnel",
-      stages: [
-        { label: "Investor role", count: Number(safeOutcomes.investorTotal), description: "Active accounts carrying the Investor role." },
-        { label: "Preferences ready", count: Number(safeOutcomes.investorReady), description: "Sectors, stages, geographies and cheque range are complete." },
-        { label: "Opportunity viewed", count: Number(safeOutcomes.investorViewed), description: "Viewed at least one curated Investor opportunity." },
-        { label: "Intent expressed", count: Number(safeOutcomes.investorInterest), description: "Expressed Project interest or requested an introduction." },
-        { label: "Founder connected", count: Number(safeOutcomes.investorConnected), description: "Has an accepted AKARI connection with a Founder." },
-        { label: "Relationship progressed", count: Number(safeOutcomes.investorProgressed), description: "Interest reached contacted/closed or an introduction reached approved/completed." },
-      ],
-    },
-  ];
+  const funnels: Array<{ key: string; title: string; stages: FunnelStage[] }> =
+    [
+      {
+        key: "founder",
+        title: "Founder outcome funnel",
+        stages: [
+          {
+            label: "Founder role",
+            count: Number(safeOutcomes.founderTotal),
+            description: "Active accounts carrying the Founder role.",
+          },
+          {
+            label: "Project managed",
+            count: Number(safeOutcomes.founderProject),
+            description:
+              "Founder owns or collaborates on at least one Project.",
+          },
+          {
+            label: "Project published",
+            count: Number(safeOutcomes.founderPublished),
+            description: "At least one managed Project is published.",
+          },
+          {
+            label: "Relationship verified",
+            count: Number(safeOutcomes.founderVerified),
+            description:
+              "AKARI verified a Founder, Co-Founder or authorized representative relationship.",
+          },
+          {
+            label: "GTM or raise activated",
+            count: Number(safeOutcomes.founderActivated),
+            description:
+              "A campaign or Investor opportunity entered an active workflow.",
+          },
+          {
+            label: "Meaningful engagement",
+            count: Number(safeOutcomes.founderEngaged),
+            description:
+              "The Project received Creator applications or Investor intent.",
+          },
+        ],
+      },
+      {
+        key: "creator",
+        title: "Creator outcome funnel",
+        stages: [
+          {
+            label: "Creator role",
+            count: Number(safeOutcomes.creatorTotal),
+            description:
+              "All active Creator accounts, including campaign participants who are not House members.",
+          },
+          {
+            label: "Campaign ready",
+            count: Number(safeOutcomes.creatorReady),
+            description:
+              "X profile, follower count, XScore and Sorsa Score are present. No follower threshold.",
+          },
+          {
+            label: "Applied",
+            count: Number(safeOutcomes.creatorApplied),
+            description: "Applied to at least one Ambassador Campaign.",
+          },
+          {
+            label: "Shortlisted or accepted",
+            count: Number(safeOutcomes.creatorShortlisted),
+            description: "Moved beyond initial application review.",
+          },
+          {
+            label: "Accepted",
+            count: Number(safeOutcomes.creatorAccepted),
+            description: "Accepted into at least one campaign roster.",
+          },
+          {
+            label: "Delivered",
+            count: Number(safeOutcomes.creatorDelivered),
+            description: "Submitted campaign work or content.",
+          },
+          {
+            label: "Approved delivery",
+            count: Number(safeOutcomes.creatorApproved),
+            description: "At least one submitted deliverable was approved.",
+          },
+          {
+            label: "Compensation allocated",
+            count: Number(safeOutcomes.creatorCompensated),
+            description:
+              "Base campaign compensation was allocated or a recorded bonus was paid. This is not a base-payment settlement metric.",
+          },
+        ],
+      },
+      {
+        key: "investor",
+        title: "Investor outcome funnel",
+        stages: [
+          {
+            label: "Investor role",
+            count: Number(safeOutcomes.investorTotal),
+            description: "Active accounts carrying the Investor role.",
+          },
+          {
+            label: "Preferences ready",
+            count: Number(safeOutcomes.investorReady),
+            description:
+              "Sectors, stages, geographies and cheque range are complete.",
+          },
+          {
+            label: "Opportunity viewed",
+            count: Number(safeOutcomes.investorViewed),
+            description: "Viewed at least one curated Investor opportunity.",
+          },
+          {
+            label: "Intent expressed",
+            count: Number(safeOutcomes.investorInterest),
+            description:
+              "Expressed Project interest or requested an introduction.",
+          },
+          {
+            label: "Founder connected",
+            count: Number(safeOutcomes.investorConnected),
+            description: "Has an accepted AKARI connection with a Founder.",
+          },
+          {
+            label: "Relationship progressed",
+            count: Number(safeOutcomes.investorProgressed),
+            description:
+              "Interest reached contacted/closed or an introduction reached approved/completed.",
+          },
+        ],
+      },
+    ];
 
   return {
     user,
@@ -579,25 +670,59 @@ export default function AdminActivation({ loaderData }: Route.ComponentProps) {
 
         <AdminWorkspaceNav access={loaderData.access} />
 
-        <section className="application-queue-summary" aria-label="Outcome summary">
-          <span><strong>{Number(readiness.members)}</strong> active members</span>
-          <span><strong>{Number(engagement.shownUsers)}</strong> reached by next actions</span>
-          <span><strong>{Number(engagement.clickedUsers)}</strong> clicked a next action</span>
-          <span><strong>{loaderData.clickThroughRate}%</strong> member click-through</span>
+        <section
+          className="application-queue-summary"
+          aria-label="Outcome summary"
+        >
+          <span>
+            <strong>{Number(readiness.members)}</strong> active members
+          </span>
+          <span>
+            <strong>{Number(engagement.shownUsers)}</strong> reached by next
+            actions
+          </span>
+          <span>
+            <strong>{Number(engagement.clickedUsers)}</strong> clicked a next
+            action
+          </span>
+          <span>
+            <strong>{loaderData.clickThroughRate}%</strong> member click-through
+          </span>
         </section>
 
         <section className="status-card" aria-labelledby="outcome-window-title">
           <span className="chapter">7 / 30 day operating window</span>
           <h2 id="outcome-window-title">Recent outcome creation</h2>
           <div className="application-queue-summary">
-            <span><strong>{Number(recentOutcomes.creatorApplications7d)} / {Number(recentOutcomes.creatorApplications30d)}</strong> Creator applications</span>
-            <span><strong>{Number(recentOutcomes.investorSignals7d)} / {Number(recentOutcomes.investorSignals30d)}</strong> Investor intent signals</span>
-            <span><strong>{Number(recentOutcomes.founderActivations7d)} / {Number(recentOutcomes.founderActivations30d)}</strong> campaign / raise activations</span>
+            <span>
+              <strong>
+                {Number(recentOutcomes.creatorApplications7d)} /{" "}
+                {Number(recentOutcomes.creatorApplications30d)}
+              </strong>{" "}
+              Creator applications
+            </span>
+            <span>
+              <strong>
+                {Number(recentOutcomes.investorSignals7d)} /{" "}
+                {Number(recentOutcomes.investorSignals30d)}
+              </strong>{" "}
+              Investor intent signals
+            </span>
+            <span>
+              <strong>
+                {Number(recentOutcomes.founderActivations7d)} /{" "}
+                {Number(recentOutcomes.founderActivations30d)}
+              </strong>{" "}
+              campaign / raise activations
+            </span>
           </div>
         </section>
 
         {loaderData.funnels.map((funnel) => (
-          <section key={funnel.key} aria-labelledby={`${funnel.key}-funnel-title`}>
+          <section
+            key={funnel.key}
+            aria-labelledby={`${funnel.key}-funnel-title`}
+          >
             <div className="status-card">
               <span className="chapter">Source-of-truth outcomes</span>
               <h2 id={`${funnel.key}-funnel-title`}>{funnel.title}</h2>
@@ -632,15 +757,32 @@ export default function AdminActivation({ loaderData }: Route.ComponentProps) {
             the review inbox to assign work or change queue targets.
           </p>
           <div className="application-queue-summary">
-            <span><strong>{Number(reviewHealth.total)}</strong> open reviews</span>
-            <span><strong>{Number(reviewHealth.overdue)}</strong> overdue</span>
-            <span><strong>{Number(reviewHealth.dueSoon)}</strong> due soon</span>
-            <span><strong>{Number(reviewHealth.waitingUser)}</strong> waiting on user</span>
-            <span><strong>{Number(reviewHealth.avgActiveAgeHours).toFixed(1)}h</strong> average active age</span>
+            <span>
+              <strong>{Number(reviewHealth.total)}</strong> open reviews
+            </span>
+            <span>
+              <strong>{Number(reviewHealth.overdue)}</strong> overdue
+            </span>
+            <span>
+              <strong>{Number(reviewHealth.dueSoon)}</strong> due soon
+            </span>
+            <span>
+              <strong>{Number(reviewHealth.waitingUser)}</strong> waiting on
+              user
+            </span>
+            <span>
+              <strong>
+                {Number(reviewHealth.avgActiveAgeHours).toFixed(1)}h
+              </strong>{" "}
+              average active age
+            </span>
           </div>
         </section>
 
-        <section className="status-card" aria-labelledby="activation-readiness-title">
+        <section
+          className="status-card"
+          aria-labelledby="activation-readiness-title"
+        >
           <span className="chapter">Current readiness</span>
           <h2 id="activation-readiness-title">Role activation health</h2>
           <p>
@@ -649,18 +791,28 @@ export default function AdminActivation({ loaderData }: Route.ComponentProps) {
           </p>
         </section>
 
-        <section className="admin-overview-list" aria-label="Role activation readiness">
+        <section
+          className="admin-overview-list"
+          aria-label="Role activation readiness"
+        >
           {readinessRows.map((row) => (
             <div className="admin-overview-row" key={row.label}>
               <strong>{row.label}</strong>
               <p>{row.description}</p>
-              <span className="chapter">{row.completed}/{row.total} ready</span>
-              <span className="admin-overview-row-action">{percent(row.completed, row.total)}%</span>
+              <span className="chapter">
+                {row.completed}/{row.total} ready
+              </span>
+              <span className="admin-overview-row-action">
+                {percent(row.completed, row.total)}%
+              </span>
             </div>
           ))}
         </section>
 
-        <section className="status-card" aria-labelledby="activation-actions-title">
+        <section
+          className="status-card"
+          aria-labelledby="activation-actions-title"
+        >
           <span className="chapter">Last 30 days</span>
           <h2 id="activation-actions-title">Next-action engagement</h2>
           <p>
@@ -669,28 +821,40 @@ export default function AdminActivation({ loaderData }: Route.ComponentProps) {
           </p>
         </section>
 
-        <section className="admin-overview-list" aria-label="Activation action engagement">
+        <section
+          className="admin-overview-list"
+          aria-label="Activation action engagement"
+        >
           {loaderData.actions.length ? (
             loaderData.actions.map((action) => (
               <div className="admin-overview-row" key={action.key}>
                 <strong>{action.label}</strong>
                 <p>
                   {action.shownUsers} unique shown, {action.clickedUsers} unique
-                  clicked. {action.shownEvents} impressions and {action.clickedEvents} clicks recorded.
+                  clicked. {action.shownEvents} impressions and{" "}
+                  {action.clickedEvents} clicks recorded.
                 </p>
-                <span className="chapter">{action.clickRate}% click-through</span>
+                <span className="chapter">
+                  {action.clickRate}% click-through
+                </span>
                 <span className="admin-overview-row-action">{action.key}</span>
               </div>
             ))
           ) : (
             <div className="status-card">
               <h2>No activation events recorded yet.</h2>
-              <p>Activation analytics starts collecting privacy-minimal events after deployment.</p>
+              <p>
+                Activation analytics starts collecting privacy-minimal events
+                after deployment.
+              </p>
             </div>
           )}
         </section>
 
-        <section className="status-card" aria-labelledby="activation-milestones-title">
+        <section
+          className="status-card"
+          aria-labelledby="activation-milestones-title"
+        >
           <span className="chapter">Durable milestones</span>
           <h2 id="activation-milestones-title">Recorded activation states</h2>
           <p>
@@ -702,7 +866,8 @@ export default function AdminActivation({ loaderData }: Route.ComponentProps) {
             {loaderData.milestones.length ? (
               loaderData.milestones.map((milestone) => (
                 <span key={milestone.milestoneKey}>
-                  <strong>{Number(milestone.total)}</strong> {milestone.milestoneKey}
+                  <strong>{Number(milestone.total)}</strong>{" "}
+                  {milestone.milestoneKey}
                 </span>
               ))
             ) : (

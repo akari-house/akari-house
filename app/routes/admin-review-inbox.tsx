@@ -12,12 +12,10 @@ import {
   type ReviewWaitingOn,
 } from "~/lib/review-sla";
 import { assertSameOrigin } from "~/lib/security.server";
+import { formText } from "~/lib/validation";
 
 type ReviewKind =
-  | "membership"
-  | "verification"
-  | "project_claim"
-  | "moderation";
+  "membership" | "verification" | "project_claim" | "moderation";
 
 type ReviewInboxItem = {
   key: string;
@@ -110,11 +108,17 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const user = await requireSuperAdmin(request, db);
   const access = await loadAdminWorkspaceAccess(db, user.id);
 
-  const [memberships, verifications, claims, moderation, policyRows, stateRows] =
-    await Promise.all([
-      db
-        .prepare(
-          `SELECT ma.id, ma.status, ma.applicant_note AS applicantNote,
+  const [
+    memberships,
+    verifications,
+    claims,
+    moderation,
+    policyRows,
+    stateRows,
+  ] = await Promise.all([
+    db
+      .prepare(
+        `SELECT ma.id, ma.status, ma.applicant_note AS applicantNote,
                   ma.updated_at AS submittedAt, u.username,
                   p.display_name AS displayName
              FROM membership_applications ma
@@ -128,18 +132,18 @@ export async function loader({ request, context }: Route.LoaderArgs) {
                      END,
                      ma.updated_at ASC
             LIMIT 50`,
-        )
-        .all<{
-          id: string;
-          status: string;
-          applicantNote: string;
-          submittedAt: string;
-          username: string;
-          displayName: string;
-        }>(),
-      db
-        .prepare(
-          `SELECT rv.user_id AS userId, rv.role, rv.status,
+      )
+      .all<{
+        id: string;
+        status: string;
+        applicantNote: string;
+        submittedAt: string;
+        username: string;
+        displayName: string;
+      }>(),
+    db
+      .prepare(
+        `SELECT rv.user_id AS userId, rv.role, rv.status,
                   rv.decision_note AS decisionNote, rv.updated_at AS submittedAt,
                   u.username, p.display_name AS displayName
              FROM role_verifications rv
@@ -149,19 +153,19 @@ export async function loader({ request, context }: Route.LoaderArgs) {
             ORDER BY CASE WHEN rv.reviewed_at IS NULL THEN 0 ELSE 1 END,
                      rv.updated_at ASC
             LIMIT 50`,
-        )
-        .all<{
-          userId: string;
-          role: string;
-          status: string;
-          decisionNote: string;
-          submittedAt: string;
-          username: string;
-          displayName: string;
-        }>(),
-      db
-        .prepare(
-          `SELECT rel.project_id AS projectId, rel.user_id AS userId,
+      )
+      .all<{
+        userId: string;
+        role: string;
+        status: string;
+        decisionNote: string;
+        submittedAt: string;
+        username: string;
+        displayName: string;
+      }>(),
+    db
+      .prepare(
+        `SELECT rel.project_id AS projectId, rel.user_id AS userId,
                   rel.relationship_type AS relationshipType,
                   rel.evidence_url AS evidenceUrl,
                   rel.evidence_note AS evidenceNote,
@@ -175,21 +179,21 @@ export async function loader({ request, context }: Route.LoaderArgs) {
             WHERE rel.claim_status = 'pending'
             ORDER BY rel.updated_at ASC
             LIMIT 50`,
-        )
-        .all<{
-          projectId: string;
-          userId: string;
-          relationshipType: string;
-          evidenceUrl: string;
-          evidenceNote: string;
-          submittedAt: string;
-          projectTitle: string;
-          username: string;
-          displayName: string;
-        }>(),
-      db
-        .prepare(
-          `SELECT mr.id, mr.subject_type AS subjectType,
+      )
+      .all<{
+        projectId: string;
+        userId: string;
+        relationshipType: string;
+        evidenceUrl: string;
+        evidenceNote: string;
+        submittedAt: string;
+        projectTitle: string;
+        username: string;
+        displayName: string;
+      }>(),
+    db
+      .prepare(
+        `SELECT mr.id, mr.subject_type AS subjectType,
                   mr.reason, mr.details, mr.status,
                   mr.updated_at AS submittedAt,
                   u.username, p.display_name AS displayName
@@ -199,28 +203,28 @@ export async function loader({ request, context }: Route.LoaderArgs) {
             WHERE mr.status IN ('open', 'reviewing')
             ORDER BY mr.updated_at ASC
             LIMIT 50`,
-        )
-        .all<{
-          id: string;
-          subjectType: string;
-          reason: string;
-          details: string;
-          status: string;
-          submittedAt: string;
-          username: string;
-          displayName: string;
-        }>(),
-      db
-        .prepare(
-          `SELECT queue_key AS queueKey, target_hours AS targetHours,
+      )
+      .all<{
+        id: string;
+        subjectType: string;
+        reason: string;
+        details: string;
+        status: string;
+        submittedAt: string;
+        username: string;
+        displayName: string;
+      }>(),
+    db
+      .prepare(
+        `SELECT queue_key AS queueKey, target_hours AS targetHours,
                   enabled
              FROM review_sla_policies
             ORDER BY queue_key`,
-        )
-        .all<ReviewPolicy>(),
-      db
-        .prepare(
-          `SELECT rqs.item_key AS itemKey, rqs.queue_key AS queueKey,
+      )
+      .all<ReviewPolicy>(),
+    db
+      .prepare(
+        `SELECT rqs.item_key AS itemKey, rqs.queue_key AS queueKey,
                   rqs.assigned_to AS assignedTo,
                   COALESCE(u.username, '') AS assignedUsername,
                   rqs.waiting_on AS waitingOn,
@@ -228,9 +232,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
                   rqs.paused_seconds AS pausedSeconds
              FROM review_queue_state rqs
              LEFT JOIN users u ON u.id = rqs.assigned_to`,
-        )
-        .all<ReviewQueueState>(),
-    ]);
+      )
+      .all<ReviewQueueState>(),
+  ]);
 
   const policies = new Map<ReviewKind, ReviewPolicy>(
     policyRows.results.map((row) => [row.queueKey, row]),
@@ -242,11 +246,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const buildItem = (
     item: Omit<
       ReviewInboxItem,
-      | "priority"
-      | "assignedTo"
-      | "assignedUsername"
-      | "waitingOn"
-      | "sla"
+      "priority" | "assignedTo" | "assignedUsername" | "waitingOn" | "sla"
     >,
   ): ReviewInboxItem => {
     const operational = queueState.get(item.key);
@@ -341,7 +341,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const slaCounts = {
     overdue: items.filter((item) => item.sla.state === "overdue").length,
     dueSoon: items.filter((item) => item.sla.state === "due_soon").length,
-    waitingUser: items.filter((item) => item.sla.state === "waiting_user").length,
+    waitingUser: items.filter((item) => item.sla.state === "waiting_user")
+      .length,
     assignedToMe: items.filter((item) => item.assignedTo === user.id).length,
   };
 
@@ -362,12 +363,14 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     slaCounts,
     total: items.length,
     kindFilter,
-    policies: ([
-      "membership",
-      "verification",
-      "project_claim",
-      "moderation",
-    ] as ReviewKind[]).map((queueKey) => ({
+    policies: (
+      [
+        "membership",
+        "verification",
+        "project_claim",
+        "moderation",
+      ] as ReviewKind[]
+    ).map((queueKey) => ({
       queueKey,
       label: queueLabels[queueKey],
       targetHours: policyTarget(policies, queueKey),
@@ -380,11 +383,11 @@ export async function action({ request, context }: Route.ActionArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const user = await requireSuperAdmin(request, db);
   const form = await request.formData();
-  const intent = String(form.get("intent") ?? "");
-  const returnKind = String(form.get("returnKind") ?? "");
+  const intent = formText(form.get("intent"));
+  const returnKind = formText(form.get("returnKind"));
 
   if (intent === "update-sla") {
-    const queueKey = String(form.get("queueKey") ?? "");
+    const queueKey = formText(form.get("queueKey"));
     const targetHours = Number(form.get("targetHours"));
     if (
       !isReviewKind(queueKey) ||
@@ -410,8 +413,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     throw redirect(returnToReviewInbox(returnKind));
   }
 
-  const itemKey = String(form.get("itemKey") ?? "");
-  const queueKey = String(form.get("queueKey") ?? "");
+  const itemKey = formText(form.get("itemKey"));
+  const queueKey = formText(form.get("queueKey"));
   if (
     !isReviewKind(queueKey) ||
     !itemKeyMatchesQueue(itemKey, queueKey) ||
@@ -499,7 +502,9 @@ function kindHref(kind: "all" | ReviewKind) {
 }
 
 function displayTime(value: string) {
-  const date = new Date(value.includes("T") ? value : value.replace(" ", "T") + "Z");
+  const date = new Date(
+    value.includes("T") ? value : value.replace(" ", "T") + "Z",
+  );
   return Number.isNaN(date.getTime())
     ? value
     : date.toLocaleString(undefined, {
@@ -555,8 +560,8 @@ export default function AdminReviewInbox({ loaderData }: Route.ComponentProps) {
             <h1>Unified review inbox</h1>
             <p>
               Triage trust decisions by ownership and SLA, then use the existing
-              governed desk for the actual decision. Waiting on a user pauses the
-              operational SLA clock instead of creating a false breach.
+              governed desk for the actual decision. Waiting on a user pauses
+              the operational SLA clock instead of creating a false breach.
             </p>
           </div>
           <Link className="button button-quiet" to="/admin/activation">
@@ -597,7 +602,11 @@ export default function AdminReviewInbox({ loaderData }: Route.ComponentProps) {
           </p>
           <div className="application-queue-summary">
             {loaderData.policies.map((policy) => (
-              <Form method="post" key={policy.queueKey} className="admin-inline-form">
+              <Form
+                method="post"
+                key={policy.queueKey}
+                className="admin-inline-form"
+              >
                 <input type="hidden" name="intent" value="update-sla" />
                 <input type="hidden" name="queueKey" value={policy.queueKey} />
                 <input
@@ -669,7 +678,8 @@ export default function AdminReviewInbox({ loaderData }: Route.ComponentProps) {
                       Due: {displayTime(item.sla.dueAt)}. Assigned:{" "}
                       {item.assignedUsername
                         ? `@${item.assignedUsername}`
-                        : "unassigned"}.
+                        : "unassigned"}
+                      .
                     </p>
                   </div>
                   <div className="admin-review-form">
