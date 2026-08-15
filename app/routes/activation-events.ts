@@ -1,5 +1,6 @@
 import type { Route } from "./+types/activation-events";
 import { recordActivationClick } from "~/lib/activation-analytics.server";
+import type { ActivationAction } from "~/lib/activation-next-actions";
 import { requireUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { assertSameOrigin } from "~/lib/security.server";
@@ -24,7 +25,9 @@ const allowedActionKeys = new Set([
   "discover-members",
 ]);
 
-const allowedRoles = new Set([
+type AllowedRole = NonNullable<ActivationAction["role"]> | "";
+
+const allowedRoles = new Set<AllowedRole>([
   "account",
   "network",
   "founder",
@@ -32,6 +35,10 @@ const allowedRoles = new Set([
   "investor",
   "",
 ]);
+
+function isAllowedRole(value: string): value is AllowedRole {
+  return allowedRoles.has(value as AllowedRole);
+}
 
 export async function action({ request, context }: Route.ActionArgs) {
   assertSameOrigin(request);
@@ -56,7 +63,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   if (
     !allowedActionKeys.has(key) ||
-    !allowedRoles.has(role) ||
+    !isAllowedRole(role) ||
     !to.startsWith("/") ||
     to.startsWith("//") ||
     to.length > 240
@@ -64,7 +71,11 @@ export async function action({ request, context }: Route.ActionArgs) {
     return Response.json({ error: "Invalid activation event." }, { status: 400 });
   }
 
-  await recordActivationClick(db, user.id, { key, role, to });
+  await recordActivationClick(db, user.id, {
+    key,
+    role: role === "" ? undefined : role,
+    to,
+  });
 
   return Response.json(
     { ok: true },
