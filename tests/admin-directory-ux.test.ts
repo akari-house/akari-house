@@ -47,14 +47,32 @@ describe("member directory and admin trust workflow", () => {
     );
   });
 
-  it("provides a scoped admin overview", () => {
+  it("uses a compact membership approval queue with a persistent review panel", () => {
+    const applications = read("app/routes/admin-applications.tsx");
+    const styles = read("app/styles/admin-console.css");
+    expect(applications).toContain('className="application-review-layout"');
+    expect(applications).toContain('className="application-review-list"');
+    expect(applications).toContain('className="application-review-panel"');
+    expect(applications).toContain("Approve &amp; next");
+    expect(applications).toContain('value="request_info"');
+    expect(applications).not.toContain('className="application-card"');
+    expect(styles).toContain(".application-review-row");
+    expect(styles).toContain(".application-review-panel");
+  });
+
+  it("provides a compact scoped admin overview instead of large cards", () => {
     const routes = read("app/routes.ts");
     const dashboard = read("app/routes/dashboard.tsx");
     const workspace = read("app/routes/admin-workspace.tsx");
+    const styles = read("app/styles/admin-console.css");
     expect(routes).toContain('route("admin", "routes/admin-workspace.tsx")');
     expect(dashboard).toContain('to="/admin"');
     expect(dashboard).toContain("Admin workspace");
     expect(workspace).toContain("visibleAdminWorkspaceItems");
     expect(workspace).toContain("loadAdminWorkspaceAccess");
+    expect(workspace).toContain('className="admin-overview-list"');
+    expect(workspace).toContain('className="admin-overview-row"');
+    expect(workspace).not.toContain('className="admin-overview-grid"');
+    expect(styles).toContain(".admin-overview-row");
   });
 });
