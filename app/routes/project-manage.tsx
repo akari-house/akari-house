@@ -4,6 +4,10 @@ import { ProjectNeedChips } from "~/components/projects/ProjectNeedChips";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import {
+  projectClaimStatusLabel,
+  projectRelationshipLabel,
+} from "~/lib/project-relationships.server";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -15,6 +19,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       `SELECT pr.slug, pr.title, pr.summary, pr.status, pr.stage, pr.seeking,
               CASE WHEN pr.founder_user_id = ? THEN 'owner'
                    ELSE 'collaborator' END AS accessRole,
+              rel.relationship_type AS relationshipType,
+              rel.claim_status AS claimStatus,
               pr.updated_at AS updatedAt,
               ol.status AS opportunityStatus,
               COALESCE(pr.data_room_url, '') AS dataRoomUrl
@@ -22,10 +28,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
        LEFT JOIN opportunity_listings ol ON ol.project_id = pr.id
        LEFT JOIN project_collaborators pc
          ON pc.project_id = pr.id AND pc.user_id = ?
+       LEFT JOIN project_relationships rel
+         ON rel.project_id = pr.id AND rel.user_id = ?
        WHERE pr.founder_user_id = ? OR pc.user_id = ?
        ORDER BY pr.updated_at DESC`,
     )
-    .bind(user.id, user.id, user.id, user.id)
+    .bind(user.id, user.id, user.id, user.id, user.id)
     .all<{
       slug: string;
       title: string;
@@ -34,6 +42,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       stage: string;
       seeking: string;
       accessRole: "owner" | "collaborator";
+      relationshipType: string | null;
+      claimStatus: string | null;
       updatedAt: string;
       opportunityStatus: string | null;
       dataRoomUrl: string;
@@ -51,9 +61,14 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
             <span className="eyebrow">Founder project desk</span>
             <h1>Manage your project lanterns.</h1>
           </div>
-          <Link className="button button-primary" to="/projects/new">
-            New project
-          </Link>
+          <div className="button-row">
+            <Link className="button button-quiet" to="/projects/claim">
+              Claim existing project
+            </Link>
+            <Link className="button button-primary" to="/projects/new">
+              New project
+            </Link>
+          </div>
         </header>
         <div className="project-grid">
           {loaderData.projects.length ? (
@@ -64,6 +79,14 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
                 </span>
                 <h2>{project.title}</h2>
                 <small>Access: {project.accessRole}</small>
+                {project.relationshipType && project.claimStatus ? (
+                  <small>
+                    Relationship: {projectRelationshipLabel(project.relationshipType)} ·{" "}
+                    {projectClaimStatusLabel(project.claimStatus)}
+                  </small>
+                ) : (
+                  <small>Relationship: Manager access only</small>
+                )}
                 <p>{project.summary}</p>
                 <ProjectNeedChips value={project.seeking} compact />
                 {project.opportunityStatus && (
@@ -104,11 +127,17 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
               <h2>No project lanterns yet.</h2>
               <p>
                 Create a project when you are ready to explain what you are
-                building, what stage it is in and who you hope to meet.
+                building, or claim an existing AKARI project if you already
+                represent one.
               </p>
-              <Link className="button button-primary" to="/projects/new">
-                Create your first project
-              </Link>
+              <div className="button-row">
+                <Link className="button button-primary" to="/projects/new">
+                  Create your first project
+                </Link>
+                <Link className="button button-quiet" to="/projects/claim">
+                  Claim existing project
+                </Link>
+              </div>
             </div>
           )}
         </div>
