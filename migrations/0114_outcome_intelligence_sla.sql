@@ -23,7 +23,7 @@ CREATE TABLE review_queue_state (
   waiting_on TEXT NOT NULL DEFAULT 'akari'
     CHECK (waiting_on IN ('akari', 'user')),
   waiting_since TEXT,
-  paused_hours INTEGER NOT NULL DEFAULT 0 CHECK (paused_hours >= 0),
+  paused_seconds INTEGER NOT NULL DEFAULT 0 CHECK (paused_seconds >= 0),
   updated_by TEXT REFERENCES users(id) ON DELETE SET NULL,
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
