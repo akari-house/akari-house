@@ -88,6 +88,16 @@ describe("public onboarding launch rules", () => {
     expect(diligence).toContain("dataRoomAccessIsCurrent");
   });
 
+  it("keeps the membership application lightweight before human review", () => {
+    const register = read("app/routes/register.tsx");
+    expect(register).toContain("Start with the essentials");
+    expect(register).toContain("full professional profile can be completed");
+    expect(register).toContain("minLength={20}");
+    expect(register).toContain("maxLength={300}");
+    expect(register).toContain("Apply to AKARI");
+    expect(register).not.toContain("auth-journey");
+  });
+
   it("imports linked event images through a bounded HTTPS-only pipeline", () => {
     const importer = read("app/lib/event-image.server.ts");
     expect(importer).toContain('url.protocol !== "https:"');

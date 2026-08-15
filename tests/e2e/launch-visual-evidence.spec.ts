@@ -125,7 +125,7 @@ test.describe("launch visual evidence", () => {
       page,
       testInfo,
       "Find campaigns, workspace navigation",
-      /Find Creator campaigns/,
+      /Keep your Creator profile campaign-ready/,
     );
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-creator");
@@ -138,7 +138,7 @@ test.describe("launch visual evidence", () => {
       page,
       testInfo,
       "Explore matched Deals, workspace navigation",
-      /Review matched Deals/,
+      /Set your investment preferences/,
     );
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-investor");
@@ -151,7 +151,7 @@ test.describe("launch visual evidence", () => {
       page,
       testInfo,
       "Manage projects, workspace navigation",
-      /Manage your Founder work/,
+      /Create or manage your projects/,
     );
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-founder");
