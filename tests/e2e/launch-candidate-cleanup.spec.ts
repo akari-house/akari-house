@@ -101,7 +101,7 @@ test("Creator and Investor workspaces expose their primary task first", async ({
     }),
   ).toHaveAttribute("href", "/campaigns");
   await expect(
-    page.getByRole("link", { name: /Find Creator campaigns/ }),
+    page.getByRole("link", { name: /Keep your Creator profile campaign-ready/ }),
   ).toHaveAttribute("href", "/campaigns");
 
   await activatePersona(page, "investor");
@@ -112,8 +112,8 @@ test("Creator and Investor workspaces expose their primary task first", async ({
     }),
   ).toHaveAttribute("href", "/deals");
   await expect(
-    page.getByRole("link", { name: /Review matched Deals/ }),
-  ).toHaveAttribute("href", "/deals");
+    page.getByRole("link", { name: /Set your investment preferences/ }),
+  ).toHaveAttribute("href", "/settings/investor");
 });
 
 test("key mobile discovery and member pages remain accessible without overflow", async ({
