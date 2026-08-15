@@ -7,6 +7,7 @@ import {
   visibleAdminWorkspaceItems,
   type AdminWorkspaceItem,
 } from "~/lib/admin-workspace";
+import { buildAdminNextAction } from "~/lib/activation-next-actions";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { requireAdmin } from "~/lib/membership.server";
 
@@ -91,11 +92,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     count: counts[item.key as keyof QueueCounts] ?? 0,
   }));
 
-  const attentionCount = items
-    .filter((item) => !["team", "directory"].includes(item.key))
-    .reduce((total, item) => total + item.count, 0);
+  const nextAction = buildAdminNextAction(items);
+  const attentionCount = nextAction.remainingItemCount;
 
-  return { user, access, items, attentionCount };
+  return { user, access, items, attentionCount, nextAction };
 }
 
 function workspaceStatus(item: AdminWorkspaceItem & { count: number }) {
@@ -107,6 +107,7 @@ function workspaceStatus(item: AdminWorkspaceItem & { count: number }) {
 }
 
 export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
+  const next = loaderData.nextAction.next;
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -134,11 +135,40 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
             <strong>{loaderData.attentionCount}</strong> items need attention
           </span>
           <span>
-            <strong>
-              {loaderData.items.filter((item) => item.count > 0).length}
-            </strong>{" "}
-            active queues
+            <strong>{loaderData.nextAction.activeQueueCount}</strong> active queues
           </span>
+        </section>
+
+        <section className="status-card" aria-labelledby="admin-next-action-title">
+          <span className="chapter">Next action</span>
+          {next ? (
+            <>
+              <h2 id="admin-next-action-title">
+                Review {next.label.toLowerCase()} first.
+              </h2>
+              <p>
+                {next.count} item{next.count === 1 ? " is" : "s are"} waiting in
+                this queue. {next.description}
+              </p>
+              <div className="button-row">
+                <Link className="button button-primary" to={next.to}>
+                  Open priority queue
+                </Link>
+                <span className="chapter">
+                  {loaderData.nextAction.remainingItemCount} total decisions
+                  waiting
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 id="admin-next-action-title">No review queue needs action.</h2>
+              <p>
+                Membership, verification, Project claims, moderation and the
+                operational queues are currently clear.
+              </p>
+            </>
+          )}
         </section>
 
         <section
