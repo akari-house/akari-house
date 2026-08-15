@@ -9,7 +9,7 @@ import {
   projectClaimStatusLabel,
   projectRelationshipLabel,
   projectSlugFromReference,
-} from "~/lib/project-relationships.server";
+} from "~/lib/project-relationships";
 import { requireActionRateLimit } from "~/lib/rate-limit.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
