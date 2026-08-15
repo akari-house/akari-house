@@ -16,7 +16,9 @@ describe("R76D project relationship claims", () => {
     expect(migration).toContain("'verified'");
     expect(migration).toContain("'disputed'");
     expect(migration).toContain("'revoked'");
-    expect(migration).toContain("Backfilled from the existing canonical project owner");
+    expect(migration).toContain(
+      "Backfilled from the existing canonical project owner",
+    );
     expect(migration).not.toContain("UPDATE projects SET founder_user_id");
   });
 
@@ -28,7 +30,7 @@ describe("R76D project relationship claims", () => {
 
   it("requires evidence before a Founder relationship enters review", () => {
     const route = read("app/routes/project-claim.tsx");
-    expect(route).toContain('requireApprovedMember(request, db)');
+    expect(route).toContain("requireApprovedMember(request, db)");
     expect(route).toContain('user.roles.includes("founder")');
     expect(route).toContain("validEvidenceUrl");
     expect(route).toContain("evidenceNote.length < 30");
@@ -71,7 +73,9 @@ describe("R76D project relationship claims", () => {
     expect(
       projectSlugFromReference("https://akarihouse.com/projects/alpha-project"),
     ).toBe("alpha-project");
-    expect(projectSlugFromReference("https://example.com/alpha-project")).toBeNull();
+    expect(
+      projectSlugFromReference("https://example.com/alpha-project"),
+    ).toBeNull();
     expect(isClaimableProjectRelationshipType("founder")).toBe(true);
     expect(isClaimableProjectRelationshipType("advisor")).toBe(false);
   });

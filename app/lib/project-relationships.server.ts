@@ -13,14 +13,9 @@ export const claimableProjectRelationshipTypes = [
   "authorized_representative",
 ] as const;
 
-export type ProjectRelationshipType =
-  (typeof projectRelationshipTypes)[number];
+export type ProjectRelationshipType = (typeof projectRelationshipTypes)[number];
 export type ProjectClaimStatus =
-  | "self_declared"
-  | "pending"
-  | "verified"
-  | "disputed"
-  | "revoked";
+  "self_declared" | "pending" | "verified" | "disputed" | "revoked";
 
 export function isClaimableProjectRelationshipType(
   value: string,

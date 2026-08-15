@@ -130,7 +130,9 @@ export async function action({ request, context }: Route.ActionArgs) {
     .first<{ relationshipType: string; claimStatus: string }>();
 
   if (existing?.claimStatus === "verified")
-    return { error: "Your relationship with this project is already verified." };
+    return {
+      error: "Your relationship with this project is already verified.",
+    };
   if (existing?.claimStatus === "pending")
     return { error: "This project relationship is already awaiting review." };
 
@@ -155,13 +157,7 @@ export async function action({ request, context }: Route.ActionArgs) {
            decision_note = '',
            updated_at = datetime('now')`,
       )
-      .bind(
-        project.id,
-        user.id,
-        relationshipType,
-        evidenceUrl,
-        evidenceNote,
-      ),
+      .bind(project.id, user.id, relationshipType, evidenceUrl, evidenceNote),
     db
       .prepare(
         `INSERT INTO audit_logs
@@ -280,13 +276,21 @@ export default function ProjectClaim({
             <h2>Claim and verification status</h2>
             <div className="review-table" role="list">
               {loaderData.claims.map((claim) => (
-                <article key={claim.slug} className="review-row" role="listitem">
+                <article
+                  key={claim.slug}
+                  className="review-row"
+                  role="listitem"
+                >
                   <div>
                     <strong>{claim.title}</strong>
-                    <span>{projectRelationshipLabel(claim.relationshipType)}</span>
+                    <span>
+                      {projectRelationshipLabel(claim.relationshipType)}
+                    </span>
                   </div>
                   <div>
-                    <strong>{projectClaimStatusLabel(claim.claimStatus)}</strong>
+                    <strong>
+                      {projectClaimStatusLabel(claim.claimStatus)}
+                    </strong>
                     {claim.decisionNote && <span>{claim.decisionNote}</span>}
                   </div>
                   <Link to={`/projects/${claim.slug}`}>View project</Link>

@@ -81,7 +81,8 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
                 <small>Access: {project.accessRole}</small>
                 {project.relationshipType && project.claimStatus ? (
                   <small>
-                    Relationship: {projectRelationshipLabel(project.relationshipType)} ·{" "}
+                    Relationship:{" "}
+                    {projectRelationshipLabel(project.relationshipType)} ·{" "}
                     {projectClaimStatusLabel(project.claimStatus)}
                   </small>
                 ) : (

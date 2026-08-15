@@ -149,7 +149,11 @@ export async function action({ request, context }: Route.ActionArgs) {
     return { error: "Keep the decision note under 500 characters." };
 
   const status =
-    intent === "verify" ? "verified" : intent === "hold" ? "pending" : "revoked";
+    intent === "verify"
+      ? "verified"
+      : intent === "hold"
+        ? "pending"
+        : "revoked";
   const statements = [
     db
       .prepare(
@@ -342,7 +346,11 @@ export default function AdminProjectClaims({
                 </div>
                 <div className="verification-state">
                   <strong>
-                    <a href={claim.evidenceUrl} target="_blank" rel="noreferrer">
+                    <a
+                      href={claim.evidenceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       Open evidence
                     </a>
                   </strong>
@@ -387,7 +395,9 @@ export default function AdminProjectClaims({
                   </Form>
                 ) : (
                   <div className="verification-reviewed-at">
-                    <strong>{projectClaimStatusLabel(claim.claimStatus)}</strong>
+                    <strong>
+                      {projectClaimStatusLabel(claim.claimStatus)}
+                    </strong>
                     {claim.decisionNote && <span>{claim.decisionNote}</span>}
                   </div>
                 )}
@@ -397,7 +407,10 @@ export default function AdminProjectClaims({
         )}
 
         {loaderData.totalPages > 1 && (
-          <nav className="verification-pagination" aria-label="Project claim pages">
+          <nav
+            className="verification-pagination"
+            aria-label="Project claim pages"
+          >
             {loaderData.page > 1 && (
               <Link
                 className="button button-quiet"
