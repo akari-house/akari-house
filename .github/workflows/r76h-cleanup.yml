@@ -1,0 +1,62 @@
+name: R76H Cleanup
+
+on:
+  push:
+    branches:
+      - feature/r76h-outcome-intelligence-sla
+    paths:
+      - .github/workflows/r76h-cleanup.yml
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/r76h-outcome-intelligence-sla
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Fix form value parsing and format R76H files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app/routes/admin-review-inbox.tsx')
+          text = path.read_text()
+          marker = 'import { assertSameOrigin } from "~/lib/security.server";\n'
+          if 'from "~/lib/validation"' not in text:
+              text = text.replace(marker, marker + 'import { formText } from "~/lib/validation";\n')
+          text = text.replace('String(form.get("intent") ?? "")', 'formText(form.get("intent"))')
+          text = text.replace('String(form.get("returnKind") ?? "")', 'formText(form.get("returnKind"))')
+          text = text.replace('String(form.get("queueKey") ?? "")', 'formText(form.get("queueKey"))')
+          text = text.replace('String(form.get("itemKey") ?? "")', 'formText(form.get("itemKey"))')
+          path.write_text(text)
+          PY
+          npx prettier --write \
+            app/routes/admin-review-inbox.tsx \
+            app/routes/admin-activation.tsx \
+            app/lib/activation-next-actions.ts \
+            app/routes/activation-next-actions.ts \
+            app/routes/activation-events.ts \
+            app/lib/review-sla.ts \
+            tests/activation-next-actions.test.ts \
+            tests/activation-analytics.test.ts \
+            tests/review-sla.test.ts \
+            docs/R76H_EXPERT_REVIEW.md \
+            migrations/0114_outcome_intelligence_sla.sql
+      - name: Commit cleanup
+        run: |
+          git config user.name "AKARI Release Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add app tests docs migrations
+          if git diff --cached --quiet; then
+            echo "No cleanup changes required."
+          else
+            git commit -m "R76H fix lint and apply repository formatting"
+            git push origin HEAD:feature/r76h-outcome-intelligence-sla
+          fi
