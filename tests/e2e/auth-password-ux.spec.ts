@@ -6,7 +6,13 @@ test("registration explains password acceptance while typing", async ({
   await page.goto("/register");
 
   await expect(
-    page.getByRole("list", { name: "Membership request steps" }),
+    page.getByRole("heading", { name: "Create your private account" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "How will you use AKARI?" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Human-reviewed membership" }),
   ).toBeVisible();
 
   const password = page.getByLabel("Password", { exact: true });
