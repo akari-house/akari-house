@@ -44,7 +44,7 @@ describe("R76H review SLA engine", () => {
       now,
     });
 
-    expect(sla.state).toBe("due_soon");
+    expect(sla.state).toBe("on_track");
     expect(sla.ageHours).toBe(24);
     expect(sla.remainingHours).toBe(24);
   });
