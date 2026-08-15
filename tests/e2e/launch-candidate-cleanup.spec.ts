@@ -101,7 +101,9 @@ test("Creator and Investor workspaces expose their primary task first", async ({
     }),
   ).toHaveAttribute("href", "/campaigns");
   await expect(
-    page.getByRole("link", { name: /Keep your Creator profile campaign-ready/ }),
+    page.getByRole("link", {
+      name: /Keep your Creator profile campaign-ready/,
+    }),
   ).toHaveAttribute("href", "/campaigns");
 
   await activatePersona(page, "investor");
