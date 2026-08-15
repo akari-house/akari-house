@@ -9,6 +9,9 @@ type WorkspaceAction = {
   description: string;
   to: string;
   actionLabel: string;
+  key?: string;
+  role?: ActivationAction["role"];
+  priority?: number;
 };
 
 export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
@@ -125,6 +128,21 @@ function activationActionsFromPayload(payload: unknown) {
   return Array.isArray(candidate) ? candidate.filter(isActivationAction) : [];
 }
 
+function trackActivationClick(action: WorkspaceAction) {
+  if (!action.key) return;
+  void fetch("/api/activation/events", {
+    method: "POST",
+    credentials: "same-origin",
+    keepalive: true,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      key: action.key,
+      role: action.role ?? "",
+      to: action.to,
+    }),
+  }).catch(() => undefined);
+}
+
 export function DashboardRoleActions({ user }: { user: SessionUser }) {
   const [actions, setActions] = useState<WorkspaceAction[]>(() =>
     dashboardRoleActions(user),
@@ -163,6 +181,7 @@ export function DashboardRoleActions({ user }: { user: SessionUser }) {
           className={`dashboard-role-card${index === 0 ? " is-primary" : ""}`}
           to={action.to}
           key={`${action.eyebrow}:${action.title}`}
+          onClick={() => trackActivationClick(action)}
         >
           <span>{action.eyebrow}</span>
           <strong>{action.title}</strong>
