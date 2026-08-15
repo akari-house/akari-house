@@ -112,13 +112,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const userId = formText(form.get("userId"));
   const intent = formText(form.get("intent"));
   const suppliedNote = formText(form.get("decisionNote")).trim();
-  const allowedIntents = [
-    "verify",
-    "verify_next",
-    "hold",
-    "decline",
-    "revoke",
-  ];
+  const allowedIntents = ["verify", "verify_next", "hold", "decline", "revoke"];
 
   if (!projectId || !userId || !allowedIntents.includes(intent))
     return { error: "Choose a valid project relationship decision." };
@@ -127,6 +121,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     .prepare(
       `SELECT rel.relationship_type AS relationshipType,
               rel.claim_status AS claimStatus,
+              rel.reviewed_by AS previousReviewerId,
               pr.title AS projectTitle,
               pr.slug AS projectSlug,
               pr.founder_user_id AS canonicalOwnerId
@@ -138,6 +133,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     .first<{
       relationshipType: string;
       claimStatus: string;
+      previousReviewerId: string | null;
       projectTitle: string;
       projectSlug: string;
       canonicalOwnerId: string;
@@ -154,7 +150,8 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   if (intent === "hold" && suppliedNote.length < 10)
     return {
-      error: "Add a short note explaining what information the Founder should provide.",
+      error:
+        "Add a short note explaining what information the Founder should provide.",
     };
   if (suppliedNote.length > 500)
     return { error: "Keep the decision note under 500 characters." };
@@ -200,7 +197,9 @@ export async function action({ request, context }: Route.ActionArgs) {
             : intent === "revoke"
               ? `AKARI revoked your previously verified relationship with ${claim.projectTitle}.`
               : `AKARI could not verify your relationship with ${claim.projectTitle} from the supplied evidence.`,
-        intent === "hold" ? "/projects/claim" : `/projects/${claim.projectSlug}`,
+        intent === "hold"
+          ? "/projects/claim"
+          : `/projects/${claim.projectSlug}`,
       ),
     db
       .prepare(
@@ -255,9 +254,10 @@ export async function action({ request, context }: Route.ActionArgs) {
       db
         .prepare(
           `DELETE FROM project_collaborators
-           WHERE project_id = ? AND user_id = ? AND access_level = 'manager'`,
+           WHERE project_id = ? AND user_id = ? AND access_level = 'manager'
+             AND granted_by = ?`,
         )
-        .bind(projectId, userId),
+        .bind(projectId, userId, claim.previousReviewerId ?? admin.id),
     );
 
   await db.batch(statements);
@@ -457,7 +457,8 @@ export default function AdminProjectClaims({
                     {claim.decisionNote && <span>{claim.decisionNote}</span>}
                     {claim.reviewedAt && (
                       <span>
-                        Reviewed {new Date(claim.reviewedAt).toLocaleDateString()}
+                        Reviewed{" "}
+                        {new Date(claim.reviewedAt).toLocaleDateString()}
                       </span>
                     )}
                     {claim.claimStatus === "verified" && (
