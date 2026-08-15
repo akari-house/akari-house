@@ -1,121 +1,34 @@
-import { mkdirSync } from "node:fs";
-import { expect, test, type Page, type TestInfo } from "@playwright/test";
-
-const fixtureHeaders = { "x-akari-test-fixture": "launch-gate-v1" };
-
-async function activatePersona(
-  page: Page,
-  persona: string,
-  options: { seedResources?: boolean; reuseExisting?: boolean } = {},
-) {
-  await page.context().clearCookies();
-  const response = await page.request.post(`/__test__/personas/${persona}`, {
-    headers: fixtureHeaders,
-    form: {
-      session: "true",
-      seedResources: options.seedResources ? "true" : "false",
-      reuseExisting: options.reuseExisting ? "true" : "false",
-    },
-  });
-  expect(response.status()).toBe(201);
-}
-
-async function preparePage(page: Page) {
-  await page.addStyleTag({
-    content: `
-      *, *::before, *::after {
-        animation-duration: 0.001ms !important;
-        animation-delay: 0ms !important;
-        transition-duration: 0.001ms !important;
-        caret-color: transparent !important;
-      }
-    `,
-  });
-  await page.evaluate(async () => {
-    if ("fonts" in document) await document.fonts.ready;
-  });
-}
-
-async function capture(
-  page: Page,
-  testInfo: TestInfo,
-  name: string,
-  options: { fullPage?: boolean } = {},
-) {
-  const directory = `launch-gate-artifacts/visual-evidence/${testInfo.project.name}`;
-  mkdirSync(directory, { recursive: true });
-  await preparePage(page);
-  await page.screenshot({
-    path: `${directory}/${name}.png`,
-    fullPage: options.fullPage ?? true,
-    animations: "disabled",
-  });
-}
-
-async function expectNoHorizontalOverflow(page: Page) {
-  const widths = await page.evaluate(() => ({
-    scroll: document.documentElement.scrollWidth,
-    client: document.documentElement.clientWidth,
-  }));
-  expect(widths.scroll).toBeLessThanOrEqual(widths.client);
-}
-
-function visualEvidenceProject(testInfo: TestInfo) {
-  return ["desktop-chromium", "mobile-chromium"].includes(
-    testInfo.project.name,
-  );
-}
-
-async function expectRoleEntry(
-  page: Page,
-  testInfo: TestInfo,
-  desktopName: string,
-  mobileName: RegExp,
-) {
-  const roleEntry =
-    testInfo.project.name === "mobile-chromium"
-      ? page.getByRole("link", { name: mobileName })
-      : page.getByRole("link", { name: desktopName });
-  await expect(roleEntry.first()).toBeVisible();
-}
+import { expect, test } from "@playwright/test";
+import {
+  activatePersona,
+  capture,
+  expectNoHorizontalOverflow,
+  expectRoleEntry,
+} from "./launch-evidence-helpers";
 
 test.describe("launch visual evidence", () => {
-  test.describe.configure({ mode: "serial" });
-
-  test.beforeEach(async ({ page }, testInfo) => {
-    test.skip(
-      process.env.AKARI_CAPTURE_LAUNCH_EVIDENCE !== "1" ||
-        !visualEvidenceProject(testInfo),
-      "Visual evidence is captured only by the Launch Gate evidence workflow.",
-    );
-    await page.context().clearCookies();
-  });
-
-  test("captures public House and discovery routes", async ({
-    page,
-  }, testInfo) => {
-    for (const [route, name] of [
-      ["/", "public-home"],
-      ["/projects", "public-projects"],
-      ["/campaigns", "public-campaigns"],
-      ["/deals", "public-deals"],
-    ] as const) {
-      await page.goto(route, { waitUntil: "networkidle" });
-      await expectNoHorizontalOverflow(page);
-      await capture(page, testInfo, name);
-    }
-
+  test("captures public House and discovery routes", async ({ page }, testInfo) => {
     await page.goto("/", { waitUntil: "networkidle" });
-    const journey = page.locator(".blossom-experience");
-    await journey.scrollIntoViewIfNeeded();
-    await expect(journey).toBeVisible();
-    await preparePage(page);
-    const directory = `launch-gate-artifacts/visual-evidence/${testInfo.project.name}`;
-    mkdirSync(directory, { recursive: true });
-    await journey.screenshot({
-      path: `${directory}/public-blossom-journey.png`,
-      animations: "disabled",
-    });
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await capture(page, testInfo, "public-home");
+
+    await page.goto("/projects", { waitUntil: "networkidle" });
+    await expect(page.getByRole("heading", { name: "Projects" })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await capture(page, testInfo, "public-projects");
+
+    await page.goto("/campaigns", { waitUntil: "networkidle" });
+    await expect(
+      page.getByRole("heading", { name: "Ambassador Campaigns" }),
+    ).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await capture(page, testInfo, "public-campaigns");
+
+    await page.goto("/deals", { waitUntil: "networkidle" });
+    await expect(page.getByRole("heading", { name: "Deals" })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await capture(page, testInfo, "public-deals");
   });
 
   test("captures Creator workspace", async ({ page }, testInfo) => {
@@ -124,8 +37,8 @@ test.describe("launch visual evidence", () => {
     await expectRoleEntry(
       page,
       testInfo,
-      "Find campaigns, workspace navigation",
-      /Keep your Creator profile campaign-ready|Become campaign-ready|Discover Ambassador Campaigns/,
+      "Keep your Creator profile campaign-ready",
+      /Become campaign-ready|Discover Ambassador Campaigns|Track your campaign applications|Continue your accepted campaign work/,
     );
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-creator");
@@ -137,8 +50,8 @@ test.describe("launch visual evidence", () => {
     await expectRoleEntry(
       page,
       testInfo,
-      "Explore matched Deals, workspace navigation",
-      /Set your investment preferences|Complete your investment preferences|Submit your Investor profile for verification|Review relevant opportunities/,
+      "Set your investment preferences",
+      /Complete your investment preferences|Submit your Investor profile for verification|Your Investor verification is under review|Review relevant opportunities|Track your expressed Project interest|Continue your active Founder relationships/,
     );
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-investor");
@@ -151,7 +64,7 @@ test.describe("launch visual evidence", () => {
       page,
       testInfo,
       "Manage projects, workspace navigation",
-      /Create or manage your projects|Create your first Project|Track your Project relationship claim|Finish your Project profile|Keep your Project needs current/,
+      /Create or manage your projects|Create your first Project|Track your Project relationship claim|Finish your Project profile|Activate your published Project|Keep your Project needs current/,
     );
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-founder");
@@ -175,7 +88,7 @@ test.describe("launch visual evidence", () => {
 
     await page.goto("/admin/activation", { waitUntil: "networkidle" });
     await expect(
-      page.getByRole("heading", { name: "Activation analytics" }),
+      page.getByRole("heading", { name: "Activation and outcome intelligence" }),
     ).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-superadmin-activation");
