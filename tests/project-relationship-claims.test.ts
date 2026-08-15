@@ -81,9 +81,7 @@ describe("R76D and R76E project relationship trust", () => {
     const route = read("app/routes/project-detail.tsx");
     expect(route).toContain("const verifiedRelationships = await db");
     expect(route).toContain("rel.claim_status = 'verified'");
-    expect(route).toContain(
-      "COALESCE(pv.visibility, p.visibility) = 'public'",
-    );
+    expect(route).toContain("COALESCE(pv.visibility, p.visibility) = 'public'");
     expect(route).toContain("✓ Verified by AKARI");
     expect(route).toContain("Verified project relationships");
   });

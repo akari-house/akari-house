@@ -142,10 +142,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     return {
       error: "Your relationship with this project is already verified.",
     };
-  if (
-    existing?.claimStatus === "pending" &&
-    !existing.decisionNote.trim()
-  )
+  if (existing?.claimStatus === "pending" && !existing.decisionNote.trim())
     return { error: "This project relationship is already awaiting review." };
 
   const relationshipType =
