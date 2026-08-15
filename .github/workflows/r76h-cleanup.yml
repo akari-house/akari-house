@@ -47,8 +47,7 @@ jobs:
             tests/activation-next-actions.test.ts \
             tests/activation-analytics.test.ts \
             tests/review-sla.test.ts \
-            docs/R76H_EXPERT_REVIEW.md \
-            migrations/0114_outcome_intelligence_sla.sql
+            docs/R76H_EXPERT_REVIEW.md
       - name: Commit cleanup
         run: |
           git config user.name "AKARI Release Bot"
