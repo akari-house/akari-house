@@ -18,6 +18,7 @@ export default [
   route("archive/:slug", "routes/case-study.tsx"),
   route("projects", "routes/projects.tsx"),
   route("projects/new", "routes/project-new.tsx"),
+  route("projects/claim", "routes/project-claim.tsx"),
   route("projects/manage", "routes/project-manage.tsx"),
   route("projects/:slug/edit", "routes/project-edit.tsx"),
   route("projects/:slug/edit/brand", "routes/project-brand.tsx"),
@@ -74,6 +75,7 @@ export default [
   route("admin/team", "routes/admin-team.tsx"),
   route("admin/house-directory", "routes/admin-house-directory.tsx"),
   route("admin/verifications", "routes/admin-verifications.tsx"),
+  route("admin/project-claims", "routes/admin-project-claims.tsx"),
   route("admin/opportunities", "routes/admin-opportunities.tsx"),
   route(
     "admin/opportunities/operations",
