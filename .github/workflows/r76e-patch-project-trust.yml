@@ -1,0 +1,50 @@
+name: R76E Project Trust Patch
+
+on:
+  push:
+    branches:
+      - feature/r76e-trust-review-operations
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/r76e-trust-review-operations
+      - name: Surface verified project relationships
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app/routes/project-detail.tsx')
+          text = path.read_text()
+          import_anchor = 'import { isVerifiedInvestor } from "~/lib/opportunity-access.server";\n'
+          if 'projectRelationshipLabel' not in text:
+              text = text.replace(import_anchor, import_anchor + 'import { projectRelationshipLabel } from "~/lib/project-relationships";\n')
+          query_anchor = '  return {\n    user,\n    project,\n'
+          query = '''  const verifiedRelationships = await db\n    .prepare(\n      `SELECT rel.relationship_type AS relationshipType,\n              u.username, p.display_name AS displayName\n       FROM project_relationships rel\n       JOIN users u ON u.id = rel.user_id\n       JOIN profiles p ON p.user_id = u.id\n       LEFT JOIN profile_visibility pv ON pv.user_id = u.id\n       JOIN membership_applications ma\n         ON ma.user_id = u.id AND ma.status = 'approved'\n       WHERE rel.project_id = ?\n         AND rel.claim_status = 'verified'\n         AND u.status = 'active'\n         AND COALESCE(pv.visibility, p.visibility) = 'public'\n       ORDER BY CASE rel.relationship_type\n         WHEN 'founder' THEN 1\n         WHEN 'cofounder' THEN 2\n         WHEN 'authorized_representative' THEN 3\n         WHEN 'team_member' THEN 4\n         ELSE 5 END, p.display_name`,\n    )\n    .bind(project.id)\n    .all<{\n      relationshipType: string;\n      username: string;\n      displayName: string;\n    }>();\n\n  return {\n    user,\n    project,\n'''
+          if 'const verifiedRelationships = await db' not in text:
+              text = text.replace(query_anchor, query)
+          return_anchor = '    team: team.results,\n    verifiedInvestor:'
+          if 'verifiedRelationships: verifiedRelationships.results' not in text:
+              text = text.replace(return_anchor, '    team: team.results,\n    verifiedRelationships: verifiedRelationships.results,\n    verifiedInvestor:')
+          ui_anchor = '''        <p>\n          Founded by{" "}\n          <Link to={`/profiles/${project.founderUsername}`}>\n            {project.founderName}\n          </Link>\n        </p>\n'''
+          ui = ui_anchor + '''        {loaderData.verifiedRelationships.length > 0 && (\n          <section className="project-action-panel" aria-label="Verified project relationships">\n            <span className="eyebrow">AKARI verified</span>\n            <h2>Verified project relationships</h2>\n            <p>\n              AKARI has reviewed evidence supporting these professional\n              relationships with this project.\n            </p>\n            {loaderData.verifiedRelationships.map((relationship) => (\n              <article key={`${relationship.username}:${relationship.relationshipType}`}>\n                <h3>\n                  <Link to={`/profiles/${relationship.username}`}>\n                    {relationship.displayName}\n                  </Link>{" "}\n                  <span className="chapter">✓ Verified by AKARI</span>\n                </h3>\n                <p>{projectRelationshipLabel(relationship.relationshipType)}</p>\n              </article>\n            ))}\n          </section>\n        )}\n'''
+          if 'Verified project relationships' not in text:
+              text = text.replace(ui_anchor, ui)
+          path.write_text(text)
+          PY
+      - name: Format project detail
+        run: npx prettier --write app/routes/project-detail.tsx
+      - name: Commit project trust presentation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/routes/project-detail.tsx
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "R76E surface verified project relationships"
+          git push origin HEAD:feature/r76e-trust-review-operations
