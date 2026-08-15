@@ -16,10 +16,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
+      - uses: actions/checkout@v4
       - name: Wait for and verify the exact Worker login release
         run: |
           set -euo pipefail
-          expected="worker-login-2026-07-27-final"
+          expected=$(node - <<'NODE'
+          const fs = require('node:fs');
+          const source = fs.readFileSync('app/lib/public-login-fallback.server.ts', 'utf8');
+          const match = source.match(/publicLoginRelease\s*=\s*"([^"]+)"/);
+          if (!match) {
+            console.error('Could not derive publicLoginRelease from source.');
+            process.exit(1);
+          }
+          process.stdout.write(match[1]);
+          NODE
+          )
           base="https://akarihouse.com"
 
           for attempt in $(seq 1 48); do
@@ -33,7 +44,7 @@ jobs:
             fi
             rm -f "$headers" "$body"
             if [ "$attempt" = "48" ]; then
-              echo "Custom domain did not serve the expected login release. status=$status release=$release"
+              echo "Custom domain did not serve the expected login release. status=$status release=$release expected=$expected"
               exit 1
             fi
             sleep 10
