@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Form, Link, useNavigation } from "react-router";
 import type { Route } from "./+types/admin-applications";
 import { SiteHeader } from "~/components/SiteHeader";
@@ -10,35 +11,73 @@ import { requireAdminScope } from "~/lib/membership.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 
+type MembershipApplicationRow = {
+  id: string;
+  status: string;
+  applicantNote: string;
+  decisionNote: string;
+  createdAt: string;
+  username: string;
+  emailVerifiedAt: string | null;
+  displayName: string;
+  roles: string;
+  evidencePlatform: string | null;
+  evidenceUrl: string | null;
+};
+
+function statusLabel(status: string) {
+  if (status === "pending_email") return "Email pending";
+  if (status === "waitlisted") return "Needs info";
+  return "Ready for review";
+}
+
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
   const user = await requireAdminScope(request, db, "membership");
   const applications = await db
     .prepare(
       `SELECT ma.id, ma.status, ma.applicant_note AS applicantNote,
-              ma.created_at AS createdAt, u.username,
-              u.email_verified_at AS emailVerifiedAt,
+              ma.decision_note AS decisionNote, ma.created_at AS createdAt,
+              u.username, u.email_verified_at AS emailVerifiedAt,
               p.display_name AS displayName,
-              group_concat(ur.role, ', ') AS roles
+              group_concat(ur.role, ', ') AS roles,
+              (SELECT psa.platform
+                 FROM profile_social_accounts psa
+                WHERE psa.user_id = u.id AND trim(psa.profile_url) <> ''
+                ORDER BY CASE psa.platform
+                  WHEN 'x' THEN 0 WHEN 'linkedin' THEN 1 ELSE 2 END,
+                  psa.updated_at DESC
+                LIMIT 1) AS evidencePlatform,
+              (SELECT psa.profile_url
+                 FROM profile_social_accounts psa
+                WHERE psa.user_id = u.id AND trim(psa.profile_url) <> ''
+                ORDER BY CASE psa.platform
+                  WHEN 'x' THEN 0 WHEN 'linkedin' THEN 1 ELSE 2 END,
+                  psa.updated_at DESC
+                LIMIT 1) AS evidenceUrl
        FROM membership_applications ma
        JOIN users u ON u.id = ma.user_id
        JOIN profiles p ON p.user_id = u.id
        LEFT JOIN user_roles ur ON ur.user_id = u.id
        WHERE ma.status IN ('pending_email', 'pending_review', 'waitlisted')
        GROUP BY ma.id
-       ORDER BY ma.created_at ASC`,
+       ORDER BY CASE ma.status
+         WHEN 'pending_review' THEN 0
+         WHEN 'pending_email' THEN 1
+         ELSE 2 END,
+         ma.created_at ASC`,
     )
-    .all<{
-      id: string;
-      status: string;
-      applicantNote: string;
-      createdAt: string;
-      username: string;
-      emailVerifiedAt: string | null;
-      displayName: string;
-      roles: string;
-    }>();
-  return { user, applications: applications.results };
+    .all<MembershipApplicationRow>();
+  const rows = applications.results;
+  return {
+    user,
+    applications: rows,
+    counts: {
+      pending: rows.filter((item) => item.status === "pending_review").length,
+      email: rows.filter((item) => item.status === "pending_email").length,
+      needsInfo: rows.filter((item) => item.status === "waitlisted").length,
+    },
+  };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -50,16 +89,25 @@ export async function action({ request, context }: Route.ActionArgs) {
   const formData = await request.formData();
   const applicationId = formText(formData.get("applicationId"));
   const intent = formText(formData.get("intent"));
-  const decisionNote = formText(formData.get("decisionNote")).trim();
-  if (!["approve", "waitlist", "decline"].includes(intent))
+  const suppliedNote = formText(formData.get("decisionNote")).trim();
+  if (!["approve", "request_info", "decline"].includes(intent))
     throw new Response("Invalid decision", { status: 400 });
+
+  const decisionNote =
+    suppliedNote ||
+    (intent === "approve" ? "Approved from the membership review queue." : "");
   if (decisionNote.length < 5 || decisionNote.length > 500)
-    return { error: "Add a decision note between 5 and 500 characters." };
+    return {
+      error:
+        intent === "approve"
+          ? "Keep the decision note under 500 characters."
+          : "Add a note between 5 and 500 characters so the applicant understands the decision.",
+    };
 
   const status =
     intent === "approve"
       ? "approved"
-      : intent === "waitlist"
+      : intent === "request_info"
         ? "waitlisted"
         : "declined";
   const application = await db
@@ -130,6 +178,18 @@ export async function action({ request, context }: Route.ActionArgs) {
             .bind(application.userId),
         ]
       : []),
+    ...(intent === "request_info"
+      ? [
+          db
+            .prepare(
+              `INSERT INTO notifications
+               (id, user_id, kind, title, body, action_url)
+               VALUES (?, ?, 'membership.info_requested',
+                 'More information requested', ?, '/app')`,
+            )
+            .bind(crypto.randomUUID(), application.userId, decisionNote),
+        ]
+      : []),
     db
       .prepare(
         "INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id, metadata_json) VALUES (?, ?, 'membership.decision', 'membership_application', ?, ?)",
@@ -138,11 +198,11 @@ export async function action({ request, context }: Route.ActionArgs) {
         crypto.randomUUID(),
         admin.id,
         applicationId,
-        JSON.stringify({ status, decisionNote }),
+        JSON.stringify({ status, intent, decisionNote }),
       ),
   ]);
   if (status === "approved") await sendApprovalEmail(env, application.email);
-  return { saved: true };
+  return { saved: true, applicationId, intent };
 }
 
 export default function AdminApplications({
@@ -150,120 +210,232 @@ export default function AdminApplications({
   actionData,
 }: Route.ComponentProps) {
   const navigation = useNavigation();
+  const busy = navigation.state !== "idle";
+  const [selectedApplicationId, setSelectedApplicationId] = useState<
+    string | null
+  >(loaderData.applications[0]?.id ?? null);
+  const selectedApplication =
+    loaderData.applications.find(
+      (application) => application.id === selectedApplicationId,
+    ) ?? null;
+
+  useEffect(() => {
+    if (selectedApplicationId && selectedApplication) return;
+    setSelectedApplicationId(loaderData.applications[0]?.id ?? null);
+  }, [loaderData.applications, selectedApplication, selectedApplicationId]);
+
+  useEffect(() => {
+    if (!actionData?.saved) return;
+    if (actionData.applicationId !== selectedApplicationId) return;
+    const next = loaderData.applications.find(
+      (application) => application.id !== actionData.applicationId,
+    );
+    setSelectedApplicationId(next?.id ?? null);
+  }, [actionData, loaderData.applications, selectedApplicationId]);
+
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
       <main id="main-content" className="admin-main">
         <header className="admin-heading">
           <div>
-            <span className="eyebrow">Membership Desk</span>
-            <h1>Review requests</h1>
+            <span className="eyebrow">Membership approvals</span>
+            <h1>Review queue</h1>
+            <p>
+              Scan requests in one compact list. Open the review panel only when
+              you need the applicant context or a decision.
+            </p>
           </div>
-          <Link className="button button-quiet" to="/app">
-            Return to profile
-          </Link>
-          <Link className="button button-quiet" to="/admin/interests">
-            Projects and interests
-          </Link>
-          <Link className="button button-quiet" to="/admin/moderation">
-            Moderation
-          </Link>
-          <Link className="button button-quiet" to="/admin/verifications">
-            Role verification
-          </Link>
-          <Link className="button button-quiet" to="/admin/campaigns">
-            Campaigns
-          </Link>
-          <Link className="button button-quiet" to="/admin/team">
-            Admin team
+          <Link className="button button-quiet" to="/admin">
+            Admin overview
           </Link>
         </header>
+
         {actionData?.error && (
           <p className="form-error" role="alert">
             {actionData.error}
           </p>
         )}
         {actionData?.saved && (
-          <p className="notice success">Membership decision saved.</p>
+          <p className="notice success" role="status">
+            Membership decision saved.
+          </p>
         )}
-        <div className="application-list">
-          {loaderData.applications.length === 0 ? (
-            <div className="status-card">
-              <h2>The desk is clear</h2>
-              <p>There are no requests waiting for a decision.</p>
-            </div>
-          ) : (
-            loaderData.applications.map((application) => (
-              <article className="application-card" key={application.id}>
-                <div>
-                  <span className="chapter">
-                    {application.status.replace("_", " ")}
+
+        <div className="application-queue-summary" aria-label="Queue summary">
+          <span>
+            <strong>{loaderData.counts.pending}</strong> ready
+          </span>
+          <span>
+            <strong>{loaderData.counts.email}</strong> email pending
+          </span>
+          <span>
+            <strong>{loaderData.counts.needsInfo}</strong> needs info
+          </span>
+        </div>
+
+        {loaderData.applications.length === 0 ? (
+          <section className="verification-empty-state">
+            <span className="chapter">Queue clear</span>
+            <h2>There are no membership requests waiting for action.</h2>
+          </section>
+        ) : (
+          <div className="application-review-layout">
+            <section
+              className="application-review-list"
+              aria-label="Membership requests"
+            >
+              <div className="application-review-list-head" aria-hidden="true">
+                <span>Applicant</span>
+                <span>Roles</span>
+                <span>Status</span>
+                <span>Applied</span>
+                <span />
+              </div>
+              {loaderData.applications.map((application) => (
+                <article
+                  className={`application-review-row${
+                    application.id === selectedApplicationId
+                      ? " is-selected"
+                      : ""
+                  }`}
+                  key={application.id}
+                >
+                  <div className="application-review-person">
+                    <strong>{application.displayName}</strong>
+                    <span>@{application.username}</span>
+                  </div>
+                  <span className="application-review-roles">
+                    {application.roles || "No role selected"}
                   </span>
-                  <h2>{application.displayName}</h2>
-                  <p>@{application.username}</p>
-                  <p>{application.roles}</p>
-                </div>
-                <blockquote>{application.applicantNote}</blockquote>
-                <div className="application-meta">
-                  <span>
-                    Email{" "}
-                    {application.emailVerifiedAt
-                      ? "confirmed"
-                      : "not confirmed"}
-                  </span>
+                  <div className="application-review-state">
+                    <strong>{statusLabel(application.status)}</strong>
+                    <span>
+                      {application.emailVerifiedAt
+                        ? "Email confirmed"
+                        : "Email not confirmed"}
+                    </span>
+                  </div>
                   <time dateTime={application.createdAt}>
                     {new Date(application.createdAt).toLocaleDateString()}
                   </time>
-                </div>
-                <Form method="post" className="application-actions">
-                  <input
-                    type="hidden"
-                    name="applicationId"
-                    value={application.id}
-                  />
-                  <label className="application-decision-note">
-                    Decision note
-                    <textarea
-                      name="decisionNote"
-                      minLength={5}
-                      maxLength={500}
-                      rows={3}
-                      required
-                      placeholder="Record the reason for this decision."
+                  <button
+                    className="button button-quiet"
+                    type="button"
+                    onClick={() => setSelectedApplicationId(application.id)}
+                    aria-pressed={application.id === selectedApplicationId}
+                  >
+                    Review
+                  </button>
+                </article>
+              ))}
+            </section>
+
+            <aside className="application-review-panel" aria-live="polite">
+              {selectedApplication ? (
+                <>
+                  <header>
+                    <span className="chapter">
+                      {statusLabel(selectedApplication.status)}
+                    </span>
+                    <h2>{selectedApplication.displayName}</h2>
+                    <p>
+                      @{selectedApplication.username} · {selectedApplication.roles}
+                    </p>
+                  </header>
+
+                  <dl className="application-review-signals">
+                    <div>
+                      <dt>Email</dt>
+                      <dd>
+                        {selectedApplication.emailVerifiedAt
+                          ? "Confirmed"
+                          : "Not confirmed"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Professional evidence</dt>
+                      <dd>
+                        {selectedApplication.evidenceUrl ? (
+                          <a
+                            href={selectedApplication.evidenceUrl}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            {selectedApplication.evidencePlatform ?? "Profile"} ↗
+                          </a>
+                        ) : (
+                          "Not added yet"
+                        )}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  <section className="application-review-note">
+                    <h3>Application</h3>
+                    <p>{selectedApplication.applicantNote}</p>
+                    {selectedApplication.status === "waitlisted" &&
+                      selectedApplication.decisionNote && (
+                        <>
+                          <h3>Information requested</h3>
+                          <p>{selectedApplication.decisionNote}</p>
+                        </>
+                      )}
+                  </section>
+
+                  <Form method="post" className="application-review-form">
+                    <input
+                      type="hidden"
+                      name="applicationId"
+                      value={selectedApplication.id}
                     />
-                  </label>
-                  <button
-                    className="button button-primary"
-                    name="intent"
-                    value="approve"
-                    disabled={
-                      !application.emailVerifiedAt ||
-                      navigation.state !== "idle"
-                    }
-                  >
-                    Approve
-                  </button>
-                  <button
-                    className="button button-quiet"
-                    name="intent"
-                    value="waitlist"
-                    disabled={navigation.state !== "idle"}
-                  >
-                    Waitlist
-                  </button>
-                  <button
-                    className="button button-quiet"
-                    name="intent"
-                    value="decline"
-                    disabled={navigation.state !== "idle"}
-                  >
-                    Decline
-                  </button>
-                </Form>
-              </article>
-            ))
-          )}
-        </div>
+                    <label>
+                      Review note
+                      <textarea
+                        name="decisionNote"
+                        maxLength={500}
+                        rows={4}
+                        placeholder="Optional for approval. Required when requesting information or declining."
+                      />
+                    </label>
+                    <div className="button-row">
+                      <button
+                        className="button button-primary"
+                        name="intent"
+                        value="approve"
+                        disabled={!selectedApplication.emailVerifiedAt || busy}
+                      >
+                        Approve &amp; next
+                      </button>
+                      <button
+                        className="button button-quiet"
+                        name="intent"
+                        value="request_info"
+                        disabled={busy}
+                      >
+                        Request info
+                      </button>
+                      <button
+                        className="button button-quiet application-review-decline"
+                        name="intent"
+                        value="decline"
+                        disabled={busy}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </Form>
+                </>
+              ) : (
+                <div className="application-review-panel-empty">
+                  <span className="chapter">Review panel</span>
+                  <h2>Select an applicant</h2>
+                  <p>The full context will appear here without leaving the queue.</p>
+                </div>
+              )}
+            </aside>
+          </div>
+        )}
       </main>
     </div>
   );
