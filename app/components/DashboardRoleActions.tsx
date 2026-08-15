@@ -118,11 +118,13 @@ function isActivationAction(value: unknown): value is ActivationAction {
 }
 
 export function DashboardRoleActions({ user }: { user: SessionUser }) {
-  const fallbackActions = dashboardRoleActions(user);
-  const [actions, setActions] = useState<WorkspaceAction[]>(fallbackActions);
+  const [actions, setActions] = useState<WorkspaceAction[]>(() =>
+    dashboardRoleActions(user),
+  );
 
   useEffect(() => {
     const controller = new AbortController();
+    const fallbackActions = dashboardRoleActions(user);
     void fetch("/api/activation/next-actions", {
       credentials: "same-origin",
       headers: { Accept: "application/json" },
@@ -143,7 +145,7 @@ export function DashboardRoleActions({ user }: { user: SessionUser }) {
       });
 
     return () => controller.abort();
-  }, [user.accessTier, user.roles.join("|")]);
+  }, [user]);
 
   return (
     <div className="dashboard-role-actions" aria-live="polite">
@@ -151,7 +153,7 @@ export function DashboardRoleActions({ user }: { user: SessionUser }) {
         <Link
           className={`dashboard-role-card${index === 0 ? " is-primary" : ""}`}
           to={action.to}
-          key={"key" in action ? action.key : action.title}
+          key={`${action.eyebrow}:${action.title}`}
         >
           <span>{action.eyebrow}</span>
           <strong>{action.title}</strong>
