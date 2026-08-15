@@ -1,8 +1,12 @@
 import type { Route } from "./+types/activation-next-actions";
+import {
+  recordActivationShown,
+  syncActivationMilestones,
+} from "~/lib/activation-analytics.server";
+import { buildMemberNextActions } from "~/lib/activation-next-actions";
 import { requireUser } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { profileCompletion } from "~/lib/profile-completion";
-import { buildMemberNextActions } from "~/lib/activation-next-actions";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -131,7 +135,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     }
   }
 
-  const actions = buildMemberNextActions({
+  const snapshot = {
     accessTier: user.accessTier,
     roles: user.roles.filter(
       (role): role is "founder" | "creator" | "investor" =>
@@ -150,7 +154,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     investorPreferencesComplete,
     unreadNotifications: Number(inboxState?.unreadNotifications ?? 0),
     pendingConnections: Number(inboxState?.pendingConnections ?? 0),
-  });
+  };
+  const actions = buildMemberNextActions(snapshot);
+
+  await Promise.all([
+    recordActivationShown(db, user.id, actions),
+    syncActivationMilestones(db, user.id, snapshot),
+  ]);
 
   return Response.json(
     {
