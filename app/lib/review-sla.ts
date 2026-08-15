@@ -20,20 +20,20 @@ export function calculateReviewSla({
   submittedAt,
   targetHours,
   waitingOn,
-  pausedHours = 0,
+  pausedSeconds = 0,
   waitingSince = null,
   now = Date.now(),
 }: {
   submittedAt: string;
   targetHours: number;
   waitingOn: ReviewWaitingOn;
-  pausedHours?: number;
+  pausedSeconds?: number;
   waitingSince?: string | null;
   now?: number;
 }): ReviewSlaResult {
   const started = parseUtc(submittedAt);
   const safeTarget = Math.max(1, Math.round(targetHours));
-  const storedPauseMs = Math.max(0, pausedHours) * 3_600_000;
+  const storedPauseMs = Math.max(0, pausedSeconds) * 1000;
   const currentPauseStarted = waitingOn === "user" ? parseUtc(waitingSince) : 0;
   const currentPauseMs = currentPauseStarted
     ? Math.max(0, now - currentPauseStarted)
