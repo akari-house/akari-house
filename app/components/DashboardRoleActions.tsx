@@ -117,6 +117,14 @@ function isActivationAction(value: unknown): value is ActivationAction {
   );
 }
 
+function activationActionsFromPayload(payload: unknown) {
+  if (!payload || typeof payload !== "object" || !("actions" in payload)) {
+    return [];
+  }
+  const candidate = payload.actions;
+  return Array.isArray(candidate) ? candidate.filter(isActivationAction) : [];
+}
+
 export function DashboardRoleActions({ user }: { user: SessionUser }) {
   const [actions, setActions] = useState<WorkspaceAction[]>(() =>
     dashboardRoleActions(user),
@@ -132,11 +140,11 @@ export function DashboardRoleActions({ user }: { user: SessionUser }) {
     })
       .then(async (response) => {
         if (!response.ok) throw new Error("Activation actions unavailable");
-        return (await response.json()) as { actions?: unknown };
+        const payload: unknown = await response.json();
+        return payload;
       })
       .then((payload) => {
-        if (!Array.isArray(payload.actions)) return;
-        const next = payload.actions.filter(isActivationAction);
+        const next = activationActionsFromPayload(payload);
         if (next.length) setActions(next);
       })
       .catch((error: unknown) => {
