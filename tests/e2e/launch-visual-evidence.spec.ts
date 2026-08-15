@@ -175,7 +175,9 @@ test.describe("launch visual evidence", () => {
 
     await page.goto("/admin/activation", { waitUntil: "networkidle" });
     await expect(
-      page.getByRole("heading", { name: "Activation and outcome intelligence" }),
+      page.getByRole("heading", {
+        name: "Activation and outcome intelligence",
+      }),
     ).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-superadmin-activation");
