@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Form, Link, useNavigation } from "react-router";
 import type { Route } from "./+types/admin-applications";
 import { SiteHeader } from "~/components/SiteHeader";
@@ -213,25 +213,13 @@ export default function AdminApplications({
   const busy = navigation.state !== "idle";
   const [selectedApplicationId, setSelectedApplicationId] = useState<
     string | null
-  >(loaderData.applications[0]?.id ?? null);
+  >(null);
   const selectedApplication =
     loaderData.applications.find(
       (application) => application.id === selectedApplicationId,
-    ) ?? null;
-
-  useEffect(() => {
-    if (selectedApplicationId && selectedApplication) return;
-    setSelectedApplicationId(loaderData.applications[0]?.id ?? null);
-  }, [loaderData.applications, selectedApplication, selectedApplicationId]);
-
-  useEffect(() => {
-    if (!actionData?.saved) return;
-    if (actionData.applicationId !== selectedApplicationId) return;
-    const next = loaderData.applications.find(
-      (application) => application.id !== actionData.applicationId,
-    );
-    setSelectedApplicationId(next?.id ?? null);
-  }, [actionData, loaderData.applications, selectedApplicationId]);
+    ) ??
+    loaderData.applications[0] ??
+    null;
 
   return (
     <div className="dashboard-shell">
@@ -295,7 +283,7 @@ export default function AdminApplications({
               {loaderData.applications.map((application) => (
                 <article
                   className={`application-review-row${
-                    application.id === selectedApplicationId
+                    application.id === selectedApplication?.id
                       ? " is-selected"
                       : ""
                   }`}
@@ -323,7 +311,7 @@ export default function AdminApplications({
                     className="button button-quiet"
                     type="button"
                     onClick={() => setSelectedApplicationId(application.id)}
-                    aria-pressed={application.id === selectedApplicationId}
+                    aria-pressed={application.id === selectedApplication?.id}
                   >
                     Review
                   </button>
