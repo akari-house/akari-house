@@ -165,5 +165,19 @@ test.describe("launch visual evidence", () => {
     ).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-superadmin");
+
+    await page.goto("/admin/reviews", { waitUntil: "networkidle" });
+    await expect(
+      page.getByRole("heading", { name: "Unified review inbox" }),
+    ).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await capture(page, testInfo, "workspace-superadmin-reviews");
+
+    await page.goto("/admin/activation", { waitUntil: "networkidle" });
+    await expect(
+      page.getByRole("heading", { name: "Activation analytics" }),
+    ).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await capture(page, testInfo, "workspace-superadmin-activation");
   });
 });
