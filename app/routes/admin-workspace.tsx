@@ -122,7 +122,10 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
         </header>
         <AdminWorkspaceNav access={loaderData.access} />
 
-        <section className="application-queue-summary" aria-label="Admin summary">
+        <section
+          className="application-queue-summary"
+          aria-label="Admin summary"
+        >
           <span>
             <strong>{loaderData.attentionCount}</strong> items need attention
           </span>
@@ -134,7 +137,10 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
           </span>
         </section>
 
-        <section className="admin-overview-list" aria-label="Available admin tools">
+        <section
+          className="admin-overview-list"
+          aria-label="Available admin tools"
+        >
           {loaderData.items.map((item) => (
             <Link className="admin-overview-row" to={item.to} key={item.key}>
               <strong>{item.label}</strong>
