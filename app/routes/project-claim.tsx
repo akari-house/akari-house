@@ -101,7 +101,7 @@ export async function action({ request, context }: Route.ActionArgs) {
 
   const project = await db
     .prepare(
-      `SELECT id, slug, title, founder_user_id AS founderUserId
+      `SELECT id, slug, title, status, founder_user_id AS founderUserId
        FROM projects
        WHERE slug = ?`,
     )
@@ -110,9 +110,14 @@ export async function action({ request, context }: Route.ActionArgs) {
       id: string;
       slug: string;
       title: string;
+      status: string;
       founderUserId: string;
     }>();
-  if (!project) return { error: "That AKARI project could not be found." };
+  if (
+    !project ||
+    (project.status !== "published" && project.founderUserId !== user.id)
+  )
+    return { error: "That AKARI project could not be found." };
 
   const existing = await db
     .prepare(
