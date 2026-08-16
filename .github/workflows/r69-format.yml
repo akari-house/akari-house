@@ -1,0 +1,42 @@
+name: R69 Format
+
+on:
+  push:
+    branches:
+      - feature/r69-campaign-closeout-renewal
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: ${{ !contains(github.event.head_commit.message, 'R69 format') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/r69-campaign-closeout-renewal
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Format R69 files
+        run: >-
+          npx prettier --write
+          app/lib/campaign-closeout.ts
+          app/routes/campaign-closeout.tsx
+          app/routes/admin-campaign-operations.tsx
+          app/routes.ts
+          tests/campaign-closeout.test.ts
+          docs/R69_EXPERT_REVIEW.md
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/lib/campaign-closeout.ts app/routes/campaign-closeout.tsx app/routes/admin-campaign-operations.tsx app/routes.ts tests/campaign-closeout.test.ts docs/R69_EXPERT_REVIEW.md
+          git commit -m "R69 format product files"
+          git push
