@@ -32,7 +32,9 @@ test.describe("R70 agreement tracking", () => {
     const title = `R70 Service Agreement ${testInfo.project.name} ${runId}`;
     const createForm = page.locator("form.agreement-tracking-form").first();
     await createForm.locator('input[name="title"]').fill(title);
-    await createForm.locator('select[name="agreementType"]').selectOption("service");
+    await createForm
+      .locator('select[name="agreementType"]')
+      .selectOption("service");
     await createForm.locator('select[name="status"]').selectOption("sent");
     await createForm
       .locator('input[name="counterpartyName"]')
@@ -40,9 +42,7 @@ test.describe("R70 agreement tracking", () => {
     await createForm
       .locator('input[name="counterpartyEmail"]')
       .fill(`r70-${runId}@example.com`);
-    await createForm
-      .locator('input[name="nextFollowUpAt"]')
-      .fill("2026-08-16");
+    await createForm.locator('input[name="nextFollowUpAt"]').fill("2026-08-16");
     await createForm
       .locator('textarea[name="note"]')
       .fill(
@@ -66,12 +66,8 @@ test.describe("R70 agreement tracking", () => {
     await updateForm
       .locator('input[name="externalDocumentUrl"]')
       .fill(`https://drive.google.com/file/d/${runId}`);
-    await updateForm
-      .locator('input[name="signedAt"]')
-      .fill("2026-08-16");
-    await updateForm
-      .locator('input[name="effectiveAt"]')
-      .fill("2026-08-16");
+    await updateForm.locator('input[name="signedAt"]').fill("2026-08-16");
+    await updateForm.locator('input[name="effectiveAt"]').fill("2026-08-16");
     await updateForm.locator('input[name="expiresAt"]').fill("2027-08-16");
     await updateForm
       .getByRole("button", { name: "Update tracking record" })
