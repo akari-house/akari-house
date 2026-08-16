@@ -9,7 +9,10 @@ export default [
   route("__test__/personas/:persona", "routes/test-persona.ts"),
   route("__test__/launch-security/:action", "routes/test-launch-security.ts"),
   route("__test__/opportunities/:action", "routes/test-opportunities.ts"),
-  route("__test__/campaign-closeout/:action", "routes/test-campaign-closeout.ts"),
+  route(
+    "__test__/campaign-closeout/:action",
+    "routes/test-campaign-closeout.ts",
+  ),
   route(
     "__test__/opportunity-documents/:action",
     "routes/test-opportunity-documents.ts",

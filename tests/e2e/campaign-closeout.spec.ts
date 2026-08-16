@@ -33,12 +33,18 @@ test.describe("R69 campaign closeout", () => {
     await activatePersona(page, "superadmin");
     const slug = await seedCloseout(page);
 
-    await page.goto(`/campaigns/${slug}/closeout`, { waitUntil: "networkidle" });
+    await page.goto(`/campaigns/${slug}/closeout`, {
+      waitUntil: "networkidle",
+    });
     await expect(
       page.getByRole("heading", { name: "R69 Closeout Campaign" }),
     ).toBeVisible();
-    await expect(page.getByText("Approved compensation", { exact: true })).toBeVisible();
-    await expect(page.getByText("$500.00", { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByText("Approved compensation", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("$500.00", { exact: true }).first(),
+    ).toBeVisible();
 
     await page.getByLabel("Payment status").selectOption("paid");
     await page.getByLabel("Payment method").fill("External bank transfer");
@@ -46,7 +52,9 @@ test.describe("R69 campaign closeout", () => {
     await page.getByRole("button", { name: "Save settlement" }).click();
     await page.waitForLoadState("networkidle");
     await expect(page.getByText("1/1", { exact: true })).toBeVisible();
-    await expect(page.getByText("$0.00", { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByText("$0.00", { exact: true }).first(),
+    ).toBeVisible();
 
     await page.getByRole("button", { name: "Finalize report" }).click();
     await page.waitForLoadState("networkidle");
@@ -61,15 +69,11 @@ test.describe("R69 campaign closeout", () => {
     await page.waitForLoadState("networkidle");
     await expect(page.getByText(/Sent to R69 Test Client/)).toBeVisible();
 
-    await page
-      .getByLabel("Acknowledgement")
-      .selectOption("acknowledged");
+    await page.getByLabel("Acknowledgement").selectOption("acknowledged");
     await page
       .getByLabel("Note", { exact: true })
       .fill("Client confirmed campaign completion.");
-    await page
-      .getByRole("button", { name: "Record acknowledgement" })
-      .click();
+    await page.getByRole("button", { name: "Record acknowledgement" }).click();
     await page.waitForLoadState("networkidle");
 
     await page
@@ -77,7 +81,9 @@ test.describe("R69 campaign closeout", () => {
       .fill("All R69 campaign obligations completed and reconciled.");
     await page.getByRole("button", { name: "Close campaign" }).click();
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText("closed", { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByText("closed", { exact: true }).first(),
+    ).toBeVisible();
 
     await page.getByLabel("Next step").selectOption("renew_campaign");
     await page.getByLabel("Stage").selectOption("converted");
@@ -86,7 +92,9 @@ test.describe("R69 campaign closeout", () => {
       .fill("Client confirmed the next campaign cycle.");
     await page.getByRole("button", { name: "Save renewal outcome" }).click();
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText("renewed", { exact: true }).first()).toBeVisible();
+    await expect(
+      page.getByText("renewed", { exact: true }).first(),
+    ).toBeVisible();
   });
 
   test("rejects an accepted Creator from the private operator closeout", async ({

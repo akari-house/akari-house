@@ -35,18 +35,38 @@ async function cleanup(db: D1Database) {
          )`,
       )
       .bind(campaign.id),
-    db.prepare("DELETE FROM campaign_closeouts WHERE campaign_id = ?").bind(campaign.id),
-    db.prepare("DELETE FROM campaign_final_reports WHERE campaign_id = ?").bind(campaign.id),
-    db.prepare("DELETE FROM campaign_disputes WHERE campaign_id = ?").bind(campaign.id),
-    db.prepare("DELETE FROM campaign_settlements WHERE campaign_id = ?").bind(campaign.id),
-    db.prepare("DELETE FROM campaign_creator_bonuses WHERE campaign_id = ?").bind(campaign.id),
     db
-      .prepare("DELETE FROM campaign_content_metric_snapshots WHERE campaign_id = ?")
+      .prepare("DELETE FROM campaign_closeouts WHERE campaign_id = ?")
       .bind(campaign.id),
-    db.prepare("DELETE FROM campaign_content_items WHERE campaign_id = ?").bind(campaign.id),
-    db.prepare("DELETE FROM campaign_work_submissions WHERE campaign_id = ?").bind(campaign.id),
-    db.prepare("DELETE FROM campaign_applications WHERE campaign_id = ?").bind(campaign.id),
-    db.prepare("DELETE FROM ambassador_campaigns WHERE id = ?").bind(campaign.id),
+    db
+      .prepare("DELETE FROM campaign_final_reports WHERE campaign_id = ?")
+      .bind(campaign.id),
+    db
+      .prepare("DELETE FROM campaign_disputes WHERE campaign_id = ?")
+      .bind(campaign.id),
+    db
+      .prepare("DELETE FROM campaign_settlements WHERE campaign_id = ?")
+      .bind(campaign.id),
+    db
+      .prepare("DELETE FROM campaign_creator_bonuses WHERE campaign_id = ?")
+      .bind(campaign.id),
+    db
+      .prepare(
+        "DELETE FROM campaign_content_metric_snapshots WHERE campaign_id = ?",
+      )
+      .bind(campaign.id),
+    db
+      .prepare("DELETE FROM campaign_content_items WHERE campaign_id = ?")
+      .bind(campaign.id),
+    db
+      .prepare("DELETE FROM campaign_work_submissions WHERE campaign_id = ?")
+      .bind(campaign.id),
+    db
+      .prepare("DELETE FROM campaign_applications WHERE campaign_id = ?")
+      .bind(campaign.id),
+    db
+      .prepare("DELETE FROM ambassador_campaigns WHERE id = ?")
+      .bind(campaign.id),
   ]);
 }
 
@@ -113,13 +133,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
                  date('now', '-7 days'), date('now', '-1 day'),
                  datetime('now', '-7 days'), ?)`,
       )
-      .bind(
-        campaignId,
-        projectId,
-        founder.id,
-        campaignSlug,
-        superadmin.id,
-      ),
+      .bind(campaignId, projectId, founder.id, campaignSlug, superadmin.id),
     db
       .prepare(
         `INSERT INTO campaign_applications
@@ -139,13 +153,7 @@ export async function action({ request, params, context }: Route.ActionArgs) {
          VALUES (?, ?, ?, ?, 'x', 'https://x.com/example/status/16969',
                  date('now', '-2 days'), 'approved', ?, datetime('now', '-1 day'))`,
       )
-      .bind(
-        contentId,
-        campaignId,
-        applicationId,
-        creator.id,
-        superadmin.id,
-      ),
+      .bind(contentId, campaignId, applicationId, creator.id, superadmin.id),
     db
       .prepare(
         `INSERT INTO campaign_content_metric_snapshots
