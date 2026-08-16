@@ -108,22 +108,18 @@ export function deriveCampaignCloseoutStatus(
   if (input.closed) return "closed";
   if (input.reportDelivered) return "client_delivered";
   if (input.reportFinal) return "reporting";
-  if (input.allPaid && input.campaignEnded) return "settled";
-  if (
+
+  const deliveryReady =
     input.campaignEnded &&
     input.unresolvedApprovalCount === 0 &&
     input.missingFinalMetricCount === 0 &&
-    input.openDisputeCount === 0
-  )
-    return "awaiting_settlement";
+    input.openDisputeCount === 0;
+
+  if (deliveryReady && input.allPaid) return "settled";
+  if (deliveryReady) return "awaiting_settlement";
   if (input.campaignEnded && input.unresolvedApprovalCount > 0)
     return "awaiting_approvals";
-  if (
-    input.campaignEnded &&
-    input.unresolvedApprovalCount === 0 &&
-    input.missingFinalMetricCount === 0
-  )
-    return "delivery_complete";
+  if (input.campaignEnded) return "delivery_complete";
   return "active";
 }
 
