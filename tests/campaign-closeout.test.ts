@@ -140,8 +140,9 @@ describe("R69 production wiring and safety", () => {
   it("keeps client acknowledgement operational rather than legal", () => {
     const closeout = readFileSync("app/routes/campaign-closeout.tsx", "utf8");
     expect(closeout).toContain(
-      "This is an operational CRM marker only. It is not a legal signature or",
+      "This is an operational CRM marker only. It is not a legal signature",
     );
+    expect(closeout).toContain("or agreement workflow.");
   });
 
   it("uses an additive closeout migration with external reference links", () => {
