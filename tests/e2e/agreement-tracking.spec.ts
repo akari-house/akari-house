@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 
 const fixtureHeaders = { "x-akari-test-fixture": "launch-gate-v1" };
@@ -16,10 +17,10 @@ async function activatePersona(page: Page, persona: string) {
 }
 
 test.describe("R70 agreement tracking", () => {
-  test("records an external agreement lifecycle without storing legal content", async ({
-    page,
-    browserName,
-  }) => {
+  test("records an external agreement lifecycle without storing legal content", async (
+    { page },
+    testInfo,
+  ) => {
     await activatePersona(page, "superadmin");
     await page.goto("/admin/agreements", { waitUntil: "networkidle" });
 
@@ -28,20 +29,25 @@ test.describe("R70 agreement tracking", () => {
     ).toBeVisible();
     await expect(page.getByText("Operational tracking only.")).toBeVisible();
 
-    const title = `R70 Service Agreement ${browserName}`;
+    const runId = randomUUID();
+    const title = `R70 Service Agreement ${testInfo.project.name} ${runId}`;
     const createForm = page.locator("form.agreement-tracking-form").first();
-    await createForm.getByLabel("Agreement title").fill(title);
-    await createForm.getByLabel("Agreement type").selectOption("service");
-    await createForm.getByLabel("Stage").selectOption("sent");
+    await createForm.getByLabel("Agreement title", { exact: true }).fill(title);
+    await createForm
+      .getByLabel("Agreement type", { exact: true })
+      .selectOption("service");
+    await createForm.getByLabel("Stage", { exact: true }).selectOption("sent");
     await createForm
       .getByLabel("Counterparty", { exact: true })
       .fill("R70 Test Client");
     await createForm
-      .getByLabel("Counterparty email")
-      .fill(`r70-${browserName}@example.com`);
-    await createForm.getByLabel("Next follow-up").fill("2026-08-16");
+      .getByLabel("Counterparty email", { exact: true })
+      .fill(`r70-${runId}@example.com`);
     await createForm
-      .getByLabel("Operational note")
+      .getByLabel("Next follow-up", { exact: true })
+      .fill("2026-08-16");
+    await createForm
+      .getByLabel("Operational note", { exact: true })
       .fill(
         "Lawyer prepared the agreement externally and it was sent to the client.",
       );
@@ -53,18 +59,27 @@ test.describe("R70 agreement tracking", () => {
     const record = page
       .locator("details.agreement-card")
       .filter({ hasText: title });
+    await expect(record).toHaveCount(1);
     await expect(record).toBeVisible();
     await expect(record.getByText("Follow-up due")).toBeVisible();
     await record.locator("summary").click();
 
     const updateForm = record.locator("form.agreement-tracking-form");
-    await updateForm.getByLabel("Stage").selectOption("signed");
     await updateForm
-      .getByLabel("External document link")
-      .fill("https://drive.google.com/file/d/r70-signed-example");
-    await updateForm.getByLabel("Signed externally").fill("2026-08-16");
-    await updateForm.getByLabel("Effective").fill("2026-08-16");
-    await updateForm.getByLabel("Expires").fill("2027-08-16");
+      .getByLabel("Stage", { exact: true })
+      .selectOption("signed");
+    await updateForm
+      .getByLabel("External document link", { exact: true })
+      .fill(`https://drive.google.com/file/d/${runId}`);
+    await updateForm
+      .getByLabel("Signed externally", { exact: true })
+      .fill("2026-08-16");
+    await updateForm
+      .getByLabel("Effective", { exact: true })
+      .fill("2026-08-16");
+    await updateForm
+      .getByLabel("Expires", { exact: true })
+      .fill("2027-08-16");
     await updateForm
       .getByRole("button", { name: "Update tracking record" })
       .click();
@@ -73,13 +88,14 @@ test.describe("R70 agreement tracking", () => {
     const updated = page
       .locator("details.agreement-card")
       .filter({ hasText: title });
+    await expect(updated).toHaveCount(1);
     await expect(
       updated.getByText("Signed externally", { exact: true }),
     ).toBeVisible();
     await updated.locator("summary").click();
     await expect(
       updated.getByRole("link", { name: "Open external agreement ↗" }),
-    ).toHaveAttribute("href", /drive\.google\.com/);
+    ).toHaveAttribute("href", new RegExp(runId));
   });
 
   test("rejects a Founder from confidential agreement operations", async ({
