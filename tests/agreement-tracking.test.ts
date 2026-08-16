@@ -12,7 +12,9 @@ describe("R70 agreement tracking", () => {
     expect(
       normalizeExternalAgreementUrl("https://drive.google.com/file/d/example"),
     ).toContain("https://drive.google.com/");
-    expect(normalizeExternalAgreementUrl("http://example.com/agreement")).toBeNull();
+    expect(
+      normalizeExternalAgreementUrl("http://example.com/agreement"),
+    ).toBeNull();
     expect(normalizeExternalAgreementUrl("javascript:alert(1)")).toBeNull();
     expect(normalizeExternalAgreementUrl("")).toBe("");
   });
@@ -54,7 +56,9 @@ describe("R70 agreement tracking", () => {
     const route = readFileSync("app/routes/admin-agreements.tsx", "utf8");
     expect(route).toContain("requireSuperAdmin");
     expect(route).toContain("Operational tracking only.");
-    expect(route).toContain("AKARI does not generate, draft, review or sign agreements");
+    expect(route).toContain(
+      "AKARI does not generate, draft, review or sign agreements",
+    );
     expect(route).toContain("external HTTPS document link");
     expect(route).not.toContain("Generate agreement");
     expect(route).not.toContain("AI contract");
@@ -62,7 +66,10 @@ describe("R70 agreement tracking", () => {
   });
 
   it("uses an additive metadata table and audit log rather than document storage", () => {
-    const migration = readFileSync("migrations/0116_agreement_tracking.sql", "utf8");
+    const migration = readFileSync(
+      "migrations/0116_agreement_tracking.sql",
+      "utf8",
+    );
     const route = readFileSync("app/routes/admin-agreements.tsx", "utf8");
     expect(migration).toContain("CREATE TABLE agreement_records");
     expect(migration).toContain("external_document_url");

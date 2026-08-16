@@ -75,7 +75,8 @@ export const meta: Route.MetaFunction = () => [
   { title: "Agreement Tracking | AKARI House" },
   {
     name: "description",
-    content: "Internal agreement lifecycle tracking and external legal references.",
+    content:
+      "Internal agreement lifecycle tracking and external legal references.",
   },
 ];
 
@@ -250,9 +251,14 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (externalReference.length > 300 || note.length > 3000)
     return { error: "Check the reference and note length limits." };
   if (
-    [requestedAt, sentAt, signedAt, effectiveAt, expiresAt, nextFollowUpAt].some(
-      (value) => value === undefined,
-    )
+    [
+      requestedAt,
+      sentAt,
+      signedAt,
+      effectiveAt,
+      expiresAt,
+      nextFollowUpAt,
+    ].some((value) => value === undefined)
   )
     return { error: "Use valid calendar dates." };
   if (effectiveAt && expiresAt && expiresAt < effectiveAt)
@@ -272,11 +278,14 @@ export async function action({ request, context }: Route.ActionArgs) {
     )
     .bind(ownerUserId)
     .first<{ id: string }>();
-  if (!owner) return { error: "Choose an active AKARI admin as follow-up owner." };
+  if (!owner)
+    return { error: "Choose an active AKARI admin as follow-up owner." };
 
   if (campaignId) {
     const campaign = await db
-      .prepare("SELECT project_id AS projectId FROM ambassador_campaigns WHERE id = ?")
+      .prepare(
+        "SELECT project_id AS projectId FROM ambassador_campaigns WHERE id = ?",
+      )
       .bind(campaignId)
       .first<{ projectId: string }>();
     if (!campaign) return { error: "The selected campaign no longer exists." };
@@ -448,7 +457,10 @@ function AgreementForm({
         </label>
         <label>
           Agreement type
-          <select name="agreementType" defaultValue={record?.agreementType ?? "service"}>
+          <select
+            name="agreementType"
+            defaultValue={record?.agreementType ?? "service"}
+          >
             {agreementTypes.map((type) => (
               <option value={type} key={type}>
                 {agreementTypeLabels[type]}
@@ -468,7 +480,11 @@ function AgreementForm({
         </label>
         <label>
           Follow-up owner
-          <select name="ownerUserId" defaultValue={record?.ownerUserId ?? owners[0]?.id} required>
+          <select
+            name="ownerUserId"
+            defaultValue={record?.ownerUserId ?? owners[0]?.id}
+            required
+          >
             {owners.map((owner) => (
               <option value={owner.id} key={owner.id}>
                 {owner.displayName} (@{owner.username})
@@ -526,7 +542,9 @@ function AgreementForm({
             placeholder="https://drive.google.com/..."
             defaultValue={record?.externalDocumentUrl ?? ""}
           />
-          <small>HTTPS only. AKARI stores the reference, not the contract file.</small>
+          <small>
+            HTTPS only. AKARI stores the reference, not the contract file.
+          </small>
         </label>
         <label>
           External reference
@@ -539,31 +557,60 @@ function AgreementForm({
         </label>
         <label>
           Requested
-          <input name="requestedAt" type="date" defaultValue={record?.requestedAt?.slice(0, 10) ?? ""} />
+          <input
+            name="requestedAt"
+            type="date"
+            defaultValue={record?.requestedAt?.slice(0, 10) ?? ""}
+          />
         </label>
         <label>
           Sent
-          <input name="sentAt" type="date" defaultValue={record?.sentAt?.slice(0, 10) ?? ""} />
+          <input
+            name="sentAt"
+            type="date"
+            defaultValue={record?.sentAt?.slice(0, 10) ?? ""}
+          />
         </label>
         <label>
           Signed externally
-          <input name="signedAt" type="date" defaultValue={record?.signedAt?.slice(0, 10) ?? ""} />
+          <input
+            name="signedAt"
+            type="date"
+            defaultValue={record?.signedAt?.slice(0, 10) ?? ""}
+          />
         </label>
         <label>
           Effective
-          <input name="effectiveAt" type="date" defaultValue={record?.effectiveAt?.slice(0, 10) ?? ""} />
+          <input
+            name="effectiveAt"
+            type="date"
+            defaultValue={record?.effectiveAt?.slice(0, 10) ?? ""}
+          />
         </label>
         <label>
           Expires
-          <input name="expiresAt" type="date" defaultValue={record?.expiresAt?.slice(0, 10) ?? ""} />
+          <input
+            name="expiresAt"
+            type="date"
+            defaultValue={record?.expiresAt?.slice(0, 10) ?? ""}
+          />
         </label>
         <label>
           Next follow-up
-          <input name="nextFollowUpAt" type="date" defaultValue={record?.nextFollowUpAt?.slice(0, 10) ?? ""} />
+          <input
+            name="nextFollowUpAt"
+            type="date"
+            defaultValue={record?.nextFollowUpAt?.slice(0, 10) ?? ""}
+          />
         </label>
         <label className="full-span">
           Operational note
-          <textarea name="note" rows={3} maxLength={3000} defaultValue={record?.note ?? ""} />
+          <textarea
+            name="note"
+            rows={3}
+            maxLength={3000}
+            defaultValue={record?.note ?? ""}
+          />
         </label>
       </div>
       <button className="button button-primary" type="submit">
@@ -573,7 +620,10 @@ function AgreementForm({
   );
 }
 
-export default function AdminAgreements({ loaderData, actionData }: Route.ComponentProps) {
+export default function AdminAgreements({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   const navigation = useNavigation();
   const [searchParams] = useSearchParams();
   const pending = navigation.state !== "idle";
@@ -587,7 +637,8 @@ export default function AdminAgreements({ loaderData, actionData }: Route.Compon
             <h1>Agreement tracking</h1>
             <p>
               Track who needs an agreement, where the external original lives,
-              its current stage, expiry and the AKARI owner responsible for follow-up.
+              its current stage, expiry and the AKARI owner responsible for
+              follow-up.
             </p>
           </div>
           <Link className="button button-quiet" to="/admin">
@@ -596,31 +647,53 @@ export default function AdminAgreements({ loaderData, actionData }: Route.Compon
         </header>
         <AdminWorkspaceNav access={loaderData.access} />
 
-        <section className="notice applicant-notice" aria-label="Legal boundary">
+        <section
+          className="notice applicant-notice"
+          aria-label="Legal boundary"
+        >
           <strong>Operational tracking only.</strong>
           <p>
-            AKARI does not generate, draft, review or sign agreements. Lawyers and
-            external providers remain the source of the legal document and signature.
+            AKARI does not generate, draft, review or sign agreements. Lawyers
+            and external providers remain the source of the legal document and
+            signature.
           </p>
         </section>
 
         {actionData?.error && (
-          <p className="form-error" role="alert">{actionData.error}</p>
+          <p className="form-error" role="alert">
+            {actionData.error}
+          </p>
         )}
         {actionData?.saved && (
-          <p className="notice success" role="status">{actionData.saved}</p>
+          <p className="notice success" role="status">
+            {actionData.saved}
+          </p>
         )}
 
-        <section className="application-queue-summary" aria-label="Agreement summary">
-          <span><strong>{loaderData.summary.followUp}</strong> follow-ups due</span>
-          <span><strong>{loaderData.summary.awaitingSignature}</strong> awaiting signature</span>
-          <span><strong>{loaderData.summary.signed}</strong> signed</span>
-          <span><strong>{loaderData.summary.expiring}</strong> expiring in 30 days</span>
+        <section
+          className="application-queue-summary"
+          aria-label="Agreement summary"
+        >
+          <span>
+            <strong>{loaderData.summary.followUp}</strong> follow-ups due
+          </span>
+          <span>
+            <strong>{loaderData.summary.awaitingSignature}</strong> awaiting
+            signature
+          </span>
+          <span>
+            <strong>{loaderData.summary.signed}</strong> signed
+          </span>
+          <span>
+            <strong>{loaderData.summary.expiring}</strong> expiring in 30 days
+          </span>
         </section>
 
         <section className="status-card" aria-labelledby="new-agreement-title">
           <span className="chapter">New record</span>
-          <h2 id="new-agreement-title">Record an external agreement requirement.</h2>
+          <h2 id="new-agreement-title">
+            Record an external agreement requirement.
+          </h2>
           <AgreementForm
             projects={loaderData.projects}
             campaigns={loaderData.campaigns}
@@ -637,60 +710,101 @@ export default function AdminAgreements({ loaderData, actionData }: Route.Compon
             <Form method="get" className="admin-filter-form">
               <label>
                 Search
-                <input name="q" defaultValue={loaderData.query} placeholder="Counterparty or Project" />
+                <input
+                  name="q"
+                  defaultValue={loaderData.query}
+                  placeholder="Counterparty or Project"
+                />
               </label>
               <label>
                 Stage
                 <select name="status" defaultValue={loaderData.statusFilter}>
                   <option value="">All stages</option>
                   {agreementStatuses.map((status) => (
-                    <option value={status} key={status}>{agreementStatusLabels[status]}</option>
+                    <option value={status} key={status}>
+                      {agreementStatusLabels[status]}
+                    </option>
                   ))}
                 </select>
               </label>
-              <button className="button button-quiet" type="submit">Filter</button>
-              {searchParams.size > 0 && <Link to="/admin/agreements">Clear</Link>}
+              <button className="button button-quiet" type="submit">
+                Filter
+              </button>
+              {searchParams.size > 0 && (
+                <Link to="/admin/agreements">Clear</Link>
+              )}
             </Form>
           </div>
 
           <div className="application-list">
             {loaderData.agreements.length ? (
               loaderData.agreements.map((record) => (
-                <details className="application-card agreement-card" key={record.id}>
+                <details
+                  className="application-card agreement-card"
+                  key={record.id}
+                >
                   <summary>
                     <div>
                       <span className="chapter">
-                        {agreementStatusLabels[record.status]} · {agreementTypeLabels[record.agreementType]}
+                        {agreementStatusLabels[record.status]} ·{" "}
+                        {agreementTypeLabels[record.agreementType]}
                       </span>
                       <h3>{record.title}</h3>
-                      <p>{record.counterpartyName} · Owner: {record.ownerName}</p>
+                      <p>
+                        {record.counterpartyName} · Owner: {record.ownerName}
+                      </p>
                     </div>
                     <div className="agreement-status-stack">
-                      {record.needsFollowUp && <span className="status-pill">Follow-up due</span>}
-                      {record.expiryState === "expiring" && <span className="status-pill">Expiring soon</span>}
-                      {record.expiryState === "expired" && <span className="status-pill">Expired</span>}
+                      {record.needsFollowUp && (
+                        <span className="status-pill">Follow-up due</span>
+                      )}
+                      {record.expiryState === "expiring" && (
+                        <span className="status-pill">Expiring soon</span>
+                      )}
+                      {record.expiryState === "expired" && (
+                        <span className="status-pill">Expired</span>
+                      )}
                     </div>
                   </summary>
                   <div className="agreement-record-details">
                     <p>
                       <strong>Project:</strong>{" "}
-                      {record.projectSlug ? <Link to={`/projects/${record.projectSlug}`}>{record.projectTitle}</Link> : "Not linked"}
+                      {record.projectSlug ? (
+                        <Link to={`/projects/${record.projectSlug}`}>
+                          {record.projectTitle}
+                        </Link>
+                      ) : (
+                        "Not linked"
+                      )}
                       <br />
                       <strong>Campaign:</strong>{" "}
-                      {record.campaignSlug ? <Link to={`/campaigns/${record.campaignSlug}`}>{record.campaignTitle}</Link> : "Not linked"}
+                      {record.campaignSlug ? (
+                        <Link to={`/campaigns/${record.campaignSlug}`}>
+                          {record.campaignTitle}
+                        </Link>
+                      ) : (
+                        "Not linked"
+                      )}
                       <br />
-                      <strong>Next follow-up:</strong> {dateLabel(record.nextFollowUpAt)}
+                      <strong>Next follow-up:</strong>{" "}
+                      {dateLabel(record.nextFollowUpAt)}
                       <br />
                       <strong>Expiry:</strong> {dateLabel(record.expiresAt)}
                     </p>
                     {record.externalDocumentUrl ? (
                       <p>
-                        <a href={record.externalDocumentUrl} target="_blank" rel="noreferrer">
+                        <a
+                          href={record.externalDocumentUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
                           Open external agreement ↗
                         </a>
                       </p>
                     ) : (
-                      <p className="chapter">External document not linked yet</p>
+                      <p className="chapter">
+                        External document not linked yet
+                      </p>
                     )}
                     <AgreementForm
                       record={record}
@@ -702,11 +816,17 @@ export default function AdminAgreements({ loaderData, actionData }: Route.Compon
                 </details>
               ))
             ) : (
-              <p className="empty-state">No agreement records match this view.</p>
+              <p className="empty-state">
+                No agreement records match this view.
+              </p>
             )}
           </div>
         </section>
-        {pending && <span className="sr-only" aria-live="polite">Saving agreement tracking changes.</span>}
+        {pending && (
+          <span className="sr-only" aria-live="polite">
+            Saving agreement tracking changes.
+          </span>
+        )}
       </main>
     </div>
   );

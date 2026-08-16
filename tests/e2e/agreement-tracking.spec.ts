@@ -40,13 +40,17 @@ test.describe("R70 agreement tracking", () => {
     await createForm.getByLabel("Next follow-up").fill("2026-08-16");
     await createForm
       .getByLabel("Operational note")
-      .fill("Lawyer prepared the agreement externally and it was sent to the client.");
+      .fill(
+        "Lawyer prepared the agreement externally and it was sent to the client.",
+      );
     await createForm
       .getByRole("button", { name: "Create tracking record" })
       .click();
     await page.waitForLoadState("networkidle");
 
-    const record = page.locator("details.agreement-card").filter({ hasText: title });
+    const record = page
+      .locator("details.agreement-card")
+      .filter({ hasText: title });
     await expect(record).toBeVisible();
     await expect(record.getByText("Follow-up due")).toBeVisible();
     await record.locator("summary").click();
@@ -67,14 +71,18 @@ test.describe("R70 agreement tracking", () => {
     const updated = page
       .locator("details.agreement-card")
       .filter({ hasText: title });
-    await expect(updated.getByText("Signed externally", { exact: true })).toBeVisible();
+    await expect(
+      updated.getByText("Signed externally", { exact: true }),
+    ).toBeVisible();
     await updated.locator("summary").click();
     await expect(
       updated.getByRole("link", { name: "Open external agreement ↗" }),
     ).toHaveAttribute("href", /drive\.google\.com/);
   });
 
-  test("rejects a Founder from confidential agreement operations", async ({ page }) => {
+  test("rejects a Founder from confidential agreement operations", async ({
+    page,
+  }) => {
     await activatePersona(page, "founder");
     const response = await page.goto("/admin/agreements");
     expect(response?.status()).toBe(403);

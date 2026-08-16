@@ -100,7 +100,15 @@ export function agreementAttentionRank(input: {
   const expiry = agreementExpiryState(input.status, input.expiresAt, now);
   if (expiry === "expired") return 1;
   if (expiry === "expiring") return 2;
-  if (["required", "with_lawyer", "ready_to_send", "sent", "negotiation"].includes(input.status))
+  if (
+    [
+      "required",
+      "with_lawyer",
+      "ready_to_send",
+      "sent",
+      "negotiation",
+    ].includes(input.status)
+  )
     return 3;
   return 4;
 }
