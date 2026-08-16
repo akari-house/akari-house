@@ -35,7 +35,7 @@ type AgreementRow = {
   campaignId: string | null;
   campaignSlug: string | null;
   campaignTitle: string | null;
-  ownerUserId: string;
+  ownerUserId: string | null;
   ownerName: string;
   externalDocumentUrl: string;
   externalReference: string;
@@ -100,7 +100,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
                   ar.campaign_id AS campaignId, ac.slug AS campaignSlug,
                   ac.title AS campaignTitle,
                   ar.owner_user_id AS ownerUserId,
-                  COALESCE(op.display_name, ou.username) AS ownerName,
+                  COALESCE(op.display_name, ou.username, 'Unassigned') AS ownerName,
                   ar.external_document_url AS externalDocumentUrl,
                   ar.external_reference AS externalReference,
                   ar.requested_at AS requestedAt, ar.sent_at AS sentAt,
@@ -111,7 +111,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
            FROM agreement_records ar
            LEFT JOIN projects pr ON pr.id = ar.project_id
            LEFT JOIN ambassador_campaigns ac ON ac.id = ar.campaign_id
-           JOIN users ou ON ou.id = ar.owner_user_id
+           LEFT JOIN users ou ON ou.id = ar.owner_user_id
            LEFT JOIN profiles op ON op.user_id = ou.id
            WHERE (? = '' OR ar.status = ?)
              AND (? = '' OR ar.title LIKE '%' || ? || '%'

@@ -17,10 +17,9 @@ async function activatePersona(page: Page, persona: string) {
 }
 
 test.describe("R70 agreement tracking", () => {
-  test("records an external agreement lifecycle without storing legal content", async (
-    { page },
-    testInfo,
-  ) => {
+  test("records an external agreement lifecycle without storing legal content", async ({
+    page,
+  }, testInfo) => {
     await activatePersona(page, "superadmin");
     await page.goto("/admin/agreements", { waitUntil: "networkidle" });
 
@@ -77,9 +76,7 @@ test.describe("R70 agreement tracking", () => {
     await updateForm
       .getByLabel("Effective", { exact: true })
       .fill("2026-08-16");
-    await updateForm
-      .getByLabel("Expires", { exact: true })
-      .fill("2027-08-16");
+    await updateForm.getByLabel("Expires", { exact: true }).fill("2027-08-16");
     await updateForm
       .getByRole("button", { name: "Update tracking record" })
       .click();
