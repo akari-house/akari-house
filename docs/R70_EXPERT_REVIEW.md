@@ -88,6 +88,10 @@ This is enough to reduce missed follow-ups and expired mandates without creating
 - HTTPS external URL normalization
 - relationship validation for Campaign -> Project
 
+## Release validation
+
+The release gate must validate generated route types, lint/formatting, unit tests, production build, all three Playwright browsers and the existing production security audit before R70 is merged or deployed.
+
 ## V1 acceptance criteria
 
 R70 is complete when:
