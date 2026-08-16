@@ -33,7 +33,9 @@ test.describe("R70 agreement tracking", () => {
     await createForm.getByLabel("Agreement title").fill(title);
     await createForm.getByLabel("Agreement type").selectOption("service");
     await createForm.getByLabel("Stage").selectOption("sent");
-    await createForm.getByLabel("Counterparty").fill("R70 Test Client");
+    await createForm
+      .getByLabel("Counterparty", { exact: true })
+      .fill("R70 Test Client");
     await createForm
       .getByLabel("Counterparty email")
       .fill(`r70-${browserName}@example.com`);
