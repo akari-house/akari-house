@@ -31,22 +31,20 @@ test.describe("R70 agreement tracking", () => {
     const runId = randomUUID();
     const title = `R70 Service Agreement ${testInfo.project.name} ${runId}`;
     const createForm = page.locator("form.agreement-tracking-form").first();
-    await createForm.getByLabel("Agreement title", { exact: true }).fill(title);
+    await createForm.locator('input[name="title"]').fill(title);
+    await createForm.locator('select[name="agreementType"]').selectOption("service");
+    await createForm.locator('select[name="status"]').selectOption("sent");
     await createForm
-      .getByLabel("Agreement type", { exact: true })
-      .selectOption("service");
-    await createForm.getByLabel("Stage", { exact: true }).selectOption("sent");
-    await createForm
-      .getByLabel("Counterparty", { exact: true })
+      .locator('input[name="counterpartyName"]')
       .fill("R70 Test Client");
     await createForm
-      .getByLabel("Counterparty email", { exact: true })
+      .locator('input[name="counterpartyEmail"]')
       .fill(`r70-${runId}@example.com`);
     await createForm
-      .getByLabel("Next follow-up", { exact: true })
+      .locator('input[name="nextFollowUpAt"]')
       .fill("2026-08-16");
     await createForm
-      .getByLabel("Operational note", { exact: true })
+      .locator('textarea[name="note"]')
       .fill(
         "Lawyer prepared the agreement externally and it was sent to the client.",
       );
@@ -64,19 +62,17 @@ test.describe("R70 agreement tracking", () => {
     await record.locator("summary").click();
 
     const updateForm = record.locator("form.agreement-tracking-form");
+    await updateForm.locator('select[name="status"]').selectOption("signed");
     await updateForm
-      .getByLabel("Stage", { exact: true })
-      .selectOption("signed");
-    await updateForm
-      .getByLabel("External document link", { exact: true })
+      .locator('input[name="externalDocumentUrl"]')
       .fill(`https://drive.google.com/file/d/${runId}`);
     await updateForm
-      .getByLabel("Signed externally", { exact: true })
+      .locator('input[name="signedAt"]')
       .fill("2026-08-16");
     await updateForm
-      .getByLabel("Effective", { exact: true })
+      .locator('input[name="effectiveAt"]')
       .fill("2026-08-16");
-    await updateForm.getByLabel("Expires", { exact: true }).fill("2027-08-16");
+    await updateForm.locator('input[name="expiresAt"]').fill("2027-08-16");
     await updateForm
       .getByRole("button", { name: "Update tracking record" })
       .click();
