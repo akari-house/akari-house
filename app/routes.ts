@@ -38,6 +38,7 @@ export default [
   route("campaigns/:slug/commitment", "routes/campaign-commitment.tsx"),
   route("campaigns/:slug/performance", "routes/campaign-performance.tsx"),
   route("campaigns/:slug/work", "routes/campaign-workspace.tsx"),
+  route("campaigns/:slug/closeout", "routes/campaign-closeout.tsx"),
   route("campaigns/:slug/settlement", "routes/iio-settlement.tsx"),
   route("events", "routes/events.tsx"),
   route("events/new", "routes/event-new.tsx"),
