@@ -95,6 +95,8 @@ This is enough to reduce missed follow-ups and expired mandates without creating
 
 The release gate must validate generated route types, lint/formatting, unit tests, production build, all three Playwright browsers and the existing production security audit before R70 is merged or deployed.
 
+The R70 browser lifecycle uses stable form-control names for mutation proof so accessibility-label matching differences across browser engines do not create false failures. The user-facing labels remain available in the rendered form and Launch Gate visual evidence.
+
 ## V1 acceptance criteria
 
 R70 is complete when:
