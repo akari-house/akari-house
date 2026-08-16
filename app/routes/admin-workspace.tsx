@@ -18,6 +18,7 @@ interface QueueCounts {
   moderation: number;
   projects: number;
   campaigns: number;
+  agreements: number;
   contact: number;
   operations: number;
   team: number;
@@ -62,6 +63,14 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         ((SELECT COUNT(*) FROM projects WHERE status = 'submitted') +
          (SELECT COUNT(*) FROM interest_requests WHERE status = 'pending')) AS projects,
         (SELECT COUNT(*) FROM ambassador_campaigns WHERE status = 'submitted') AS campaigns,
+        (SELECT COUNT(*) FROM agreement_records
+          WHERE (
+            status IN ('required', 'with_lawyer', 'ready_to_send', 'sent', 'negotiation')
+            AND (next_follow_up_at IS NULL OR next_follow_up_at <= date('now'))
+          ) OR (
+            status = 'signed' AND expires_at IS NOT NULL
+            AND expires_at <= date('now', '+30 days')
+          )) AS agreements,
         (SELECT COUNT(*) FROM contact_messages
           WHERE status IN ('open', 'reviewing')) AS contact,
         ((SELECT COUNT(*) FROM delivery_outbox
@@ -80,6 +89,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     moderation: 0,
     projects: 0,
     campaigns: 0,
+    agreements: 0,
     contact: 0,
     operations: 0,
     team: 0,
@@ -172,8 +182,8 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
                 No review queue needs action.
               </h2>
               <p>
-                Membership, verification, Project claims, moderation and the
-                operational queues are currently clear.
+                Membership, verification, Project claims, agreements, moderation
+                and the operational queues are currently clear.
               </p>
             </>
           )}

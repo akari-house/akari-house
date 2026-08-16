@@ -61,6 +61,7 @@ export default [
   route("admin", "routes/admin-workspace.tsx"),
   route("admin/reviews", "routes/admin-review-inbox.tsx"),
   route("admin/activation", "routes/admin-activation.tsx"),
+  route("admin/agreements", "routes/admin-agreements.tsx"),
   route("admin/operations", "routes/admin-operations.tsx"),
   route("admin/production", "routes/admin-production.tsx"),
   route("admin/resilience", "routes/admin-resilience.tsx"),

@@ -43,6 +43,14 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     superadminOnly: true,
   },
   {
+    key: "agreements",
+    label: "Agreement tracking",
+    description:
+      "Track external agreement stages, document references, expiry and follow-up ownership.",
+    to: "/admin/agreements",
+    superadminOnly: true,
+  },
+  {
     key: "membership",
     label: "Membership",
     description: "Review applicants and approve House access.",
