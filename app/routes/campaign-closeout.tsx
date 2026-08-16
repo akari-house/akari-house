@@ -687,12 +687,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
                updated_at = datetime('now')
            WHERE campaign_id = ?`,
         )
-        .bind(
-          acknowledgementStatus,
-          note || null,
-          operator.id,
-          campaign.id,
-        ),
+        .bind(acknowledgementStatus, note || null, operator.id, campaign.id),
       db
         .prepare(
           `INSERT INTO audit_logs
@@ -768,7 +763,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   if (intent === "save-renewal") {
     const closeout = await getCloseout(db, campaign.id);
     if (!closeout?.closedAt)
-      return { error: "Close the completed campaign before recording renewal." };
+      return {
+        error: "Close the completed campaign before recording renewal.",
+      };
     const renewalType = formText(form.get("renewalType"));
     const renewalStage = formText(form.get("renewalStage"));
     const followUpAt = formText(form.get("renewalFollowUpAt")).trim();
@@ -784,9 +781,12 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       ) ||
       (referenceValue && !referenceUrl) ||
       note.length > 1000 ||
-      (renewalType === "none" && !["none", "declined"].includes(renewalStage)) ||
+      (renewalType === "none" &&
+        !["none", "declined"].includes(renewalStage)) ||
       (renewalType !== "none" && renewalStage === "none") ||
-      (renewalType === "follow_up" && renewalStage === "planned" && !followUpAt) ||
+      (renewalType === "follow_up" &&
+        renewalStage === "planned" &&
+        !followUpAt) ||
       (renewalStage === "converted" && note.length < 5)
     )
       return {
@@ -870,7 +870,10 @@ export default function CampaignCloseout({
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
       <main id="main-content" className="admin-main">
-        <Link className="quiet-link" to={`/campaigns/${campaign.slug}/performance`}>
+        <Link
+          className="quiet-link"
+          to={`/campaigns/${campaign.slug}/performance`}
+        >
           Back to campaign performance
         </Link>
         <header className="admin-heading">
@@ -912,11 +915,15 @@ export default function CampaignCloseout({
             <span>closeout status</span>
           </div>
           <div>
-            <strong>{reconciliation.paidCreatorCount}/{reconciliation.creatorCount}</strong>
+            <strong>
+              {reconciliation.paidCreatorCount}/{reconciliation.creatorCount}
+            </strong>
             <span>Creators paid</span>
           </div>
           <div>
-            <strong>{money.format(reconciliation.outstandingCents / 100)}</strong>
+            <strong>
+              {money.format(reconciliation.outstandingCents / 100)}
+            </strong>
             <span>outstanding</span>
           </div>
           <div>
@@ -947,8 +954,9 @@ export default function CampaignCloseout({
             </article>
           </div>
           <p>
-            Accepted Creators: {operational.acceptedCreators} · approved content:{" "}
-            {operational.approvedContent}/{operational.submittedContent} · final views:{" "}
+            Accepted Creators: {operational.acceptedCreators} · approved
+            content: {operational.approvedContent}/
+            {operational.submittedContent} · final views:{" "}
             {operational.totalViews.toLocaleString()}.
           </p>
         </section>
@@ -958,11 +966,15 @@ export default function CampaignCloseout({
           <h2>Approved compensation vs recorded settlement.</h2>
           <div className="member-home-stats">
             <article>
-              <strong>{money.format(reconciliation.approvedCompensationCents / 100)}</strong>
+              <strong>
+                {money.format(reconciliation.approvedCompensationCents / 100)}
+              </strong>
               <span>Approved compensation</span>
             </article>
             <article>
-              <strong>{money.format(reconciliation.recordedSettlementCents / 100)}</strong>
+              <strong>
+                {money.format(reconciliation.recordedSettlementCents / 100)}
+              </strong>
               <span>Recorded settlement</span>
             </article>
             <article>
@@ -970,7 +982,9 @@ export default function CampaignCloseout({
               <span>Paid</span>
             </article>
             <article>
-              <strong>{money.format(reconciliation.outstandingCents / 100)}</strong>
+              <strong>
+                {money.format(reconciliation.outstandingCents / 100)}
+              </strong>
               <span>Outstanding</span>
             </article>
           </div>
@@ -979,9 +993,11 @@ export default function CampaignCloseout({
               <p className="form-error" role="alert">
                 Recorded settlement exceeds the configured campaign budget by{" "}
                 {money.format(
-                  (reconciliation.recordedSettlementCents - campaign.budgetCents) /
+                  (reconciliation.recordedSettlementCents -
+                    campaign.budgetCents) /
                     100,
-                )}.
+                )}
+                .
               </p>
             )}
         </section>
@@ -992,8 +1008,8 @@ export default function CampaignCloseout({
             <h2>Canonical payment status and evidence.</h2>
             <p>
               Approved compensation combines the final base payout with approved
-              bonuses. Any settlement adjustment requires a reason and is kept in
-              history.
+              bonuses. Any settlement adjustment requires a reason and is kept
+              in history.
             </p>
           </header>
           {participants.map((participant) => {
@@ -1003,27 +1019,37 @@ export default function CampaignCloseout({
             );
             const current = participant.settlementFinalCents ?? approved;
             return (
-              <article className="application-card" key={participant.applicationId}>
+              <article
+                className="application-card"
+                key={participant.applicationId}
+              >
                 <div>
                   <span className="chapter">
                     {participant.paymentStatus ?? "pending"}
                   </span>
                   <h3>{participant.creatorName}</h3>
                   <p>
-                    Final base: {money.format(participant.baseFinalCents / 100)} ·
-                    approved bonus: {money.format(participant.bonusCents / 100)}
+                    Final base: {money.format(participant.baseFinalCents / 100)}{" "}
+                    · approved bonus:{" "}
+                    {money.format(participant.bonusCents / 100)}
                   </p>
                   <p>
-                    Approved compensation: {money.format(approved / 100)} · recorded:{" "}
-                    {money.format(current / 100)}
+                    Approved compensation: {money.format(approved / 100)} ·
+                    recorded: {money.format(current / 100)}
                   </p>
                   {participant.paidAt && (
-                    <small>Paid {new Date(participant.paidAt).toLocaleString()}</small>
+                    <small>
+                      Paid {new Date(participant.paidAt).toLocaleString()}
+                    </small>
                   )}
                 </div>
                 <Form method="post" className="profile-form">
                   <input type="hidden" name="intent" value="save-settlement" />
-                  <input type="hidden" name="applicationId" value={participant.applicationId} />
+                  <input
+                    type="hidden"
+                    name="applicationId"
+                    value={participant.applicationId}
+                  />
                   <div className="form-row form-row-three">
                     <label>
                       Final settlement ({campaign.currency})
@@ -1038,7 +1064,10 @@ export default function CampaignCloseout({
                     </label>
                     <label>
                       Settlement type
-                      <select name="settlementType" defaultValue={participant.settlementType ?? "cash"}>
+                      <select
+                        name="settlementType"
+                        defaultValue={participant.settlementType ?? "cash"}
+                      >
                         <option value="cash">Cash</option>
                         <option value="token">Token</option>
                         <option value="mixed">Mixed</option>
@@ -1047,7 +1076,10 @@ export default function CampaignCloseout({
                     </label>
                     <label>
                       Payment status
-                      <select name="paymentStatus" defaultValue={participant.paymentStatus ?? "pending"}>
+                      <select
+                        name="paymentStatus"
+                        defaultValue={participant.paymentStatus ?? "pending"}
+                      >
                         <option value="pending">Pending</option>
                         <option value="approved">Approved</option>
                         <option value="processing">Processing</option>
@@ -1060,30 +1092,57 @@ export default function CampaignCloseout({
                   <div className="form-row form-row-three">
                     <label>
                       Payment method
-                      <input name="paymentMethod" maxLength={200} defaultValue={participant.paymentMethod ?? ""} />
+                      <input
+                        name="paymentMethod"
+                        maxLength={200}
+                        defaultValue={participant.paymentMethod ?? ""}
+                      />
                     </label>
                     <label>
                       Token symbol
-                      <input name="tokenSymbol" maxLength={20} defaultValue={participant.tokenSymbol ?? ""} />
+                      <input
+                        name="tokenSymbol"
+                        maxLength={20}
+                        defaultValue={participant.tokenSymbol ?? ""}
+                      />
                     </label>
                     <label>
                       Transaction reference
-                      <input name="transactionReference" maxLength={200} defaultValue={participant.transactionReference ?? ""} />
+                      <input
+                        name="transactionReference"
+                        maxLength={200}
+                        defaultValue={participant.transactionReference ?? ""}
+                      />
                     </label>
                   </div>
                   <label>
                     Payment evidence link or invoice reference
-                    <input name="evidenceReference" maxLength={500} defaultValue={participant.evidenceReference ?? ""} />
+                    <input
+                      name="evidenceReference"
+                      maxLength={500}
+                      defaultValue={participant.evidenceReference ?? ""}
+                    />
                   </label>
                   <label>
                     Adjustment reason
-                    <input name="adjustmentReason" maxLength={500} placeholder="Required if the total differs from approved compensation." />
+                    <input
+                      name="adjustmentReason"
+                      maxLength={500}
+                      placeholder="Required if the total differs from approved compensation."
+                    />
                   </label>
                   <label>
                     Internal settlement note
-                    <textarea name="internalNote" maxLength={1000} defaultValue={participant.internalNote ?? ""} />
+                    <textarea
+                      name="internalNote"
+                      maxLength={1000}
+                      defaultValue={participant.internalNote ?? ""}
+                    />
                   </label>
-                  <button className="button button-primary" disabled={navigation.state !== "idle"}>
+                  <button
+                    className="button button-primary"
+                    disabled={navigation.state !== "idle"}
+                  >
                     Save settlement
                   </button>
                 </Form>
@@ -1094,19 +1153,28 @@ export default function CampaignCloseout({
 
         <section className="admin-panel">
           <span className="chapter">Final client report</span>
-          <h2>{report?.status === "final" ? "Final report is locked to closeout evidence." : "Generate the final campaign snapshot."}</h2>
+          <h2>
+            {report?.status === "final"
+              ? "Final report is locked to closeout evidence."
+              : "Generate the final campaign snapshot."}
+          </h2>
           <p>
-            The client-safe export uses the existing campaign performance data and
-            excludes private Creator compensation. Internal settlement stays in the
-            internal report.
+            The client-safe export uses the existing campaign performance data
+            and excludes private Creator compensation. Internal settlement stays
+            in the internal report.
           </p>
           {report?.finalizedAt && (
             <p>Finalized {new Date(report.finalizedAt).toLocaleString()}.</p>
           )}
           <Form method="post">
             <input type="hidden" name="intent" value="finalize-report" />
-            <button className="button button-primary" disabled={navigation.state !== "idle"}>
-              {report?.status === "final" ? "Regenerate final snapshot" : "Finalize report"}
+            <button
+              className="button button-primary"
+              disabled={navigation.state !== "idle"}
+            >
+              {report?.status === "final"
+                ? "Regenerate final snapshot"
+                : "Finalize report"}
             </button>
           </Form>
         </section>
@@ -1115,8 +1183,8 @@ export default function CampaignCloseout({
           <span className="chapter">Client delivery evidence</span>
           <h2>Record the delivery, not another document system.</h2>
           <p>
-            Send the report through your normal client channel. AKARI records who
-            received it and, if useful, a Drive or other external reference.
+            Send the report through your normal client channel. AKARI records
+            who received it and, if useful, a Drive or other external reference.
           </p>
           {closeout?.reportSentAt && (
             <p>
@@ -1128,13 +1196,25 @@ export default function CampaignCloseout({
             <input type="hidden" name="intent" value="mark-report-delivered" />
             <label>
               Recipient
-              <input name="reportSentTo" maxLength={200} defaultValue={closeout?.reportSentTo ?? ""} required />
+              <input
+                name="reportSentTo"
+                maxLength={200}
+                defaultValue={closeout?.reportSentTo ?? ""}
+                required
+              />
             </label>
             <label>
               External report / Drive link
-              <input name="reportReferenceUrl" type="url" defaultValue={closeout?.reportReferenceUrl ?? ""} />
+              <input
+                name="reportReferenceUrl"
+                type="url"
+                defaultValue={closeout?.reportReferenceUrl ?? ""}
+              />
             </label>
-            <button className="button button-primary" disabled={navigation.state !== "idle"}>
+            <button
+              className="button button-primary"
+              disabled={navigation.state !== "idle"}
+            >
               Mark report delivered
             </button>
           </Form>
@@ -1144,23 +1224,41 @@ export default function CampaignCloseout({
           <span className="chapter">Completion acknowledgement</span>
           <h2>Record whether the client acknowledged completion.</h2>
           <p>
-            This is an operational CRM marker only. It is not a legal signature or
-            agreement workflow.
+            This is an operational CRM marker only. It is not a legal signature
+            or agreement workflow.
           </p>
           <Form method="post" className="profile-form">
-            <input type="hidden" name="intent" value="record-client-acknowledgement" />
+            <input
+              type="hidden"
+              name="intent"
+              value="record-client-acknowledgement"
+            />
             <label>
               Acknowledgement
-              <select name="clientAcknowledgementStatus" defaultValue={closeout?.clientAcknowledgementStatus ?? "acknowledged"}>
+              <select
+                name="clientAcknowledgementStatus"
+                defaultValue={
+                  closeout?.clientAcknowledgementStatus ?? "acknowledged"
+                }
+              >
                 <option value="acknowledged">Acknowledged</option>
-                <option value="not_required">Explicit acknowledgement not required</option>
+                <option value="not_required">
+                  Explicit acknowledgement not required
+                </option>
               </select>
             </label>
             <label>
               Note
-              <textarea name="clientAcknowledgementNote" maxLength={1000} defaultValue={closeout?.clientAcknowledgementNote ?? ""} />
+              <textarea
+                name="clientAcknowledgementNote"
+                maxLength={1000}
+                defaultValue={closeout?.clientAcknowledgementNote ?? ""}
+              />
             </label>
-            <button className="button button-quiet" disabled={navigation.state !== "idle"}>
+            <button
+              className="button button-quiet"
+              disabled={navigation.state !== "idle"}
+            >
               Record acknowledgement
             </button>
           </Form>
@@ -1173,9 +1271,20 @@ export default function CampaignCloseout({
             <input type="hidden" name="intent" value="close-campaign" />
             <label>
               Closeout note
-              <textarea name="closeoutNote" minLength={10} maxLength={1000} defaultValue={closeout?.closeoutNote ?? ""} required />
+              <textarea
+                name="closeoutNote"
+                minLength={10}
+                maxLength={1000}
+                defaultValue={closeout?.closeoutNote ?? ""}
+                required
+              />
             </label>
-            <button className="button button-primary" disabled={navigation.state !== "idle" || Boolean(closeout?.closedAt)}>
+            <button
+              className="button button-primary"
+              disabled={
+                navigation.state !== "idle" || Boolean(closeout?.closedAt)
+              }
+            >
               {closeout?.closedAt ? "Campaign closed" : "Close campaign"}
             </button>
           </Form>
@@ -1185,16 +1294,19 @@ export default function CampaignCloseout({
           <span className="chapter">Renewal and upsell</span>
           <h2>Record the commercial next step after closeout.</h2>
           <p>
-            AKARI House does not map this to the Investor Opportunity system. Use an
-            optional external CRM/reference link until the commercial CRM is
-            connected to this product surface.
+            AKARI House does not map this to the Investor Opportunity system.
+            Use an optional external CRM/reference link until the commercial CRM
+            is connected to this product surface.
           </p>
           <Form method="post" className="profile-form">
             <input type="hidden" name="intent" value="save-renewal" />
             <div className="form-row form-row-three">
               <label>
                 Next step
-                <select name="renewalType" defaultValue={closeout?.renewalType ?? "none"}>
+                <select
+                  name="renewalType"
+                  defaultValue={closeout?.renewalType ?? "none"}
+                >
                   <option value="none">No renewal</option>
                   <option value="follow_up">Follow up later</option>
                   <option value="renew_campaign">Renew campaign</option>
@@ -1204,7 +1316,10 @@ export default function CampaignCloseout({
               </label>
               <label>
                 Stage
-                <select name="renewalStage" defaultValue={closeout?.renewalStage ?? "none"}>
+                <select
+                  name="renewalStage"
+                  defaultValue={closeout?.renewalStage ?? "none"}
+                >
                   <option value="none">No active follow-up</option>
                   <option value="planned">Planned</option>
                   <option value="converted">Converted</option>
@@ -1213,18 +1328,33 @@ export default function CampaignCloseout({
               </label>
               <label>
                 Follow-up date
-                <input name="renewalFollowUpAt" type="date" defaultValue={closeout?.renewalFollowUpAt?.slice(0, 10) ?? ""} />
+                <input
+                  name="renewalFollowUpAt"
+                  type="date"
+                  defaultValue={closeout?.renewalFollowUpAt?.slice(0, 10) ?? ""}
+                />
               </label>
             </div>
             <label>
               Commercial CRM / reference link
-              <input name="renewalReferenceUrl" type="url" defaultValue={closeout?.renewalReferenceUrl ?? ""} />
+              <input
+                name="renewalReferenceUrl"
+                type="url"
+                defaultValue={closeout?.renewalReferenceUrl ?? ""}
+              />
             </label>
             <label>
               Renewal note
-              <textarea name="renewalNote" maxLength={1000} defaultValue={closeout?.renewalNote ?? ""} />
+              <textarea
+                name="renewalNote"
+                maxLength={1000}
+                defaultValue={closeout?.renewalNote ?? ""}
+              />
             </label>
-            <button className="button button-primary" disabled={navigation.state !== "idle" || !closeout?.closedAt}>
+            <button
+              className="button button-primary"
+              disabled={navigation.state !== "idle" || !closeout?.closedAt}
+            >
               Save renewal outcome
             </button>
           </Form>

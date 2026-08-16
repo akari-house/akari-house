@@ -69,9 +69,9 @@ describe("R69 campaign settlement reconciliation", () => {
       renewalConverted: false,
     };
     expect(deriveCampaignCloseoutStatus(base)).toBe("settled");
-    expect(
-      deriveCampaignCloseoutStatus({ ...base, reportFinal: true }),
-    ).toBe("reporting");
+    expect(deriveCampaignCloseoutStatus({ ...base, reportFinal: true })).toBe(
+      "reporting",
+    );
     expect(
       deriveCampaignCloseoutStatus({
         ...base,
@@ -99,9 +99,9 @@ describe("R69 campaign settlement reconciliation", () => {
   });
 
   it("accepts only external HTTP(S) references", () => {
-    expect(safeExternalUrl("https://drive.google.com/file/d/example")).toContain(
-      "https://drive.google.com",
-    );
+    expect(
+      safeExternalUrl("https://drive.google.com/file/d/example"),
+    ).toContain("https://drive.google.com");
     expect(safeExternalUrl("javascript:alert(1)")).toBeNull();
   });
 });
@@ -114,7 +114,9 @@ describe("R69 production wiring and safety", () => {
       'route("campaigns/:slug/closeout", "routes/campaign-closeout.tsx")',
     );
     expect(closeout).toContain('campaign.campaignKind === "iio"');
-    expect(closeout).toContain("requireCampaignOperator(request, db, campaign.id)");
+    expect(closeout).toContain(
+      "requireCampaignOperator(request, db, campaign.id)",
+    );
     expect(closeout).toContain("assertSameOrigin(request)");
   });
 
@@ -147,9 +149,13 @@ describe("R69 production wiring and safety", () => {
       "migrations/0115_campaign_closeout_renewal.sql",
       "utf8",
     );
-    expect(migration).toContain("CREATE TABLE IF NOT EXISTS campaign_closeouts");
+    expect(migration).toContain(
+      "CREATE TABLE IF NOT EXISTS campaign_closeouts",
+    );
     expect(migration).toContain("report_reference_url");
     expect(migration).toContain("renewal_reference_url");
-    expect(migration).not.toMatch(/DROP TABLE|DELETE FROM|ALTER TABLE .* DROP/i);
+    expect(migration).not.toMatch(
+      /DROP TABLE|DELETE FROM|ALTER TABLE .* DROP/i,
+    );
   });
 });
