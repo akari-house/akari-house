@@ -157,8 +157,18 @@ test.describe("launch visual evidence", () => {
     await capture(page, testInfo, "workspace-founder");
   });
 
-  test("captures Superadmin workspace", async ({ page }, testInfo) => {
+  test("captures Superadmin workspace and R69 closeout", async ({
+    page,
+  }, testInfo) => {
+    await activatePersona(page, "founder", { reuseExisting: true });
+    await activatePersona(page, "creator_selected", { reuseExisting: true });
     await activatePersona(page, "superadmin", { reuseExisting: true });
+    const seedCloseout = await page.request.post(
+      "/__test__/campaign-closeout/seed",
+      { headers: fixtureHeaders },
+    );
+    expect(seedCloseout.status()).toBe(201);
+
     await page.goto("/admin", { waitUntil: "networkidle" });
     await expect(
       page.getByRole("heading", { name: "Admin workspace" }),
@@ -181,5 +191,14 @@ test.describe("launch visual evidence", () => {
     ).toBeVisible();
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-superadmin-activation");
+
+    await page.goto("/campaigns/launch-gate-closeout/closeout", {
+      waitUntil: "networkidle",
+    });
+    await expect(
+      page.getByRole("heading", { name: "R69 Closeout Campaign" }),
+    ).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    await capture(page, testInfo, "workspace-superadmin-campaign-closeout");
   });
 });

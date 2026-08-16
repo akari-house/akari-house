@@ -10,6 +10,10 @@ export default [
   route("__test__/launch-security/:action", "routes/test-launch-security.ts"),
   route("__test__/opportunities/:action", "routes/test-opportunities.ts"),
   route(
+    "__test__/campaign-closeout/:action",
+    "routes/test-campaign-closeout.ts",
+  ),
+  route(
     "__test__/opportunity-documents/:action",
     "routes/test-opportunity-documents.ts",
   ),
@@ -38,6 +42,7 @@ export default [
   route("campaigns/:slug/commitment", "routes/campaign-commitment.tsx"),
   route("campaigns/:slug/performance", "routes/campaign-performance.tsx"),
   route("campaigns/:slug/work", "routes/campaign-workspace.tsx"),
+  route("campaigns/:slug/closeout", "routes/campaign-closeout.tsx"),
   route("campaigns/:slug/settlement", "routes/iio-settlement.tsx"),
   route("events", "routes/events.tsx"),
   route("events/new", "routes/event-new.tsx"),

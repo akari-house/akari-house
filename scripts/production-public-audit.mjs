@@ -179,6 +179,7 @@ await record(
       { path: "/__test__/launch-security/account-state", method: "POST" },
       { path: "/__test__/opportunities/state", method: "POST" },
       { path: "/__test__/opportunity-documents/state", method: "POST" },
+      { path: "/__test__/campaign-closeout/seed", method: "POST" },
     ];
     for (const probe of probes) {
       const response = await request(probe.path, {
