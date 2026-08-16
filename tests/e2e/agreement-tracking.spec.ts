@@ -78,9 +78,9 @@ test.describe("R70 agreement tracking", () => {
       .locator("details.agreement-card")
       .filter({ hasText: title });
     await expect(updated).toHaveCount(1);
-    await expect(
-      updated.getByText("Signed externally", { exact: true }),
-    ).toBeVisible();
+    await expect(updated.locator("summary")).toContainText(
+      "Signed externally · Service agreement",
+    );
     await updated.locator("summary").click();
     await expect(
       updated.getByRole("link", { name: "Open external agreement ↗" }),
