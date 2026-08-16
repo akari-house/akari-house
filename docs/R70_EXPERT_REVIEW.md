@@ -48,6 +48,8 @@ External document references must use HTTPS. AKARI does not proxy or ingest the 
 
 Every create/update operation writes to the existing `audit_logs` system. Records are not hard-deleted through the UI; `terminated` and `not_required` preserve operating history.
 
+Agreement history must also survive administrator account changes. If a recorded owner or historical actor is removed, the agreement remains and the owner becomes unassigned for reassignment instead of blocking account removal or deleting the agreement record.
+
 ## CRM / operations lens
 
 The design answers six operational questions directly:
@@ -87,6 +89,7 @@ This is enough to reduce missed follow-ups and expired mandates without creating
 - Superadmin authorization on loader and action
 - HTTPS external URL normalization
 - relationship validation for Campaign -> Project
+- owner and historical actor references preserve the agreement with `ON DELETE SET NULL`
 
 ## Release validation
 
@@ -103,6 +106,7 @@ R70 is complete when:
 - signed status requires an external HTTPS document link
 - sent/signed milestone dates are recorded
 - follow-up and expiry urgency are visible
+- agreement history survives admin account removal and becomes reassignable
 - all changes are auditable
 - non-Superadmins cannot enter the desk
 - AKARI never claims to draft, review or sign the legal agreement
