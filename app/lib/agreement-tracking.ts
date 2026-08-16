@@ -71,8 +71,9 @@ export function agreementNeedsFollowUp(
 ) {
   if (!nextFollowUpAt || ["terminated", "not_required"].includes(status))
     return false;
-  const due = new Date(`${nextFollowUpAt}T23:59:59.999Z`);
-  return Number.isFinite(due.getTime()) && due.getTime() <= now.getTime();
+  const due = nextFollowUpAt.slice(0, 10);
+  const today = now.toISOString().slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(due) && due <= today;
 }
 
 export function agreementExpiryState(
