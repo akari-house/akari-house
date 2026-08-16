@@ -15,12 +15,17 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     db
       .prepare(
         `SELECT c.id, c.slug, c.title, c.status,
+              c.campaign_kind AS campaignKind,
               o.primary_moderator_id AS primaryModeratorId,
               o.backup_moderator_id AS backupModeratorId,
               o.escalation_status AS escalationStatus,
-              o.internal_notes AS internalNotes
+              o.internal_notes AS internalNotes,
+              co.status AS closeoutStatus,
+              co.closed_at AS closedAt,
+              co.renewal_stage AS renewalStage
        FROM ambassador_campaigns c
        LEFT JOIN campaign_ownership o ON o.campaign_id = c.id
+       LEFT JOIN campaign_closeouts co ON co.campaign_id = c.id
        ORDER BY c.updated_at DESC`,
       )
       .all<{
@@ -28,10 +33,14 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         slug: string;
         title: string;
         status: string;
+        campaignKind: string;
         primaryModeratorId: string | null;
         backupModeratorId: string | null;
         escalationStatus: string | null;
         internalNotes: string | null;
+        closeoutStatus: string | null;
+        closedAt: string | null;
+        renewalStage: string | null;
       }>(),
     db
       .prepare(
@@ -214,6 +223,30 @@ export default function AdminCampaignOperations({
                     ? adminName.get(campaign.backupModeratorId)
                     : "Unassigned"}
                 </p>
+                {campaign.campaignKind !== "iio" && (
+                  <p>
+                    Closeout: {campaign.closeoutStatus ?? "active"}
+                    {campaign.renewalStage && campaign.renewalStage !== "none"
+                      ? ` · renewal ${campaign.renewalStage}`
+                      : ""}
+                  </p>
+                )}
+                <div className="button-row">
+                  <Link
+                    className="button button-quiet"
+                    to={`/campaigns/${campaign.slug}/performance`}
+                  >
+                    Performance
+                  </Link>
+                  {campaign.campaignKind !== "iio" && (
+                    <Link
+                      className="button button-primary"
+                      to={`/campaigns/${campaign.slug}/closeout`}
+                    >
+                      Closeout & renewal
+                    </Link>
+                  )}
+                </div>
               </div>
               <Form method="post" className="form-stack">
                 <input type="hidden" name="campaignId" value={campaign.id} />
