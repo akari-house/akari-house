@@ -81,7 +81,9 @@ test.describe("R70 agreement tracking", () => {
     await expect(updated.locator("summary")).toContainText(
       "Signed externally · Service agreement",
     );
-    await updated.locator("summary").click();
+    if ((await updated.getAttribute("open")) === null) {
+      await updated.locator("summary").click();
+    }
     await expect(
       updated.getByRole("link", { name: "Open external agreement ↗" }),
     ).toHaveAttribute("href", new RegExp(runId));
