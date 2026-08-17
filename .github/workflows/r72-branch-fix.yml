@@ -36,10 +36,11 @@ jobs:
                 ? `${data.project.title} Diligence | AKARI House`
                 : "Diligence | AKARI House",
             },'''
-          if old not in s:
-              raise SystemExit('Expected dynamic meta block not found')
-          s = s.replace(old, '''export const meta: Route.MetaFunction = () => [
+          if old in s:
+              s = s.replace(old, '''export const meta: Route.MetaFunction = () => [
             { title: "Project Diligence | AKARI House" },''')
+          elif 'export const meta: Route.MetaFunction = () => [' not in s:
+              raise SystemExit('Expected diligence meta block not found')
           p.write_text(s)
           PY
       - name: Format R72 files
@@ -50,7 +51,6 @@ jobs:
             app/routes.ts \
             app/routes/admin-diligence.tsx \
             app/routes/project-diligence-completion.tsx \
-            migrations/0118_data_room_diligence_completion.sql \
             tests/diligence-completion.test.ts
       - name: Commit repaired branch
         run: |
