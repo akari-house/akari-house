@@ -75,6 +75,14 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     superadminOnly: true,
   },
   {
+    key: "operating-rhythm",
+    label: "Operating rhythm",
+    description:
+      "Review cross-system attention signals, follow-up ownership and recurring report snapshots.",
+    to: "/admin/operating-rhythm",
+    superadminOnly: true,
+  },
+  {
     key: "membership",
     label: "Membership",
     description: "Review applicants and approve House access.",
