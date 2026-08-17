@@ -1,0 +1,84 @@
+name: R75 branch integration fixer
+
+on:
+  push:
+    branches:
+      - r75-commercial-saas-completion
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r75-commercial-saas-completion
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Integrate R75 with operating rhythm
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const path = 'app/lib/operating-rhythm.server.ts';
+          let text = fs.readFileSync(path, 'utf8');
+          if (!text.includes('loadCommercialAttentionSignals')) {
+            text = text.replace(
+              '} from "./operating-rhythm";\n',
+              '} from "./operating-rhythm";\nimport { loadCommercialAttentionSignals } from "./commercial-attention.server";\nimport { commercialCurrencySummary } from "./commercial-saas.server";\n',
+            );
+          }
+          if (!text.includes('await loadCommercialAttentionSignals(db, now)')) {
+            const marker = '  return signals;\n}\n\nexport async function loadAttentionStates';
+            text = text.replace(
+              marker,
+              '  signals.push(...(await loadCommercialAttentionSignals(db, now)));\n  return signals;\n}\n\nexport async function loadAttentionStates',
+            );
+          }
+          if (!text.includes('reportType === "revenue"')) {
+            const marker = '  if (reportType === "relationship_followup")\n    return signals.filter((item) => item.sourceType === "relationship");\n  return signals;';
+            text = text.replace(
+              marker,
+              '  if (reportType === "relationship_followup")\n    return signals.filter((item) => item.sourceType === "relationship");\n  if (reportType === "revenue")\n    return signals.filter((item) =>\n      ["invoice", "settlement", "workspace_subscription", "campaign_renewal"].includes(\n        item.sourceType,\n      ),\n    );\n  return signals;',
+            );
+          }
+          if (!text.includes('const finance =\n    options.reportType === "revenue"')) {
+            text = text.replace(
+              '  const items = reportSignals(options.reportType, active, projectId);\n  const snapshot = {',
+              '  const items = reportSignals(options.reportType, active, projectId);\n  const finance =\n    options.reportType === "revenue" ? await commercialCurrencySummary(db) : undefined;\n  const snapshot = {',
+            );
+            text = text.replace(
+              '    projectId,\n    summary: summarizeAttention(items),',
+              '    projectId,\n    summary: summarizeAttention(items),\n    ...(finance ? { finance } : {}),',
+            );
+          }
+          fs.writeFileSync(path, text);
+          NODE
+      - name: Format R75 files
+        run: >-
+          npx prettier --write
+          app/lib/commercial-saas.ts
+          app/lib/commercial-saas.server.ts
+          app/lib/commercial-attention.server.ts
+          app/lib/saas-workspace.server.ts
+          app/lib/operating-rhythm.ts
+          app/lib/operating-rhythm.server.ts
+          app/lib/admin-workspace.ts
+          app/routes.ts
+          app/routes/admin-finance.tsx
+          app/routes/admin-saas-workspaces.tsx
+          app/routes/saas-workspace.tsx
+      - name: Commit integration changes
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app
+          git commit -m "R75: integrate finance attention and format"
+          git push origin HEAD:r75-commercial-saas-completion
