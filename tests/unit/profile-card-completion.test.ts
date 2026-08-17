@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   MAX_PROFILE_CARD_LANGUAGES,
+  PROFILE_CARD_PALETTES,
   formatProfileReach,
   normaliseProfileCardLanguages,
   parseProfileCardLanguages,
@@ -40,8 +41,19 @@ describe("completed AKARI profile card", () => {
     expect(formatProfileReach(12500)).toBe("12.5K");
   });
 
-  it("renders the requested profile identity and privacy features", () => {
+  it("offers five AKARI brand glass colors", () => {
+    expect(PROFILE_CARD_PALETTES).toEqual([
+      "midnight",
+      "pearl",
+      "sakura",
+      "blossom",
+      "lantern",
+    ]);
+  });
+
+  it("renders the requested credit-card identity and privacy features", () => {
     const component = read("app/components/ProfileShareCard.tsx");
+    const styles = read("app/styles/profile-card-glass.css");
     const route = read("app/routes/profile-card.tsx");
 
     expect(component).toContain("profile-card-language-tags");
@@ -50,8 +62,12 @@ describe("completed AKARI profile card", () => {
     expect(component).toContain("profile-card-headline");
     expect(component).toContain("Connected social platforms");
     expect(component).toContain("akarihouse.com/profiles/${model.username}");
-    expect(component).toContain('value="landscape"');
-    expect(component).toContain('value="portrait"');
+    expect(component).toContain("/assets/brand/akari-logo-horizontal.png");
+    expect(component).toContain("/assets/brand/akari-flower-mark.png");
+    expect(component).toContain('type="hidden" name="orientation" value="landscape"');
+    expect(component).toContain("Glass color");
+    expect(styles).toContain("aspect-ratio: 85.6 / 53.98");
+    expect(styles).toContain("glass-card-gloss");
     expect(route).toContain(
       "languageCandidates.length > MAX_PROFILE_CARD_LANGUAGES",
     );
