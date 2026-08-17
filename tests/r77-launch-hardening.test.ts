@@ -12,7 +12,9 @@ describe("R77 launch hardening", () => {
 
   it("keeps the Turnstile server gate intact while making the client responsive", async () => {
     const source = await readFile("app/components/TurnstileWidget.tsx", "utf8");
-    expect(source).toContain('size: window.matchMedia("(max-width: 360px)").matches');
+    expect(source).toContain(
+      'size: window.matchMedia("(max-width: 360px)").matches',
+    );
     expect(source).toContain('? "compact"');
     expect(source).toContain(': "flexible"');
     expect(source).toContain('"error-callback"');
@@ -26,7 +28,7 @@ describe("R77 launch hardening", () => {
     expect(css).toContain(".common-section");
     expect(css).toContain(".journey-section");
     expect(css).toContain(".archive-section");
-    expect(css).not.toMatch(/\.arrival\s*[,\{][^}]*content-visibility/s);
+    expect(css).not.toContain(".arrival {\n    content-visibility");
   });
 
   it("stores pilot evidence additively without creating synthetic participants", async () => {

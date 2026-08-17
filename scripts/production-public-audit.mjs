@@ -98,8 +98,12 @@ await record(
     const injectedMarkers = ["static.cloudflareinsights.com", "beacon.min.js"];
     const found = injectedMarkers.filter((marker) => body.includes(marker));
     if (found.length > 0)
-      throw new Error(`Unexpected browser analytics injection: ${found.join(", ")}.`);
-    const csp = (response.headers.get("content-security-policy") || "").toLowerCase();
+      throw new Error(
+        `Unexpected browser analytics injection: ${found.join(", ")}.`,
+      );
+    const csp = (
+      response.headers.get("content-security-policy") || ""
+    ).toLowerCase();
     if (csp.includes("cloudflareinsights"))
       throw new Error("CSP unexpectedly permits Cloudflare browser analytics.");
     return "No Cloudflare browser analytics injection and CSP remains narrow";

@@ -64,11 +64,7 @@ const taskStatuses = new Set([
   "abandoned",
   "not_applicable",
 ]);
-const consentStatuses = new Set([
-  "none",
-  "notes_only",
-  "screenshots_allowed",
-]);
+const consentStatuses = new Set(["none", "notes_only", "screenshots_allowed"]);
 
 export const meta: Route.MetaFunction = () => [
   { title: "Launch Completion | AKARI House" },
@@ -80,11 +76,15 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 function text(form: FormData, key: string) {
-  return String(form.get(key) ?? "").trim();
+  const value = form.get(key);
+  return typeof value === "string" ? value.trim() : "";
 }
 
 async function scalar(db: D1Database, sql: string, ...values: unknown[]) {
-  const row = await db.prepare(sql).bind(...values).first<CountRow>();
+  const row = await db
+    .prepare(sql)
+    .bind(...values)
+    .first<CountRow>();
   return Number(row?.count ?? 0);
 }
 
@@ -123,7 +123,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     pilotMultiRole,
     openCriticalOrHighFindings,
   ] = await Promise.all([
-    scalar(db, `SELECT COUNT(*) AS count FROM projects WHERE status = 'published'`),
+    scalar(
+      db,
+      `SELECT COUNT(*) AS count FROM projects WHERE status = 'published'`,
+    ),
     scalar(
       db,
       `SELECT COUNT(*) AS count FROM opportunity_listings WHERE status = 'published'`,
@@ -507,7 +510,13 @@ function CheckList({
   checks,
 }: {
   title: string;
-  checks: { key: string; label: string; current: number; target: number; passed: boolean }[];
+  checks: {
+    key: string;
+    label: string;
+    current: number;
+    target: number;
+    passed: boolean;
+  }[];
 }) {
   return (
     <section className="dashboard-panel">
@@ -526,7 +535,10 @@ function CheckList({
                 {item.current} / {item.target}
               </p>
             </div>
-            <span className="status-badge" data-status={item.passed ? "approved" : "pending"}>
+            <span
+              className="status-badge"
+              data-status={item.passed ? "approved" : "pending"}
+            >
               {item.passed ? "Ready" : "Needs work"}
             </span>
           </div>
@@ -536,9 +548,14 @@ function CheckList({
   );
 }
 
-export default function AdminLaunchCompletion({ loaderData }: Route.ComponentProps) {
+export default function AdminLaunchCompletion({
+  loaderData,
+}: Route.ComponentProps) {
   const taskByParticipant = new Map(
-    loaderData.taskRows.map((row) => [`${row.participantId}:${row.taskKey}`, row]),
+    loaderData.taskRows.map((row) => [
+      `${row.participantId}:${row.taskKey}`,
+      row,
+    ]),
   );
 
   return (
@@ -548,7 +565,9 @@ export default function AdminLaunchCompletion({ loaderData }: Route.ComponentPro
         <AdminWorkspaceNav access={loaderData.access} />
         <header className="admin-heading">
           <div>
-            <span className="eyebrow">R77 · AKARI House V1 launch completion</span>
+            <span className="eyebrow">
+              R77 · AKARI House V1 launch completion
+            </span>
             <h1>Finish with evidence, not more feature scope.</h1>
             <p>
               This desk measures live House inventory, real pilot participation,
@@ -574,17 +593,25 @@ export default function AdminLaunchCompletion({ loaderData }: Route.ComponentPro
               : "Public V1 still has evidence blockers"}
           </h2>
           <p>
-            Seed {loaderData.readiness.seedReady ? "ready" : "incomplete"} · Pilot{" "}
-            {loaderData.readiness.cohortReady ? "ready" : "incomplete"} · Journeys{" "}
-            {loaderData.readiness.journeysReady ? "ready" : "incomplete"} · Serious defects{" "}
+            Seed {loaderData.readiness.seedReady ? "ready" : "incomplete"} ·
+            Pilot {loaderData.readiness.cohortReady ? "ready" : "incomplete"} ·
+            Journeys{" "}
+            {loaderData.readiness.journeysReady ? "ready" : "incomplete"} ·
+            Serious defects{" "}
             {loaderData.readiness.defectsClear
               ? "clear"
               : `${loaderData.openCriticalOrHighFindings} open`}
           </p>
         </section>
 
-        <CheckList title="Seed the live House" checks={loaderData.readiness.seedChecks} />
-        <CheckList title="Balanced real-user pilot" checks={loaderData.readiness.cohortChecks} />
+        <CheckList
+          title="Seed the live House"
+          checks={loaderData.readiness.seedChecks}
+        />
+        <CheckList
+          title="Balanced real-user pilot"
+          checks={loaderData.readiness.cohortChecks}
+        />
 
         <section className="dashboard-panel">
           <span className="eyebrow">Required journeys</span>
@@ -593,7 +620,10 @@ export default function AdminLaunchCompletion({ loaderData }: Route.ComponentPro
             {loaderData.readiness.journeyChecks.map((item) => (
               <div className="application-card" key={item.key}>
                 <strong>{item.label}</strong>
-                <span className="status-badge" data-status={item.passed ? "approved" : "pending"}>
+                <span
+                  className="status-badge"
+                  data-status={item.passed ? "approved" : "pending"}
+                >
                   {item.passed ? "Passed" : "Not yet passed"}
                 </span>
               </div>
@@ -605,8 +635,8 @@ export default function AdminLaunchCompletion({ loaderData }: Route.ComponentPro
           <section className="dashboard-panel">
             <h2>Create the controlled pilot first</h2>
             <p>
-              No pilot cohort exists yet. Create one in Production evidence, then
-              return here to add real approved members.
+              No pilot cohort exists yet. Create one in Production evidence,
+              then return here to add real approved members.
             </p>
             <Link className="button button-primary" to="/admin/production">
               Create pilot cohort
@@ -623,7 +653,11 @@ export default function AdminLaunchCompletion({ loaderData }: Route.ComponentPro
               </p>
               <Form method="post" className="form-grid">
                 <input type="hidden" name="intent" value="add_participant" />
-                <input type="hidden" name="cohortId" value={loaderData.cohort.id} />
+                <input
+                  type="hidden"
+                  name="cohortId"
+                  value={loaderData.cohort.id}
+                />
                 <label>
                   Approved member
                   <select name="userId" required defaultValue="">
@@ -632,7 +666,8 @@ export default function AdminLaunchCompletion({ loaderData }: Route.ComponentPro
                     </option>
                     {loaderData.eligibleUsers.map((member) => (
                       <option value={member.id} key={member.id}>
-                        {member.displayName} (@{member.username}) · {member.roles}
+                        {member.displayName} (@{member.username}) ·{" "}
+                        {member.roles}
                       </option>
                     ))}
                   </select>
@@ -651,7 +686,9 @@ export default function AdminLaunchCompletion({ loaderData }: Route.ComponentPro
                   <select name="evidenceConsent" defaultValue="notes_only">
                     <option value="none">No evidence capture</option>
                     <option value="notes_only">Notes only</option>
-                    <option value="screenshots_allowed">Screenshots allowed</option>
+                    <option value="screenshots_allowed">
+                      Screenshots allowed
+                    </option>
                   </select>
                 </label>
                 <label>
@@ -679,14 +716,29 @@ export default function AdminLaunchCompletion({ loaderData }: Route.ComponentPro
                       <h3>{participant.displayName}</h3>
                       <p>
                         @{participant.username} · {participant.status} · passed{" "}
-                        {participant.passedTasks}/{pilotTaskDefinitions.length} tracked journeys
+                        {participant.passedTasks}/{pilotTaskDefinitions.length}{" "}
+                        tracked journeys
                       </p>
-                      {participant.deviceNotes && <small>{participant.deviceNotes}</small>}
+                      {participant.deviceNotes && (
+                        <small>{participant.deviceNotes}</small>
+                      )}
                     </div>
                     <Form method="post" className="form-grid">
-                      <input type="hidden" name="intent" value="update_participant" />
-                      <input type="hidden" name="participantId" value={participant.id} />
-                      <select name="status" defaultValue={participant.status} aria-label="Participant status">
+                      <input
+                        type="hidden"
+                        name="intent"
+                        value="update_participant"
+                      />
+                      <input
+                        type="hidden"
+                        name="participantId"
+                        value={participant.id}
+                      />
+                      <select
+                        name="status"
+                        defaultValue={participant.status}
+                        aria-label="Participant status"
+                      >
                         <option value="invited">Invited</option>
                         <option value="active">Active</option>
                         <option value="completed">Completed</option>
@@ -699,7 +751,9 @@ export default function AdminLaunchCompletion({ loaderData }: Route.ComponentPro
                       >
                         <option value="none">No evidence capture</option>
                         <option value="notes_only">Notes only</option>
-                        <option value="screenshots_allowed">Screenshots allowed</option>
+                        <option value="screenshots_allowed">
+                          Screenshots allowed
+                        </option>
                       </select>
                       <input
                         name="deviceNotes"
@@ -714,12 +768,30 @@ export default function AdminLaunchCompletion({ loaderData }: Route.ComponentPro
 
                     <div className="application-list">
                       {pilotTaskDefinitions.map((task) => {
-                        const existing = taskByParticipant.get(`${participant.id}:${task.key}`);
+                        const existing = taskByParticipant.get(
+                          `${participant.id}:${task.key}`,
+                        );
                         return (
-                          <Form method="post" className="application-card" key={task.key}>
-                            <input type="hidden" name="intent" value="record_task" />
-                            <input type="hidden" name="participantId" value={participant.id} />
-                            <input type="hidden" name="taskKey" value={task.key} />
+                          <Form
+                            method="post"
+                            className="application-card"
+                            key={task.key}
+                          >
+                            <input
+                              type="hidden"
+                              name="intent"
+                              value="record_task"
+                            />
+                            <input
+                              type="hidden"
+                              name="participantId"
+                              value={participant.id}
+                            />
+                            <input
+                              type="hidden"
+                              name="taskKey"
+                              value={task.key}
+                            />
                             <strong>{task.label}</strong>
                             <select
                               name="taskStatus"
@@ -730,7 +802,9 @@ export default function AdminLaunchCompletion({ loaderData }: Route.ComponentPro
                               <option value="passed">Passed</option>
                               <option value="blocked">Blocked</option>
                               <option value="abandoned">Abandoned</option>
-                              <option value="not_applicable">Not applicable</option>
+                              <option value="not_applicable">
+                                Not applicable
+                              </option>
                             </select>
                             <label>
                               Minutes
@@ -746,7 +820,9 @@ export default function AdminLaunchCompletion({ loaderData }: Route.ComponentPro
                                 name="assistanceRequired"
                                 type="checkbox"
                                 value="1"
-                                defaultChecked={Boolean(existing?.assistanceRequired)}
+                                defaultChecked={Boolean(
+                                  existing?.assistanceRequired,
+                                )}
                               />{" "}
                               Operator assistance required
                             </label>
@@ -757,7 +833,10 @@ export default function AdminLaunchCompletion({ loaderData }: Route.ComponentPro
                               placeholder="Observed friction, browser or evidence note"
                               aria-label={`${task.label} notes`}
                             />
-                            <button className="button button-quiet" type="submit">
+                            <button
+                              className="button button-quiet"
+                              type="submit"
+                            >
                               Save task evidence
                             </button>
                           </Form>
@@ -767,7 +846,9 @@ export default function AdminLaunchCompletion({ loaderData }: Route.ComponentPro
                   </article>
                 ))}
                 {!loaderData.participants.length && (
-                  <p>No real participants have been added to this cohort yet.</p>
+                  <p>
+                    No real participants have been added to this cohort yet.
+                  </p>
                 )}
               </div>
             </section>

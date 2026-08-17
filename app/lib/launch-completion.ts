@@ -3,7 +3,10 @@ export const pilotTaskDefinitions = [
   { key: "profile_privacy", label: "Profile completion and privacy controls" },
   { key: "connections", label: "Member discovery and connection journey" },
   { key: "founder_project", label: "Founder Project creation and activation" },
-  { key: "creator_campaign", label: "Creator campaign application and delivery" },
+  {
+    key: "creator_campaign",
+    label: "Creator campaign application and delivery",
+  },
   { key: "investor_deal", label: "Investor Deal discovery and diligence" },
   { key: "event_participation", label: "Event discovery and participation" },
   { key: "account_recovery", label: "Password reset, logout and recovery" },
@@ -49,7 +52,12 @@ function check(
 
 export function evaluateLaunchCompletion(snapshot: LaunchCompletionSnapshot) {
   const seedChecks = [
-    check("projects", "Published Founder Projects", snapshot.publishedProjects, 3),
+    check(
+      "projects",
+      "Published Founder Projects",
+      snapshot.publishedProjects,
+      3,
+    ),
     check(
       "opportunities",
       "Published Investor opportunities",
@@ -65,7 +73,12 @@ export function evaluateLaunchCompletion(snapshot: LaunchCompletionSnapshot) {
     check("events", "Upcoming published events", snapshot.upcomingEvents, 2),
     check("founders", "Approved Founder members", snapshot.approvedFounders, 3),
     check("creators", "Approved Creator members", snapshot.approvedCreators, 8),
-    check("investors", "Approved Investor members", snapshot.approvedInvestors, 3),
+    check(
+      "investors",
+      "Approved Investor members",
+      snapshot.approvedInvestors,
+      3,
+    ),
     check(
       "multi_role",
       "Approved multi-role members",
@@ -87,9 +100,24 @@ export function evaluateLaunchCompletion(snapshot: LaunchCompletionSnapshot) {
       snapshot.completedParticipants,
       10,
     ),
-    check("pilot_founders", "Founder pilot coverage", snapshot.pilotFounders, 3),
-    check("pilot_creators", "Creator pilot coverage", snapshot.pilotCreators, 8),
-    check("pilot_investors", "Investor pilot coverage", snapshot.pilotInvestors, 3),
+    check(
+      "pilot_founders",
+      "Founder pilot coverage",
+      snapshot.pilotFounders,
+      3,
+    ),
+    check(
+      "pilot_creators",
+      "Creator pilot coverage",
+      snapshot.pilotCreators,
+      8,
+    ),
+    check(
+      "pilot_investors",
+      "Investor pilot coverage",
+      snapshot.pilotInvestors,
+      3,
+    ),
     check(
       "pilot_multi_role",
       "Multi-role pilot coverage",
@@ -110,8 +138,8 @@ export function evaluateLaunchCompletion(snapshot: LaunchCompletionSnapshot) {
   const journeyChecks = requiredJourneyKeys.map((key) => ({
     key,
     label:
-      pilotTaskDefinitions.find((definition) => definition.key === key)?.label ??
-      key,
+      pilotTaskDefinitions.find((definition) => definition.key === key)
+        ?.label ?? key,
     passed: passedTasks.has(key),
   }));
 

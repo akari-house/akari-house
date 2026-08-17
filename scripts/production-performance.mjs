@@ -1,3 +1,4 @@
+/* global window, PerformanceObserver, performance */
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
@@ -86,7 +87,10 @@ try {
           domContentLoadedMs: Math.round(nav?.domContentLoadedEventEnd ?? 0),
           loadMs: Math.round(nav?.loadEventEnd ?? 0),
           transferBytes: Math.round(
-            resources.reduce((sum, entry) => sum + (entry.transferSize || 0), 0),
+            resources.reduce(
+              (sum, entry) => sum + (entry.transferSize || 0),
+              0,
+            ),
           ),
           resourceCount: resources.length,
         };

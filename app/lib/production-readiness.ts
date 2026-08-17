@@ -88,11 +88,7 @@ export type PublicAuditRecord = {
 export type PilotState = {
   status: "planning" | "active" | "paused" | "completed";
   stage:
-    | "internal"
-    | "invited_15"
-    | "invited_25"
-    | "invited_50"
-    | "invited_100";
+    "internal" | "invited_15" | "invited_25" | "invited_50" | "invited_100";
 } | null;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -140,8 +136,8 @@ export function evaluateProductionReadiness(input: {
   const auditTime = validTime(input.publicAudit?.completedAt);
   const publicAuditFresh = Boolean(
     input.publicAudit?.status === "passed" &&
-      auditTime !== null &&
-      auditTime > now.getTime() - 7 * DAY_MS,
+    auditTime !== null &&
+    auditTime > now.getTime() - 7 * DAY_MS,
   );
   const manualPassed = manual.filter((check) => check.fresh).length;
   const manualTotal = manual.length;
