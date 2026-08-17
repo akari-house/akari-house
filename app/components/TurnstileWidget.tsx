@@ -48,13 +48,15 @@ export function TurnstileWidget({
     if (!siteKey || !containerRef.current) return;
     let widgetId: string | undefined;
     let cancelled = false;
-    let loadTimer: ReturnType<typeof setTimeout> | undefined;
 
     ensureTurnstilePreconnect();
 
+    const loadTimer = setTimeout(() => {
+      if (!cancelled && !window.turnstile) setState("error");
+    }, 12_000);
     const render = () => {
       if (cancelled || !containerRef.current || !window.turnstile) return;
-      if (loadTimer) clearTimeout(loadTimer);
+      clearTimeout(loadTimer);
       setState("ready");
       widgetId = window.turnstile.render(containerRef.current, {
         sitekey: siteKey,
@@ -79,10 +81,6 @@ export function TurnstileWidget({
     );
 
     setState("loading");
-    loadTimer = setTimeout(() => {
-      if (!cancelled && !window.turnstile) setState("error");
-    }, 12_000);
-
     if (window.turnstile) render();
     else if (existing) {
       existing.addEventListener("load", render, { once: true });
@@ -101,7 +99,7 @@ export function TurnstileWidget({
 
     return () => {
       cancelled = true;
-      if (loadTimer) clearTimeout(loadTimer);
+      clearTimeout(loadTimer);
       existing?.removeEventListener("load", render);
       existing?.removeEventListener("error", onScriptError);
       if (widgetId && window.turnstile) window.turnstile.remove(widgetId);
