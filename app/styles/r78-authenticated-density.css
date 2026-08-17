@@ -206,8 +206,10 @@
 }
 
 .member-card-grid.is-list:has(> .member-card:only-child) .member-card,
-.member-card-grid.is-list:has(> .member-card:nth-child(2):last-child) .member-card,
-.member-card-grid.is-list:has(> .member-card:nth-child(3):last-child) .member-card {
+.member-card-grid.is-list:has(> .member-card:nth-child(2):last-child)
+  .member-card,
+.member-card-grid.is-list:has(> .member-card:nth-child(3):last-child)
+  .member-card {
   width: 100%;
   max-width: 380px;
   padding: 0.9rem;
@@ -216,22 +218,30 @@
 }
 
 .member-card-grid.is-list:has(> .member-card:only-child) .member-card-body,
-.member-card-grid.is-list:has(> .member-card:nth-child(2):last-child) .member-card-body,
-.member-card-grid.is-list:has(> .member-card:nth-child(3):last-child) .member-card-body {
+.member-card-grid.is-list:has(> .member-card:nth-child(2):last-child)
+  .member-card-body,
+.member-card-grid.is-list:has(> .member-card:nth-child(3):last-child)
+  .member-card-body {
   grid-template-columns: 1fr;
   gap: 0.55rem;
 }
 
 .member-card-grid.is-list:has(> .member-card:only-child) .member-card-summary,
-.member-card-grid.is-list:has(> .member-card:nth-child(2):last-child) .member-card-summary,
-.member-card-grid.is-list:has(> .member-card:nth-child(3):last-child) .member-card-summary {
+.member-card-grid.is-list:has(> .member-card:nth-child(2):last-child)
+  .member-card-summary,
+.member-card-grid.is-list:has(> .member-card:nth-child(3):last-child)
+  .member-card-summary {
   max-width: none;
   font-size: 0.8rem;
 }
 
 .member-card-grid.is-list:has(> .member-card:only-child) .member-card footer,
-.member-card-grid.is-list:has(> .member-card:nth-child(2):last-child) .member-card footer,
-.member-card-grid.is-list:has(> .member-card:nth-child(3):last-child) .member-card footer {
+.member-card-grid.is-list:has(> .member-card:nth-child(2):last-child)
+  .member-card
+  footer,
+.member-card-grid.is-list:has(> .member-card:nth-child(3):last-child)
+  .member-card
+  footer {
   justify-content: flex-start;
 }
 
@@ -290,8 +300,10 @@
 
   .member-card-grid.is-grid .member-card,
   .member-card-grid.is-list:has(> .member-card:only-child) .member-card,
-  .member-card-grid.is-list:has(> .member-card:nth-child(2):last-child) .member-card,
-  .member-card-grid.is-list:has(> .member-card:nth-child(3):last-child) .member-card {
+  .member-card-grid.is-list:has(> .member-card:nth-child(2):last-child)
+    .member-card,
+  .member-card-grid.is-list:has(> .member-card:nth-child(3):last-child)
+    .member-card {
     max-width: none;
   }
 }
@@ -320,8 +332,10 @@
   }
 
   .member-card-grid.is-list:has(> .member-card:only-child) .member-card,
-  .member-card-grid.is-list:has(> .member-card:nth-child(2):last-child) .member-card,
-  .member-card-grid.is-list:has(> .member-card:nth-child(3):last-child) .member-card {
+  .member-card-grid.is-list:has(> .member-card:nth-child(2):last-child)
+    .member-card,
+  .member-card-grid.is-list:has(> .member-card:nth-child(3):last-child)
+    .member-card {
     grid-template-columns: 44px minmax(0, 1fr);
   }
 }

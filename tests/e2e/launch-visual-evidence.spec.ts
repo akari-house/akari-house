@@ -157,7 +157,9 @@ test.describe("launch visual evidence", () => {
     await capture(page, testInfo, "workspace-founder");
   });
 
-  test("keeps a sparse Founder directory compact", async ({ page }, testInfo) => {
+  test("keeps a sparse Founder directory compact", async ({
+    page,
+  }, testInfo) => {
     await activatePersona(page, "founder", { reuseExisting: true });
     await activatePersona(page, "creator", { reuseExisting: true });
     await page.goto("/members?role=founder&view=grid", {
