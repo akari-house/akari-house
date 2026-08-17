@@ -5,6 +5,10 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import {
+  fundraisingStatusLabels,
+  type FundraisingStatus,
+} from "~/lib/fundraising-readiness";
+import {
   projectClaimStatusLabel,
   projectRelationshipLabel,
 } from "~/lib/project-relationships";
@@ -23,9 +27,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
               rel.claim_status AS claimStatus,
               pr.updated_at AS updatedAt,
               ol.status AS opportunityStatus,
+              fp.readiness_status AS fundraisingStatus,
               COALESCE(pr.data_room_url, '') AS dataRoomUrl
        FROM projects pr
        LEFT JOIN opportunity_listings ol ON ol.project_id = pr.id
+       LEFT JOIN project_fundraising_profiles fp ON fp.project_id = pr.id
        LEFT JOIN project_collaborators pc
          ON pc.project_id = pr.id AND pc.user_id = ?
        LEFT JOIN project_relationships rel
@@ -46,6 +52,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       claimStatus: string | null;
       updatedAt: string;
       opportunityStatus: string | null;
+      fundraisingStatus: FundraisingStatus | null;
       dataRoomUrl: string;
     }>();
   return { user, projects: projects.results };
@@ -90,6 +97,12 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
                 )}
                 <p>{project.summary}</p>
                 <ProjectNeedChips value={project.seeking} compact />
+                <small>
+                  Fundraising readiness:{" "}
+                  {project.fundraisingStatus
+                    ? fundraisingStatusLabels[project.fundraisingStatus]
+                    : "Not started"}
+                </small>
                 {project.opportunityStatus && (
                   <small>
                     Deal Room review:{" "}
@@ -109,6 +122,9 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
                     Logo and banner
                   </Link>
                   <Link to={`/projects/${project.slug}/needs`}>Edit needs</Link>
+                  <Link to={`/projects/${project.slug}/fundraising`}>
+                    Fundraising readiness
+                  </Link>
                   <Link to={`/projects/${project.slug}/opportunity`}>
                     Deal preview submission
                   </Link>
