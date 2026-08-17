@@ -1,5 +1,6 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/project-diligence-completion";
+import { action as trustedDiligenceAction } from "./project-diligence";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
@@ -243,7 +244,27 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   };
 }
 
-export async function action({ request, context, params }: Route.ActionArgs) {
+export async function action({
+  request,
+  context,
+  params,
+  url,
+  pattern,
+}: Route.ActionArgs) {
+  const previewForm = await request.clone().formData();
+  const previewIntent = formText(previewForm.get("intent"));
+  if (
+    [
+      "request-data-room",
+      "grant-document",
+      "revoke-grant",
+      "approve-data-room",
+      "decline-data-room",
+      "revoke-data-room",
+    ].includes(previewIntent)
+  ) {
+    return trustedDiligenceAction({ request, context, params, url, pattern });
+  }
   assertSameOrigin(request);
   const db = context.get(cloudflareContext).env.DB;
   await ensureDiligenceSchema(db);
