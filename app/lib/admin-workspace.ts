@@ -67,6 +67,14 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     superadminOnly: true,
   },
   {
+    key: "relationships",
+    label: "Relationship intelligence",
+    description:
+      "Own relationships, record interactions, find warm paths and review connected account context.",
+    to: "/admin/relationships",
+    superadminOnly: true,
+  },
+  {
     key: "membership",
     label: "Membership",
     description: "Review applicants and approve House access.",
