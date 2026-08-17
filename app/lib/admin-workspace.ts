@@ -59,6 +59,14 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     superadminOnly: true,
   },
   {
+    key: "diligence",
+    label: "Diligence operations",
+    description:
+      "Review Data Room completeness, NDA policy, Investor access and open diligence requests.",
+    to: "/admin/diligence",
+    superadminOnly: true,
+  },
+  {
     key: "membership",
     label: "Membership",
     description: "Review applicants and approve House access.",
