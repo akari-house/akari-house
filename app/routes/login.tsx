@@ -5,6 +5,7 @@ import { PasswordField } from "~/components/PasswordField";
 import { TurnstileWidget } from "~/components/TurnstileWidget";
 import { createSession } from "~/lib/auth.server";
 import { assertSameOrigin, verifyPassword } from "~/lib/security.server";
+import { isSafeReturnPath } from "~/lib/production-security.server";
 import { formText, normalizeEmail } from "~/lib/validation";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import {
@@ -108,8 +109,7 @@ export async function action({ request, context }: Route.ActionArgs) {
       .run();
   const cookie = await createSession(db, row.id, request);
   const returnTo = new URL(request.url).searchParams.get("returnTo");
-  const safeReturnTo =
-    returnTo?.startsWith("/") && !returnTo.startsWith("//") ? returnTo : null;
+  const safeReturnTo = isSafeReturnPath(returnTo) ? returnTo : null;
   const invitationReturn = safeReturnTo?.startsWith(
     "/workspace-invitations/accept",
   );
