@@ -1,0 +1,57 @@
+name: R74 Fix
+
+on:
+  push:
+    branches:
+      - r74-reporting-notifications-operating-rhythm
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r74-reporting-notifications-operating-rhythm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Fix AdminWorkspaceNav usage
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app/routes/admin-operating-rhythm.tsx')
+          text = path.read_text()
+          text = text.replace(
+              '<AdminWorkspaceNav access={loaderData.access} currentPath="/admin/operating-rhythm" />',
+              '<AdminWorkspaceNav access={loaderData.access} />',
+          )
+          path.write_text(text)
+          PY
+      - name: Format R74 TypeScript
+        run: >-
+          npx prettier --write
+          app/lib/admin-workspace.ts
+          app/lib/operating-rhythm.ts
+          app/lib/operating-rhythm.server.ts
+          app/lib/scheduled-jobs.ts
+          app/routes.ts
+          app/routes/admin-operating-rhythm.tsx
+          app/routes/notifications.tsx
+          tests/operating-rhythm.test.ts
+          worker/index.ts
+      - run: npm run typecheck
+      - name: Commit fixes
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/lib/admin-workspace.ts app/lib/operating-rhythm.ts app/lib/operating-rhythm.server.ts app/lib/scheduled-jobs.ts app/routes.ts app/routes/admin-operating-rhythm.tsx app/routes/notifications.tsx tests/operating-rhythm.test.ts worker/index.ts
+          git commit -m "R74: apply type and repository formatting fixes"
+          git push origin HEAD:r74-reporting-notifications-operating-rhythm
