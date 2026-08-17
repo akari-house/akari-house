@@ -74,6 +74,7 @@ export default [
     "admin/relationships/:relationshipId",
     "routes/admin-relationship-detail.tsx",
   ),
+  route("admin/operating-rhythm", "routes/admin-operating-rhythm.tsx"),
   route("admin/operations", "routes/admin-operations.tsx"),
   route("admin/production", "routes/admin-production.tsx"),
   route("admin/resilience", "routes/admin-resilience.tsx"),
