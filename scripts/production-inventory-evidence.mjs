@@ -7,6 +7,8 @@ const database = process.env.AKARI_D1_DATABASE || "akari-house-db";
 const output =
   process.env.INVENTORY_REPORT_PATH ||
   "production-performance/production-inventory.json";
+const evidenceCommitSha =
+  process.env.AKARI_EVIDENCE_COMMIT_SHA || process.env.GITHUB_SHA || null;
 
 const queries = {
   publishedProjects:
@@ -101,7 +103,7 @@ const checks = Object.entries(thresholds).map(([key, target]) => ({
 const report = {
   schemaVersion: 1,
   generatedAt: new Date().toISOString(),
-  commitSha: process.env.GITHUB_SHA || null,
+  commitSha: evidenceCommitSha,
   database,
   privacy:
     "Aggregate counts only. No member identity, email, profile content, financial value or document content is exported.",
