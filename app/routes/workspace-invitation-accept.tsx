@@ -21,8 +21,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   if (!invitation)
     return {
       invitation: null,
+      token: "",
       user: await getOptionalUser(request, db),
       loginUrl: "/login",
+      emailMatches: false,
     };
   const user = await getOptionalUser(request, db);
   const returnTo = `${url.pathname}${url.search}`;
@@ -35,6 +37,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     : null;
   return {
     invitation,
+    token,
     user,
     loginUrl,
     emailMatches:
@@ -155,13 +158,7 @@ export default function WorkspaceInvitationAccept({
         </p>
       ) : (
         <Form method="post" className="form-stack">
-          <input
-            type="hidden"
-            name="token"
-            value={new URLSearchParams(
-              typeof window === "undefined" ? "" : window.location.search,
-            ).get("token") ?? ""}
-          />
+          <input type="hidden" name="token" value={loaderData.token} />
           {actionData?.error && (
             <p className="form-error" role="alert">
               {actionData.error}
