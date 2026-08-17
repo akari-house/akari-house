@@ -129,8 +129,13 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   ]);
 
   const filtered = active.filter((item) => {
-    if (attentionSeverities.includes(severityFilter as AttentionSeverity) && item.severity !== severityFilter) return false;
-    if (isSourceType(sourceFilter) && item.sourceType !== sourceFilter) return false;
+    if (
+      attentionSeverities.includes(severityFilter as AttentionSeverity) &&
+      item.severity !== severityFilter
+    )
+      return false;
+    if (isSourceType(sourceFilter) && item.sourceType !== sourceFilter)
+      return false;
     if (ownerFilter && item.assignedTo !== ownerFilter) return false;
     return true;
   });
@@ -147,7 +152,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       ...report,
       summary: reportSummary(report.snapshotJson),
     })),
-    filters: { severity: severityFilter, source: sourceFilter, owner: ownerFilter },
+    filters: {
+      severity: severityFilter,
+      source: sourceFilter,
+      owner: ownerFilter,
+    },
   };
 }
 
@@ -180,7 +189,8 @@ export async function action({ request, context }: Route.ActionArgs) {
     const source = (await loadAttentionSignals(db)).find(
       (item) => item.attentionKey === key,
     );
-    if (!source) throw new Response("Attention item not found.", { status: 404 });
+    if (!source)
+      throw new Response("Attention item not found.", { status: 404 });
 
     await db.batch([
       db
@@ -282,7 +292,7 @@ export default function AdminOperatingRhythm({
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
       <main id="main-content" className="directory-main">
-        <AdminWorkspaceNav access={loaderData.access} currentPath="/admin/operating-rhythm" />
+        <AdminWorkspaceNav access={loaderData.access} />
         <header className="directory-heading">
           <div>
             <span className="eyebrow">Operating rhythm</span>
@@ -294,72 +304,247 @@ export default function AdminOperatingRhythm({
           </div>
         </header>
 
-        {actionData?.error && <p className="notice error" role="alert">{actionData.error}</p>}
-        {actionData?.saved && <p className="notice success" role="status">{actionData.message}</p>}
+        {actionData?.error && (
+          <p className="notice error" role="alert">
+            {actionData.error}
+          </p>
+        )}
+        {actionData?.saved && (
+          <p className="notice success" role="status">
+            {actionData.message}
+          </p>
+        )}
 
         <section className="admin-stat-grid" aria-label="Attention summary">
-          <article className="status-card"><span className="chapter">Open attention</span><strong>{loaderData.summary.total}</strong></article>
-          <article className="status-card"><span className="chapter">Overdue</span><strong>{loaderData.summary.severity.overdue}</strong></article>
-          <article className="status-card"><span className="chapter">Due today</span><strong>{loaderData.summary.severity.today}</strong></article>
-          <article className="status-card"><span className="chapter">Due soon</span><strong>{loaderData.summary.severity.soon}</strong></article>
+          <article className="status-card">
+            <span className="chapter">Open attention</span>
+            <strong>{loaderData.summary.total}</strong>
+          </article>
+          <article className="status-card">
+            <span className="chapter">Overdue</span>
+            <strong>{loaderData.summary.severity.overdue}</strong>
+          </article>
+          <article className="status-card">
+            <span className="chapter">Due today</span>
+            <strong>{loaderData.summary.severity.today}</strong>
+          </article>
+          <article className="status-card">
+            <span className="chapter">Due soon</span>
+            <strong>{loaderData.summary.severity.soon}</strong>
+          </article>
         </section>
 
         <section className="status-card">
-          <div className="section-heading"><div><span className="chapter">Filter</span><h2>Attention queue</h2></div></div>
+          <div className="section-heading">
+            <div>
+              <span className="chapter">Filter</span>
+              <h2>Attention queue</h2>
+            </div>
+          </div>
           <Form method="get" className="form-row">
-            <label>Severity<select name="severity" defaultValue={loaderData.filters.severity}><option value="">All</option>{attentionSeverities.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
-            <label>Source<select name="source" defaultValue={loaderData.filters.source}><option value="">All</option>{attentionSourceTypes.map((value) => <option key={value} value={value}>{attentionSourceLabels[value]}</option>)}</select></label>
-            <label>Owner<select name="owner" defaultValue={loaderData.filters.owner}><option value="">All</option>{loaderData.owners.map((owner) => <option key={owner.id} value={owner.id}>{owner.displayName}</option>)}</select></label>
+            <label>
+              Severity
+              <select
+                name="severity"
+                defaultValue={loaderData.filters.severity}
+              >
+                <option value="">All</option>
+                {attentionSeverities.map((value) => (
+                  <option key={value} value={value}>
+                    {value}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Source
+              <select name="source" defaultValue={loaderData.filters.source}>
+                <option value="">All</option>
+                {attentionSourceTypes.map((value) => (
+                  <option key={value} value={value}>
+                    {attentionSourceLabels[value]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Owner
+              <select name="owner" defaultValue={loaderData.filters.owner}>
+                <option value="">All</option>
+                {loaderData.owners.map((owner) => (
+                  <option key={owner.id} value={owner.id}>
+                    {owner.displayName}
+                  </option>
+                ))}
+              </select>
+            </label>
             <button className="button button-quiet">Apply filters</button>
           </Form>
-          <p className="muted">Showing {loaderData.filteredSummary.total} active item{loaderData.filteredSummary.total === 1 ? "" : "s"}.</p>
+          <p className="muted">
+            Showing {loaderData.filteredSummary.total} active item
+            {loaderData.filteredSummary.total === 1 ? "" : "s"}.
+          </p>
         </section>
 
         <div className="notification-list" aria-busy={pending}>
-          {loaderData.items.length ? loaderData.items.map((item: ActiveAttentionSignal) => (
-            <article key={item.attentionKey} id={`attention-${item.attentionKey.replaceAll(":", "-")}`}>
-              <div>
-                <div className="form-row">
-                  <span className="chapter">{attentionSourceLabels[item.sourceType]}</span>
-                  <SeverityBadge severity={item.severity} />
+          {loaderData.items.length ? (
+            loaderData.items.map((item: ActiveAttentionSignal) => (
+              <article
+                key={item.attentionKey}
+                id={`attention-${item.attentionKey.replaceAll(":", "-")}`}
+              >
+                <div>
+                  <div className="form-row">
+                    <span className="chapter">
+                      {attentionSourceLabels[item.sourceType]}
+                    </span>
+                    <SeverityBadge severity={item.severity} />
+                  </div>
+                  <h2>{item.title}</h2>
+                  <p>{item.detail}</p>
+                  <p className="muted">Due: {dateLabel(item.dueAt)}</p>
+                  <Link className="text-link" to={item.actionUrl}>
+                    Open source record
+                  </Link>
                 </div>
-                <h2>{item.title}</h2>
-                <p>{item.detail}</p>
-                <p className="muted">Due: {dateLabel(item.dueAt)}</p>
-                <Link className="text-link" to={item.actionUrl}>Open source record</Link>
-              </div>
-              <Form method="post" className="profile-form">
-                <input type="hidden" name="intent" value="update-attention" />
-                <input type="hidden" name="attentionKey" value={item.attentionKey} />
-                <label>Status<select name="status" defaultValue={item.stateStatus}><option value="open">Open</option><option value="snoozed">Snoozed</option><option value="resolved">Resolved</option><option value="ignored">Ignore</option></select></label>
-                <label>Owner<select name="assignedTo" defaultValue={item.assignedTo ?? ""}><option value="">Use source owner / Superadmin queue</option>{loaderData.owners.map((owner) => <option key={owner.id} value={owner.id}>{owner.displayName}</option>)}</select></label>
-                <label>Snooze until<input type="date" name="snoozedUntil" /></label>
-                <label>Internal workflow note<textarea name="note" rows={2} maxLength={2000} defaultValue={item.stateNote} /></label>
-                <button className="button button-quiet" disabled={pending}>{pending ? "Saving..." : "Update"}</button>
-              </Form>
-            </article>
-          )) : <div className="status-card"><h2>No matching attention items.</h2><p>The selected operating queue is clear.</p></div>}
+                <Form method="post" className="profile-form">
+                  <input type="hidden" name="intent" value="update-attention" />
+                  <input
+                    type="hidden"
+                    name="attentionKey"
+                    value={item.attentionKey}
+                  />
+                  <label>
+                    Status
+                    <select name="status" defaultValue={item.stateStatus}>
+                      <option value="open">Open</option>
+                      <option value="snoozed">Snoozed</option>
+                      <option value="resolved">Resolved</option>
+                      <option value="ignored">Ignore</option>
+                    </select>
+                  </label>
+                  <label>
+                    Owner
+                    <select
+                      name="assignedTo"
+                      defaultValue={item.assignedTo ?? ""}
+                    >
+                      <option value="">
+                        Use source owner / Superadmin queue
+                      </option>
+                      {loaderData.owners.map((owner) => (
+                        <option key={owner.id} value={owner.id}>
+                          {owner.displayName}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Snooze until
+                    <input type="date" name="snoozedUntil" />
+                  </label>
+                  <label>
+                    Internal workflow note
+                    <textarea
+                      name="note"
+                      rows={2}
+                      maxLength={2000}
+                      defaultValue={item.stateNote}
+                    />
+                  </label>
+                  <button className="button button-quiet" disabled={pending}>
+                    {pending ? "Saving..." : "Update"}
+                  </button>
+                </Form>
+              </article>
+            ))
+          ) : (
+            <div className="status-card">
+              <h2>No matching attention items.</h2>
+              <p>The selected operating queue is clear.</p>
+            </div>
+          )}
         </div>
 
         <section className="status-card">
-          <div className="section-heading"><div><span className="chapter">Reports</span><h2>Generate an operating snapshot</h2></div></div>
+          <div className="section-heading">
+            <div>
+              <span className="chapter">Reports</span>
+              <h2>Generate an operating snapshot</h2>
+            </div>
+          </div>
           <p>
             Snapshots preserve the operating state for the selected week. They
             reference canonical records rather than becoming a second CRM.
           </p>
           <Form method="post" className="form-row">
             <input type="hidden" name="intent" value="generate-report" />
-            <label>Report type<select name="reportType" defaultValue="management_weekly">{operatingReportTypes.map((value) => <option key={value} value={value}>{operatingReportLabels[value]}</option>)}</select></label>
-            <label>Project for Founder weekly<select name="projectId" defaultValue=""><option value="">Not project-scoped</option>{loaderData.projects.map((project) => <option key={project.id} value={project.id}>{project.title}</option>)}</select></label>
-            <button className="button button-primary" disabled={pending}>{pending ? "Generating..." : "Generate snapshot"}</button>
+            <label>
+              Report type
+              <select name="reportType" defaultValue="management_weekly">
+                {operatingReportTypes.map((value) => (
+                  <option key={value} value={value}>
+                    {operatingReportLabels[value]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Project for Founder weekly
+              <select name="projectId" defaultValue="">
+                <option value="">Not project-scoped</option>
+                {loaderData.projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.title}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button className="button button-primary" disabled={pending}>
+              {pending ? "Generating..." : "Generate snapshot"}
+            </button>
           </Form>
         </section>
 
         <section className="status-card">
-          <div className="section-heading"><div><span className="chapter">History</span><h2>Recent operating reports</h2></div></div>
+          <div className="section-heading">
+            <div>
+              <span className="chapter">History</span>
+              <h2>Recent operating reports</h2>
+            </div>
+          </div>
           {loaderData.reports.length ? (
-            <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Report</th><th>Project</th><th>Period</th><th>Items</th><th>Overdue</th><th>Source</th></tr></thead><tbody>{loaderData.reports.map((report) => <tr key={report.id}><td>{operatingReportLabels[report.reportType]}</td><td>{report.projectTitle ?? "All AKARI"}</td><td>{report.periodStart} to {report.periodEnd}</td><td>{report.summary.total ?? 0}</td><td>{report.summary.severity?.overdue ?? 0}</td><td>{report.generationSource}</td></tr>)}</tbody></table></div>
-          ) : <p>No operating report snapshots yet.</p>}
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Report</th>
+                    <th>Project</th>
+                    <th>Period</th>
+                    <th>Items</th>
+                    <th>Overdue</th>
+                    <th>Source</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loaderData.reports.map((report) => (
+                    <tr key={report.id}>
+                      <td>{operatingReportLabels[report.reportType]}</td>
+                      <td>{report.projectTitle ?? "All AKARI"}</td>
+                      <td>
+                        {report.periodStart} to {report.periodEnd}
+                      </td>
+                      <td>{report.summary.total ?? 0}</td>
+                      <td>{report.summary.severity?.overdue ?? 0}</td>
+                      <td>{report.generationSource}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p>No operating report snapshots yet.</p>
+          )}
         </section>
       </main>
     </div>

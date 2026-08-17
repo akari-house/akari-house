@@ -1,4 +1,9 @@
-export const attentionSeverities = ["overdue", "today", "soon", "watch"] as const;
+export const attentionSeverities = [
+  "overdue",
+  "today",
+  "soon",
+  "watch",
+] as const;
 export type AttentionSeverity = (typeof attentionSeverities)[number];
 
 export const attentionSourceTypes = [
@@ -15,7 +20,12 @@ export const attentionSourceTypes = [
 ] as const;
 export type AttentionSourceType = (typeof attentionSourceTypes)[number];
 
-export const attentionStatuses = ["open", "snoozed", "resolved", "ignored"] as const;
+export const attentionStatuses = [
+  "open",
+  "snoozed",
+  "resolved",
+  "ignored",
+] as const;
 export type AttentionStatus = (typeof attentionStatuses)[number];
 
 export const operatingReportTypes = [
@@ -118,7 +128,9 @@ export function isAttentionStatus(value: string): value is AttentionStatus {
   return attentionStatuses.includes(value as AttentionStatus);
 }
 
-export function isOperatingReportType(value: string): value is OperatingReportType {
+export function isOperatingReportType(
+  value: string,
+): value is OperatingReportType {
   return operatingReportTypes.includes(value as OperatingReportType);
 }
 
@@ -133,7 +145,8 @@ export function applyAttentionStates(
     .filter((signal) => {
       const state = byKey.get(signal.attentionKey);
       if (!state) return true;
-      if (state.status === "resolved" || state.status === "ignored") return false;
+      if (state.status === "resolved" || state.status === "ignored")
+        return false;
       if (state.status !== "snoozed" || !state.snoozedUntil) return true;
       const snoozedUntil = new Date(state.snoozedUntil).getTime();
       return !Number.isFinite(snoozedUntil) || snoozedUntil <= nowMs;

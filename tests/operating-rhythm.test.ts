@@ -53,10 +53,34 @@ describe("R74 operating rhythm", () => {
     const active = applyAttentionStates(
       signals,
       [
-        { attentionKey: "one", status: "resolved", assignedTo: null, snoozedUntil: null, note: "" },
-        { attentionKey: "two", status: "ignored", assignedTo: null, snoozedUntil: null, note: "" },
-        { attentionKey: "three", status: "snoozed", assignedTo: null, snoozedUntil: "2026-08-18T00:00:00Z", note: "" },
-        { attentionKey: "four", status: "snoozed", assignedTo: "admin-2", snoozedUntil: "2026-08-16T00:00:00Z", note: "ready" },
+        {
+          attentionKey: "one",
+          status: "resolved",
+          assignedTo: null,
+          snoozedUntil: null,
+          note: "",
+        },
+        {
+          attentionKey: "two",
+          status: "ignored",
+          assignedTo: null,
+          snoozedUntil: null,
+          note: "",
+        },
+        {
+          attentionKey: "three",
+          status: "snoozed",
+          assignedTo: null,
+          snoozedUntil: "2026-08-18T00:00:00Z",
+          note: "",
+        },
+        {
+          attentionKey: "four",
+          status: "snoozed",
+          assignedTo: "admin-2",
+          snoozedUntil: "2026-08-16T00:00:00Z",
+          note: "ready",
+        },
       ],
       now,
     );
@@ -69,8 +93,16 @@ describe("R74 operating rhythm", () => {
     const active = applyAttentionStates(
       [
         signal({ attentionKey: "watch", severity: "watch", dueAt: null }),
-        signal({ attentionKey: "soon", severity: "soon", dueAt: "2026-08-20T12:00:00Z" }),
-        signal({ attentionKey: "overdue", severity: "overdue", dueAt: "2026-08-16T12:00:00Z" }),
+        signal({
+          attentionKey: "soon",
+          severity: "soon",
+          dueAt: "2026-08-20T12:00:00Z",
+        }),
+        signal({
+          attentionKey: "overdue",
+          severity: "overdue",
+          dueAt: "2026-08-16T12:00:00Z",
+        }),
         signal({ attentionKey: "today", severity: "today" }),
       ],
       [],
@@ -99,8 +131,16 @@ describe("R74 operating rhythm", () => {
     const summary = summarizeAttention(
       applyAttentionStates(
         [
-          signal({ attentionKey: "a", sourceType: "relationship", severity: "overdue" }),
-          signal({ attentionKey: "b", sourceType: "agreement", severity: "soon" }),
+          signal({
+            attentionKey: "a",
+            sourceType: "relationship",
+            severity: "overdue",
+          }),
+          signal({
+            attentionKey: "b",
+            sourceType: "agreement",
+            severity: "soon",
+          }),
         ],
         [],
       ),
