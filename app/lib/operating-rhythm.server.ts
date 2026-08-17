@@ -459,19 +459,17 @@ export async function createOperatingReport(
     reportType: options.reportType,
     projectId,
     summary: summarizeAttention(items),
-    items: items
-      .slice(0, 250)
-      .map((item) => ({
-        attentionKey: item.attentionKey,
-        sourceType: item.sourceType,
-        sourceId: item.sourceId,
-        title: item.title,
-        severity: item.severity,
-        dueAt: item.dueAt,
-        assignedTo: item.assignedTo,
-        projectId: item.projectId,
-        actionUrl: item.actionUrl,
-      })),
+    items: items.slice(0, 250).map((item) => ({
+      attentionKey: item.attentionKey,
+      sourceType: item.sourceType,
+      sourceId: item.sourceId,
+      title: item.title,
+      severity: item.severity,
+      dueAt: item.dueAt,
+      assignedTo: item.assignedTo,
+      projectId: item.projectId,
+      actionUrl: item.actionUrl,
+    })),
   };
   await db
     .prepare(
