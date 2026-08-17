@@ -1,30 +1,32 @@
-name: R76 Dependency Audit
+name: R76 Dependency Fix
 on:
   push:
     branches:
       - r76-security-production-hardening
 permissions:
-  contents: read
+  contents: write
 jobs:
-  audit:
+  fix:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: r76-security-production-hardening
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Capture npm audit
-        shell: bash
+      - name: Apply npm advisory fixes
+        run: npm audit fix
+      - name: Require no high or critical findings
+        run: npm audit --audit-level=high
+      - name: Commit dependency repair
         run: |
-          set +e
-          npm audit --json > npm-audit.json
-          status=$?
-          node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          const report = JSON.parse(fs.readFileSync('npm-audit.json','utf8'));
-          console.log(JSON.stringify({metadata: report.metadata, vulnerabilities: report.vulnerabilities}, null, 2));
-          NODE
-          echo "npm audit exit code: $status"
-          exit 0
+          if git diff --quiet -- package.json package-lock.json; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "R76: repair audited dependencies"
+          git push origin HEAD:r76-security-production-hardening
