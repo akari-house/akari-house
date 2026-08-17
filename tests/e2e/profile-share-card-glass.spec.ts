@@ -28,11 +28,15 @@ test.describe("AKARI glass profile sharing card", () => {
     await expect(
       page.getByRole("heading", { name: "Profile sharing card" }),
     ).toBeVisible();
-    await expect(page.getByText("Midnight Glass", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Midnight Glass", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByText("Sakura Glass", { exact: true })).toBeVisible();
     await expect(page.getByText("Pearl Glass", { exact: true })).toBeVisible();
 
-    const landscape = page.locator('input[name="orientation"][value="landscape"]');
+    const landscape = page.locator(
+      'input[name="orientation"][value="landscape"]',
+    );
     await landscape.check();
     const midnight = page.locator('input[name="palette"][value="midnight"]');
     await midnight.check();

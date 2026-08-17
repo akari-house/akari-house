@@ -53,7 +53,8 @@ const palettes: Record<ProfileCardPalette, GlassPalette> = {
   },
   lantern: {
     label: "Pearl Glass",
-    description: "Warm pearl glass with soft sakura-pink and yellow highlights.",
+    description:
+      "Warm pearl glass with soft sakura-pink and yellow highlights.",
     background: "#fff7ed",
     backgroundEnd: "#ffe9ee",
     ink: "#2b1720",
@@ -244,7 +245,8 @@ function fitCanvasText(
   let size = startSize;
   do {
     ctx.font = `${weight} ${size}px Inter, Arial, sans-serif`;
-    if (ctx.measureText(value).width <= maxWidth || size <= minSize) return size;
+    if (ctx.measureText(value).width <= maxWidth || size <= minSize)
+      return size;
     size -= 2;
   } while (size >= minSize);
   return minSize;
@@ -381,7 +383,10 @@ async function drawCard(
   ctx.stroke();
 
   const sheen = ctx.createLinearGradient(0, 0, width, height * 0.55);
-  sheen.addColorStop(0, light ? "rgba(255,255,255,.68)" : "rgba(255,255,255,.18)");
+  sheen.addColorStop(
+    0,
+    light ? "rgba(255,255,255,.68)" : "rgba(255,255,255,.18)",
+  );
   sheen.addColorStop(0.34, "rgba(255,255,255,.02)");
   sheen.addColorStop(1, "rgba(255,255,255,0)");
   ctx.save();
@@ -410,17 +415,10 @@ async function drawCard(
     );
   }
 
-  let logo: HTMLImageElement | null = null;
-  let flower: HTMLImageElement | null = null;
-  try {
-    [logo, flower] = await Promise.all([
-      loadImage("/assets/brand/akari-logo-horizontal.png"),
-      loadImage("/assets/brand/akari-flower-mark.png"),
-    ]);
-  } catch {
-    logo = null;
-    flower = null;
-  }
+  const [logo, flower] = await Promise.all([
+    loadImage("/assets/brand/akari-logo-horizontal.png"),
+    loadImage("/assets/brand/akari-flower-mark.png"),
+  ]).catch(() => [null, null] as const);
 
   if (!portrait) {
     if (logo) {
@@ -443,24 +441,47 @@ async function drawCard(
   const photoSize = portrait ? 250 : 320;
   const photoX = portrait ? 90 : 125;
   const photoY = portrait ? 220 : 205;
-  const ring = ctx.createLinearGradient(photoX, photoY, photoX + photoSize, photoY + photoSize);
+  const ring = ctx.createLinearGradient(
+    photoX,
+    photoY,
+    photoX + photoSize,
+    photoY + photoSize,
+  );
   ring.addColorStop(0, palette.glow);
   ring.addColorStop(0.52, palette.accent);
   ring.addColorStop(1, light ? "#fff9f4" : "#7c88a7");
   ctx.beginPath();
-  ctx.arc(photoX + photoSize / 2, photoY + photoSize / 2, photoSize / 2 + 19, 0, Math.PI * 2);
+  ctx.arc(
+    photoX + photoSize / 2,
+    photoY + photoSize / 2,
+    photoSize / 2 + 19,
+    0,
+    Math.PI * 2,
+  );
   ctx.strokeStyle = ring;
   ctx.lineWidth = 9;
   ctx.stroke();
   ctx.beginPath();
-  ctx.arc(photoX + photoSize / 2, photoY + photoSize / 2, photoSize / 2 + 5, 0, Math.PI * 2);
+  ctx.arc(
+    photoX + photoSize / 2,
+    photoY + photoSize / 2,
+    photoSize / 2 + 5,
+    0,
+    Math.PI * 2,
+  );
   ctx.strokeStyle = light ? "rgba(255,255,255,.85)" : "rgba(255,255,255,.28)";
   ctx.lineWidth = 3;
   ctx.stroke();
 
   ctx.save();
   ctx.beginPath();
-  ctx.arc(photoX + photoSize / 2, photoY + photoSize / 2, photoSize / 2, 0, Math.PI * 2);
+  ctx.arc(
+    photoX + photoSize / 2,
+    photoY + photoSize / 2,
+    photoSize / 2,
+    0,
+    Math.PI * 2,
+  );
   ctx.clip();
   const imageUrl = avatarUrl(model);
   if (imageUrl) {
@@ -503,21 +524,38 @@ async function drawCard(
       light ? "rgba(255,255,255,.8)" : "rgba(9,12,20,.82)",
       palette.panelStroke,
     );
-    ctx.drawImage(flower, badgeX + 11, badgeY + 11, badgeSize - 22, badgeSize - 22);
+    ctx.drawImage(
+      flower,
+      badgeX + 11,
+      badgeY + 11,
+      badgeSize - 22,
+      badgeSize - 22,
+    );
   }
 
   const identityX = portrait ? 90 : 535;
   const identityY = portrait ? 585 : 320;
   const identityWidth = portrait ? 820 : 545;
   ctx.fillStyle = palette.ink;
-  fitCanvasText(ctx, model.displayName.slice(0, 30), identityWidth, portrait ? 76 : 76, 48, 800);
+  fitCanvasText(
+    ctx,
+    model.displayName.slice(0, 30),
+    identityWidth,
+    portrait ? 76 : 76,
+    48,
+    800,
+  );
   ctx.fillText(model.displayName.slice(0, 30), identityX, identityY);
   ctx.fillStyle = palette.muted;
   ctx.font = `500 ${portrait ? 28 : 30}px Inter, Arial, sans-serif`;
   ctx.fillText(`@${model.username}`, identityX, identityY + 48);
   ctx.fillStyle = palette.glow;
   ctx.font = `650 ${portrait ? 26 : 29}px Inter, Arial, sans-serif`;
-  ctx.fillText(model.roles.map(roleLabel).join(" • "), identityX, identityY + 102);
+  ctx.fillText(
+    model.roles.map(roleLabel).join(" • "),
+    identityX,
+    identityY + 102,
+  );
   if (model.headline) {
     ctx.fillStyle = palette.muted;
     ctx.font = `500 ${portrait ? 23 : 24}px Inter, Arial, sans-serif`;
@@ -582,7 +620,8 @@ async function drawCard(
   );
   ctx.fillStyle = palette.muted;
   ctx.font = `500 ${portrait ? 18 : 16}px Inter, Arial, sans-serif`;
-  const profileLabel = canonicalUrl.length > 37 ? `@${model.username}` : canonicalUrl;
+  const profileLabel =
+    canonicalUrl.length > 37 ? `@${model.username}` : canonicalUrl;
   ctx.fillText(
     profileLabel,
     portrait ? linkPanelX + 180 : linkPanelX + linkPanelWidth / 2,
@@ -591,16 +630,7 @@ async function drawCard(
   ctx.textAlign = "left";
 
   if (!portrait) {
-    glassPanel(
-      ctx,
-      118,
-      650,
-      930,
-      118,
-      26,
-      palette.panel,
-      palette.panelStroke,
-    );
+    glassPanel(ctx, 118, 650, 930, 118, 26, palette.panel, palette.panelStroke);
     ctx.fillStyle = palette.ink;
     ctx.font = "600 23px Inter, Arial, sans-serif";
     ctx.fillText("Connect with me", 168, 718);
@@ -617,7 +647,13 @@ async function drawCard(
       ctx.fill();
       ctx.strokeStyle = palette.panelStroke;
       ctx.stroke();
-      drawSocialMark(ctx, social.platform, centerX - 13, 697, index === 0 ? palette.glow : palette.ink);
+      drawSocialMark(
+        ctx,
+        social.platform,
+        centerX - 13,
+        697,
+        index === 0 ? palette.glow : palette.ink,
+      );
     });
 
     glassPanel(
@@ -656,10 +692,15 @@ async function drawCard(
     ctx.fillText("A private ecosystem for high-signal connections.", 115, 1410);
   }
 
-  if (!portrait && (settings.showLocation || (settings.showLanguages && languages.length))) {
+  if (
+    !portrait &&
+    (settings.showLocation || (settings.showLanguages && languages.length))
+  ) {
     ctx.fillStyle = palette.muted;
     ctx.font = "500 15px Inter, Arial, sans-serif";
-    const privateLine = [settings.showLocation ? location : "", ...languages].filter(Boolean).join("  •  ");
+    const privateLine = [settings.showLocation ? location : "", ...languages]
+      .filter(Boolean)
+      .join("  •  ");
     ctx.fillText(privateLine.slice(0, 92), 118, 935);
   }
 
@@ -667,7 +708,11 @@ async function drawCard(
     ctx.fillStyle = palette.accent;
     ctx.font = "650 15px Inter, Arial, sans-serif";
     ctx.textAlign = "right";
-    ctx.fillText(`Verified • ${verifiedRoles.join(" • ")}`, width - 120, height - 65);
+    ctx.fillText(
+      `Verified • ${verifiedRoles.join(" • ")}`,
+      width - 120,
+      height - 65,
+    );
     ctx.textAlign = "left";
   }
 
@@ -724,7 +769,8 @@ export function ProfileShareCardGlass({
   }
 
   function addLanguage() {
-    if (!languageToAdd || languages.length >= MAX_PROFILE_CARD_LANGUAGES) return;
+    if (!languageToAdd || languages.length >= MAX_PROFILE_CARD_LANGUAGES)
+      return;
     updateLanguages([...languages, languageToAdd]);
     setLanguageToAdd("");
   }
@@ -794,7 +840,10 @@ export function ProfileShareCardGlass({
       )}
 
       <div className="share-card-layout glass-share-card-layout">
-        <section className="share-card-stage glass-share-card-stage" aria-label="Card preview">
+        <section
+          className="share-card-stage glass-share-card-stage"
+          aria-label="Card preview"
+        >
           <article
             className={`akari-glass-card ${settings.orientation} ${settings.design} theme-${settings.palette}`}
             style={
@@ -849,26 +898,42 @@ export function ProfileShareCardGlass({
 
               <div className="glass-card-identity">
                 <span className="glass-card-kicker">
-                  {settings.design === "passport" ? "Member passport" : "AKARI member"}
+                  {settings.design === "passport"
+                    ? "Member passport"
+                    : "AKARI member"}
                 </span>
                 <h2>{model.displayName}</h2>
                 <p className="glass-card-handle">@{model.username}</p>
                 <p className="glass-card-role-line">{roles.join(" • ")}</p>
-                {model.headline && <p className="glass-card-headline">{model.headline}</p>}
-                <div className="glass-card-role-chips" aria-label="Member roles">
+                {model.headline && (
+                  <p className="glass-card-headline">{model.headline}</p>
+                )}
+                <div
+                  className="glass-card-role-chips"
+                  aria-label="Member roles"
+                >
                   {roles.slice(0, 3).map((role, index) => (
-                    <span key={role} className={index === 0 ? "primary" : undefined}>
+                    <span
+                      key={role}
+                      className={index === 0 ? "primary" : undefined}
+                    >
                       {role}
                     </span>
                   ))}
                 </div>
                 {verifiedRoles.length > 0 && (
-                  <span className="glass-card-verified">Verified • {verifiedRoles.join(" • ")}</span>
+                  <span className="glass-card-verified">
+                    Verified • {verifiedRoles.join(" • ")}
+                  </span>
                 )}
               </div>
 
               <div className="glass-card-profile-plate">
-                <img src="/assets/brand/akari-flower-mark.png" alt="" aria-hidden="true" />
+                <img
+                  src="/assets/brand/akari-flower-mark.png"
+                  alt=""
+                  aria-hidden="true"
+                />
                 <strong>{canShareLabel(model)}</strong>
                 <span>{canonicalUrl}</span>
               </div>
@@ -878,7 +943,10 @@ export function ProfileShareCardGlass({
               <div className="glass-card-connect">
                 <strong>Connect with me</strong>
                 <span className="glass-card-divider" aria-hidden="true" />
-                <div className="glass-card-socials" aria-label="Connected social platforms">
+                <div
+                  className="glass-card-socials"
+                  aria-label="Connected social platforms"
+                >
                   {model.socials.slice(0, 5).map((social) => (
                     <a
                       key={social.platform}
@@ -891,22 +959,41 @@ export function ProfileShareCardGlass({
                       <SocialIcon platform={social.platform} />
                     </a>
                   ))}
-                  {model.socials.length === 0 && <span className="glass-card-no-socials">Add socials in your profile</span>}
+                  {model.socials.length === 0 && (
+                    <span className="glass-card-no-socials">
+                      Add socials in your profile
+                    </span>
+                  )}
                 </div>
               </div>
 
-              <div className="glass-card-signal-row" aria-label="AKARI profile signals">
-                <span>{model.opportunityStats.created + model.opportunityStats.received} opportunities</span>
+              <div
+                className="glass-card-signal-row"
+                aria-label="AKARI profile signals"
+              >
+                <span>
+                  {model.opportunityStats.created +
+                    model.opportunityStats.received}{" "}
+                  opportunities
+                </span>
                 <span>{formatProfileReach(model.followerCount)} reach</span>
-                <span>{model.percentile.topPercent ? `Top ${model.percentile.topPercent}%` : "Building signal"}</span>
+                <span>
+                  {model.percentile.topPercent
+                    ? `Top ${model.percentile.topPercent}%`
+                    : "Building signal"}
+                </span>
               </div>
 
               <footer className="glass-card-footer">
                 <strong>akarihouse.com</strong>
                 <span>A private ecosystem for high-signal connections.</span>
-                {(settings.showLocation || (settings.showLanguages && languages.length > 0)) && (
+                {(settings.showLocation ||
+                  (settings.showLanguages && languages.length > 0)) && (
                   <small>
-                    {[settings.showLocation ? location : "", ...(settings.showLanguages ? languages : [])]
+                    {[
+                      settings.showLocation ? location : "",
+                      ...(settings.showLanguages ? languages : []),
+                    ]
                       .filter(Boolean)
                       .join(" • ")}
                   </small>
@@ -924,7 +1011,10 @@ export function ProfileShareCardGlass({
           </p>
         </section>
 
-        <Form method="post" className="share-card-controls glass-share-card-controls">
+        <Form
+          method="post"
+          className="share-card-controls glass-share-card-controls"
+        >
           <fieldset>
             <legend>Card design</legend>
             <label>
@@ -933,7 +1023,9 @@ export function ProfileShareCardGlass({
                 name="design"
                 value="signature"
                 checked={settings.design === "signature"}
-                onChange={() => setSettings({ ...settings, design: "signature" })}
+                onChange={() =>
+                  setSettings({ ...settings, design: "signature" })
+                }
               />
               Signature Glass
             </label>
@@ -943,7 +1035,9 @@ export function ProfileShareCardGlass({
                 name="design"
                 value="passport"
                 checked={settings.design === "passport"}
-                onChange={() => setSettings({ ...settings, design: "passport" })}
+                onChange={() =>
+                  setSettings({ ...settings, design: "passport" })
+                }
               />
               Passport Glass
             </label>
@@ -957,7 +1051,9 @@ export function ProfileShareCardGlass({
                 name="orientation"
                 value="landscape"
                 checked={settings.orientation === "landscape"}
-                onChange={() => setSettings({ ...settings, orientation: "landscape" })}
+                onChange={() =>
+                  setSettings({ ...settings, orientation: "landscape" })
+                }
               />
               Credit card
             </label>
@@ -967,7 +1063,9 @@ export function ProfileShareCardGlass({
                 name="orientation"
                 value="portrait"
                 checked={settings.orientation === "portrait"}
-                onChange={() => setSettings({ ...settings, orientation: "portrait" })}
+                onChange={() =>
+                  setSettings({ ...settings, orientation: "portrait" })
+                }
               />
               Portrait
             </label>
@@ -977,14 +1075,20 @@ export function ProfileShareCardGlass({
             <legend>Glass colour</legend>
             <div className="glass-theme-grid">
               {Object.entries(palettes).map(([value, item]) => (
-                <label key={value} className={`glass-theme-choice theme-choice-${value}`}>
+                <label
+                  key={value}
+                  className={`glass-theme-choice theme-choice-${value}`}
+                >
                   <input
                     type="radio"
                     name="palette"
                     value={value}
                     checked={settings.palette === value}
                     onChange={() =>
-                      setSettings({ ...settings, palette: value as ProfileCardPalette })
+                      setSettings({
+                        ...settings,
+                        palette: value as ProfileCardPalette,
+                      })
                     }
                   />
                   <span className="glass-theme-swatch" aria-hidden="true" />
@@ -1003,7 +1107,10 @@ export function ProfileShareCardGlass({
               name="showLanguages"
               checked={Boolean(settings.showLanguages)}
               onChange={(event) =>
-                setSettings({ ...settings, showLanguages: event.target.checked ? 1 : 0 })
+                setSettings({
+                  ...settings,
+                  showLanguages: event.target.checked ? 1 : 0,
+                })
               }
             />
             Show spoken languages
@@ -1029,7 +1136,10 @@ export function ProfileShareCardGlass({
                 type="button"
                 className="button button-quiet"
                 onClick={addLanguage}
-                disabled={!languageToAdd || languages.length >= MAX_PROFILE_CARD_LANGUAGES}
+                disabled={
+                  !languageToAdd ||
+                  languages.length >= MAX_PROFILE_CARD_LANGUAGES
+                }
               >
                 Add
               </button>
@@ -1042,7 +1152,11 @@ export function ProfileShareCardGlass({
                   <button
                     type="button"
                     aria-label={`Remove ${language}`}
-                    onClick={() => updateLanguages(languages.filter((item) => item !== language))}
+                    onClick={() =>
+                      updateLanguages(
+                        languages.filter((item) => item !== language),
+                      )
+                    }
                   >
                     ×
                   </button>
@@ -1062,7 +1176,10 @@ export function ProfileShareCardGlass({
               placeholder="DE"
               value={settings.countryCode}
               onChange={(event) =>
-                setSettings({ ...settings, countryCode: event.target.value.toUpperCase() })
+                setSettings({
+                  ...settings,
+                  countryCode: event.target.value.toUpperCase(),
+                })
               }
             />
           </label>
@@ -1073,21 +1190,35 @@ export function ProfileShareCardGlass({
               name="showLocation"
               checked={Boolean(settings.showLocation)}
               onChange={(event) =>
-                setSettings({ ...settings, showLocation: event.target.checked ? 1 : 0 })
+                setSettings({
+                  ...settings,
+                  showLocation: event.target.checked ? 1 : 0,
+                })
               }
             />
             Show profile location
           </label>
 
-          <button className="button button-secondary" disabled={navigation.state !== "idle"}>
+          <button
+            className="button button-secondary"
+            disabled={navigation.state !== "idle"}
+          >
             {navigation.state === "idle" ? "Save preferences" : "Saving…"}
           </button>
 
           <div className="share-card-actions">
-            <button type="button" className="button button-primary" onClick={() => void download()}>
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={() => void download()}
+            >
               Download PNG
             </button>
-            <button type="button" className="button button-secondary" onClick={() => void share()}>
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={() => void share()}
+            >
               Share card
             </button>
           </div>

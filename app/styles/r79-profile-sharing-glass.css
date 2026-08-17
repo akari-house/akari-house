@@ -12,8 +12,7 @@
   overflow: hidden;
   background:
     radial-gradient(circle at 12% 5%, #ffd16612, transparent 34%),
-    radial-gradient(circle at 90% 8%, #f04f8718, transparent 38%),
-    #070a11;
+    radial-gradient(circle at 90% 8%, #f04f8718, transparent 38%), #070a11;
 }
 
 .akari-glass-card {
@@ -78,18 +77,20 @@
   z-index: -1;
   background:
     linear-gradient(
-      90deg,
-      var(--card-glow),
-      transparent 23%,
-      transparent 70%,
-      var(--card-accent)
-    ) top / 100% 2px no-repeat,
+        90deg,
+        var(--card-glow),
+        transparent 23%,
+        transparent 70%,
+        var(--card-accent)
+      )
+      top / 100% 2px no-repeat,
     linear-gradient(
-      90deg,
-      var(--card-glow),
-      transparent 35%,
-      var(--card-accent)
-    ) bottom / 100% 2px no-repeat;
+        90deg,
+        var(--card-glow),
+        transparent 35%,
+        var(--card-accent)
+      )
+      bottom / 100% 2px no-repeat;
   opacity: 0.9;
 }
 
@@ -182,7 +183,10 @@
 .glass-card-body {
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.45fr) minmax(115px, 0.66fr);
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.45fr) minmax(
+      115px,
+      0.66fr
+    );
   align-items: center;
   gap: clamp(0.55rem, 2cqi, 1.15rem);
 }
@@ -199,7 +203,12 @@
   aspect-ratio: 1;
   padding: clamp(4px, 0.7cqi, 7px);
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--card-glow), var(--card-accent) 55%, #7c88a7);
+  background: linear-gradient(
+    135deg,
+    var(--card-glow),
+    var(--card-accent) 55%,
+    #7c88a7
+  );
   box-shadow:
     0 0 24px color-mix(in srgb, var(--card-accent) 30%, transparent),
     0 0 14px color-mix(in srgb, var(--card-glow) 20%, transparent),
@@ -379,7 +388,9 @@
 .glass-card-profile-plate img {
   width: clamp(2rem, 7.5cqi, 4.1rem);
   height: auto;
-  filter: drop-shadow(0 7px 15px color-mix(in srgb, var(--card-accent) 22%, transparent));
+  filter: drop-shadow(
+    0 7px 15px color-mix(in srgb, var(--card-accent) 22%, transparent)
+  );
 }
 
 .glass-card-profile-plate strong {
@@ -529,7 +540,11 @@
 }
 
 .akari-glass-card.passport .glass-card-profile-plate {
-  border-color: color-mix(in srgb, var(--card-glow) 45%, var(--card-panel-stroke));
+  border-color: color-mix(
+    in srgb,
+    var(--card-glow) 45%,
+    var(--card-panel-stroke)
+  );
 }
 
 .akari-glass-card.portrait {
@@ -705,7 +720,10 @@
   }
 
   .glass-card-body {
-    grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.55fr) minmax(64px, 0.58fr);
+    grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.55fr) minmax(
+        64px,
+        0.58fr
+      );
   }
 
   .glass-card-connect {
