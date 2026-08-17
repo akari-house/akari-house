@@ -22,12 +22,13 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Integrate R75 with operating rhythm
+      - name: Integrate R75 completion edges
         run: |
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
-          const path = 'app/lib/operating-rhythm.server.ts';
-          let text = fs.readFileSync(path, 'utf8');
+
+          const operatingPath = 'app/lib/operating-rhythm.server.ts';
+          let text = fs.readFileSync(operatingPath, 'utf8');
           if (!text.includes('loadCommercialAttentionSignals')) {
             text = text.replace(
               '} from "./operating-rhythm";\n',
@@ -35,16 +36,14 @@ jobs:
             );
           }
           if (!text.includes('await loadCommercialAttentionSignals(db, now)')) {
-            const marker = '  return signals;\n}\n\nexport async function loadAttentionStates';
             text = text.replace(
-              marker,
+              '  return signals;\n}\n\nexport async function loadAttentionStates',
               '  signals.push(...(await loadCommercialAttentionSignals(db, now)));\n  return signals;\n}\n\nexport async function loadAttentionStates',
             );
           }
           if (!text.includes('reportType === "revenue"')) {
-            const marker = '  if (reportType === "relationship_followup")\n    return signals.filter((item) => item.sourceType === "relationship");\n  return signals;';
             text = text.replace(
-              marker,
+              '  if (reportType === "relationship_followup")\n    return signals.filter((item) => item.sourceType === "relationship");\n  return signals;',
               '  if (reportType === "relationship_followup")\n    return signals.filter((item) => item.sourceType === "relationship");\n  if (reportType === "revenue")\n    return signals.filter((item) =>\n      ["invoice", "settlement", "workspace_subscription", "campaign_renewal"].includes(\n        item.sourceType,\n      ),\n    );\n  return signals;',
             );
           }
@@ -58,15 +57,211 @@ jobs:
               '    projectId,\n    summary: summarizeAttention(items),\n    ...(finance ? { finance } : {}),',
             );
           }
-          fs.writeFileSync(path, text);
+          fs.writeFileSync(operatingPath, text);
 
           const workspacePath = 'app/routes/admin-saas-workspaces.tsx';
           let workspace = fs.readFileSync(workspacePath, 'utf8');
+          if (!workspace.includes('sendWorkspaceInvitationEmail')) {
+            workspace = workspace.replace(
+              'import { loadAdminWorkspaceAccess } from "~/lib/admin-workspace.server";\n',
+              'import { loadAdminWorkspaceAccess } from "~/lib/admin-workspace.server";\nimport { sendWorkspaceInvitationEmail } from "~/lib/email.server";\n',
+            );
+            workspace = workspace.replace(
+              'import { formText, normalizeEmail, validateEmail } from "~/lib/validation";\n',
+              'import { formText, normalizeEmail, validateEmail } from "~/lib/validation";\nimport {\n  issueWorkspaceInvitationToken,\n  markWorkspaceInvitationDelivery,\n} from "~/lib/workspace-invitations.server";\n',
+            );
+          }
           workspace = workspace.replace(
-            'defaultValue={selected.primaryProjectId ?? ""><option',
-            'defaultValue={selected.primaryProjectId ?? ""}><option',
+            '  const db = context.get(cloudflareContext).env.DB;\n  const admin = await requireSuperAdmin(request, db);',
+            '  const env = context.get(cloudflareContext).env;\n  const db = env.DB;\n  const admin = await requireSuperAdmin(request, db);',
           );
+          workspace = workspace.replace(
+            '"SELECT id, owner_user_id AS ownerUserId FROM saas_workspaces WHERE id = ?",',
+            '"SELECT id, name, owner_user_id AS ownerUserId FROM saas_workspaces WHERE id = ?",',
+          );
+          workspace = workspace.replace(
+            '.first<{ id: string; ownerUserId: string }>();',
+            '.first<{ id: string; name: string; ownerUserId: string }>();',
+          );
+          workspace = workspace.replace(
+            'if (!userId || !isWorkspaceRole(role))\n      return { error: "Choose a user and workspace role." };',
+            'if (!userId || !isWorkspaceRole(role) || role === "owner")\n      return { error: "Choose a user and a non-owner workspace role." };',
+          );
+          workspace = workspace.replace(
+            '      !isWorkspaceRole(role) ||\n      !["active", "suspended"].includes(status)',
+            '      !isWorkspaceRole(role) ||\n      (role === "owner" && userId !== workspace.ownerUserId) ||\n      !["active", "suspended"].includes(status)',
+          );
+          workspace = workspace.replace(
+            '"Workspace owner must remain an active owner. Transfer ownership before changing this member.",',
+            '"Workspace owner must remain an active owner. Use Transfer ownership first.",',
+          );
+          if (!workspace.includes('intent === "transfer-owner"')) {
+            workspace = workspace.replace(
+              '  if (intent === "record-invite") {',
+              `  if (intent === "transfer-owner") {
+    const newOwnerUserId = formText(form.get("newOwnerUserId")).trim();
+    if (!newOwnerUserId || newOwnerUserId === workspace.ownerUserId)
+      return { error: "Choose a different active workspace member." };
+    const candidate = await db
+      .prepare(
+        "SELECT role, status FROM saas_workspace_members WHERE workspace_id = ? AND user_id = ?",
+      )
+      .bind(workspaceId, newOwnerUserId)
+      .first<{ role: string; status: string }>();
+    if (!candidate || candidate.status !== "active")
+      return { error: "The new owner must already be an active workspace member." };
+    await db.batch([
+      db
+        .prepare(
+          "UPDATE saas_workspace_members SET role = 'admin', updated_at = datetime('now') WHERE workspace_id = ? AND user_id = ?",
+        )
+        .bind(workspaceId, workspace.ownerUserId),
+      db
+        .prepare(
+          "UPDATE saas_workspace_members SET role = 'owner', status = 'active', updated_at = datetime('now') WHERE workspace_id = ? AND user_id = ?",
+        )
+        .bind(workspaceId, newOwnerUserId),
+      db
+        .prepare(
+          "UPDATE saas_workspaces SET owner_user_id = ?, updated_by = ?, updated_at = datetime('now') WHERE id = ?",
+        )
+        .bind(newOwnerUserId, admin.id, workspaceId),
+      db
+        .prepare(
+          "INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id, metadata_json) VALUES (?, ?, 'saas_workspace.owner_transferred', 'saas_workspace', ?, ?)",
+        )
+        .bind(
+          crypto.randomUUID(),
+          admin.id,
+          workspaceId,
+          JSON.stringify({ fromUserId: workspace.ownerUserId, toUserId: newOwnerUserId }),
+        ),
+    ]);
+    return { saved: true, message: "Workspace ownership transferred." };
+  }
+
+  if (intent === "record-invite") {`,
+            );
+          }
+          const oldInvite = `    await db
+      .prepare(
+        "INSERT INTO saas_workspace_invitations (id, workspace_id, email, role, expires_at, invited_by) VALUES (?, ?, ?, ?, ?, ?)",
+      )
+      .bind(crypto.randomUUID(), workspaceId, email, role, expiresAt, admin.id)
+      .run();
+    return {
+      saved: true,
+      message:
+        "Invitation is tracked. No email is sent automatically in this release.",
+    };`;
+          if (workspace.includes(oldInvite)) {
+            workspace = workspace.replace(
+              oldInvite,
+              `    const invitationId = crypto.randomUUID();
+    await db
+      .prepare(
+        \`INSERT INTO saas_workspace_invitations
+         (id, workspace_id, email, role, expires_at, invited_by)
+         VALUES (?, ?, ?, ?, COALESCE(datetime(?, '+1 day', '-1 second'), datetime('now', '+7 days')), ?)\`,
+      )
+      .bind(invitationId, workspaceId, email, role, expiresAt, admin.id)
+      .run();
+    const token = await issueWorkspaceInvitationToken(db, invitationId);
+    const delivery = await sendWorkspaceInvitationEmail(
+      env,
+      email,
+      token,
+      workspace.name,
+      role,
+    );
+    if (delivery.sent || delivery.deliveryId)
+      await markWorkspaceInvitationDelivery(
+        db,
+        invitationId,
+        delivery.deliveryId ?? null,
+      );
+    await db
+      .prepare(
+        "INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id, metadata_json) VALUES (?, ?, 'saas_workspace.invitation_created', 'saas_workspace', ?, ?)",
+      )
+      .bind(
+        crypto.randomUUID(),
+        admin.id,
+        workspaceId,
+        JSON.stringify({ invitationId, email, role, delivery: delivery.sent ? 'delivered' : delivery.reason }),
+      )
+      .run();
+    return {
+      saved: true,
+      message: delivery.sent
+        ? "Workspace invitation sent."
+        : delivery.reason === "queued"
+          ? "Workspace invitation queued for delivery."
+          : "Invitation created, but email delivery is not configured.",
+    };`,
+            );
+          }
+          workspace = workspace.replace(
+            '<select name="role" defaultValue="member">\n                  {workspaceRoles.map((r) => (',
+            '<select name="role" defaultValue="member">\n                  {workspaceRoles.filter((r) => r !== "owner").map((r) => (',
+          );
+          workspace = workspace.replace(
+            `              <h3>Invitation tracking</h3>
+              <p>
+                This records pending invitations only. It does not pretend an
+                email/token delivery system exists.
+              </p>`,
+            `              <h3>Workspace invitations</h3>
+              <p>
+                Invitations use a single-use secure token and the invited email must
+                match the signed-in AKARI account.
+              </p>`,
+          );
+          workspace = workspace.replace(
+            '<button disabled={pending}>Track invitation</button>',
+            '<button disabled={pending}>Send invitation</button>',
+          );
+          if (!workspace.includes('value="transfer-owner"')) {
+            workspace = workspace.replace(
+              '              <h3>Workspace invitations</h3>',
+              `              <h3>Ownership</h3>
+              <Form method="post" className="inline-form">
+                <input type="hidden" name="intent" value="transfer-owner" />
+                <input type="hidden" name="workspaceId" value={selected.id} />
+                <select name="newOwnerUserId" defaultValue="" required>
+                  <option value="" disabled>Transfer ownership to...</option>
+                  {loaderData.members
+                    .filter((member) => member.status === "active" && member.userId !== selected.ownerUserId)
+                    .map((member) => (
+                      <option key={member.userId} value={member.userId}>{member.label}</option>
+                    ))}
+                </select>
+                <button disabled={pending}>Transfer ownership</button>
+              </Form>
+              <h3>Workspace invitations</h3>`,
+            );
+          }
           fs.writeFileSync(workspacePath, workspace);
+
+          const routesPath = 'app/routes.ts';
+          let routes = fs.readFileSync(routesPath, 'utf8');
+          if (!routes.includes('workspace-invitations/accept')) {
+            routes = routes.replace(
+              '  route("workspaces/:slug", "routes/saas-workspace.tsx"),',
+              '  route("workspaces/:slug", "routes/saas-workspace.tsx"),\n  route("workspace-invitations/accept", "routes/workspace-invitation-accept.tsx"),',
+            );
+          }
+          fs.writeFileSync(routesPath, routes);
+
+          const loginPath = 'app/routes/login.tsx';
+          let login = fs.readFileSync(loginPath, 'utf8');
+          if (!login.includes('workspace-invitations/accept')) {
+            login = login.replace(
+              '  const destination = firstEntry\n    ? "/app?welcome=1"\n    : returnTo?.startsWith("/") && !returnTo.startsWith("//")\n      ? returnTo\n      : "/app";',
+              '  const safeReturnTo =\n    returnTo?.startsWith("/") && !returnTo.startsWith("//") ? returnTo : null;\n  const invitationReturn = safeReturnTo?.startsWith("/workspace-invitations/accept");\n  const destination = invitationReturn\n    ? safeReturnTo!\n    : firstEntry\n      ? "/app?welcome=1"\n      : safeReturnTo ?? "/app";',
+            );
+          }
+          fs.writeFileSync(loginPath, login);
           NODE
       - name: Format R75 files
         run: >-
@@ -75,19 +270,27 @@ jobs:
           app/lib/commercial-saas.server.ts
           app/lib/commercial-attention.server.ts
           app/lib/saas-workspace.server.ts
+          app/lib/workspace-invitations.server.ts
           app/lib/operating-rhythm.ts
           app/lib/operating-rhythm.server.ts
           app/lib/admin-workspace.ts
+          app/lib/email.server.ts
           app/routes.ts
+          app/routes/login.tsx
           app/routes/admin-finance.tsx
           app/routes/admin-saas-workspaces.tsx
           app/routes/saas-workspace.tsx
+          app/routes/workspace-invitation-accept.tsx
           tests/commercial-saas.test.ts
+      - name: Validate R75 types and tests
+        run: |
+          npm run typecheck
+          npm test -- --run tests/commercial-saas.test.ts
       - name: Commit integration changes
         run: |
           if git diff --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add app tests/commercial-saas.test.ts
-          git commit -m "R75: integrate finance attention and format"
+          git commit -m "R75: finalize workspace invitations and ownership"
           git push origin HEAD:r75-commercial-saas-completion
