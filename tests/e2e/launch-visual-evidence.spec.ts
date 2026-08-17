@@ -180,6 +180,31 @@ test.describe("launch visual evidence", () => {
     await capture(page, testInfo, "workspace-member-directory-founder-sparse");
   });
 
+  test("captures glass profile sharing card", async ({ page }, testInfo) => {
+    await activatePersona(page, "founder", { reuseExisting: true });
+    await page.goto("/profile-card", { waitUntil: "networkidle" });
+
+    await expect(
+      page.getByRole("heading", { name: "Profile sharing card" }),
+    ).toBeVisible();
+    const card = page.locator(".akari-glass-card");
+    await expect(card).toBeVisible();
+    await page.locator('input[name="orientation"][value="landscape"]').check();
+    await page.locator('input[name="palette"][value="midnight"]').check();
+    await expect(card).toHaveClass(/theme-midnight/);
+    await expectNoHorizontalOverflow(page);
+
+    if (testInfo.project.name === "desktop-chromium") {
+      const cardBox = await card.boundingBox();
+      expect(cardBox).not.toBeNull();
+      const ratio = (cardBox?.width ?? 1) / (cardBox?.height ?? 1);
+      expect(ratio).toBeGreaterThan(1.54);
+      expect(ratio).toBeLessThan(1.63);
+    }
+
+    await capture(page, testInfo, "workspace-profile-sharing-glass-card");
+  });
+
   test("captures Superadmin workspace and R69 closeout", async ({
     page,
   }, testInfo) => {
