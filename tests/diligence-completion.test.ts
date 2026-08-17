@@ -64,6 +64,18 @@ describe("diligence completion", () => {
     expect(normalizeDiligenceCategory("risk")).toBe("legal");
   });
 
+  it("does not double-count multiple documents in the same category", () => {
+    const readiness = diligenceCompleteness([
+      "company",
+      "corporate",
+      "financial",
+      "financials",
+    ]);
+
+    expect(readiness.complete).toBe(2);
+    expect(readiness.total).toBe(7);
+  });
+
   it("does not count unknown or other material as a completed institutional category", () => {
     const readiness = diligenceCompleteness(["other", "unknown", "company"]);
     expect(readiness.complete).toBe(1);
