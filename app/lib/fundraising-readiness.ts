@@ -62,7 +62,8 @@ export function calculateFundraisingReadiness(
       key: "project_profile",
       label: "Project profile",
       complete: input.projectProfileComplete,
-      guidance: "Complete the project summary, description, stage and public project profile.",
+      guidance:
+        "Complete the project summary, description, stage and public project profile.",
     },
     {
       key: "founder_verification",
@@ -85,13 +86,15 @@ export function calculateFundraisingReadiness(
       label: "Traction and key metrics",
       complete:
         hasText(input.tractionSummary, 20) && hasText(input.keyMetrics, 10),
-      guidance: "Summarize current traction and provide the most relevant measurable metrics.",
+      guidance:
+        "Summarize current traction and provide the most relevant measurable metrics.",
     },
     {
       key: "use_of_funds",
       label: "Use of funds",
       complete: hasText(input.useOfFunds, 20),
-      guidance: "Explain how the capital will be used and what milestones it should unlock.",
+      guidance:
+        "Explain how the capital will be used and what milestones it should unlock.",
     },
     {
       key: "financial_readiness",

@@ -53,7 +53,9 @@ type ReadinessRow = {
 };
 
 function documentMatches(titles: string[], patterns: RegExp[]) {
-  return titles.some((title) => patterns.some((pattern) => pattern.test(title)));
+  return titles.some((title) =>
+    patterns.some((pattern) => pattern.test(title)),
+  );
 }
 
 function readinessFor(row: ReadinessRow) {
@@ -77,7 +79,8 @@ function readinessFor(row: ReadinessRow) {
       Boolean(row.capTableReference) ||
       documentMatches(titles, [/cap\s*table/i, /ownership/i]),
     pitchDeckReady:
-      Boolean(row.pitchDeckReference) || documentMatches(titles, [/pitch/i, /deck/i]),
+      Boolean(row.pitchDeckReference) ||
+      documentMatches(titles, [/pitch/i, /deck/i]),
     onePagerReady:
       Boolean(row.onePagerReference) ||
       documentMatches(titles, [/one[- ]?pager/i, /overview/i]),
@@ -86,10 +89,16 @@ function readinessFor(row: ReadinessRow) {
       documentMatches(titles, [/financial/i, /p&l/i, /profit/i, /cash flow/i]),
     corporateDocsReady:
       Boolean(row.corporateDocsReference) ||
-      documentMatches(titles, [/corporate/i, /incorpor/i, /legal/i, /registration/i]),
+      documentMatches(titles, [
+        /corporate/i,
+        /incorpor/i,
+        /legal/i,
+        /registration/i,
+      ]),
     tokenRelevant: Boolean(row.tokenRelevant),
     tokenomicsReady:
-      Boolean(row.tokenomicsReference) || documentMatches(titles, [/tokenomics/i]),
+      Boolean(row.tokenomicsReference) ||
+      documentMatches(titles, [/tokenomics/i]),
   });
 }
 
@@ -173,7 +182,10 @@ export async function action({ request, context }: Route.ActionArgs) {
   const row = rows.find((candidate) => candidate.projectId === projectId);
   if (!row) return { error: "Fundraising profile not found." };
   const readiness = readinessFor(row);
-  if (readinessStatus === "ready_for_outreach" && !readiness.canPrepareOpportunity)
+  if (
+    readinessStatus === "ready_for_outreach" &&
+    !readiness.canPrepareOpportunity
+  )
     return {
       error:
         "This project cannot be marked ready for outreach until it reaches 80% completeness, is published and the Founder is verified.",
@@ -212,51 +224,100 @@ export default function AdminFundraisingReadiness({
             <span className="eyebrow">R71 · Founder readiness</span>
             <h1>Fundraising readiness review</h1>
             <p>
-              Review operational completeness before investor outreach. The score is a workflow measure, not an investment rating or recommendation.
+              Review operational completeness before investor outreach. The
+              score is a workflow measure, not an investment rating or
+              recommendation.
             </p>
           </div>
         </header>
 
-        {actionData?.error ? <div className="status-card status-card-warning">{actionData.error}</div> : null}
-        {actionData?.saved ? <div className="status-card">Readiness review updated.</div> : null}
+        {actionData?.error ? (
+          <div className="status-card status-card-warning">
+            {actionData.error}
+          </div>
+        ) : null}
+        {actionData?.saved ? (
+          <div className="status-card">Readiness review updated.</div>
+        ) : null}
 
         <div className="project-grid">
-          {loaderData.rows.length ? loaderData.rows.map((row) => (
-            <article className="project-card" key={row.projectId}>
-              <span className="chapter">{row.readiness.score}% complete · {fundraisingStatusLabels[row.readinessStatus]}</span>
-              <h2>{row.projectTitle}</h2>
-              <p>Founder: {row.founderName} (@{row.founderUsername})</p>
-              <p>Raise: {moneyLabel(row.raiseTarget, row.raiseCurrency)} · {row.fundingInstrument.replaceAll("_", " ")}</p>
-              <p>Missing: {row.readiness.missing.length ? row.readiness.missing.map((item) => item.label).join(", ") : "No checklist items"}</p>
-              <p>Investor opportunity: {row.opportunityStatus?.replaceAll("_", " ") ?? "Not prepared"}</p>
-              <div className="button-row">
-                <Link to={`/projects/${row.projectSlug}/fundraising`}>Founder workspace</Link>
-                <Link to={`/projects/${row.projectSlug}/opportunity`}>Investor opportunity</Link>
-                <Link to={`/projects/${row.projectSlug}/diligence`}>Diligence</Link>
-              </div>
-              <Form method="post" className="admin-form-stack">
-                <input type="hidden" name="projectId" value={row.projectId} />
-                <label>
-                  Review status
-                  <select name="readinessStatus" defaultValue={row.readinessStatus}>
-                    {fundraisingStatuses.map((status) => (
-                      <option key={status} value={status}>{fundraisingStatusLabels[status]}</option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Internal review note
-                  <textarea name="reviewNote" rows={3} defaultValue={row.reviewNote} />
-                </label>
-                <button className="button button-primary" type="submit" disabled={busy}>
-                  {busy ? "Updating…" : "Update review"}
-                </button>
-              </Form>
-            </article>
-          )) : (
+          {loaderData.rows.length ? (
+            loaderData.rows.map((row) => (
+              <article className="project-card" key={row.projectId}>
+                <span className="chapter">
+                  {row.readiness.score}% complete ·{" "}
+                  {fundraisingStatusLabels[row.readinessStatus]}
+                </span>
+                <h2>{row.projectTitle}</h2>
+                <p>
+                  Founder: {row.founderName} (@{row.founderUsername})
+                </p>
+                <p>
+                  Raise: {moneyLabel(row.raiseTarget, row.raiseCurrency)} ·{" "}
+                  {row.fundingInstrument.replaceAll("_", " ")}
+                </p>
+                <p>
+                  Missing:{" "}
+                  {row.readiness.missing.length
+                    ? row.readiness.missing.map((item) => item.label).join(", ")
+                    : "No checklist items"}
+                </p>
+                <p>
+                  Investor opportunity:{" "}
+                  {row.opportunityStatus?.replaceAll("_", " ") ??
+                    "Not prepared"}
+                </p>
+                <div className="button-row">
+                  <Link to={`/projects/${row.projectSlug}/fundraising`}>
+                    Founder workspace
+                  </Link>
+                  <Link to={`/projects/${row.projectSlug}/opportunity`}>
+                    Investor opportunity
+                  </Link>
+                  <Link to={`/projects/${row.projectSlug}/diligence`}>
+                    Diligence
+                  </Link>
+                </div>
+                <Form method="post" className="admin-form-stack">
+                  <input type="hidden" name="projectId" value={row.projectId} />
+                  <label>
+                    Review status
+                    <select
+                      name="readinessStatus"
+                      defaultValue={row.readinessStatus}
+                    >
+                      {fundraisingStatuses.map((status) => (
+                        <option key={status} value={status}>
+                          {fundraisingStatusLabels[status]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Internal review note
+                    <textarea
+                      name="reviewNote"
+                      rows={3}
+                      defaultValue={row.reviewNote}
+                    />
+                  </label>
+                  <button
+                    className="button button-primary"
+                    type="submit"
+                    disabled={busy}
+                  >
+                    {busy ? "Updating…" : "Update review"}
+                  </button>
+                </Form>
+              </article>
+            ))
+          ) : (
             <div className="status-card">
               <h2>No fundraising profiles yet.</h2>
-              <p>Founder fundraising workspaces will appear here after a project saves its first readiness profile.</p>
+              <p>
+                Founder fundraising workspaces will appear here after a project
+                saves its first readiness profile.
+              </p>
             </div>
           )}
         </div>

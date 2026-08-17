@@ -102,11 +102,18 @@ function optionalReference(value: FormDataEntryValue | null) {
 }
 
 function documentMatches(titles: string[], patterns: RegExp[]) {
-  return titles.some((title) => patterns.some((pattern) => pattern.test(title)));
+  return titles.some((title) =>
+    patterns.some((pattern) => pattern.test(title)),
+  );
 }
 
 function readinessFor(
-  project: { status: string; summary: string; description: string; stage: string },
+  project: {
+    status: string;
+    summary: string;
+    description: string;
+    stage: string;
+  },
   profile: ProfileRow,
   founderVerified: boolean,
   documentTitles: string[],
@@ -122,12 +129,23 @@ function readinessFor(
     documentMatches(documentTitles, [/one[- ]?pager/i, /overview/i]);
   const financialsReady =
     Boolean(profile.financialsReference) ||
-    documentMatches(documentTitles, [/financial/i, /p&l/i, /profit/i, /cash flow/i]);
+    documentMatches(documentTitles, [
+      /financial/i,
+      /p&l/i,
+      /profit/i,
+      /cash flow/i,
+    ]);
   const corporateDocsReady =
     Boolean(profile.corporateDocsReference) ||
-    documentMatches(documentTitles, [/corporate/i, /incorpor/i, /legal/i, /registration/i]);
+    documentMatches(documentTitles, [
+      /corporate/i,
+      /incorpor/i,
+      /legal/i,
+      /registration/i,
+    ]);
   const tokenomicsReady =
-    Boolean(profile.tokenomicsReference) || documentMatches(documentTitles, [/tokenomics/i]);
+    Boolean(profile.tokenomicsReference) ||
+    documentMatches(documentTitles, [/tokenomics/i]);
 
   return calculateFundraisingReadiness({
     projectProfileComplete:
@@ -289,10 +307,13 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         user.id,
       )
       .run();
-    throw redirect(`/projects/${workspace.project.slug}/opportunity?from=readiness`);
+    throw redirect(
+      `/projects/${workspace.project.slug}/opportunity?from=readiness`,
+    );
   }
 
-  if (intent !== "save") throw new Response("Unsupported action.", { status: 400 });
+  if (intent !== "save")
+    throw new Response("Unsupported action.", { status: 400 });
 
   const amounts = {
     raiseTarget: optionalInteger(form.get("raiseTarget")),
@@ -303,9 +324,14 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     currentRevenue: optionalInteger(form.get("currentRevenue")),
   };
   if (Object.values(amounts).some((value) => Number.isNaN(value)))
-    return { error: "Financial amounts must be whole numbers greater than or equal to zero." };
+    return {
+      error:
+        "Financial amounts must be whole numbers greater than or equal to zero.",
+    };
 
-  const raiseCurrency = formText(form.get("raiseCurrency")).trim().toUpperCase();
+  const raiseCurrency = formText(form.get("raiseCurrency"))
+    .trim()
+    .toUpperCase();
   const fundingInstrument = formText(form.get("fundingInstrument"));
   const revenuePeriod = formText(form.get("revenuePeriod"));
   const closingTarget = optionalDate(form.get("closingTarget"));
@@ -313,22 +339,29 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     return { error: "Use a three-letter currency code such as USD or EUR." };
   if (!instruments.includes(fundingInstrument as (typeof instruments)[number]))
     return { error: "Choose a supported funding instrument." };
-  if (!revenuePeriods.includes(revenuePeriod as (typeof revenuePeriods)[number]))
+  if (
+    !revenuePeriods.includes(revenuePeriod as (typeof revenuePeriods)[number])
+  )
     return { error: "Choose a supported revenue period." };
-  if (closingTarget === undefined) return { error: "Use a valid closing target date." };
+  if (closingTarget === undefined)
+    return { error: "Use a valid closing target date." };
 
   const references = {
     capTableReference: optionalReference(form.get("capTableReference")),
     pitchDeckReference: optionalReference(form.get("pitchDeckReference")),
     onePagerReference: optionalReference(form.get("onePagerReference")),
     financialsReference: optionalReference(form.get("financialsReference")),
-    corporateDocsReference: optionalReference(form.get("corporateDocsReference")),
+    corporateDocsReference: optionalReference(
+      form.get("corporateDocsReference"),
+    ),
     tokenomicsReference: optionalReference(form.get("tokenomicsReference")),
   };
   if (Object.values(references).some((value) => value === undefined))
     return { error: "Document references must be valid HTTPS links." };
 
-  const tractionSummary = formText(form.get("tractionSummary")).trim().slice(0, 3000);
+  const tractionSummary = formText(form.get("tractionSummary"))
+    .trim()
+    .slice(0, 3000);
   const keyMetrics = formText(form.get("keyMetrics")).trim().slice(0, 3000);
   const useOfFunds = formText(form.get("useOfFunds")).trim().slice(0, 3000);
   const tokenRelevant = form.get("tokenRelevant") === "on" ? 1 : 0;
@@ -419,39 +452,57 @@ export default function ProjectFundraisingReadiness({
             <span className="eyebrow">Founder fundraising readiness</span>
             <h1>{loaderData.project.title}</h1>
             <p>
-              Prepare the operational information AKARI needs before investor outreach.
-              The readiness score measures completeness only. It is not an investment rating.
+              Prepare the operational information AKARI needs before investor
+              outreach. The readiness score measures completeness only. It is
+              not an investment rating.
             </p>
           </div>
           <div className="button-row">
             <Link className="button button-quiet" to="/projects/manage">
               Project desk
             </Link>
-            <Link className="button button-quiet" to={`/projects/${loaderData.project.slug}/diligence`}>
+            <Link
+              className="button button-quiet"
+              to={`/projects/${loaderData.project.slug}/diligence`}
+            >
               Private documents
             </Link>
           </div>
         </header>
 
-        {actionData?.error ? <div className="status-card status-card-warning">{actionData.error}</div> : null}
+        {actionData?.error ? (
+          <div className="status-card status-card-warning">
+            {actionData.error}
+          </div>
+        ) : null}
 
         <section className="status-card">
           <span className="eyebrow">Operational completeness</span>
           <h2>{readiness.score}% fundraising ready</h2>
           <p>
-            {readiness.completed} of {readiness.total} readiness checks complete · Review status:{" "}
-            {fundraisingStatusLabels[profile.readinessStatus]}
+            {readiness.completed} of {readiness.total} readiness checks complete
+            · Review status: {fundraisingStatusLabels[profile.readinessStatus]}
           </p>
           <div className="project-grid">
             {readiness.items.map((item) => (
               <article className="project-card" key={item.key}>
-                <span className="chapter">{item.complete ? "Ready" : "Needs attention"}</span>
+                <span className="chapter">
+                  {item.complete ? "Ready" : "Needs attention"}
+                </span>
                 <h3>{item.label}</h3>
-                {!item.complete ? <p>{item.guidance}</p> : <p>Operational requirement recorded.</p>}
+                {!item.complete ? (
+                  <p>{item.guidance}</p>
+                ) : (
+                  <p>Operational requirement recorded.</p>
+                )}
               </article>
             ))}
           </div>
-          {profile.reviewNote ? <p><strong>AKARI review note:</strong> {profile.reviewNote}</p> : null}
+          {profile.reviewNote ? (
+            <p>
+              <strong>AKARI review note:</strong> {profile.reviewNote}
+            </p>
+          ) : null}
         </section>
 
         <Form method="post" className="admin-form-stack">
@@ -461,51 +512,220 @@ export default function ProjectFundraisingReadiness({
             <span className="eyebrow">1 · Raise</span>
             <h2>Fundraising structure</h2>
             <div className="form-grid">
-              <label>Raise target<input name="raiseTarget" inputMode="numeric" defaultValue={moneyValue(profile.raiseTarget)} /></label>
-              <label>Currency<input name="raiseCurrency" maxLength={3} defaultValue={profile.raiseCurrency} /></label>
-              <label>Valuation, if applicable<input name="valuation" inputMode="numeric" defaultValue={moneyValue(profile.valuation)} /></label>
-              <label>Funding instrument<select name="fundingInstrument" defaultValue={profile.fundingInstrument}>{instruments.map((value) => <option key={value} value={value}>{value.replaceAll("_", " ")}</option>)}</select></label>
-              <label>Minimum participation<input name="minimumParticipation" inputMode="numeric" defaultValue={moneyValue(profile.minimumParticipation)} /></label>
-              <label>Target close<input name="closingTarget" type="date" defaultValue={profile.closingTarget ?? ""} /></label>
+              <label>
+                Raise target
+                <input
+                  name="raiseTarget"
+                  inputMode="numeric"
+                  defaultValue={moneyValue(profile.raiseTarget)}
+                />
+              </label>
+              <label>
+                Currency
+                <input
+                  name="raiseCurrency"
+                  maxLength={3}
+                  defaultValue={profile.raiseCurrency}
+                />
+              </label>
+              <label>
+                Valuation, if applicable
+                <input
+                  name="valuation"
+                  inputMode="numeric"
+                  defaultValue={moneyValue(profile.valuation)}
+                />
+              </label>
+              <label>
+                Funding instrument
+                <select
+                  name="fundingInstrument"
+                  defaultValue={profile.fundingInstrument}
+                >
+                  {instruments.map((value) => (
+                    <option key={value} value={value}>
+                      {value.replaceAll("_", " ")}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Minimum participation
+                <input
+                  name="minimumParticipation"
+                  inputMode="numeric"
+                  defaultValue={moneyValue(profile.minimumParticipation)}
+                />
+              </label>
+              <label>
+                Target close
+                <input
+                  name="closingTarget"
+                  type="date"
+                  defaultValue={profile.closingTarget ?? ""}
+                />
+              </label>
             </div>
           </section>
 
           <section className="status-card">
             <span className="eyebrow">2 · Traction</span>
             <h2>Evidence of progress</h2>
-            <label>Traction summary<textarea name="tractionSummary" rows={5} defaultValue={profile.tractionSummary} placeholder="Customers, users, product progress, distribution, partnerships or other relevant traction." /></label>
-            <label>Key metrics<textarea name="keyMetrics" rows={4} defaultValue={profile.keyMetrics} placeholder="Record the measurable metrics that matter for this company and stage." /></label>
+            <label>
+              Traction summary
+              <textarea
+                name="tractionSummary"
+                rows={5}
+                defaultValue={profile.tractionSummary}
+                placeholder="Customers, users, product progress, distribution, partnerships or other relevant traction."
+              />
+            </label>
+            <label>
+              Key metrics
+              <textarea
+                name="keyMetrics"
+                rows={4}
+                defaultValue={profile.keyMetrics}
+                placeholder="Record the measurable metrics that matter for this company and stage."
+              />
+            </label>
           </section>
 
           <section className="status-card">
             <span className="eyebrow">3 · Financial readiness</span>
             <h2>Runway and use of funds</h2>
             <div className="form-grid">
-              <label>Monthly burn<input name="monthlyBurn" inputMode="numeric" defaultValue={moneyValue(profile.monthlyBurn)} /></label>
-              <label>Runway in months<input name="runwayMonths" inputMode="numeric" defaultValue={moneyValue(profile.runwayMonths)} /></label>
-              <label>Current revenue<input name="currentRevenue" inputMode="numeric" defaultValue={moneyValue(profile.currentRevenue)} /></label>
-              <label>Revenue period<select name="revenuePeriod" defaultValue={profile.revenuePeriod}>{revenuePeriods.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
+              <label>
+                Monthly burn
+                <input
+                  name="monthlyBurn"
+                  inputMode="numeric"
+                  defaultValue={moneyValue(profile.monthlyBurn)}
+                />
+              </label>
+              <label>
+                Runway in months
+                <input
+                  name="runwayMonths"
+                  inputMode="numeric"
+                  defaultValue={moneyValue(profile.runwayMonths)}
+                />
+              </label>
+              <label>
+                Current revenue
+                <input
+                  name="currentRevenue"
+                  inputMode="numeric"
+                  defaultValue={moneyValue(profile.currentRevenue)}
+                />
+              </label>
+              <label>
+                Revenue period
+                <select
+                  name="revenuePeriod"
+                  defaultValue={profile.revenuePeriod}
+                >
+                  {revenuePeriods.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </div>
-            <label>Use of funds<textarea name="useOfFunds" rows={5} defaultValue={profile.useOfFunds} placeholder="Explain the main allocation areas and milestones this raise is expected to unlock." /></label>
+            <label>
+              Use of funds
+              <textarea
+                name="useOfFunds"
+                rows={5}
+                defaultValue={profile.useOfFunds}
+                placeholder="Explain the main allocation areas and milestones this raise is expected to unlock."
+              />
+            </label>
           </section>
 
           <section className="status-card">
             <span className="eyebrow">4 · Investor materials</span>
             <h2>External references</h2>
-            <p>Use HTTPS links to the current source documents. AKARI records the reference and workflow; it does not replace your source document system.</p>
+            <p>
+              Use HTTPS links to the current source documents. AKARI records the
+              reference and workflow; it does not replace your source document
+              system.
+            </p>
             <div className="form-grid">
-              <label>Cap table<input name="capTableReference" type="url" defaultValue={profile.capTableReference} placeholder="https://" /></label>
-              <label>Pitch deck<input name="pitchDeckReference" type="url" defaultValue={profile.pitchDeckReference} placeholder="https://" /></label>
-              <label>One-pager<input name="onePagerReference" type="url" defaultValue={profile.onePagerReference} placeholder="https://" /></label>
-              <label>Financials<input name="financialsReference" type="url" defaultValue={profile.financialsReference} placeholder="https://" /></label>
-              <label>Corporate / legal docs<input name="corporateDocsReference" type="url" defaultValue={profile.corporateDocsReference} placeholder="https://" /></label>
+              <label>
+                Cap table
+                <input
+                  name="capTableReference"
+                  type="url"
+                  defaultValue={profile.capTableReference}
+                  placeholder="https://"
+                />
+              </label>
+              <label>
+                Pitch deck
+                <input
+                  name="pitchDeckReference"
+                  type="url"
+                  defaultValue={profile.pitchDeckReference}
+                  placeholder="https://"
+                />
+              </label>
+              <label>
+                One-pager
+                <input
+                  name="onePagerReference"
+                  type="url"
+                  defaultValue={profile.onePagerReference}
+                  placeholder="https://"
+                />
+              </label>
+              <label>
+                Financials
+                <input
+                  name="financialsReference"
+                  type="url"
+                  defaultValue={profile.financialsReference}
+                  placeholder="https://"
+                />
+              </label>
+              <label>
+                Corporate / legal docs
+                <input
+                  name="corporateDocsReference"
+                  type="url"
+                  defaultValue={profile.corporateDocsReference}
+                  placeholder="https://"
+                />
+              </label>
             </div>
-            <label className="checkbox-row"><input name="tokenRelevant" type="checkbox" defaultChecked={Boolean(profile.tokenRelevant)} /> This project has a token or token-related fundraising component.</label>
-            <label>Tokenomics, when relevant<input name="tokenomicsReference" type="url" defaultValue={profile.tokenomicsReference} placeholder="https://" /></label>
+            <label className="checkbox-row">
+              <input
+                name="tokenRelevant"
+                type="checkbox"
+                defaultChecked={Boolean(profile.tokenRelevant)}
+              />{" "}
+              This project has a token or token-related fundraising component.
+            </label>
+            <label>
+              Tokenomics, when relevant
+              <input
+                name="tokenomicsReference"
+                type="url"
+                defaultValue={profile.tokenomicsReference}
+                placeholder="https://"
+              />
+            </label>
           </section>
 
           <div className="button-row">
-            <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Saving…" : "Save fundraising readiness"}</button>
+            <button
+              className="button button-primary"
+              type="submit"
+              disabled={busy}
+            >
+              {busy ? "Saving…" : "Save fundraising readiness"}
+            </button>
           </div>
         </Form>
 
@@ -514,14 +734,32 @@ export default function ProjectFundraisingReadiness({
           <h2>Prepare the Investor Opportunity</h2>
           {loaderData.opportunityStatus ? (
             <div className="button-row">
-              <p>Existing opportunity status: {loaderData.opportunityStatus.replaceAll("_", " ")}</p>
-              <Link className="button button-primary" to={`/projects/${loaderData.project.slug}/opportunity`}>Open investor opportunity</Link>
+              <p>
+                Existing opportunity status:{" "}
+                {loaderData.opportunityStatus.replaceAll("_", " ")}
+              </p>
+              <Link
+                className="button button-primary"
+                to={`/projects/${loaderData.project.slug}/opportunity`}
+              >
+                Open investor opportunity
+              </Link>
             </div>
           ) : (
             <Form method="post">
               <input type="hidden" name="intent" value="prepare-opportunity" />
-              <p>At 80%+ completeness, with a published project and verified Founder, AKARI can create a draft in the existing investor-opportunity workflow using your recorded raise data.</p>
-              <button className="button button-primary" type="submit" disabled={!readiness.canPrepareOpportunity || busy}>Prepare investor opportunity</button>
+              <p>
+                At 80%+ completeness, with a published project and verified
+                Founder, AKARI can create a draft in the existing
+                investor-opportunity workflow using your recorded raise data.
+              </p>
+              <button
+                className="button button-primary"
+                type="submit"
+                disabled={!readiness.canPrepareOpportunity || busy}
+              >
+                Prepare investor opportunity
+              </button>
             </Form>
           )}
         </section>

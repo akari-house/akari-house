@@ -4,7 +4,10 @@ import { ProjectNeedChips } from "~/components/projects/ProjectNeedChips";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import { fundraisingStatusLabels, type FundraisingStatus } from "~/lib/fundraising-readiness";
+import {
+  fundraisingStatusLabels,
+  type FundraisingStatus,
+} from "~/lib/fundraising-readiness";
 import {
   projectClaimStatusLabel,
   projectRelationshipLabel,

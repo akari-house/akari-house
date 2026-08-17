@@ -7,7 +7,8 @@ const completeInput = {
   raiseTarget: 500000,
   raiseCurrency: "USD",
   fundingInstrument: "safe",
-  tractionSummary: "The company has live users, paying customers and repeat usage.",
+  tractionSummary:
+    "The company has live users, paying customers and repeat usage.",
   keyMetrics: "MRR 25000, 18% MoM growth",
   useOfFunds: "Product, growth, hiring and regulated market expansion.",
   monthlyBurn: 30000,
@@ -36,7 +37,9 @@ describe("fundraising readiness", () => {
       tokenomicsReady: false,
     });
     expect(withoutTokenomics.total).toBe(11);
-    expect(withoutTokenomics.missing.map((item) => item.key)).toContain("tokenomics");
+    expect(withoutTokenomics.missing.map((item) => item.key)).toContain(
+      "tokenomics",
+    );
 
     const withTokenomics = calculateFundraisingReadiness({
       ...completeInput,
