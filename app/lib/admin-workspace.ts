@@ -1,5 +1,9 @@
 export type AdminScope =
-  "membership" | "verification" | "projects" | "campaigns" | "moderation";
+  | "membership"
+  | "verification"
+  | "projects"
+  | "campaigns"
+  | "moderation";
 
 export const adminScopes: AdminScope[] = [
   "membership",
@@ -174,6 +178,14 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     label: "Public people & partners",
     description: "Manage AKARI team, advisors and partner identities.",
     to: "/admin/house-directory",
+    superadminOnly: true,
+  },
+  {
+    key: "launch-completion",
+    label: "Launch completion",
+    description:
+      "Measure live seed inventory, real pilot coverage, journey evidence and launch blockers.",
+    to: "/admin/launch-completion",
     superadminOnly: true,
   },
   {
