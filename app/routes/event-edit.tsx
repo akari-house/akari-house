@@ -1,26 +1,29 @@
-import { Form, redirect, useNavigation } from "react-router";
 import { useState } from "react";
+import { Form, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/event-edit";
+import { AkariMotif } from "~/components/AkariMotif";
+import { EventTimezoneField } from "~/components/EventTimeDisplay";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
+import { importEventImage } from "~/lib/event-image.server";
+import {
+  canHostEvents,
+  canPublishEventsDirectly,
+} from "~/lib/events.server";
 import {
   eventTimeToLocalInput,
   isValidTimezone,
   localEventTimeToUtc,
   validEventTimes,
 } from "~/lib/events";
-import { EventTimezoneField } from "~/components/EventTimeDisplay";
-import { assertSameOrigin } from "~/lib/security.server";
-import { formText, normalizeWebsite } from "~/lib/validation";
-import { AkariMotif } from "~/components/AkariMotif";
-import { canHostEvents } from "~/lib/events.server";
 import { validateProfilePhoto } from "~/lib/profile-photo.server";
 import {
   markManagedR2ObjectDeleted,
   registerManagedR2Object,
 } from "~/lib/r2-lifecycle.server";
-import { importEventImage } from "~/lib/event-image.server";
+import { assertSameOrigin } from "~/lib/security.server";
+import { formText, normalizeWebsite } from "~/lib/validation";
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -57,7 +60,11 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
       imageSourceUrl: string;
     }>();
   if (!event) throw new Response("Event not found.", { status: 404 });
-  return { user, event };
+  return {
+    user,
+    event,
+    canPublishDirectly: canPublishEventsDirectly(user),
+  };
 }
 
 export async function action({ request, context, params }: Route.ActionArgs) {
@@ -69,9 +76,13 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     throw new Response("Approved event-host access is required.", {
       status: 403,
     });
+  const publishDirectly = canPublishEventsDirectly(user);
+  const nextStatus = publishDirectly ? "published" : "submitted";
+
   const contentLength = Number(request.headers.get("content-length") ?? "0");
   if (contentLength > 2_750_000)
     return { error: "Event cover images must be 2 MB or smaller." };
+
   const form = await request.formData();
   const intent = formText(form.get("intent"));
   const existing = await db
@@ -89,6 +100,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       imageSourceUrl: string;
     }>();
   if (!existing) throw new Response("Event not found.", { status: 404 });
+
   if (intent === "cancel") {
     const registrations = await db
       .prepare(
@@ -140,6 +152,12 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     ]);
     throw redirect("/events/manage?cancelled=1");
   }
+
+  if (existing.status === "cancelled")
+    return {
+      error: "Cancelled events cannot be republished. Create a new event instead.",
+    };
+
   const title = formText(form.get("title")).trim();
   const summary = formText(form.get("summary")).trim();
   const description = formText(form.get("description")).trim();
@@ -153,6 +171,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const endsAt = localEventTimeToUtc(endsAtLocal, timezone);
   const capacityText = formText(form.get("capacity")).trim();
   const capacity = capacityText ? Number(capacityText) : null;
+
   if (
     title.length < 3 ||
     title.length > 120 ||
@@ -177,6 +196,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     return { error: "Online and hybrid events require a meeting URL." };
   if (format !== "online" && !venue)
     return { error: "In-person and hybrid events require a venue." };
+
   const confirmed = await db
     .prepare(
       `SELECT COUNT(*) AS total FROM event_registrations
@@ -194,6 +214,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   const removeImage = form.get("removeImage") === "yes";
   if (image instanceof File && image.size && imageUrl)
     return { error: "Choose either an image upload or an image URL." };
+
   let imageKey = removeImage ? null : existing.imageKey;
   let imageSourceUrl = removeImage ? "" : existing.imageSourceUrl;
   let uploadedImageKey: string | null = null;
@@ -232,31 +253,54 @@ export async function action({ request, context, params }: Route.ActionArgs) {
         sourceId: existing.id,
         ownerUserId: user.id,
       });
-    await db
-      .prepare(
-        `UPDATE events SET title = ?, summary = ?, description = ?,
-         format = ?, venue = ?, meeting_url = ?, starts_at = ?, ends_at = ?,
-         timezone = ?, capacity = ?, image_key = ?, image_source_url = ?,
-         status = 'submitted',
-         updated_at = datetime('now')
-         WHERE id = ?`,
-      )
-      .bind(
-        title,
-        summary,
-        description,
-        format,
-        venue,
-        meetingUrl ?? "",
-        startsAt,
-        endsAt,
-        timezone,
-        capacity,
-        imageKey,
-        imageSourceUrl,
-        existing.id,
-      )
-      .run();
+
+    await db.batch([
+      db
+        .prepare(
+          `UPDATE events SET title = ?, summary = ?, description = ?,
+           format = ?, venue = ?, meeting_url = ?, starts_at = ?, ends_at = ?,
+           timezone = ?, capacity = ?, image_key = ?, image_source_url = ?,
+           status = ?, reviewed_by = ?,
+           reviewed_at = CASE WHEN ? = 'published' THEN datetime('now') ELSE NULL END,
+           updated_at = datetime('now')
+           WHERE id = ?`,
+        )
+        .bind(
+          title,
+          summary,
+          description,
+          format,
+          venue,
+          meetingUrl ?? "",
+          startsAt,
+          endsAt,
+          timezone,
+          capacity,
+          imageKey,
+          imageSourceUrl,
+          nextStatus,
+          publishDirectly ? user.id : null,
+          nextStatus,
+          existing.id,
+        ),
+      db
+        .prepare(
+          `INSERT INTO audit_logs
+           (id, actor_user_id, action, subject_type, subject_id, metadata_json)
+           VALUES (?, ?, ?, 'event', ?, ?)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          user.id,
+          publishDirectly ? "event.published_directly" : "event.resubmitted",
+          existing.id,
+          JSON.stringify({
+            previousStatus: existing.status,
+            status: nextStatus,
+            imageChanged: existing.imageKey !== imageKey,
+          }),
+        ),
+    ]);
   } catch (error) {
     if (uploadedImageKey) {
       await env.MEDIA.delete(uploadedImageKey);
@@ -271,7 +315,12 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     await env.MEDIA.delete(existing.imageKey);
     await markManagedR2ObjectDeleted(db, existing.imageKey);
   }
-  throw redirect(`/events/${params.slug}?submitted=1`);
+
+  throw redirect(
+    publishDirectly
+      ? `/events/${params.slug}?published=1`
+      : `/events/${params.slug}?submitted=1`,
+  );
 }
 
 export default function EventEdit({
@@ -279,8 +328,10 @@ export default function EventEdit({
   actionData,
 }: Route.ComponentProps) {
   const event = loaderData.event;
+  const canPublishDirectly = loaderData.canPublishDirectly;
   const navigation = useNavigation();
   const [eventFormat, setEventFormat] = useState(event.format);
+
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -290,9 +341,14 @@ export default function EventEdit({
           <div>
             <span className="eyebrow">Event editor · {event.status}</span>
             <h1>Refine the gathering.</h1>
-            <p>Shape the invitation, timing and welcome before review.</p>
+            <p>
+              {canPublishDirectly
+                ? "Update the invitation and keep it publication-ready."
+                : "Shape the invitation, timing and welcome before review."}
+            </p>
           </div>
         </header>
+
         <Form
           method="post"
           encType="multipart/form-data"
@@ -303,9 +359,22 @@ export default function EventEdit({
               {actionData.error}
             </p>
           )}
+          {canPublishDirectly && event.status !== "cancelled" && (
+            <p className="notice">
+              Saving publishes the validated event immediately with your AKARI
+              admin access.
+            </p>
+          )}
+
           <label>
             Title
-            <input name="title" defaultValue={event.title} maxLength={120} />
+            <input
+              name="title"
+              defaultValue={event.title}
+              minLength={3}
+              maxLength={120}
+              required
+            />
           </label>
           <label>
             Summary
@@ -315,6 +384,7 @@ export default function EventEdit({
               minLength={20}
               maxLength={300}
               rows={3}
+              required
             />
           </label>
           <label>
@@ -326,6 +396,7 @@ export default function EventEdit({
               rows={8}
             />
           </label>
+
           <div className="event-image-field">
             <span>Event cover image</span>
             {event.imageKey && (
@@ -351,10 +422,13 @@ export default function EventEdit({
               </label>
             )}
             <small>
-              Landscape JPG, PNG or WebP up to 2 MB. Changes return a published
-              event to review.
+              Landscape JPG, PNG or WebP up to 2 MB.
+              {canPublishDirectly
+                ? " Admin updates remain publishable immediately."
+                : " Changes to a published event return it to review."}
             </small>
           </div>
+
           <label>
             Or import a cover from an HTTPS image link
             <input
@@ -368,6 +442,7 @@ export default function EventEdit({
               AKARI securely copies the reviewed image into private storage.
             </small>
           </label>
+
           <div className="form-row">
             <label>
               Format
@@ -394,6 +469,7 @@ export default function EventEdit({
               />
             </label>
           </div>
+
           <div className="form-row">
             <label>
               Starts in the event timezone
@@ -421,12 +497,14 @@ export default function EventEdit({
             </label>
           </div>
           <EventTimezoneField defaultValue={event.timezone} />
-          {event.status === "published" && (
+
+          {event.status === "published" && !canPublishDirectly && (
             <p className="notice">
               Saving changes sends this event back for review and temporarily
               removes it from the public calendar.
             </p>
           )}
+
           {eventFormat !== "online" && (
             <label>
               Venue
@@ -449,16 +527,22 @@ export default function EventEdit({
               />
             </label>
           )}
+
           <button
             className="button button-primary"
             name="intent"
             value="submit"
-            disabled={navigation.state !== "idle"}
+            disabled={navigation.state !== "idle" || event.status === "cancelled"}
           >
             {navigation.state === "idle"
-              ? "Save and submit for review"
-              : "Submitting changes..."}
+              ? canPublishDirectly
+                ? "Save and publish"
+                : "Save and submit for review"
+              : canPublishDirectly
+                ? "Publishing changes..."
+                : "Submitting changes..."}
           </button>
+
           {event.status !== "cancelled" && (
             <button
               className="button button-quiet"
