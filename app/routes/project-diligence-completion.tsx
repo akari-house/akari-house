@@ -72,12 +72,8 @@ async function signedNdaForInvestor(
   return Boolean(row?.ok);
 }
 
-export const meta: Route.MetaFunction = ({ data }) => [
-  {
-    title: data?.project?.title
-      ? `${data.project.title} Diligence | AKARI House`
-      : "Diligence | AKARI House",
-  },
+export const meta: Route.MetaFunction = () => [
+  { title: "Project Diligence | AKARI House" },
   {
     name: "description",
     content:
@@ -182,7 +178,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
            LEFT JOIN project_documents pd ON pd.id = oqd.document_id
            WHERE oq.project_id = ?
            ORDER BY CASE WHEN oqd.resolved_at IS NULL THEN 0 ELSE 1 END,
-                    oq.created_at DESC`)
+                    oq.created_at DESC`,
+        )
         .bind(project.id)
     : db
         .prepare(
@@ -201,7 +198,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
            LEFT JOIN project_documents pd ON pd.id = oqd.document_id
            WHERE oq.project_id = ? AND oq.asked_by = ?
            ORDER BY CASE WHEN oqd.resolved_at IS NULL THEN 0 ELSE 1 END,
-                    oq.created_at DESC`)
+                    oq.created_at DESC`,
+        )
         .bind(project.id, user.id);
   const questions = await questionQuery.all<QuestionRow>();
 
@@ -251,9 +249,7 @@ export async function action({ request, context, params }: Route.ActionArgs) {
   await ensureDiligenceSchema(db);
   const user = await requireApprovedMember(request, db);
   const project = await db
-    .prepare(
-      `SELECT id, slug, title FROM projects WHERE slug = ?`,
-    )
+    .prepare(`SELECT id, slug, title FROM projects WHERE slug = ?`)
     .bind(params.slug)
     .first<{ id: string; slug: string; title: string }>();
   if (!project) throw new Response("Project not found.", { status: 404 });
@@ -277,9 +273,15 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       )
       .bind(project.id, ndaRequired, user.id)
       .run();
-    await recordOpportunityAudit(db, user.id, "diligence.nda_policy_updated", project.id, {
-      ndaRequired: Boolean(ndaRequired),
-    });
+    await recordOpportunityAudit(
+      db,
+      user.id,
+      "diligence.nda_policy_updated",
+      project.id,
+      {
+        ndaRequired: Boolean(ndaRequired),
+      },
+    );
     throw redirect(`/projects/${project.slug}/diligence?saved=nda`);
   }
 
@@ -327,8 +329,15 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     const previousId = formText(form.get("previousDocumentId"));
     const nextId = formText(form.get("nextDocumentId"));
     const versionNote = formText(form.get("versionNote")).trim();
-    if (!previousId || !nextId || previousId === nextId || versionNote.length > 1000)
-      return { error: "Choose two different documents and an optional version note." };
+    if (
+      !previousId ||
+      !nextId ||
+      previousId === nextId ||
+      versionNote.length > 1000
+    )
+      return {
+        error: "Choose two different documents and an optional version note.",
+      };
     const rows = await db
       .prepare(
         `SELECT pd.id, COALESCE(pdv.series_id, pd.id) AS seriesId,
@@ -350,7 +359,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     const previous = rows.results.find((row) => row.id === previousId);
     const next = rows.results.find((row) => row.id === nextId);
     if (!previous?.isCurrent || !next?.isCurrent)
-      return { error: "Only current documents can be linked into a new version." };
+      return {
+        error: "Only current documents can be linked into a new version.",
+      };
     const nextVersion = previous.versionNumber + 1;
     await db.batch([
       db
@@ -360,7 +371,12 @@ export async function action({ request, context, params }: Route.ActionArgs) {
            VALUES (?, ?, ?, ?, 1)
            ON CONFLICT(document_id) DO NOTHING`,
         )
-        .bind(previous.id, project.id, previous.seriesId, previous.versionNumber),
+        .bind(
+          previous.id,
+          project.id,
+          previous.seriesId,
+          previous.versionNumber,
+        ),
       db
         .prepare(
           `UPDATE project_document_versions
@@ -427,7 +443,10 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       (await opportunityAccessStateForUserId(db, project.id, user.id)) ===
         "approved";
     if (!hasAccess)
-      return { error: "Approved Deal Room or data-room access is required before asking diligence questions." };
+      return {
+        error:
+          "Approved Deal Room or data-room access is required before asking diligence questions.",
+      };
     const setting = await db
       .prepare(
         `SELECT COALESCE(nda_required, 0) AS ndaRequired
@@ -435,8 +454,14 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       )
       .bind(project.id)
       .first<{ ndaRequired: number }>();
-    if (setting?.ndaRequired && !(await signedNdaForInvestor(db, project.id, user.id)))
-      return { error: "A current signed NDA reference is required before diligence Q&A can begin." };
+    if (
+      setting?.ndaRequired &&
+      !(await signedNdaForInvestor(db, project.id, user.id))
+    )
+      return {
+        error:
+          "A current signed NDA reference is required before diligence Q&A can begin.",
+      };
     const question = formText(form.get("question")).trim();
     const requestedCategory = formText(form.get("requestedCategory"));
     if (
@@ -444,7 +469,10 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       question.length > 2000 ||
       !isDiligenceCategory(requestedCategory)
     )
-      return { error: "Add a diligence question between 10 and 2,000 characters and choose a category." };
+      return {
+        error:
+          "Add a diligence question between 10 and 2,000 characters and choose a category.",
+      };
     const id = crypto.randomUUID();
     await db.batch([
       db
@@ -505,7 +533,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       )
       .bind(questionId, project.id)
       .first<{ id: string }>();
-    if (!question) throw new Response("Open question not found.", { status: 404 });
+    if (!question)
+      throw new Response("Open question not found.", { status: 404 });
     await db.batch([
       db
         .prepare(
@@ -540,7 +569,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
       )
       .bind(questionId, project.id, user.id)
       .first<{ id: string }>();
-    if (!question) throw new Response("Answered question not found.", { status: 404 });
+    if (!question)
+      throw new Response("Answered question not found.", { status: 404 });
     await db
       .prepare(
         `INSERT INTO opportunity_question_documents
@@ -568,7 +598,9 @@ export default function ProjectDiligenceCompletion({
 }: Route.ComponentProps) {
   const navigation = useNavigation();
   const pending = navigation.state !== "idle";
-  const currentIds = new Set(loaderData.currentDocuments.map((item) => item.id));
+  const currentIds = new Set(
+    loaderData.currentDocuments.map((item) => item.id),
+  );
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -578,36 +610,51 @@ export default function ProjectDiligenceCompletion({
             <span className="eyebrow">R72 · Data Room & Diligence</span>
             <h1>{loaderData.project.title}</h1>
             <p>
-              Complete institutional diligence without creating a second data room.
-              Documents, access controls and Investor Q&A remain attached to this Project.
+              Complete institutional diligence without creating a second data
+              room. Documents, access controls and Investor Q&A remain attached
+              to this Project.
             </p>
           </div>
           <div className="application-actions">
-            <Link className="button button-primary" to={`/projects/${loaderData.project.slug}/diligence/access`}>
+            <Link
+              className="button button-primary"
+              to={`/projects/${loaderData.project.slug}/diligence/access`}
+            >
               Trusted access
             </Link>
-            <Link className="button button-quiet" to={`/projects/${loaderData.project.slug}`}>
+            <Link
+              className="button button-quiet"
+              to={`/projects/${loaderData.project.slug}`}
+            >
               Project
             </Link>
           </div>
         </header>
 
-        {actionData?.error && <p className="form-error" role="alert">{actionData.error}</p>}
+        {actionData?.error && (
+          <p className="form-error" role="alert">
+            {actionData.error}
+          </p>
+        )}
 
         <section className="admin-panel">
           <span className="chapter">Institutional checklist</span>
           <h2>{loaderData.completeness.percentage}% complete</h2>
           <p>
-            {loaderData.completeness.complete} of {loaderData.completeness.total} required
-            diligence categories currently have a current document.
+            {loaderData.completeness.complete} of{" "}
+            {loaderData.completeness.total} required diligence categories
+            currently have a current document.
           </p>
           <div className="application-list">
             {loaderData.completeness.required.map((category) => {
-              const missing = loaderData.completeness.missing.includes(category);
+              const missing =
+                loaderData.completeness.missing.includes(category);
               return (
                 <article className="application-card" key={category}>
                   <div>
-                    <span className="chapter">{missing ? "missing" : "provided"}</span>
+                    <span className="chapter">
+                      {missing ? "missing" : "provided"}
+                    </span>
                     <h3>{diligenceCategoryLabels[category]}</h3>
                     <p>{diligenceCategoryDescriptions[category]}</p>
                   </div>
@@ -623,13 +670,25 @@ export default function ProjectDiligenceCompletion({
           {loaderData.isFounder ? (
             <Form method="post" className="form-stack">
               <label className="inline-choice">
-                <input type="checkbox" name="ndaRequired" value="yes" defaultChecked={loaderData.ndaRequired} />
-                Require a current signed external NDA record before Investor diligence Q&A.
+                <input
+                  type="checkbox"
+                  name="ndaRequired"
+                  value="yes"
+                  defaultChecked={loaderData.ndaRequired}
+                />
+                Require a current signed external NDA record before Investor
+                diligence Q&A.
               </label>
               <p className="form-hint">
-                NDA records remain external legal references in AKARI Agreement Tracking. AKARI does not draft or sign the agreement.
+                NDA records remain external legal references in AKARI Agreement
+                Tracking. AKARI does not draft or sign the agreement.
               </p>
-              <button className="button button-primary" name="intent" value="set-nda-policy" disabled={pending}>
+              <button
+                className="button button-primary"
+                name="intent"
+                value="set-nda-policy"
+                disabled={pending}
+              >
                 Save NDA policy
               </button>
             </Form>
@@ -643,7 +702,9 @@ export default function ProjectDiligenceCompletion({
             </p>
           )}
           <p>
-            Pending room requests: {loaderData.accessCounts.pendingRequests} · Active document grants: {loaderData.accessCounts.activeGrants} · Logged access events: {loaderData.accessCounts.accessEvents}
+            Pending room requests: {loaderData.accessCounts.pendingRequests} ·
+            Active document grants: {loaderData.accessCounts.activeGrants} ·
+            Logged access events: {loaderData.accessCounts.accessEvents}
           </p>
         </section>
 
@@ -653,36 +714,69 @@ export default function ProjectDiligenceCompletion({
               <span className="chapter">Current documents</span>
               <h2>Classify diligence material</h2>
               <p>
-                Upload source files in the existing Project editor, then classify them here. Changing a category clears any prior AKARI document approval so the material can be reviewed again.
+                Upload source files in the existing Project editor, then
+                classify them here. Changing a category clears any prior AKARI
+                document approval so the material can be reviewed again.
               </p>
-              <Link className="button button-quiet" to={`/projects/${loaderData.project.slug}/edit`}>
+              <Link
+                className="button button-quiet"
+                to={`/projects/${loaderData.project.slug}/edit`}
+              >
                 Upload in Project editor
               </Link>
               <div className="application-list">
                 {loaderData.currentDocuments.map((document) => (
                   <article className="application-card" key={document.id}>
                     <div>
-                      <span className="chapter">v{document.versionNumber} · {document.category}</span>
+                      <span className="chapter">
+                        v{document.versionNumber} · {document.category}
+                      </span>
                       <h3>{document.title}</h3>
-                      <small>{document.approvedAt ? "AKARI reviewed" : "Review pending / not required yet"}</small>
+                      <small>
+                        {document.approvedAt
+                          ? "AKARI reviewed"
+                          : "Review pending / not required yet"}
+                      </small>
                     </div>
                     <Form method="post" className="application-actions">
-                      <input type="hidden" name="documentId" value={document.id} />
+                      <input
+                        type="hidden"
+                        name="documentId"
+                        value={document.id}
+                      />
                       <label>
                         Category
-                        <select name="category" defaultValue={diligenceCategories.includes(document.category as never) ? document.category : "corporate"}>
+                        <select
+                          name="category"
+                          defaultValue={
+                            diligenceCategories.includes(
+                              document.category as never,
+                            )
+                              ? document.category
+                              : "corporate"
+                          }
+                        >
                           {diligenceCategories.map((category) => (
-                            <option key={category} value={category}>{diligenceCategoryLabels[category]}</option>
+                            <option key={category} value={category}>
+                              {diligenceCategoryLabels[category]}
+                            </option>
                           ))}
                         </select>
                       </label>
-                      <button className="button button-quiet" name="intent" value="classify-document" disabled={pending}>
+                      <button
+                        className="button button-quiet"
+                        name="intent"
+                        value="classify-document"
+                        disabled={pending}
+                      >
                         Save category
                       </button>
                     </Form>
                   </article>
                 ))}
-                {!loaderData.currentDocuments.length && <p>No AKARI project documents have been uploaded yet.</p>}
+                {!loaderData.currentDocuments.length && (
+                  <p>No AKARI project documents have been uploaded yet.</p>
+                )}
               </div>
             </section>
 
@@ -690,7 +784,10 @@ export default function ProjectDiligenceCompletion({
               <span className="chapter">Document versions</span>
               <h2>Link a replacement as the next version</h2>
               <p>
-                Upload the replacement as a normal Project document first. Linking it below preserves both files, makes the replacement current and automatically revokes active grants to the superseded version.
+                Upload the replacement as a normal Project document first.
+                Linking it below preserves both files, makes the replacement
+                current and automatically revokes active grants to the
+                superseded version.
               </p>
               {loaderData.currentDocuments.length >= 2 ? (
                 <Form method="post" className="form-stack">
@@ -698,35 +795,63 @@ export default function ProjectDiligenceCompletion({
                     Superseded document
                     <select name="previousDocumentId" required>
                       <option value="">Choose current document</option>
-                      {loaderData.currentDocuments.map((document) => <option key={document.id} value={document.id}>{document.title} · v{document.versionNumber}</option>)}
+                      {loaderData.currentDocuments.map((document) => (
+                        <option key={document.id} value={document.id}>
+                          {document.title} · v{document.versionNumber}
+                        </option>
+                      ))}
                     </select>
                   </label>
                   <label>
                     Replacement document
                     <select name="nextDocumentId" required>
                       <option value="">Choose uploaded replacement</option>
-                      {loaderData.currentDocuments.map((document) => <option key={document.id} value={document.id}>{document.title}</option>)}
+                      {loaderData.currentDocuments.map((document) => (
+                        <option key={document.id} value={document.id}>
+                          {document.title}
+                        </option>
+                      ))}
                     </select>
                   </label>
                   <label>
                     Version note
-                    <textarea name="versionNote" maxLength={1000} placeholder="What changed in this version?" />
+                    <textarea
+                      name="versionNote"
+                      maxLength={1000}
+                      placeholder="What changed in this version?"
+                    />
                   </label>
-                  <button className="button button-primary" name="intent" value="link-document-version" disabled={pending}>
+                  <button
+                    className="button button-primary"
+                    name="intent"
+                    value="link-document-version"
+                    disabled={pending}
+                  >
                     Make replacement current
                   </button>
                 </Form>
-              ) : <p>Upload at least two documents before linking a replacement version.</p>}
+              ) : (
+                <p>
+                  Upload at least two documents before linking a replacement
+                  version.
+                </p>
+              )}
               <div className="application-list">
-                {loaderData.documents.filter((document) => !currentIds.has(document.id)).map((document) => (
-                  <article className="application-card" key={document.id}>
-                    <div>
-                      <span className="chapter">historical · v{document.versionNumber}</span>
-                      <h3>{document.title}</h3>
-                      <p>{document.versionNote || "No version note recorded."}</p>
-                    </div>
-                  </article>
-                ))}
+                {loaderData.documents
+                  .filter((document) => !currentIds.has(document.id))
+                  .map((document) => (
+                    <article className="application-card" key={document.id}>
+                      <div>
+                        <span className="chapter">
+                          historical · v{document.versionNumber}
+                        </span>
+                        <h3>{document.title}</h3>
+                        <p>
+                          {document.versionNote || "No version note recorded."}
+                        </p>
+                      </div>
+                    </article>
+                  ))}
               </div>
             </section>
           </>
@@ -735,74 +860,127 @@ export default function ProjectDiligenceCompletion({
         <section className="admin-panel">
           <span className="chapter">Diligence requests</span>
           <h2>Investor questions → Founder answers → supporting document</h2>
-          {loaderData.isInvestor && (
-            loaderData.investorAccess ? (
+          {loaderData.isInvestor &&
+            (loaderData.investorAccess ? (
               <Form method="post" className="form-stack">
                 <label>
                   Category
                   <select name="requestedCategory" defaultValue="financials">
                     {diligenceCategories.map((category) => (
-                      <option key={category} value={category}>{diligenceCategoryLabels[category]}</option>
+                      <option key={category} value={category}>
+                        {diligenceCategoryLabels[category]}
+                      </option>
                     ))}
                   </select>
                 </label>
                 <label>
                   Diligence question or document request
-                  <textarea name="question" minLength={10} maxLength={2000} required />
+                  <textarea
+                    name="question"
+                    minLength={10}
+                    maxLength={2000}
+                    required
+                  />
                 </label>
-                <button className="button button-primary" name="intent" value="ask-diligence-question" disabled={pending || (loaderData.ndaRequired && !loaderData.ndaSigned)}>
+                <button
+                  className="button button-primary"
+                  name="intent"
+                  value="ask-diligence-question"
+                  disabled={
+                    pending || (loaderData.ndaRequired && !loaderData.ndaSigned)
+                  }
+                >
                   Submit diligence request
                 </button>
               </Form>
             ) : (
-              <p>Approved Deal Room or data-room access is required before diligence Q&A.</p>
-            )
-          )}
+              <p>
+                Approved Deal Room or data-room access is required before
+                diligence Q&A.
+              </p>
+            ))}
           <div className="application-list">
             {loaderData.questions.map((item) => (
               <article className="application-card" key={item.id}>
                 <div>
                   <span className="chapter">
-                    {item.resolvedAt ? "resolved" : item.status} · {item.requestedCategory}
+                    {item.resolvedAt ? "resolved" : item.status} ·{" "}
+                    {item.requestedCategory}
                   </span>
                   <h3>{item.question}</h3>
-                  <p>Asked by {item.askerName} (@{item.askerUsername})</p>
-                  {item.answer && <p><strong>Founder answer:</strong> {item.answer}</p>}
-                  {item.documentTitle && <p><strong>Supporting document:</strong> {item.documentTitle}</p>}
-                  <small>Opened {formatDate(item.createdAt)}{item.resolvedAt ? ` · Resolved ${formatDate(item.resolvedAt)}` : ""}</small>
+                  <p>
+                    Asked by {item.askerName} (@{item.askerUsername})
+                  </p>
+                  {item.answer && (
+                    <p>
+                      <strong>Founder answer:</strong> {item.answer}
+                    </p>
+                  )}
+                  {item.documentTitle && (
+                    <p>
+                      <strong>Supporting document:</strong> {item.documentTitle}
+                    </p>
+                  )}
+                  <small>
+                    Opened {formatDate(item.createdAt)}
+                    {item.resolvedAt
+                      ? ` · Resolved ${formatDate(item.resolvedAt)}`
+                      : ""}
+                  </small>
                 </div>
                 {loaderData.isFounder && item.status === "submitted" && (
                   <Form method="post" className="form-stack">
                     <input type="hidden" name="questionId" value={item.id} />
                     <label>
                       Answer
-                      <textarea name="answer" minLength={5} maxLength={4000} required />
+                      <textarea
+                        name="answer"
+                        minLength={5}
+                        maxLength={4000}
+                        required
+                      />
                     </label>
                     <label>
                       Supporting current document
                       <select name="documentId" defaultValue="">
                         <option value="">No document</option>
                         {loaderData.currentDocuments.map((document) => (
-                          <option key={document.id} value={document.id}>{document.title}</option>
+                          <option key={document.id} value={document.id}>
+                            {document.title}
+                          </option>
                         ))}
                       </select>
                     </label>
-                    <button className="button button-primary" name="intent" value="answer-diligence-question" disabled={pending}>
+                    <button
+                      className="button button-primary"
+                      name="intent"
+                      value="answer-diligence-question"
+                      disabled={pending}
+                    >
                       Answer request
                     </button>
                   </Form>
                 )}
-                {loaderData.isInvestor && item.status === "answered" && !item.resolvedAt && (
-                  <Form method="post">
-                    <input type="hidden" name="questionId" value={item.id} />
-                    <button className="button button-quiet" name="intent" value="resolve-diligence-question" disabled={pending}>
-                      Mark resolved
-                    </button>
-                  </Form>
-                )}
+                {loaderData.isInvestor &&
+                  item.status === "answered" &&
+                  !item.resolvedAt && (
+                    <Form method="post">
+                      <input type="hidden" name="questionId" value={item.id} />
+                      <button
+                        className="button button-quiet"
+                        name="intent"
+                        value="resolve-diligence-question"
+                        disabled={pending}
+                      >
+                        Mark resolved
+                      </button>
+                    </Form>
+                  )}
               </article>
             ))}
-            {!loaderData.questions.length && <p>No diligence questions have been recorded.</p>}
+            {!loaderData.questions.length && (
+              <p>No diligence questions have been recorded.</p>
+            )}
           </div>
         </section>
       </main>

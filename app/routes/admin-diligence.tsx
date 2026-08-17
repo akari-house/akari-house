@@ -4,7 +4,10 @@ import { AdminWorkspaceNav } from "~/components/AdminWorkspaceNav";
 import { SiteHeader } from "~/components/SiteHeader";
 import { loadAdminWorkspaceAccess } from "~/lib/admin-workspace.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import { diligenceCategoryLabels, diligenceCompleteness } from "~/lib/diligence-completion";
+import {
+  diligenceCategoryLabels,
+  diligenceCompleteness,
+} from "~/lib/diligence-completion";
 import { requireSuperAdmin } from "~/lib/membership.server";
 
 type DiligenceRow = {
@@ -26,7 +29,8 @@ export const meta: Route.MetaFunction = () => [
   { title: "Diligence Operations | AKARI House" },
   {
     name: "description",
-    content: "Internal review of Data Room completeness and diligence activity.",
+    content:
+      "Internal review of Data Room completeness and diligence activity.",
   },
 ];
 
@@ -85,7 +89,7 @@ export default function AdminDiligence({ loaderData }: Route.ComponentProps) {
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
       <main id="main-content" className="admin-main">
-        <AdminWorkspaceNav access={loaderData.access} activeKey="diligence" />
+        <AdminWorkspaceNav access={loaderData.access} />
         <header className="admin-heading">
           <div>
             <span className="eyebrow">R72 · Diligence operations</span>
@@ -95,7 +99,10 @@ export default function AdminDiligence({ loaderData }: Route.ComponentProps) {
               questions and active Investor access.
             </p>
           </div>
-          <Link className="button button-quiet" to="/admin/opportunities/documents">
+          <Link
+            className="button button-quiet"
+            to="/admin/opportunities/documents"
+          >
             Document review
           </Link>
         </header>
@@ -105,32 +112,48 @@ export default function AdminDiligence({ loaderData }: Route.ComponentProps) {
             <article className="application-card" key={row.projectId}>
               <div>
                 <span className="chapter">
-                  {row.completeness.percentage}% complete · {row.opportunityStatus ?? "no opportunity"}
+                  {row.completeness.percentage}% complete ·{" "}
+                  {row.opportunityStatus ?? "no opportunity"}
                 </span>
                 <h2>{row.title}</h2>
                 <p>
-                  {row.founderName} (@{row.founderUsername}) · NDA {row.ndaRequired ? "required" : "optional"}
+                  {row.founderName} (@{row.founderUsername}) · NDA{" "}
+                  {row.ndaRequired ? "required" : "optional"}
                 </p>
                 <p>
-                  Open diligence: {row.openQuestions} · Pending access: {row.pendingRequests} · Active grants: {row.activeGrants}
+                  Open diligence: {row.openQuestions} · Pending access:{" "}
+                  {row.pendingRequests} · Active grants: {row.activeGrants}
                 </p>
                 {row.completeness.missing.length > 0 && (
                   <small>
-                    Missing: {row.completeness.missing.map((category) => diligenceCategoryLabels[category]).join(", ")}
+                    Missing:{" "}
+                    {row.completeness.missing
+                      .map((category) => diligenceCategoryLabels[category])
+                      .join(", ")}
                   </small>
                 )}
               </div>
               <div className="application-actions">
-                <Link className="button button-primary" to={`/projects/${row.slug}/diligence`}>
+                <Link
+                  className="button button-primary"
+                  to={`/projects/${row.slug}/diligence`}
+                >
                   Open diligence
                 </Link>
-                <Link className="button button-quiet" to={`/projects/${row.slug}/diligence/access`}>
+                <Link
+                  className="button button-quiet"
+                  to={`/projects/${row.slug}/diligence/access`}
+                >
                   Access controls
                 </Link>
               </div>
             </article>
           ))}
-          {!loaderData.rows.length && <p>No fundraising or Investor opportunity projects are active yet.</p>}
+          {!loaderData.rows.length && (
+            <p>
+              No fundraising or Investor opportunity projects are active yet.
+            </p>
+          )}
         </div>
       </main>
     </div>

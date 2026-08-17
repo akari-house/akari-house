@@ -22,16 +22,19 @@ export const diligenceCategoryLabels: Record<DiligenceCategory, string> = {
   token_web3: "Token / Web3",
 };
 
-export const diligenceCategoryDescriptions: Record<DiligenceCategory, string> = {
-  corporate: "Registration, ownership and corporate records.",
-  legal: "Material legal, regulatory and agreement references.",
-  financials: "Financial statements, runway, forecasts and supporting records.",
-  product: "Product, architecture, security or implementation evidence.",
-  market: "Market, customer, competition and commercial evidence.",
-  team: "Team, key-person and organization evidence.",
-  fundraising: "Deck, cap table, raise terms and use-of-funds material.",
-  token_web3: "Tokenomics, network, treasury or onchain material where relevant.",
-};
+export const diligenceCategoryDescriptions: Record<DiligenceCategory, string> =
+  {
+    corporate: "Registration, ownership and corporate records.",
+    legal: "Material legal, regulatory and agreement references.",
+    financials:
+      "Financial statements, runway, forecasts and supporting records.",
+    product: "Product, architecture, security or implementation evidence.",
+    market: "Market, customer, competition and commercial evidence.",
+    team: "Team, key-person and organization evidence.",
+    fundraising: "Deck, cap table, raise terms and use-of-funds material.",
+    token_web3:
+      "Tokenomics, network, treasury or onchain material where relevant.",
+  };
 
 const categoryAliases: Record<string, DiligenceCategory> = {
   company: "corporate",
@@ -49,7 +52,9 @@ const categoryAliases: Record<string, DiligenceCategory> = {
   risk: "legal",
 };
 
-export function normalizeDiligenceCategory(value: string): DiligenceCategory | null {
+export function normalizeDiligenceCategory(
+  value: string,
+): DiligenceCategory | null {
   return categoryAliases[value.trim().toLowerCase()] ?? null;
 }
 
@@ -57,7 +62,10 @@ export function isDiligenceCategory(value: string): value is DiligenceCategory {
   return diligenceCategories.includes(value as DiligenceCategory);
 }
 
-export function diligenceCompleteness(categories: string[], tokenRelevant = false) {
+export function diligenceCompleteness(
+  categories: string[],
+  tokenRelevant = false,
+) {
   const present = new Set(
     categories
       .map((category) => normalizeDiligenceCategory(category))
@@ -73,6 +81,8 @@ export function diligenceCompleteness(categories: string[], tokenRelevant = fals
     missing,
     complete,
     total: required.length,
-    percentage: required.length ? Math.round((complete / required.length) * 100) : 100,
+    percentage: required.length
+      ? Math.round((complete / required.length) * 100)
+      : 100,
   };
 }
