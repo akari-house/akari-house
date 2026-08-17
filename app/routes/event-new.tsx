@@ -212,9 +212,15 @@ export default function EventNew({
           <AkariMotif motif="invitation" />
           <div>
             <span className="eyebrow">
-              {canPublishDirectly ? "AKARI event publishing" : "Event host desk"}
+              {canPublishDirectly
+                ? "AKARI event publishing"
+                : "Event host desk"}
             </span>
-            <h1>{canPublishDirectly ? "Publish a gathering." : "Propose a gathering."}</h1>
+            <h1>
+              {canPublishDirectly
+                ? "Publish a gathering."
+                : "Propose a gathering."}
+            </h1>
             <p>
               {canPublishDirectly
                 ? "Your AKARI admin access can publish this event directly to the public House."
@@ -235,8 +241,8 @@ export default function EventNew({
           )}
           {canPublishDirectly && (
             <p className="notice">
-              Publish now is enabled for your AKARI admin account. The event will
-              become public immediately after validation succeeds.
+              Publish now is enabled for your AKARI admin account. The event
+              will become public immediately after validation succeeds.
             </p>
           )}
 
@@ -266,8 +272,8 @@ export default function EventNew({
               accept="image/jpeg,image/png,image/webp"
             />
             <small>
-              Optional. Use a landscape JPG, PNG or WebP up to 2 MB. For reviewed
-              events the image remains private until approval.
+              Optional. Use a landscape JPG, PNG or WebP up to 2 MB. For
+              reviewed events the image remains private until approval.
             </small>
           </label>
           <label>

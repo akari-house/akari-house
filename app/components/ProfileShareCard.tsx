@@ -96,7 +96,7 @@ function flagFor(code: string) {
 }
 
 function titleCaseRole(role: string) {
-  return role ? role[0]!.toUpperCase() + role.slice(1) : role;
+  return role ? role[0].toUpperCase() + role.slice(1) : role;
 }
 
 function SocialIcon({ platform }: { platform: ProfileCardSocialPlatform }) {
@@ -174,8 +174,14 @@ function LinkGlyph({ size = 20 }: { size?: number }) {
       aria-hidden="true"
     >
       <path d="M10.5 13.5l3-3" />
-      <path d="M7.4 16.6l-1 1a3.5 3.5 0 01-5-5l3.1-3.1a3.5 3.5 0 014.9 0" transform="translate(3 0)" />
-      <path d="M16.6 7.4l1-1a3.5 3.5 0 015 5l-3.1 3.1a3.5 3.5 0 01-4.9 0" transform="translate(-3 0)" />
+      <path
+        d="M7.4 16.6l-1 1a3.5 3.5 0 01-5-5l3.1-3.1a3.5 3.5 0 014.9 0"
+        transform="translate(3 0)"
+      />
+      <path
+        d="M16.6 7.4l1-1a3.5 3.5 0 015 5l-3.1 3.1a3.5 3.5 0 01-4.9 0"
+        transform="translate(-3 0)"
+      />
     </svg>
   );
 }
@@ -246,11 +252,7 @@ function drawSocialMark(
   } else {
     ctx.font = "700 20px Inter, sans-serif";
     ctx.fillText(
-      platform === "linkedin"
-        ? "in"
-        : platform === "facebook"
-          ? "f"
-          : "♪",
+      platform === "linkedin" ? "in" : platform === "facebook" ? "f" : "♪",
       2,
       20,
     );
@@ -360,30 +362,56 @@ async function drawCard(
   const photoX = 115;
   const photoY = 145;
   const photoSize = 310;
-  const avatarRing = ctx.createLinearGradient(photoX, photoY, photoX + photoSize, photoY + photoSize);
+  const avatarRing = ctx.createLinearGradient(
+    photoX,
+    photoY,
+    photoX + photoSize,
+    photoY + photoSize,
+  );
   avatarRing.addColorStop(0, palette.highlight);
   avatarRing.addColorStop(0.52, palette.accent);
   avatarRing.addColorStop(1, `${palette.ink}88`);
   ctx.beginPath();
-  ctx.arc(photoX + photoSize / 2, photoY + photoSize / 2, photoSize / 2 + 18, 0, Math.PI * 2);
+  ctx.arc(
+    photoX + photoSize / 2,
+    photoY + photoSize / 2,
+    photoSize / 2 + 18,
+    0,
+    Math.PI * 2,
+  );
   ctx.strokeStyle = avatarRing;
   ctx.lineWidth = 9;
   ctx.stroke();
   ctx.beginPath();
-  ctx.arc(photoX + photoSize / 2, photoY + photoSize / 2, photoSize / 2 + 5, 0, Math.PI * 2);
+  ctx.arc(
+    photoX + photoSize / 2,
+    photoY + photoSize / 2,
+    photoSize / 2 + 5,
+    0,
+    Math.PI * 2,
+  );
   ctx.strokeStyle = `${palette.ink}66`;
   ctx.lineWidth = 3;
   ctx.stroke();
 
   ctx.save();
   ctx.beginPath();
-  ctx.arc(photoX + photoSize / 2, photoY + photoSize / 2, photoSize / 2, 0, Math.PI * 2);
+  ctx.arc(
+    photoX + photoSize / 2,
+    photoY + photoSize / 2,
+    photoSize / 2,
+    0,
+    Math.PI * 2,
+  );
   ctx.clip();
   const imageUrl = avatarUrl(model);
   if (imageUrl) {
     try {
       const photo = await loadImage(imageUrl);
-      const scale = Math.max(photoSize / photo.naturalWidth, photoSize / photo.naturalHeight);
+      const scale = Math.max(
+        photoSize / photo.naturalWidth,
+        photoSize / photo.naturalHeight,
+      );
       const width = photo.naturalWidth * scale;
       const height = photo.naturalHeight * scale;
       ctx.drawImage(
@@ -503,7 +531,12 @@ async function drawCard(
   const metrics = [
     [String(opportunities), "OPPORTUNITIES"],
     [formatProfileReach(model.followerCount), "REACH"],
-    [model.percentile.topPercent ? `TOP ${model.percentile.topPercent}%` : "BUILDING", "SIGNAL"],
+    [
+      model.percentile.topPercent
+        ? `TOP ${model.percentile.topPercent}%`
+        : "BUILDING",
+      "SIGNAL",
+    ],
   ] as const;
   roundedRect(ctx, 115, 625, 1010, 116, 30);
   ctx.fillStyle = palette.surface;
@@ -567,7 +600,11 @@ async function drawCard(
   }
   ctx.fillStyle = palette.accent;
   ctx.font = "700 16px Inter, sans-serif";
-  ctx.fillText(settings.design === "passport" ? "MEMBER PASSPORT" : "PROFILE SIGNATURE", 1190, 816);
+  ctx.fillText(
+    settings.design === "passport" ? "MEMBER PASSPORT" : "PROFILE SIGNATURE",
+    1190,
+    816,
+  );
 
   ctx.fillStyle = palette.ink;
   ctx.globalAlpha = 0.66;
@@ -627,7 +664,8 @@ export function ProfileShareCard({
   }
 
   function addLanguage() {
-    if (!languageToAdd || languages.length >= MAX_PROFILE_CARD_LANGUAGES) return;
+    if (!languageToAdd || languages.length >= MAX_PROFILE_CARD_LANGUAGES)
+      return;
     updateLanguages([...languages, languageToAdd]);
     setLanguageToAdd("");
   }
@@ -670,7 +708,11 @@ export function ProfileShareCard({
         setShareStatus("Profile link copied.");
       }
     } catch (shareError) {
-      if (shareError instanceof DOMException && shareError.name === "AbortError") return;
+      if (
+        shareError instanceof DOMException &&
+        shareError.name === "AbortError"
+      )
+        return;
       setShareStatus("Sharing was unavailable. Download the card instead.");
     }
   }
@@ -691,8 +733,9 @@ export function ProfileShareCard({
           <span className="eyebrow">Your AKARI identity</span>
           <h1>Profile sharing card</h1>
           <p>
-            A premium AKARI credit-card profile built from your real member data.
-            Choose your glass color, control private details, then download or share.
+            A premium AKARI credit-card profile built from your real member
+            data. Choose your glass color, control private details, then
+            download or share.
           </p>
         </div>
         <Link className="quiet-link" to={`/profiles/${model.username}`}>
@@ -708,7 +751,10 @@ export function ProfileShareCard({
       )}
 
       <div className="share-card-layout">
-        <section className="share-card-stage glass-card-stage" aria-label="Card preview">
+        <section
+          className="share-card-stage glass-card-stage"
+          aria-label="Card preview"
+        >
           <article
             className={`akari-share-card glass-profile-card landscape ${settings.design} palette-${settings.palette}`}
             style={cardStyle}
@@ -730,7 +776,9 @@ export function ProfileShareCard({
                 <span>HOUSE</span>
               </div>
               <span className="glass-card-edition">
-                {settings.design === "passport" ? "Member passport" : "Profile signature"}
+                {settings.design === "passport"
+                  ? "Member passport"
+                  : "Profile signature"}
               </span>
             </div>
 
@@ -829,7 +877,9 @@ export function ProfileShareCard({
                     </a>
                   ))
                 ) : (
-                  <span className="glass-no-socials">Add social links to your profile</span>
+                  <span className="glass-no-socials">
+                    Add social links to your profile
+                  </span>
                 )}
               </div>
             </div>
@@ -848,7 +898,8 @@ export function ProfileShareCard({
           <div className="glass-card-note">
             <strong>Credit-card format</strong>
             <span>
-              85.6 × 54 proportion. The downloaded PNG uses the same branded glass design.
+              85.6 × 54 proportion. The downloaded PNG uses the same branded
+              glass design.
             </span>
           </div>
           <p className="share-card-confidence">
@@ -871,7 +922,9 @@ export function ProfileShareCard({
                 name="design"
                 value="signature"
                 checked={settings.design === "signature"}
-                onChange={() => setSettings({ ...settings, design: "signature" })}
+                onChange={() =>
+                  setSettings({ ...settings, design: "signature" })
+                }
               />
               Signature
             </label>
@@ -881,7 +934,9 @@ export function ProfileShareCard({
                 name="design"
                 value="passport"
                 checked={settings.design === "passport"}
-                onChange={() => setSettings({ ...settings, design: "passport" })}
+                onChange={() =>
+                  setSettings({ ...settings, design: "passport" })
+                }
               />
               Passport
             </label>
@@ -962,7 +1017,10 @@ export function ProfileShareCard({
                 type="button"
                 className="button button-quiet"
                 onClick={addLanguage}
-                disabled={!languageToAdd || languages.length >= MAX_PROFILE_CARD_LANGUAGES}
+                disabled={
+                  !languageToAdd ||
+                  languages.length >= MAX_PROFILE_CARD_LANGUAGES
+                }
               >
                 Add
               </button>
@@ -976,7 +1034,9 @@ export function ProfileShareCard({
                     type="button"
                     aria-label={`Remove ${language}`}
                     onClick={() =>
-                      updateLanguages(languages.filter((item) => item !== language))
+                      updateLanguages(
+                        languages.filter((item) => item !== language),
+                      )
                     }
                   >
                     ×

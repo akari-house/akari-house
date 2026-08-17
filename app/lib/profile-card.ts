@@ -58,10 +58,7 @@ export type ProfileCardOrientation = (typeof PROFILE_CARD_ORIENTATIONS)[number];
 export type ProfileCardSocialPlatform =
   (typeof PROFILE_CARD_SOCIAL_PLATFORMS)[number];
 export type ProfileCardSignalSource =
-  | "official_api"
-  | "partner_verified"
-  | "member_reported"
-  | "unavailable";
+  "official_api" | "partner_verified" | "member_reported" | "unavailable";
 
 export type ProfileCardSettings = {
   design: ProfileCardDesign;

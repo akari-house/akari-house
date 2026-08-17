@@ -7,10 +7,7 @@ import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { importEventImage } from "~/lib/event-image.server";
-import {
-  canHostEvents,
-  canPublishEventsDirectly,
-} from "~/lib/events.server";
+import { canHostEvents, canPublishEventsDirectly } from "~/lib/events.server";
 import {
   eventTimeToLocalInput,
   isValidTimezone,
@@ -155,7 +152,8 @@ export async function action({ request, context, params }: Route.ActionArgs) {
 
   if (existing.status === "cancelled")
     return {
-      error: "Cancelled events cannot be republished. Create a new event instead.",
+      error:
+        "Cancelled events cannot be republished. Create a new event instead.",
     };
 
   const title = formText(form.get("title")).trim();
@@ -532,7 +530,9 @@ export default function EventEdit({
             className="button button-primary"
             name="intent"
             value="submit"
-            disabled={navigation.state !== "idle" || event.status === "cancelled"}
+            disabled={
+              navigation.state !== "idle" || event.status === "cancelled"
+            }
           >
             {navigation.state === "idle"
               ? canPublishDirectly

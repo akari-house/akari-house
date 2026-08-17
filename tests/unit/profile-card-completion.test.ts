@@ -64,7 +64,9 @@ describe("completed AKARI profile card", () => {
     expect(component).toContain("akarihouse.com/profiles/${model.username}");
     expect(component).toContain("/assets/brand/akari-logo-horizontal.png");
     expect(component).toContain("/assets/brand/akari-flower-mark.png");
-    expect(component).toContain('type="hidden" name="orientation" value="landscape"');
+    expect(component).toContain(
+      'type="hidden" name="orientation" value="landscape"',
+    );
     expect(component).toContain("Glass color");
     expect(styles).toContain("aspect-ratio: 85.6 / 53.98");
     expect(styles).toContain("glass-card-gloss");

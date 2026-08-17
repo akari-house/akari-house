@@ -6,8 +6,7 @@
   padding: clamp(0.75rem, 2.5vw, 2rem);
   background:
     radial-gradient(circle at 18% 12%, #ffd33d12, transparent 30%),
-    radial-gradient(circle at 86% 82%, #f04f871c, transparent 34%),
-    #070a11;
+    radial-gradient(circle at 86% 82%, #f04f871c, transparent 34%), #070a11;
 }
 
 .glass-profile-card {
@@ -497,10 +496,10 @@
   border: 1px solid #ffffff4a;
   border-radius: 7px;
   background:
-    linear-gradient(90deg, var(--swatch-highlight), transparent 30%) left / 50% 100%
-      no-repeat,
-    linear-gradient(270deg, var(--swatch-accent), transparent 30%) right / 50% 100%
-      no-repeat,
+    linear-gradient(90deg, var(--swatch-highlight), transparent 30%) left / 50%
+      100% no-repeat,
+    linear-gradient(270deg, var(--swatch-accent), transparent 30%) right / 50%
+      100% no-repeat,
     var(--swatch-bg);
   box-shadow: 0 5px 12px #0004;
 }
