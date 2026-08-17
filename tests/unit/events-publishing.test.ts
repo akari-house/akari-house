@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { canPublishEventsDirectly } from "../../app/lib/events.server";
 import type { SessionUser } from "../../app/lib/domain";
+
+const read = (path: string) => readFileSync(path, "utf8");
 
 function member(overrides: Partial<SessionUser> = {}): SessionUser {
   return {
@@ -46,5 +49,25 @@ describe("canPublishEventsDirectly", () => {
         }),
       ),
     ).toBe(false);
+  });
+
+  it("wires the direct-publish decision into create and edit routes", () => {
+    const createRoute = read("app/routes/event-new.tsx");
+    const editRoute = read("app/routes/event-edit.tsx");
+
+    expect(createRoute).toContain("canPublishEventsDirectly(user)");
+    expect(createRoute).toContain('"event.published_directly"');
+    expect(createRoute).toContain(
+      'nextStatus = publishDirectly ? "published" : "submitted"',
+    );
+    expect(createRoute).toContain('"Publish event"');
+
+    expect(editRoute).toContain("canPublishEventsDirectly(user)");
+    expect(editRoute).toContain('"event.published_directly"');
+    expect(editRoute).toContain(
+      'nextStatus = publishDirectly ? "published" : "submitted"',
+    );
+    expect(editRoute).toContain('"Save and publish"');
+    expect(editRoute).toContain("Cancelled events cannot be republished");
   });
 });
