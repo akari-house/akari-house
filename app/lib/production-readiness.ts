@@ -18,6 +18,24 @@ export const productionCheckDefinitions = [
     expiresAfterDays: 30,
   },
   {
+    key: "real_device_auth",
+    label: "Real-device auth on Safari, iOS Safari, Android Chrome and Firefox",
+    category: "launch",
+    expiresAfterDays: 30,
+  },
+  {
+    key: "human_visual_review",
+    label: "Human visual review of public, member, role and admin workspaces",
+    category: "launch",
+    expiresAfterDays: 30,
+  },
+  {
+    key: "analytics_privacy",
+    label: "Analytics, CSP and privacy posture verified in production",
+    category: "security",
+    expiresAfterDays: 30,
+  },
+  {
     key: "google_oauth_export",
     label: "Google OAuth and reviewed Sheet export",
     category: "integration",
@@ -70,7 +88,11 @@ export type PublicAuditRecord = {
 export type PilotState = {
   status: "planning" | "active" | "paused" | "completed";
   stage:
-    "internal" | "invited_15" | "invited_25" | "invited_50" | "invited_100";
+    | "internal"
+    | "invited_15"
+    | "invited_25"
+    | "invited_50"
+    | "invited_100";
 } | null;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -118,8 +140,8 @@ export function evaluateProductionReadiness(input: {
   const auditTime = validTime(input.publicAudit?.completedAt);
   const publicAuditFresh = Boolean(
     input.publicAudit?.status === "passed" &&
-    auditTime !== null &&
-    auditTime > now.getTime() - 7 * DAY_MS,
+      auditTime !== null &&
+      auditTime > now.getTime() - 7 * DAY_MS,
   );
   const manualPassed = manual.filter((check) => check.fresh).length;
   const manualTotal = manual.length;
