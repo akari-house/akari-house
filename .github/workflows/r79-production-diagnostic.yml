@@ -1,0 +1,66 @@
+name: R79 Production Event Diagnostic
+
+on:
+  push:
+    branches:
+      - r79-profile-card-event-publishing
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Resolve production D1
+        run: |
+          set -euo pipefail
+          npx wrangler d1 list --json > d1.json
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          const payload = JSON.parse(fs.readFileSync('d1.json','utf8'));
+          const rows = Array.isArray(payload) ? payload : (payload.result ?? []);
+          const db = rows.find((x) => x.name === 'akari-house-db' || x.database_name === 'akari-house-db');
+          const id = db?.uuid ?? db?.database_id ?? db?.id;
+          if (!id) throw new Error('akari-house-db not found');
+          fs.appendFileSync(process.env.GITHUB_ENV, `PRODUCTION_DB_ID=${id}\n`);
+          NODE
+      - name: Inspect event publishing state
+        run: |
+          set -euo pipefail
+          cat > diagnostic.sql <<'SQL'
+          SELECT 'superadmin' AS section, u.id, u.username, u.status, au.access_level AS detail
+          FROM users u JOIN admin_users au ON au.user_id = u.id
+          WHERE au.access_level = 'superadmin'
+          ORDER BY u.created_at LIMIT 5;
+
+          SELECT 'event_host_permission' AS section, u.id, u.username, ir.status,
+                 ir.interest_type AS detail
+          FROM users u
+          JOIN admin_users au ON au.user_id = u.id AND au.access_level = 'superadmin'
+          LEFT JOIN interest_requests ir ON ir.user_id = u.id AND ir.interest_type = 'event_host'
+          ORDER BY u.created_at LIMIT 10;
+
+          SELECT 'recent_events' AS section, e.id, e.slug, e.title, e.status,
+                 u.username AS host_username, e.starts_at, e.ends_at, e.timezone,
+                 e.created_at, e.updated_at, e.reviewed_at
+          FROM events e JOIN users u ON u.id = e.host_user_id
+          ORDER BY e.created_at DESC LIMIT 20;
+
+          SELECT 'event_audit' AS section, a.action, a.subject_id, a.created_at,
+                 u.username AS actor_username, a.metadata_json
+          FROM audit_logs a LEFT JOIN users u ON u.id = a.actor_user_id
+          WHERE a.action LIKE 'event.%'
+          ORDER BY a.created_at DESC LIMIT 30;
+          SQL
+          npx wrangler d1 execute "$PRODUCTION_DB_ID" --remote --json --file diagnostic.sql
