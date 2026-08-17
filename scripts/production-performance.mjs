@@ -8,6 +8,8 @@ const targetUrl = process.env.PRODUCTION_URL || "https://akarihouse.com";
 const output =
   process.env.PERFORMANCE_REPORT_PATH ||
   "production-performance/production-performance.json";
+const evidenceCommitSha =
+  process.env.AKARI_EVIDENCE_COMMIT_SHA || process.env.GITHUB_SHA || null;
 const runsPerProfile = 3;
 
 const profiles = [
@@ -132,7 +134,7 @@ const report = {
   schemaVersion: 1,
   targetUrl,
   generatedAt: new Date().toISOString(),
-  commitSha: process.env.GITHUB_SHA || null,
+  commitSha: evidenceCommitSha,
   methodology:
     "Three fresh Chromium navigations per 390x844 mobile and 1440x900 desktop profile. Medians are reported; this is synthetic lab evidence, not CrUX field data.",
   targets: {
