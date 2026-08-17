@@ -157,6 +157,26 @@ test.describe("launch visual evidence", () => {
     await capture(page, testInfo, "workspace-founder");
   });
 
+  test("keeps a sparse Founder directory compact", async ({ page }, testInfo) => {
+    await activatePersona(page, "founder", { reuseExisting: true });
+    await activatePersona(page, "creator", { reuseExisting: true });
+    await page.goto("/members?role=founder&view=grid", {
+      waitUntil: "networkidle",
+    });
+
+    const cards = page.locator(".member-card-grid .member-card");
+    await expect(cards.first()).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    if (testInfo.project.name === "desktop-chromium") {
+      const firstCard = await cards.first().boundingBox();
+      expect(firstCard).not.toBeNull();
+      expect(firstCard?.width ?? 9999).toBeLessThanOrEqual(380);
+    }
+
+    await capture(page, testInfo, "workspace-member-directory-founder-sparse");
+  });
+
   test("captures Superadmin workspace and R69 closeout", async ({
     page,
   }, testInfo) => {
