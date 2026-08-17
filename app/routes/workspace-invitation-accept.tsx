@@ -128,7 +128,10 @@ export default function WorkspaceInvitationAccept({
 }: Route.ComponentProps) {
   if (!loaderData.invitation)
     return (
-      <AuthLayout eyebrow="Workspace invitation" title="This invitation is unavailable">
+      <AuthLayout
+        eyebrow="Workspace invitation"
+        title="This invitation is unavailable"
+      >
         <p className="form-intro">
           It may have expired, been revoked, or already been accepted.
         </p>
@@ -139,22 +142,31 @@ export default function WorkspaceInvitationAccept({
     );
 
   return (
-    <AuthLayout eyebrow="Workspace invitation" title={`Join ${loaderData.invitation.workspaceName}`}>
+    <AuthLayout
+      eyebrow="Workspace invitation"
+      title={`Join ${loaderData.invitation.workspaceName}`}
+    >
       <p className="form-intro">
         You were invited as <strong>{loaderData.invitation.role}</strong> using{" "}
         <strong>{loaderData.invitation.email}</strong>.
       </p>
       {!loaderData.user ? (
         <>
-          <p>Sign in with the invited email address to accept this workspace seat.</p>
-          <Link className="button button-primary button-wide" to={loaderData.loginUrl}>
+          <p>
+            Sign in with the invited email address to accept this workspace
+            seat.
+          </p>
+          <Link
+            className="button button-primary button-wide"
+            to={loaderData.loginUrl}
+          >
             Sign in to accept
           </Link>
         </>
       ) : !loaderData.emailMatches ? (
         <p className="form-error" role="alert">
-          This signed-in account does not match the invitation email. Sign out and use{" "}
-          {loaderData.invitation.email}.
+          This signed-in account does not match the invitation email. Sign out
+          and use {loaderData.invitation.email}.
         </p>
       ) : (
         <Form method="post" className="form-stack">

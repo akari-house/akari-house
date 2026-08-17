@@ -43,12 +43,8 @@ type InvoiceRow = {
   collectedCents: number;
 };
 
-export const meta: Route.MetaFunction = ({ data }) => [
-  {
-    title: data
-      ? `${data.workspace.name} Workspace | AKARI`
-      : "Workspace | AKARI",
-  },
+export const meta: Route.MetaFunction = () => [
+  { title: "Private Workspace | AKARI" },
   {
     name: "description",
     content:

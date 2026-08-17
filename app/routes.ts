@@ -126,6 +126,10 @@ export default [
   route("integrations/telegram/webhook", "routes/telegram-webhook.ts"),
   route("report", "routes/report.tsx"),
   route("workspaces/:slug", "routes/saas-workspace.tsx"),
+  route(
+    "workspace-invitations/accept",
+    "routes/workspace-invitation-accept.tsx",
+  ),
   route("logout", "routes/logout.tsx"),
   route("app", "routes/dashboard.tsx"),
   route("profiles/:username", "routes/profile.tsx"),

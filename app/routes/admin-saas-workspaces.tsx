@@ -17,11 +17,16 @@ import {
   workspaceStatuses,
 } from "~/lib/commercial-saas";
 import { loadAdminWorkspaceAccess } from "~/lib/admin-workspace.server";
+import { sendWorkspaceInvitationEmail } from "~/lib/email.server";
 import { loadWorkspaceEntitlements } from "~/lib/saas-workspace.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { requireSuperAdmin } from "~/lib/membership.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText, normalizeEmail, validateEmail } from "~/lib/validation";
+import {
+  issueWorkspaceInvitationToken,
+  markWorkspaceInvitationDelivery,
+} from "~/lib/workspace-invitations.server";
 
 type WorkspaceRow = {
   id: string;
@@ -227,7 +232,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
 export async function action({ request, context }: Route.ActionArgs) {
   assertSameOrigin(request);
-  const db = context.get(cloudflareContext).env.DB;
+  const env = context.get(cloudflareContext).env;
+  const db = env.DB;
   const admin = await requireSuperAdmin(request, db);
   const form = await request.formData();
   const intent = formText(form.get("intent"));
@@ -396,10 +402,10 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (!workspaceId) return { error: "Workspace reference is missing." };
   const workspace = await db
     .prepare(
-      "SELECT id, owner_user_id AS ownerUserId FROM saas_workspaces WHERE id = ?",
+      "SELECT id, name, owner_user_id AS ownerUserId FROM saas_workspaces WHERE id = ?",
     )
     .bind(workspaceId)
-    .first<{ id: string; ownerUserId: string }>();
+    .first<{ id: string; name: string; ownerUserId: string }>();
   if (!workspace) throw new Response("Workspace not found.", { status: 404 });
 
   if (intent === "update-workspace") {
@@ -525,8 +531,8 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (intent === "add-member") {
     const userId = formText(form.get("userId")).trim();
     const role = formText(form.get("role"));
-    if (!userId || !isWorkspaceRole(role))
-      return { error: "Choose a user and workspace role." };
+    if (!userId || !isWorkspaceRole(role) || role === "owner")
+      return { error: "Choose a user and a non-owner workspace role." };
     const effective = await loadWorkspaceEntitlements(db, workspaceId);
     const count = await db
       .prepare(
@@ -566,6 +572,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     if (
       !userId ||
       !isWorkspaceRole(role) ||
+      (role === "owner" && userId !== workspace.ownerUserId) ||
       !["active", "suspended"].includes(status)
     )
       return { error: "Check the member role and status." };
@@ -575,7 +582,7 @@ export async function action({ request, context }: Route.ActionArgs) {
     )
       return {
         error:
-          "Workspace owner must remain an active owner. Transfer ownership before changing this member.",
+          "Workspace owner must remain an active owner. Use Transfer ownership first.",
       };
     await db
       .prepare(
@@ -584,6 +591,53 @@ export async function action({ request, context }: Route.ActionArgs) {
       .bind(role, status, workspaceId, userId)
       .run();
     return { saved: true, message: "Workspace member updated." };
+  }
+
+  if (intent === "transfer-owner") {
+    const newOwnerUserId = formText(form.get("newOwnerUserId")).trim();
+    if (!newOwnerUserId || newOwnerUserId === workspace.ownerUserId)
+      return { error: "Choose a different active workspace member." };
+    const candidate = await db
+      .prepare(
+        "SELECT role, status FROM saas_workspace_members WHERE workspace_id = ? AND user_id = ?",
+      )
+      .bind(workspaceId, newOwnerUserId)
+      .first<{ role: string; status: string }>();
+    if (!candidate || candidate.status !== "active")
+      return {
+        error: "The new owner must already be an active workspace member.",
+      };
+    await db.batch([
+      db
+        .prepare(
+          "UPDATE saas_workspace_members SET role = 'admin', updated_at = datetime('now') WHERE workspace_id = ? AND user_id = ?",
+        )
+        .bind(workspaceId, workspace.ownerUserId),
+      db
+        .prepare(
+          "UPDATE saas_workspace_members SET role = 'owner', status = 'active', updated_at = datetime('now') WHERE workspace_id = ? AND user_id = ?",
+        )
+        .bind(workspaceId, newOwnerUserId),
+      db
+        .prepare(
+          "UPDATE saas_workspaces SET owner_user_id = ?, updated_by = ?, updated_at = datetime('now') WHERE id = ?",
+        )
+        .bind(newOwnerUserId, admin.id, workspaceId),
+      db
+        .prepare(
+          "INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id, metadata_json) VALUES (?, ?, 'saas_workspace.owner_transferred', 'saas_workspace', ?, ?)",
+        )
+        .bind(
+          crypto.randomUUID(),
+          admin.id,
+          workspaceId,
+          JSON.stringify({
+            fromUserId: workspace.ownerUserId,
+            toUserId: newOwnerUserId,
+          }),
+        ),
+    ]);
+    return { saved: true, message: "Workspace ownership transferred." };
   }
 
   if (intent === "record-invite") {
@@ -597,16 +651,52 @@ export async function action({ request, context }: Route.ActionArgs) {
       expiresAt === undefined
     )
       return { error: "Enter a valid invite email, role and expiry." };
+    const invitationId = crypto.randomUUID();
     await db
       .prepare(
-        "INSERT INTO saas_workspace_invitations (id, workspace_id, email, role, expires_at, invited_by) VALUES (?, ?, ?, ?, ?, ?)",
+        `INSERT INTO saas_workspace_invitations
+         (id, workspace_id, email, role, expires_at, invited_by)
+         VALUES (?, ?, ?, ?, COALESCE(datetime(?, '+1 day', '-1 second'), datetime('now', '+7 days')), ?)`,
       )
-      .bind(crypto.randomUUID(), workspaceId, email, role, expiresAt, admin.id)
+      .bind(invitationId, workspaceId, email, role, expiresAt, admin.id)
+      .run();
+    const token = await issueWorkspaceInvitationToken(db, invitationId);
+    const delivery = await sendWorkspaceInvitationEmail(
+      env,
+      email,
+      token,
+      workspace.name,
+      role,
+    );
+    if (delivery.sent || delivery.deliveryId)
+      await markWorkspaceInvitationDelivery(
+        db,
+        invitationId,
+        delivery.deliveryId ?? null,
+      );
+    await db
+      .prepare(
+        "INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id, metadata_json) VALUES (?, ?, 'saas_workspace.invitation_created', 'saas_workspace', ?, ?)",
+      )
+      .bind(
+        crypto.randomUUID(),
+        admin.id,
+        workspaceId,
+        JSON.stringify({
+          invitationId,
+          email,
+          role,
+          delivery: delivery.sent ? "delivered" : delivery.reason,
+        }),
+      )
       .run();
     return {
       saved: true,
-      message:
-        "Invitation is tracked. No email is sent automatically in this release.",
+      message: delivery.sent
+        ? "Workspace invitation sent."
+        : delivery.reason === "queued"
+          ? "Workspace invitation queued for delivery."
+          : "Invitation created, but email delivery is not configured.",
     };
   }
 
@@ -1119,11 +1209,13 @@ export default function AdminSaasWorkspaces({
                   ))}
                 </select>
                 <select name="role" defaultValue="member">
-                  {workspaceRoles.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
-                  ))}
+                  {workspaceRoles
+                    .filter((r) => r !== "owner")
+                    .map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
                 </select>
                 <button disabled={pending}>Add member</button>
               </Form>
@@ -1181,10 +1273,32 @@ export default function AdminSaasWorkspaces({
                   </tbody>
                 </table>
               </div>
-              <h3>Invitation tracking</h3>
+              <h3>Ownership</h3>
+              <Form method="post" className="inline-form">
+                <input type="hidden" name="intent" value="transfer-owner" />
+                <input type="hidden" name="workspaceId" value={selected.id} />
+                <select name="newOwnerUserId" defaultValue="" required>
+                  <option value="" disabled>
+                    Transfer ownership to...
+                  </option>
+                  {loaderData.members
+                    .filter(
+                      (member) =>
+                        member.status === "active" &&
+                        member.userId !== selected.ownerUserId,
+                    )
+                    .map((member) => (
+                      <option key={member.userId} value={member.userId}>
+                        {member.label}
+                      </option>
+                    ))}
+                </select>
+                <button disabled={pending}>Transfer ownership</button>
+              </Form>
+              <h3>Workspace invitations</h3>
               <p>
-                This records pending invitations only. It does not pretend an
-                email/token delivery system exists.
+                Invitations use a single-use secure token and the invited email
+                must match the signed-in AKARI account.
               </p>
               <Form method="post" className="inline-form">
                 <input type="hidden" name="intent" value="record-invite" />
@@ -1201,7 +1315,7 @@ export default function AdminSaasWorkspaces({
                   <option value="admin">admin</option>
                 </select>
                 <input name="expiresAt" type="date" />
-                <button disabled={pending}>Track invitation</button>
+                <button disabled={pending}>Send invitation</button>
               </Form>
               {loaderData.invites.map((invite) => (
                 <Form method="post" className="inline-form" key={invite.id}>
