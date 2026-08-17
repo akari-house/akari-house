@@ -1,0 +1,44 @@
+name: Production Performance Evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      production_url:
+        description: Production URL to measure
+        required: false
+        default: https://akarihouse.com
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Measure production three times per profile
+        env:
+          PRODUCTION_URL: ${{ inputs.production_url || 'https://akarihouse.com' }}
+        run: node scripts/production-performance.mjs
+
+      - name: Upload performance evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-performance-${{ github.sha }}
+          path: production-performance/production-performance.json
+          retention-days: 90
