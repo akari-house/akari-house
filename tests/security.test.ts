@@ -38,9 +38,9 @@ describe("authentication security", () => {
 
   it("only accepts local return paths", () => {
     expect(isSafeReturnPath("/app")).toBe(true);
-    expect(
-      isSafeReturnPath("/workspace-invitations/accept?token=test"),
-    ).toBe(true);
+    expect(isSafeReturnPath("/workspace-invitations/accept?token=test")).toBe(
+      true,
+    );
     expect(isSafeReturnPath("https://attacker.example")).toBe(false);
     expect(isSafeReturnPath("//attacker.example")).toBe(false);
     expect(isSafeReturnPath("/\\attacker.example")).toBe(false);
@@ -52,12 +52,8 @@ describe("authentication security", () => {
     expect(headers["Content-Security-Policy"]).toContain(
       "frame-ancestors 'none'",
     );
-    expect(headers["Content-Security-Policy"]).toContain(
-      "form-action 'self'",
-    );
-    expect(headers["Strict-Transport-Security"]).toContain(
-      "includeSubDomains",
-    );
+    expect(headers["Content-Security-Policy"]).toContain("form-action 'self'");
+    expect(headers["Strict-Transport-Security"]).toContain("includeSubDomains");
     expect(headers["X-Frame-Options"]).toBe("DENY");
     expect(headers["X-Content-Type-Options"]).toBe("nosniff");
     expect(headers["Permissions-Policy"]).toContain("payment=()");
