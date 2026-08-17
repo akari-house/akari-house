@@ -51,6 +51,14 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     superadminOnly: true,
   },
   {
+    key: "fundraising-readiness",
+    label: "Fundraising readiness",
+    description:
+      "Review Founder fundraising completeness before investor opportunity outreach.",
+    to: "/admin/fundraising",
+    superadminOnly: true,
+  },
+  {
     key: "membership",
     label: "Membership",
     description: "Review applicants and approve House access.",
