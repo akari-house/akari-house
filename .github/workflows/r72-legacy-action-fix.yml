@@ -1,0 +1,51 @@
+name: R72 Legacy Action Fix
+
+on:
+  push:
+    branches: [r72-data-room-diligence-completion]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r72-data-room-diligence-completion
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Preserve legacy trusted-diligence POST actions
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app/routes/project-diligence-completion.tsx')
+          s = p.read_text()
+          import_line = 'import { action as trustedDiligenceAction } from "./project-diligence";\n'
+          anchor = 'import type { Route } from "./+types/project-diligence-completion";\n'
+          if import_line not in s:
+              if anchor not in s:
+                  raise SystemExit('Route import anchor not found')
+              s = s.replace(anchor, anchor + import_line)
+          action_anchor = 'export async function action({ request, context, params }: Route.ActionArgs) {\n'
+          compatibility = '''export async function action({ request, context, params }: Route.ActionArgs) {\n  const previewForm = await request.clone().formData();\n  const previewIntent = formText(previewForm.get("intent"));\n  if (\n    [\n      "request-data-room",\n      "grant-document",\n      "revoke-grant",\n      "approve-data-room",\n      "decline-data-room",\n      "revoke-data-room",\n    ].includes(previewIntent)\n  ) {\n    return trustedDiligenceAction({ request, context, params });\n  }\n'''
+          if 'const previewForm = await request.clone().formData();' not in s:
+              if action_anchor not in s:
+                  raise SystemExit('Action anchor not found')
+              s = s.replace(action_anchor, compatibility, 1)
+          p.write_text(s)
+          PY
+      - run: npx prettier --write app/routes/project-diligence-completion.tsx
+      - run: npm run typecheck
+      - name: Commit compatibility repair
+        run: |
+          rm .github/workflows/r72-legacy-action-fix.yml
+          git config user.name "AKARI Release Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "R72: keep trusted diligence actions backward compatible"
+          git push origin HEAD:r72-data-room-diligence-completion
