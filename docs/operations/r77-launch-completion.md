@@ -74,14 +74,23 @@ R77 retains server-side Turnstile validation. The client widget now uses Cloudfl
 
 AKARI keeps its existing narrow Content Security Policy. R77 does not add Cloudflare Insights to the allowlist. The production public audit fails if a Cloudflare browser analytics beacon is injected into the returned document.
 
-## Performance evidence
+## Production launch evidence
 
-`Production Performance Evidence` is a manual GitHub Actions workflow that runs three fresh Chromium navigations for each profile:
+`Production Launch Evidence` runs automatically after a successful `Deploy Production` workflow and remains manually dispatchable when needed.
+
+It captures two privacy-safe evidence files:
+
+- aggregate production inventory and pilot counts from D1, with no member identities or private content
+- three fresh Chromium performance navigations for each mobile and desktop profile
+
+Performance profiles:
 
 - mobile: 390 x 844
 - desktop: 1440 x 900
 
-The report stores median LCP, CLS, DOMContentLoaded, load time, transfer bytes and resource count. It is synthetic lab evidence and must not be represented as CrUX field data.
+The performance report stores median LCP, CLS, DOMContentLoaded, load time, transfer bytes and resource count. It is synthetic lab evidence and must not be represented as CrUX field data.
+
+The inventory report records only aggregate counts against the V1 seed and pilot thresholds. It does not export names, emails, profile content, financial values or document content.
 
 R77 also uses `content-visibility` only on below-fold homepage story chapters. The Arrival hero remains fully rendered, eager and high priority.
 
@@ -94,7 +103,7 @@ R77 also uses `content-visibility` only on below-fold homepage story chapters. T
 5. Deploy the Worker through the normal GitHub to Cloudflare path.
 6. Run authenticated production smoke including `/admin/launch-completion`.
 7. Run the public production audit, including the browser-analytics privacy check.
-8. Run the production performance evidence workflow and retain its artifact.
+8. Allow the successful production deployment to trigger aggregate inventory and performance evidence automatically, then retain its artifact.
 9. Use the live launch-completion desk to see which seed and real-human evidence remains outstanding.
 
 A technically green deployment does not fabricate or replace the required human pilot evidence.
