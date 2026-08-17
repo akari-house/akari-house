@@ -7,6 +7,7 @@ describe("scheduled job plans", () => {
       "social_metrics",
       "account_retention",
       "operational_resilience",
+      "operating_rhythm",
     ]);
   });
 
