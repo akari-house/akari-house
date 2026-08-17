@@ -96,7 +96,9 @@ test.describe("R79 profile sharing and event publishing", () => {
     await page
       .getByLabel("Ends in the event timezone")
       .fill(localInput(endsAt));
-    await page.getByLabel("Event timezone").fill("UTC");
+    await page
+      .getByRole("combobox", { name: /Event timezone/ })
+      .fill("UTC");
     await page
       .getByLabel("HTTPS meeting URL")
       .fill("https://meet.example.com/akari-r79");
