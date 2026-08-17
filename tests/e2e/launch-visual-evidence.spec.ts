@@ -162,11 +162,12 @@ test.describe("launch visual evidence", () => {
   }, testInfo) => {
     await activatePersona(page, "founder", { reuseExisting: true });
     await activatePersona(page, "creator", { reuseExisting: true });
-    await page.goto("/members?role=founder&view=grid", {
+    await page.goto("/members?role=founder&q=launch-gate-founder", {
       waitUntil: "networkidle",
     });
 
     const cards = page.locator(".member-card-grid .member-card");
+    await expect(cards).toHaveCount(1);
     await expect(cards.first()).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
