@@ -20,6 +20,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: node scripts/r75-finalize.mjs
+      - run: node scripts/r75-fix-meta.mjs
       - run: npx prettier --write app/lib/commercial-saas.ts app/lib/commercial-saas.server.ts app/lib/commercial-attention.server.ts app/lib/saas-workspace.server.ts app/lib/workspace-invitations.server.ts app/lib/operating-rhythm.ts app/lib/operating-rhythm.server.ts app/lib/admin-workspace.ts app/lib/email.server.ts app/routes.ts app/routes/login.tsx app/routes/admin-finance.tsx app/routes/admin-saas-workspaces.tsx app/routes/saas-workspace.tsx app/routes/workspace-invitation-accept.tsx tests/commercial-saas.test.ts
       - run: npm run typecheck
       - run: npm test -- --run tests/commercial-saas.test.ts
