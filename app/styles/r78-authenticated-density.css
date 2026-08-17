@@ -188,12 +188,16 @@
   text-align: left;
 }
 
-.member-card-grid.is-sparse {
+.member-card-grid:has(> .member-card:only-child),
+.member-card-grid:has(> .member-card:nth-child(2):last-child),
+.member-card-grid:has(> .member-card:nth-child(3):last-child) {
   width: 100%;
   max-width: 780px;
 }
 
-.member-card-grid.is-list.is-sparse {
+.member-card-grid.is-list:has(> .member-card:only-child),
+.member-card-grid.is-list:has(> .member-card:nth-child(2):last-child),
+.member-card-grid.is-list:has(> .member-card:nth-child(3):last-child) {
   grid-template-columns: repeat(
     auto-fit,
     minmax(min(100%, 300px), min(380px, 100%))
@@ -201,7 +205,9 @@
   justify-content: start;
 }
 
-.member-card-grid.is-list.is-sparse .member-card {
+.member-card-grid.is-list:has(> .member-card:only-child) .member-card,
+.member-card-grid.is-list:has(> .member-card:nth-child(2):last-child) .member-card,
+.member-card-grid.is-list:has(> .member-card:nth-child(3):last-child) .member-card {
   width: 100%;
   max-width: 380px;
   padding: 0.9rem;
@@ -209,17 +215,23 @@
   border-radius: 13px;
 }
 
-.member-card-grid.is-list.is-sparse .member-card-body {
+.member-card-grid.is-list:has(> .member-card:only-child) .member-card-body,
+.member-card-grid.is-list:has(> .member-card:nth-child(2):last-child) .member-card-body,
+.member-card-grid.is-list:has(> .member-card:nth-child(3):last-child) .member-card-body {
   grid-template-columns: 1fr;
   gap: 0.55rem;
 }
 
-.member-card-grid.is-list.is-sparse .member-card-summary {
+.member-card-grid.is-list:has(> .member-card:only-child) .member-card-summary,
+.member-card-grid.is-list:has(> .member-card:nth-child(2):last-child) .member-card-summary,
+.member-card-grid.is-list:has(> .member-card:nth-child(3):last-child) .member-card-summary {
   max-width: none;
   font-size: 0.8rem;
 }
 
-.member-card-grid.is-list.is-sparse .member-card footer {
+.member-card-grid.is-list:has(> .member-card:only-child) .member-card footer,
+.member-card-grid.is-list:has(> .member-card:nth-child(2):last-child) .member-card footer,
+.member-card-grid.is-list:has(> .member-card:nth-child(3):last-child) .member-card footer {
   justify-content: flex-start;
 }
 
@@ -269,13 +281,17 @@
 
 @media (max-width: 900px) {
   .member-card-grid.is-grid,
-  .member-card-grid.is-list.is-sparse {
+  .member-card-grid.is-list:has(> .member-card:only-child),
+  .member-card-grid.is-list:has(> .member-card:nth-child(2):last-child),
+  .member-card-grid.is-list:has(> .member-card:nth-child(3):last-child) {
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
     max-width: none;
   }
 
   .member-card-grid.is-grid .member-card,
-  .member-card-grid.is-list.is-sparse .member-card {
+  .member-card-grid.is-list:has(> .member-card:only-child) .member-card,
+  .member-card-grid.is-list:has(> .member-card:nth-child(2):last-child) .member-card,
+  .member-card-grid.is-list:has(> .member-card:nth-child(3):last-child) .member-card {
     max-width: none;
   }
 }
@@ -303,7 +319,9 @@
     align-items: flex-start;
   }
 
-  .member-card-grid.is-list.is-sparse .member-card {
+  .member-card-grid.is-list:has(> .member-card:only-child) .member-card,
+  .member-card-grid.is-list:has(> .member-card:nth-child(2):last-child) .member-card,
+  .member-card-grid.is-list:has(> .member-card:nth-child(3):last-child) .member-card {
     grid-template-columns: 44px minmax(0, 1fr);
   }
 }
