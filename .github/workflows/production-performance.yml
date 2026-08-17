@@ -1,4 +1,4 @@
-name: Production Performance Evidence
+name: Production Launch Evidence
 
 on:
   workflow_dispatch:
@@ -7,38 +7,56 @@ on:
         description: Production URL to measure
         required: false
         default: https://akarihouse.com
+  workflow_run:
+    workflows:
+      - Deploy Production
+    types:
+      - completed
 
 permissions:
   contents: read
 
 jobs:
   measure:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      PRODUCTION_URL: ${{ inputs.production_url || 'https://akarihouse.com' }}
+      AKARI_EVIDENCE_COMMIT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
     steps:
-      - name: Checkout
+      - name: Checkout deployed source
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Capture aggregate production inventory
+        run: node scripts/production-inventory-evidence.mjs
+
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
       - name: Measure production three times per profile
-        env:
-          PRODUCTION_URL: ${{ inputs.production_url || 'https://akarihouse.com' }}
         run: node scripts/production-performance.mjs
 
-      - name: Upload performance evidence
+      - name: Upload launch evidence
         uses: actions/upload-artifact@v4
         with:
-          name: production-performance-${{ github.sha }}
-          path: production-performance/production-performance.json
+          name: production-launch-evidence-${{ github.event.workflow_run.head_sha || github.sha }}
+          path: |
+            production-performance/production-inventory.json
+            production-performance/production-performance.json
           retention-days: 90
