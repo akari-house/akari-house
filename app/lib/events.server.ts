@@ -1,3 +1,4 @@
+import type { SessionUser } from "./domain";
 import { slugifyProject } from "./projects.server";
 
 export async function canHostEvents(db: D1Database, userId: string) {
@@ -13,6 +14,14 @@ export async function canHostEvents(db: D1Database, userId: string) {
     .bind(userId, userId)
     .first();
   return Boolean(permission);
+}
+
+export function canPublishEventsDirectly(user: SessionUser) {
+  const access = user.adminAccess;
+  if (!access) return false;
+  return (
+    access.accessLevel === "superadmin" || access.scopes.includes("projects")
+  );
 }
 
 export async function uniqueEventSlug(db: D1Database, title: string) {
