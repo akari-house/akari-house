@@ -65,7 +65,12 @@ describe("R73 relationship intelligence", () => {
     const paths = prioritizeWarmPaths([
       { userId: "2", displayName: "Yash", username: "yash", isOwner: false },
       { userId: "1", displayName: "Muaz", username: "muaz", isOwner: true },
-      { userId: "3", displayName: "Madhav", username: "madhav", isOwner: false },
+      {
+        userId: "3",
+        displayName: "Madhav",
+        username: "madhav",
+        isOwner: false,
+      },
     ]);
     expect(paths.map((path) => path.displayName)).toEqual([
       "Muaz",
@@ -98,7 +103,10 @@ describe("R73 relationship intelligence", () => {
   });
 
   it("keeps relationship intelligence Superadmin-only", () => {
-    const listRoute = readFileSync("app/routes/admin-relationships.tsx", "utf8");
+    const listRoute = readFileSync(
+      "app/routes/admin-relationships.tsx",
+      "utf8",
+    );
     const detailRoute = readFileSync(
       "app/routes/admin-relationship-detail.tsx",
       "utf8",

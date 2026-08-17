@@ -28,18 +28,29 @@ export const relationshipStrengths = [
 
 export type RelationshipStrength = (typeof relationshipStrengths)[number];
 
-export const relationshipStrengthLabels: Record<RelationshipStrength, string> = {
-  cold: "Cold",
-  known: "Known",
-  warm: "Warm",
-  strong: "Strong",
-  trusted: "Trusted",
-};
+export const relationshipStrengthLabels: Record<RelationshipStrength, string> =
+  {
+    cold: "Cold",
+    known: "Known",
+    warm: "Warm",
+    strong: "Strong",
+    trusted: "Trusted",
+  };
 
-export const relationshipStatuses = ["active", "dormant", "paused", "closed"] as const;
+export const relationshipStatuses = [
+  "active",
+  "dormant",
+  "paused",
+  "closed",
+] as const;
 export type RelationshipStatus = (typeof relationshipStatuses)[number];
 
-export const consentStatuses = ["unknown", "granted", "limited", "opted_out"] as const;
+export const consentStatuses = [
+  "unknown",
+  "granted",
+  "limited",
+  "opted_out",
+] as const;
 export type ConsentStatus = (typeof consentStatuses)[number];
 
 export const interactionTypes = [
@@ -61,11 +72,15 @@ export function isRelationshipType(value: string): value is RelationshipType {
   return relationshipTypes.includes(value as RelationshipType);
 }
 
-export function isRelationshipStrength(value: string): value is RelationshipStrength {
+export function isRelationshipStrength(
+  value: string,
+): value is RelationshipStrength {
   return relationshipStrengths.includes(value as RelationshipStrength);
 }
 
-export function isRelationshipStatus(value: string): value is RelationshipStatus {
+export function isRelationshipStatus(
+  value: string,
+): value is RelationshipStatus {
   return relationshipStatuses.includes(value as RelationshipStatus);
 }
 
