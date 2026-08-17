@@ -94,3 +94,5 @@ The same information type should have the same visual weight across the authenti
 Launch Gate visual evidence now includes a sparse Founder directory scenario. On desktop the first sparse Founder card must remain at or below 380 pixels wide, and both desktop and mobile must remain free of horizontal overflow.
 
 R78 is a visual and interaction-density release only. It does not change member permissions, privacy rules, Founder ownership, campaign eligibility, production user data or canonical product models.
+
+The final merge must be validated on an owner-authored exact PR head after any automated formatting repair, so the normal CI and Launch Gate checks prove the same code that is merged.
