@@ -30,6 +30,14 @@ CREATE UNIQUE INDEX idx_project_document_versions_series_version
 CREATE INDEX idx_project_document_versions_project_current
   ON project_document_versions(project_id, is_current, created_at DESC);
 
+CREATE TRIGGER register_project_document_version_after_insert
+AFTER INSERT ON project_documents
+BEGIN
+  INSERT OR IGNORE INTO project_document_versions
+    (document_id, project_id, series_id, version_number, is_current, created_at)
+  VALUES (NEW.id, NEW.project_id, NEW.id, 1, 1, NEW.created_at);
+END;
+
 CREATE TABLE opportunity_question_documents (
   question_id TEXT PRIMARY KEY REFERENCES opportunity_questions(id) ON DELETE CASCADE,
   project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
