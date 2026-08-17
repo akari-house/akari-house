@@ -1,0 +1,62 @@
+name: R72 Branch Fix
+
+on:
+  push:
+    branches: [r72-data-room-diligence-completion]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r72-data-room-diligence-completion
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Patch R72 integration mismatches
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app/routes/admin-diligence.tsx')
+          s = p.read_text()
+          s = s.replace('<AdminWorkspaceNav access={loaderData.access} activeKey="diligence" />', '<AdminWorkspaceNav access={loaderData.access} />')
+          p.write_text(s)
+
+          p = Path('app/routes/project-diligence-completion.tsx')
+          s = p.read_text()
+          old = '''export const meta: Route.MetaFunction = ({ data }) => [
+            {
+              title: data?.project?.title
+                ? `${data.project.title} Diligence | AKARI House`
+                : "Diligence | AKARI House",
+            },'''
+          if old not in s:
+              raise SystemExit('Expected dynamic meta block not found')
+          s = s.replace(old, '''export const meta: Route.MetaFunction = () => [
+            { title: "Project Diligence | AKARI House" },''')
+          p.write_text(s)
+          PY
+      - name: Format R72 files
+        run: |
+          npx prettier --write \
+            app/lib/admin-workspace.ts \
+            app/lib/diligence-completion.ts \
+            app/routes.ts \
+            app/routes/admin-diligence.tsx \
+            app/routes/project-diligence-completion.tsx \
+            migrations/0118_data_room_diligence_completion.sql \
+            tests/diligence-completion.test.ts
+      - name: Commit repaired branch
+        run: |
+          rm .github/workflows/r72-branch-fix.yml
+          git config user.name "AKARI Release Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "R72: fix route integration and formatting"
+          git push origin HEAD:r72-data-room-diligence-completion
