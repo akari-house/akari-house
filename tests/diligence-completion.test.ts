@@ -56,6 +56,23 @@ describe("diligence completion", () => {
     expect(withTokenMaterial.percentage).toBe(100);
   });
 
+  it("does not make token-only material a requirement for non-token projects", () => {
+    const readiness = diligenceCompleteness([
+      "corporate",
+      "legal",
+      "financials",
+      "product",
+      "market",
+      "team",
+      "fundraising",
+      "token_web3",
+    ]);
+
+    expect(readiness.total).toBe(7);
+    expect(readiness.percentage).toBe(100);
+    expect(readiness.required).not.toContain("token_web3");
+  });
+
   it("maps legacy document categories into the R72 institutional checklist", () => {
     expect(normalizeDiligenceCategory("company")).toBe("corporate");
     expect(normalizeDiligenceCategory("financial")).toBe("financials");
