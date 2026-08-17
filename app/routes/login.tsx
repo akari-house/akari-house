@@ -108,11 +108,16 @@ export async function action({ request, context }: Route.ActionArgs) {
       .run();
   const cookie = await createSession(db, row.id, request);
   const returnTo = new URL(request.url).searchParams.get("returnTo");
-  const destination = firstEntry
-    ? "/app?welcome=1"
-    : returnTo?.startsWith("/") && !returnTo.startsWith("//")
-      ? returnTo
-      : "/app";
+  const safeReturnTo =
+    returnTo?.startsWith("/") && !returnTo.startsWith("//") ? returnTo : null;
+  const invitationReturn = safeReturnTo?.startsWith(
+    "/workspace-invitations/accept",
+  );
+  const destination = invitationReturn
+    ? safeReturnTo!
+    : firstEntry
+      ? "/app?welcome=1"
+      : (safeReturnTo ?? "/app");
   return redirect(destination, { headers: { "Set-Cookie": cookie } });
 }
 

@@ -83,6 +83,22 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     superadminOnly: true,
   },
   {
+    key: "finance",
+    label: "Finance & revenue",
+    description:
+      "Track invoices, collections, refunds, operating costs and currency-level contribution.",
+    to: "/admin/finance",
+    superadminOnly: true,
+  },
+  {
+    key: "saas-workspaces",
+    label: "SaaS workspaces",
+    description:
+      "Provision workspaces, teams, plans, subscriptions and module entitlements.",
+    to: "/admin/workspaces",
+    superadminOnly: true,
+  },
+  {
     key: "membership",
     label: "Membership",
     description: "Review applicants and approve House access.",

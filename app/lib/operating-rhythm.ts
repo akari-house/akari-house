@@ -17,6 +17,8 @@ export const attentionSourceTypes = [
   "campaign_renewal",
   "review_sla",
   "fundraising",
+  "invoice",
+  "workspace_subscription",
 ] as const;
 export type AttentionSourceType = (typeof attentionSourceTypes)[number];
 
@@ -34,6 +36,7 @@ export const operatingReportTypes = [
   "fundraising_pipeline",
   "campaign_portfolio",
   "relationship_followup",
+  "revenue",
 ] as const;
 export type OperatingReportType = (typeof operatingReportTypes)[number];
 
@@ -48,6 +51,8 @@ export const attentionSourceLabels: Record<AttentionSourceType, string> = {
   campaign_renewal: "Campaign renewal",
   review_sla: "Review SLA",
   fundraising: "Fundraising",
+  invoice: "Invoice",
+  workspace_subscription: "Workspace subscription",
 };
 
 export const operatingReportLabels: Record<OperatingReportType, string> = {
@@ -56,6 +61,7 @@ export const operatingReportLabels: Record<OperatingReportType, string> = {
   fundraising_pipeline: "Fundraising pipeline",
   campaign_portfolio: "Campaign portfolio",
   relationship_followup: "Relationship follow-up",
+  revenue: "Revenue & collections",
 };
 
 export type AttentionSignal = {
