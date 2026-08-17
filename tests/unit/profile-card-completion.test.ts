@@ -40,18 +40,28 @@ describe("completed AKARI profile card", () => {
     expect(formatProfileReach(12500)).toBe("12.5K");
   });
 
-  it("renders the requested profile identity and privacy features", () => {
-    const component = read("app/components/ProfileShareCard.tsx");
+  it("renders the branded glass profile identity and privacy features", () => {
+    const component = read("app/components/ProfileShareCardGlass.tsx");
+    const adapter = read("app/components/ProfileShareCard.tsx");
+    const styles = read("app/styles/r79-profile-sharing-glass.css");
     const route = read("app/routes/profile-card.tsx");
 
-    expect(component).toContain("profile-card-language-tags");
-    expect(component).toContain("Remove ${language}");
-    expect(component).toContain("profile-card-avatar");
-    expect(component).toContain("profile-card-headline");
+    expect(adapter).toContain("ProfileShareCardGlass as ProfileShareCard");
+    expect(component).toContain("Midnight Glass");
+    expect(component).toContain("Sakura Glass");
+    expect(component).toContain("Pearl Glass");
+    expect(component).toContain("/assets/brand/akari-logo-horizontal.png");
+    expect(component).toContain("/assets/brand/akari-flower-mark.png");
+    expect(component).toContain("glass-theme-grid");
+    expect(component).toContain("glass-card-avatar");
     expect(component).toContain("Connected social platforms");
     expect(component).toContain("akarihouse.com/profiles/${model.username}");
+    expect(component).toContain("canvas.width = portrait ? 1000 : 1586");
+    expect(component).toContain("canvas.height = portrait ? 1586 : 1000");
     expect(component).toContain('value="landscape"');
     expect(component).toContain('value="portrait"');
+    expect(styles).toContain("aspect-ratio: 856 / 540");
+    expect(styles).toContain("backdrop-filter: blur");
     expect(route).toContain(
       "languageCandidates.length > MAX_PROFILE_CARD_LANGUAGES",
     );
