@@ -31,6 +31,7 @@ import "./styles/house-workspace-polish.css";
 import "./styles/admin-operations-spacing.css";
 import "./styles/launch-candidate-cleanup.css";
 import "./styles/r77-launch-completion.css";
+import "./styles/r78-authenticated-density.css";
 
 const productionOrigin = "https://akarihouse.com";
 const socialImage = `${productionOrigin}/assets/optimized/arrival.webp`;
