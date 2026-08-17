@@ -34,7 +34,13 @@ export const PROFILE_CARD_LANGUAGE_OPTIONS = [
   "Vietnamese",
 ] as const;
 
-export const PROFILE_CARD_PALETTES = ["sakura", "midnight", "lantern"] as const;
+export const PROFILE_CARD_PALETTES = [
+  "midnight",
+  "pearl",
+  "sakura",
+  "blossom",
+  "lantern",
+] as const;
 export const PROFILE_CARD_DESIGNS = ["signature", "passport"] as const;
 export const PROFILE_CARD_ORIENTATIONS = ["landscape", "portrait"] as const;
 export const PROFILE_CARD_SOCIAL_PLATFORMS = [

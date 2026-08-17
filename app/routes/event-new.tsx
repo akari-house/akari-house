@@ -1,25 +1,29 @@
-import { Form, redirect, useNavigation } from "react-router";
 import { useState } from "react";
+import { Form, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/event-new";
+import { AkariMotif } from "~/components/AkariMotif";
+import { EventTimezoneField } from "~/components/EventTimeDisplay";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import { canHostEvents, uniqueEventSlug } from "~/lib/events.server";
+import { importEventImage } from "~/lib/event-image.server";
+import {
+  canHostEvents,
+  canPublishEventsDirectly,
+  uniqueEventSlug,
+} from "~/lib/events.server";
 import {
   isValidTimezone,
   localEventTimeToUtc,
   validEventTimes,
 } from "~/lib/events";
-import { EventTimezoneField } from "~/components/EventTimeDisplay";
-import { assertSameOrigin } from "~/lib/security.server";
-import { formText, normalizeWebsite } from "~/lib/validation";
-import { AkariMotif } from "~/components/AkariMotif";
 import { validateProfilePhoto } from "~/lib/profile-photo.server";
 import {
   markManagedR2ObjectDeleted,
   registerManagedR2Object,
 } from "~/lib/r2-lifecycle.server";
-import { importEventImage } from "~/lib/event-image.server";
+import { assertSameOrigin } from "~/lib/security.server";
+import { formText, normalizeWebsite } from "~/lib/validation";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -28,7 +32,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     throw new Response("Approved event-host access is required.", {
       status: 403,
     });
-  return { user };
+  return { user, canPublishDirectly: canPublishEventsDirectly(user) };
 }
 
 export async function action({ request, context }: Route.ActionArgs) {
@@ -40,9 +44,13 @@ export async function action({ request, context }: Route.ActionArgs) {
     throw new Response("Approved event-host access is required.", {
       status: 403,
     });
+  const publishDirectly = canPublishEventsDirectly(user);
+  const nextStatus = publishDirectly ? "published" : "submitted";
+
   const contentLength = Number(request.headers.get("content-length") ?? "0");
   if (contentLength > 2_750_000)
     return { error: "Event cover images must be 2 MB or smaller." };
+
   const form = await request.formData();
   const title = formText(form.get("title")).trim();
   const summary = formText(form.get("summary")).trim();
@@ -57,6 +65,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const endsAt = localEventTimeToUtc(endsAtLocal, timezone);
   const capacityText = formText(form.get("capacity")).trim();
   const capacity = capacityText ? Number(capacityText) : null;
+
   if (
     title.length < 3 ||
     title.length > 120 ||
@@ -81,12 +90,14 @@ export async function action({ request, context }: Route.ActionArgs) {
     return { error: "Online and hybrid events require an HTTPS meeting URL." };
   if (format !== "online" && !venue)
     return { error: "In-person and hybrid events require a venue." };
+
   const id = crypto.randomUUID();
   const slug = await uniqueEventSlug(db, title);
   const image = form.get("image");
   const imageUrl = formText(form.get("imageUrl")).trim();
   if (image instanceof File && image.size && imageUrl)
     return { error: "Choose either an image upload or an image URL." };
+
   let imageKey: string | null = null;
   let imageSourceUrl = "";
   if (image instanceof File && image.size) {
@@ -121,14 +132,16 @@ export async function action({ request, context }: Route.ActionArgs) {
         sourceId: id,
         ownerUserId: user.id,
       });
+
     await db.batch([
       db
         .prepare(
           `INSERT INTO events
            (id, host_user_id, slug, title, summary, description, format,
             venue, meeting_url, starts_at, ends_at, timezone, capacity,
-            image_key, image_source_url, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'submitted')`,
+            image_key, image_source_url, status, reviewed_by, reviewed_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                   CASE WHEN ? = 'published' THEN datetime('now') ELSE NULL END)`,
         )
         .bind(
           id,
@@ -146,18 +159,26 @@ export async function action({ request, context }: Route.ActionArgs) {
           capacity,
           imageKey,
           imageSourceUrl,
+          nextStatus,
+          publishDirectly ? user.id : null,
+          nextStatus,
         ),
       db
         .prepare(
           `INSERT INTO audit_logs
            (id, actor_user_id, action, subject_type, subject_id, metadata_json)
-           VALUES (?, ?, 'event.submitted', 'event', ?, ?)`,
+           VALUES (?, ?, ?, 'event', ?, ?)`,
         )
         .bind(
           crypto.randomUUID(),
           user.id,
+          publishDirectly ? "event.published_directly" : "event.submitted",
           id,
-          JSON.stringify({ hasImage: Boolean(imageKey) }),
+          JSON.stringify({
+            hasImage: Boolean(imageKey),
+            status: nextStatus,
+            publishingAccess: publishDirectly ? "admin" : "review_required",
+          }),
         ),
     ]);
   } catch (error) {
@@ -167,7 +188,12 @@ export async function action({ request, context }: Route.ActionArgs) {
     }
     throw error;
   }
-  throw redirect(`/events/${slug}?submitted=1`);
+
+  throw redirect(
+    publishDirectly
+      ? `/events/${slug}?published=1`
+      : `/events/${slug}?submitted=1`,
+  );
 }
 
 export default function EventNew({
@@ -176,6 +202,8 @@ export default function EventNew({
 }: Route.ComponentProps) {
   const navigation = useNavigation();
   const [eventFormat, setEventFormat] = useState("online");
+  const canPublishDirectly = loaderData.canPublishDirectly;
+
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
@@ -183,13 +211,24 @@ export default function EventNew({
         <header className="event-editor-intro">
           <AkariMotif motif="invitation" />
           <div>
-            <span className="eyebrow">Event host desk</span>
-            <h1>Propose a gathering.</h1>
+            <span className="eyebrow">
+              {canPublishDirectly
+                ? "AKARI event publishing"
+                : "Event host desk"}
+            </span>
+            <h1>
+              {canPublishDirectly
+                ? "Publish a gathering."
+                : "Propose a gathering."}
+            </h1>
             <p>
-              Every invitation is reviewed before it enters the public House.
+              {canPublishDirectly
+                ? "Your AKARI admin access can publish this event directly to the public House."
+                : "Every invitation is reviewed before it enters the public House."}
             </p>
           </div>
         </header>
+
         <Form
           method="post"
           encType="multipart/form-data"
@@ -200,6 +239,13 @@ export default function EventNew({
               {actionData.error}
             </p>
           )}
+          {canPublishDirectly && (
+            <p className="notice">
+              Publish now is enabled for your AKARI admin account. The event
+              will become public immediately after validation succeeds.
+            </p>
+          )}
+
           <label>
             Event title
             <input name="title" minLength={3} maxLength={120} required />
@@ -226,8 +272,8 @@ export default function EventNew({
               accept="image/jpeg,image/png,image/webp"
             />
             <small>
-              Optional. Use a landscape JPG, PNG or WebP up to 2 MB. The image
-              remains private until the event is approved.
+              Optional. Use a landscape JPG, PNG or WebP up to 2 MB. For
+              reviewed events the image remains private until approval.
             </small>
           </label>
           <label>
@@ -239,10 +285,11 @@ export default function EventNew({
               placeholder="https://example.com/event-cover.jpg"
             />
             <small>
-              AKARI securely copies the reviewed image into private storage.
-              Local and private-network addresses are blocked.
+              AKARI securely copies the image into private storage. Local and
+              private-network addresses are blocked.
             </small>
           </label>
+
           <div className="form-row">
             <label>
               Format
@@ -261,6 +308,7 @@ export default function EventNew({
               <input name="capacity" type="number" min={1} max={10000} />
             </label>
           </div>
+
           <div className="form-row">
             <label>
               Starts in the event timezone
@@ -272,6 +320,7 @@ export default function EventNew({
             </label>
           </div>
           <EventTimezoneField />
+
           {eventFormat !== "online" && (
             <label>
               Venue
@@ -284,13 +333,18 @@ export default function EventNew({
               <input name="meetingUrl" type="url" required />
             </label>
           )}
+
           <button
             className="button button-primary"
             disabled={navigation.state !== "idle"}
           >
             {navigation.state === "idle"
-              ? "Submit for review"
-              : "Submitting event..."}
+              ? canPublishDirectly
+                ? "Publish event"
+                : "Submit for review"
+              : canPublishDirectly
+                ? "Publishing event..."
+                : "Submitting event..."}
           </button>
         </Form>
       </main>
