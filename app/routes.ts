@@ -69,6 +69,11 @@ export default [
   route("admin/agreements", "routes/admin-agreements.tsx"),
   route("admin/fundraising", "routes/admin-fundraising-readiness.tsx"),
   route("admin/diligence", "routes/admin-diligence.tsx"),
+  route("admin/relationships", "routes/admin-relationships.tsx"),
+  route(
+    "admin/relationships/:relationshipId",
+    "routes/admin-relationship-detail.tsx",
+  ),
   route("admin/operations", "routes/admin-operations.tsx"),
   route("admin/production", "routes/admin-production.tsx"),
   route("admin/resilience", "routes/admin-resilience.tsx"),
