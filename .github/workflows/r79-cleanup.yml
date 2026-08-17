@@ -1,0 +1,52 @@
+name: R79 Cleanup
+
+on:
+  push:
+    branches:
+      - r79-profile-card-event-publishing
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r79-profile-card-event-publishing
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Fix lint assertion and format R79 files
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app/components/ProfileShareCard.tsx')
+          text = path.read_text()
+          text = text.replace('role[0]!.toUpperCase()', 'role[0].toUpperCase()')
+          path.write_text(text)
+          PY
+          npx prettier --write \
+            app/components/ProfileShareCard.tsx \
+            app/lib/profile-card.ts \
+            app/lib/events.server.ts \
+            app/routes/event-new.tsx \
+            app/routes/event-edit.tsx \
+            app/styles/profile-card-glass.css \
+            tests/unit/profile-card-completion.test.ts \
+            tests/unit/events-publishing.test.ts
+      - name: Commit cleanup
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app tests
+          if git diff --cached --quiet; then
+            echo 'No cleanup changes needed.'
+            exit 0
+          fi
+          git commit -m 'chore: format R79 implementation'
+          git push origin HEAD:r79-profile-card-event-publishing
