@@ -17,9 +17,9 @@ describe("R75 commercial and SaaS completion", () => {
     expect(normalizeWorkspaceSlug(" Coral App / Growth ")).toBe(
       "coral-app-growth",
     );
-    expect(normalizeWorkspaceSlug("!")) .toBeNull();
+    expect(normalizeWorkspaceSlug("!")).toBeNull();
     expect(normalizeCurrency(" usd ")).toBe("USD");
-    expect(normalizeCurrency("$")) .toBeNull();
+    expect(normalizeCurrency("$")).toBeNull();
   });
 
   it("applies plan modules first and explicit workspace overrides second", () => {
@@ -59,9 +59,7 @@ describe("R75 commercial and SaaS completion", () => {
   it("treats overdue invoices as a time condition, not a mutable status", () => {
     const now = new Date("2026-08-17T12:00:00Z");
     expect(isInvoiceOverdue("issued", "2026-08-16", now)).toBe(true);
-    expect(isInvoiceOverdue("partially_paid", "2026-08-18", now)).toBe(
-      false,
-    );
+    expect(isInvoiceOverdue("partially_paid", "2026-08-18", now)).toBe(false);
     expect(isInvoiceOverdue("paid", "2026-08-16", now)).toBe(false);
   });
 
@@ -104,7 +102,10 @@ describe("R75 commercial and SaaS completion", () => {
       "app/routes/admin-saas-workspaces.tsx",
       "utf8",
     );
-    const memberWorkspace = readFileSync("app/routes/saas-workspace.tsx", "utf8");
+    const memberWorkspace = readFileSync(
+      "app/routes/saas-workspace.tsx",
+      "utf8",
+    );
     const workspaceAccess = readFileSync(
       "app/lib/saas-workspace.server.ts",
       "utf8",

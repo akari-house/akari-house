@@ -124,13 +124,24 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const access = await loadAdminWorkspaceAccess(db, user.id);
   const url = new URL(request.url);
   const status = formText(url.searchParams.get("status")).trim();
-  const currency = formText(url.searchParams.get("currency")).trim().toUpperCase();
+  const currency = formText(url.searchParams.get("currency"))
+    .trim()
+    .toUpperCase();
 
-  const [invoices, payments, costs, projects, campaigns, agreements, workspaces, owners, summary] =
-    await Promise.all([
-      db
-        .prepare(
-          `SELECT i.id, i.invoice_number AS invoiceNumber,
+  const [
+    invoices,
+    payments,
+    costs,
+    projects,
+    campaigns,
+    agreements,
+    workspaces,
+    owners,
+    summary,
+  ] = await Promise.all([
+    db
+      .prepare(
+        `SELECT i.id, i.invoice_number AS invoiceNumber,
                   i.workspace_id AS workspaceId, w.name AS workspaceName,
                   i.project_id AS projectId, p.title AS projectTitle,
                   i.campaign_id AS campaignId, c.title AS campaignTitle,
@@ -156,12 +167,12 @@ export async function loader({ request, context }: Route.LoaderArgs) {
              AND (? = '' OR i.currency = ?)
            ORDER BY CASE WHEN i.due_at IS NULL THEN 1 ELSE 0 END, i.due_at, i.updated_at DESC
            LIMIT 250`,
-        )
-        .bind(status, status, currency, currency)
-        .all<InvoiceRow>(),
-      db
-        .prepare(
-          `SELECT cp.id, cp.invoice_id AS invoiceId, i.invoice_number AS invoiceNumber,
+      )
+      .bind(status, status, currency, currency)
+      .all<InvoiceRow>(),
+    db
+      .prepare(
+        `SELECT cp.id, cp.invoice_id AS invoiceId, i.invoice_number AS invoiceNumber,
                   cp.amount_cents AS amountCents,
                   cp.refunded_amount_cents AS refundedAmountCents,
                   cp.currency, cp.status, cp.payment_method AS paymentMethod,
@@ -170,11 +181,11 @@ export async function loader({ request, context }: Route.LoaderArgs) {
            FROM commercial_payments cp
            JOIN commercial_invoices i ON i.id = cp.invoice_id
            ORDER BY cp.created_at DESC LIMIT 80`,
-        )
-        .all<PaymentRow>(),
-      db
-        .prepare(
-          `SELECT ce.id, ce.description, ce.category, ce.amount_cents AS amountCents,
+      )
+      .all<PaymentRow>(),
+    db
+      .prepare(
+        `SELECT ce.id, ce.description, ce.category, ce.amount_cents AS amountCents,
                   ce.currency, ce.status, p.title AS projectTitle,
                   w.name AS workspaceName, ce.incurred_at AS incurredAt,
                   ce.external_reference AS externalReference
@@ -182,22 +193,38 @@ export async function loader({ request, context }: Route.LoaderArgs) {
            LEFT JOIN projects p ON p.id = ce.project_id
            LEFT JOIN saas_workspaces w ON w.id = ce.workspace_id
            ORDER BY ce.created_at DESC LIMIT 80`,
-        )
-        .all<CostRow>(),
-      db.prepare("SELECT id, title AS label FROM projects ORDER BY title COLLATE NOCASE LIMIT 300").all<Option>(),
-      db.prepare("SELECT id, title AS label FROM ambassador_campaigns ORDER BY title COLLATE NOCASE LIMIT 300").all<Option>(),
-      db.prepare("SELECT id, title AS label FROM agreement_records ORDER BY title COLLATE NOCASE LIMIT 300").all<Option>(),
-      db.prepare("SELECT id, name AS label FROM saas_workspaces WHERE status <> 'closed' ORDER BY name COLLATE NOCASE").all<Option>(),
-      db
-        .prepare(
-          `SELECT u.id, COALESCE(p.display_name, u.username) AS label
+      )
+      .all<CostRow>(),
+    db
+      .prepare(
+        "SELECT id, title AS label FROM projects ORDER BY title COLLATE NOCASE LIMIT 300",
+      )
+      .all<Option>(),
+    db
+      .prepare(
+        "SELECT id, title AS label FROM ambassador_campaigns ORDER BY title COLLATE NOCASE LIMIT 300",
+      )
+      .all<Option>(),
+    db
+      .prepare(
+        "SELECT id, title AS label FROM agreement_records ORDER BY title COLLATE NOCASE LIMIT 300",
+      )
+      .all<Option>(),
+    db
+      .prepare(
+        "SELECT id, name AS label FROM saas_workspaces WHERE status <> 'closed' ORDER BY name COLLATE NOCASE",
+      )
+      .all<Option>(),
+    db
+      .prepare(
+        `SELECT u.id, COALESCE(p.display_name, u.username) AS label
            FROM admin_users au JOIN users u ON u.id = au.user_id
            LEFT JOIN profiles p ON p.user_id = u.id
            WHERE u.status = 'active' ORDER BY label COLLATE NOCASE`,
-        )
-        .all<OwnerOption>(),
-      commercialCurrencySummary(db),
-    ]);
+      )
+      .all<OwnerOption>(),
+    commercialCurrencySummary(db),
+  ]);
 
   return {
     user,
@@ -237,8 +264,12 @@ export async function action({ request, context }: Route.ActionArgs) {
     const campaignId = formText(form.get("campaignId")).trim() || null;
     const agreementId = formText(form.get("agreementId")).trim() || null;
     const ownerUserId = formText(form.get("ownerUserId")).trim() || null;
-    const externalInvoiceUrl = httpsUrl(formText(form.get("externalInvoiceUrl")));
-    const externalReference = formText(form.get("externalReference")).trim().slice(0, 300);
+    const externalInvoiceUrl = httpsUrl(
+      formText(form.get("externalInvoiceUrl")),
+    );
+    const externalReference = formText(form.get("externalReference"))
+      .trim()
+      .slice(0, 300);
     const note = formText(form.get("note")).trim().slice(0, 3000);
     if (
       invoiceNumber.length < 2 ||
@@ -256,10 +287,13 @@ export async function action({ request, context }: Route.ActionArgs) {
     if (customerEmail && !validateEmail(customerEmail))
       return { error: "Enter a valid customer email or leave it blank." };
     const totalCents = subtotalCents + taxCents - discountCents;
-    if (totalCents < 0) return { error: "Discount cannot exceed subtotal plus tax." };
+    if (totalCents < 0)
+      return { error: "Discount cannot exceed subtotal plus tax." };
     if (campaignId) {
       const campaign = await db
-        .prepare("SELECT project_id AS projectId FROM ambassador_campaigns WHERE id = ?")
+        .prepare(
+          "SELECT project_id AS projectId FROM ambassador_campaigns WHERE id = ?",
+        )
         .bind(campaignId)
         .first<{ projectId: string }>();
       if (!campaign) return { error: "Campaign not found." };
@@ -268,7 +302,10 @@ export async function action({ request, context }: Route.ActionArgs) {
       projectId = campaign.projectId;
     }
     if (ownerUserId) {
-      const owner = await db.prepare("SELECT 1 FROM admin_users WHERE user_id = ?").bind(ownerUserId).first();
+      const owner = await db
+        .prepare("SELECT 1 FROM admin_users WHERE user_id = ?")
+        .bind(ownerUserId)
+        .first();
       if (!owner) return { error: "Invoice owner must be an AKARI admin." };
     }
     const id = crypto.randomUUID();
@@ -285,11 +322,28 @@ export async function action({ request, context }: Route.ActionArgs) {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
           .bind(
-            id, invoiceNumber, workspaceId, projectId, campaignId, agreementId,
-            customerName, customerEmail, currency, subtotalCents, taxCents,
-            discountCents, totalCents, issued ? "issued" : "draft", issuedAt,
-            dueAt, externalInvoiceUrl, externalReference, note, ownerUserId,
-            admin.id, admin.id,
+            id,
+            invoiceNumber,
+            workspaceId,
+            projectId,
+            campaignId,
+            agreementId,
+            customerName,
+            customerEmail,
+            currency,
+            subtotalCents,
+            taxCents,
+            discountCents,
+            totalCents,
+            issued ? "issued" : "draft",
+            issuedAt,
+            dueAt,
+            externalInvoiceUrl,
+            externalReference,
+            note,
+            ownerUserId,
+            admin.id,
+            admin.id,
           ),
         db
           .prepare(
@@ -297,10 +351,23 @@ export async function action({ request, context }: Route.ActionArgs) {
              (id, actor_user_id, action, subject_type, subject_id, metadata_json)
              VALUES (?, ?, 'commercial_invoice.created', 'commercial_invoice', ?, ?)`,
           )
-          .bind(crypto.randomUUID(), admin.id, id, JSON.stringify({ invoiceNumber, currency, totalCents, workspaceId, projectId, campaignId })),
+          .bind(
+            crypto.randomUUID(),
+            admin.id,
+            id,
+            JSON.stringify({
+              invoiceNumber,
+              currency,
+              totalCents,
+              workspaceId,
+              projectId,
+              campaignId,
+            }),
+          ),
       ]);
     } catch (error) {
-      if (String(error).includes("UNIQUE")) return { error: "Invoice number already exists." };
+      if (String(error).includes("UNIQUE"))
+        return { error: "Invoice number already exists." };
       throw error;
     }
     return { saved: true, message: "Invoice created." };
@@ -324,7 +391,12 @@ export async function action({ request, context }: Route.ActionArgs) {
           `INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id, metadata_json)
            VALUES (?, ?, 'commercial_invoice.status_changed', 'commercial_invoice', ?, ?)`,
         )
-        .bind(crypto.randomUUID(), admin.id, invoiceId, JSON.stringify({ status })),
+        .bind(
+          crypto.randomUUID(),
+          admin.id,
+          invoiceId,
+          JSON.stringify({ status }),
+        ),
     ]);
     return { saved: true, message: "Invoice stage updated." };
   }
@@ -333,17 +405,28 @@ export async function action({ request, context }: Route.ActionArgs) {
     const invoiceId = formText(form.get("invoiceId")).trim();
     const amountCents = cents(form.get("amount"));
     const status = formText(form.get("status"));
-    const paymentMethod = formText(form.get("paymentMethod")).trim().slice(0, 120);
-    const externalReference = formText(form.get("externalReference")).trim().slice(0, 300);
+    const paymentMethod = formText(form.get("paymentMethod"))
+      .trim()
+      .slice(0, 120);
+    const externalReference = formText(form.get("externalReference"))
+      .trim()
+      .slice(0, 300);
     const evidenceUrl = httpsUrl(formText(form.get("evidenceUrl")));
     const paidAt = dateValue(form.get("paidAt"));
-    if (!invoiceId || !amountCents || !isPaymentStatus(status) || evidenceUrl === null || paidAt === undefined)
+    if (
+      !invoiceId ||
+      !amountCents ||
+      !isPaymentStatus(status) ||
+      evidenceUrl === null ||
+      paidAt === undefined
+    )
       return { error: "Check the payment fields." };
     const invoice = await db
       .prepare("SELECT currency, status FROM commercial_invoices WHERE id = ?")
       .bind(invoiceId)
       .first<{ currency: string; status: InvoiceStatus }>();
-    if (!invoice || invoice.status === "void") return { error: "Invoice cannot receive this payment." };
+    if (!invoice || invoice.status === "void")
+      return { error: "Invoice cannot receive this payment." };
     const paymentId = crypto.randomUUID();
     await db.batch([
       db
@@ -353,16 +436,41 @@ export async function action({ request, context }: Route.ActionArgs) {
             external_reference, evidence_url, paid_at, cleared_at, created_by)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CASE WHEN ? = 'cleared' THEN datetime('now') ELSE NULL END, ?)`,
         )
-        .bind(paymentId, invoiceId, amountCents, invoice.currency, status, paymentMethod, externalReference, evidenceUrl, paidAt, status, admin.id),
+        .bind(
+          paymentId,
+          invoiceId,
+          amountCents,
+          invoice.currency,
+          status,
+          paymentMethod,
+          externalReference,
+          evidenceUrl,
+          paidAt,
+          status,
+          admin.id,
+        ),
       db
         .prepare(
           `INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id, metadata_json)
            VALUES (?, ?, 'commercial_payment.recorded', 'commercial_payment', ?, ?)`,
         )
-        .bind(crypto.randomUUID(), admin.id, paymentId, JSON.stringify({ invoiceId, amountCents, currency: invoice.currency, status })),
+        .bind(
+          crypto.randomUUID(),
+          admin.id,
+          paymentId,
+          JSON.stringify({
+            invoiceId,
+            amountCents,
+            currency: invoice.currency,
+            status,
+          }),
+        ),
     ]);
     await refreshInvoiceCollectionStatus(db, invoiceId, admin.id);
-    return { saved: true, message: "Payment recorded and invoice collection state refreshed." };
+    return {
+      saved: true,
+      message: "Payment recorded and invoice collection state refreshed.",
+    };
   }
 
   if (intent === "record-refund") {
@@ -371,19 +479,30 @@ export async function action({ request, context }: Route.ActionArgs) {
     if (!paymentId || refundedAmountCents === null)
       return { error: "Enter a valid refund amount." };
     const payment = await db
-      .prepare("SELECT invoice_id AS invoiceId, amount_cents AS amountCents FROM commercial_payments WHERE id = ?")
+      .prepare(
+        "SELECT invoice_id AS invoiceId, amount_cents AS amountCents FROM commercial_payments WHERE id = ?",
+      )
       .bind(paymentId)
       .first<{ invoiceId: string; amountCents: number }>();
     if (!payment || refundedAmountCents > payment.amountCents)
       return { error: "Refund cannot exceed the recorded payment." };
     await db.batch([
-      db.prepare("UPDATE commercial_payments SET refunded_amount_cents = ?, updated_at = datetime('now') WHERE id = ?").bind(refundedAmountCents, paymentId),
+      db
+        .prepare(
+          "UPDATE commercial_payments SET refunded_amount_cents = ?, updated_at = datetime('now') WHERE id = ?",
+        )
+        .bind(refundedAmountCents, paymentId),
       db
         .prepare(
           `INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id, metadata_json)
            VALUES (?, ?, 'commercial_payment.refund_recorded', 'commercial_payment', ?, ?)`,
         )
-        .bind(crypto.randomUUID(), admin.id, paymentId, JSON.stringify({ refundedAmountCents, invoiceId: payment.invoiceId })),
+        .bind(
+          crypto.randomUUID(),
+          admin.id,
+          paymentId,
+          JSON.stringify({ refundedAmountCents, invoiceId: payment.invoiceId }),
+        ),
     ]);
     await refreshInvoiceCollectionStatus(db, payment.invoiceId, admin.id);
     return { saved: true, message: "Refund recorded." };
@@ -399,13 +518,20 @@ export async function action({ request, context }: Route.ActionArgs) {
     const workspaceId = formText(form.get("workspaceId")).trim() || null;
     const campaignId = formText(form.get("campaignId")).trim() || null;
     const incurredAt = dateValue(form.get("incurredAt"));
-    const externalReference = formText(form.get("externalReference")).trim().slice(0, 300);
+    const externalReference = formText(form.get("externalReference"))
+      .trim()
+      .slice(0, 300);
     const evidenceUrl = httpsUrl(formText(form.get("evidenceUrl")));
     const note = formText(form.get("note")).trim().slice(0, 2000);
     if (
-      description.length < 2 || description.length > 240 || !amountCents || !currency ||
-      !isCommercialCostCategory(category) || !isCommercialCostStatus(status) ||
-      incurredAt === undefined || evidenceUrl === null
+      description.length < 2 ||
+      description.length > 240 ||
+      !amountCents ||
+      !currency ||
+      !isCommercialCostCategory(category) ||
+      !isCommercialCostStatus(status) ||
+      incurredAt === undefined ||
+      evidenceUrl === null
     )
       return { error: "Check the cost fields." };
     const id = crypto.randomUUID();
@@ -418,13 +544,42 @@ export async function action({ request, context }: Route.ActionArgs) {
             evidence_url, note, created_by, updated_by)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         )
-        .bind(id, workspaceId, projectId, campaignId, category, description, amountCents, currency, status, incurredAt, externalReference, evidenceUrl, note, admin.id, admin.id),
+        .bind(
+          id,
+          workspaceId,
+          projectId,
+          campaignId,
+          category,
+          description,
+          amountCents,
+          currency,
+          status,
+          incurredAt,
+          externalReference,
+          evidenceUrl,
+          note,
+          admin.id,
+          admin.id,
+        ),
       db
         .prepare(
           `INSERT INTO audit_logs (id, actor_user_id, action, subject_type, subject_id, metadata_json)
            VALUES (?, ?, 'commercial_cost.recorded', 'commercial_cost', ?, ?)`,
         )
-        .bind(crypto.randomUUID(), admin.id, id, JSON.stringify({ category, amountCents, currency, status, projectId, workspaceId, campaignId })),
+        .bind(
+          crypto.randomUUID(),
+          admin.id,
+          id,
+          JSON.stringify({
+            category,
+            amountCents,
+            currency,
+            status,
+            projectId,
+            workspaceId,
+            campaignId,
+          }),
+        ),
     ]);
     return { saved: true, message: "Commercial cost recorded." };
   }
@@ -432,9 +587,12 @@ export async function action({ request, context }: Route.ActionArgs) {
   if (intent === "set-cost-status") {
     const costId = formText(form.get("costId")).trim();
     const status = formText(form.get("status"));
-    if (!costId || !isCommercialCostStatus(status)) return { error: "Choose a valid cost stage." };
+    if (!costId || !isCommercialCostStatus(status))
+      return { error: "Choose a valid cost stage." };
     await db
-      .prepare("UPDATE commercial_cost_entries SET status = ?, updated_by = ?, updated_at = datetime('now') WHERE id = ?")
+      .prepare(
+        "UPDATE commercial_cost_entries SET status = ?, updated_by = ?, updated_at = datetime('now') WHERE id = ?",
+      )
       .bind(status, admin.id, costId)
       .run();
     return { saved: true, message: "Cost stage updated." };
@@ -443,19 +601,34 @@ export async function action({ request, context }: Route.ActionArgs) {
   return { error: "Unsupported finance action." };
 }
 
-function OptionSelect({ name, label, options }: { name: string; label: string; options: Option[] }) {
+function OptionSelect({
+  name,
+  label,
+  options,
+}: {
+  name: string;
+  label: string;
+  options: Option[];
+}) {
   return (
     <label>
       {label}
       <select name={name} defaultValue="">
         <option value="">None</option>
-        {options.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+        {options.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.label}
+          </option>
+        ))}
       </select>
     </label>
   );
 }
 
-export default function AdminFinance({ loaderData, actionData }: Route.ComponentProps) {
+export default function AdminFinance({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
   const pending = useNavigation().state !== "idle";
   return (
     <div className="dashboard-shell">
@@ -466,105 +639,504 @@ export default function AdminFinance({ loaderData, actionData }: Route.Component
           <div>
             <span className="eyebrow">Commercial operations</span>
             <h1>Revenue, collections and cost control.</h1>
-            <p>Canonical invoice and cash records, grouped by currency. Creator payouts continue to come from campaign settlement records.</p>
+            <p>
+              Canonical invoice and cash records, grouped by currency. Creator
+              payouts continue to come from campaign settlement records.
+            </p>
           </div>
         </header>
-        {actionData?.error && <p className="notice error" role="alert">{actionData.error}</p>}
-        {actionData?.saved && <p className="notice success" role="status">{actionData.message}</p>}
+        {actionData?.error && (
+          <p className="notice error" role="alert">
+            {actionData.error}
+          </p>
+        )}
+        {actionData?.saved && (
+          <p className="notice success" role="status">
+            {actionData.message}
+          </p>
+        )}
 
         <section className="admin-stat-grid" aria-label="Commercial summary">
-          {loaderData.summary.length === 0 && <article className="status-card"><span className="chapter">Ledger</span><strong>No posted cash yet</strong></article>}
+          {loaderData.summary.length === 0 && (
+            <article className="status-card">
+              <span className="chapter">Ledger</span>
+              <strong>No posted cash yet</strong>
+            </article>
+          )}
           {loaderData.summary.map((row) => (
             <article className="status-card" key={row.currency}>
               <span className="chapter">{row.currency}</span>
-              <strong>{moneyLabel(row.collectedCents, row.currency)} collected</strong>
-              <small>{moneyLabel(row.outstandingCents, row.currency)} A/R · {moneyLabel(row.grossContributionCents, row.currency)} contribution</small>
+              <strong>
+                {moneyLabel(row.collectedCents, row.currency)} collected
+              </strong>
+              <small>
+                {moneyLabel(row.outstandingCents, row.currency)} A/R ·{" "}
+                {moneyLabel(row.grossContributionCents, row.currency)}{" "}
+                contribution
+              </small>
             </article>
           ))}
         </section>
 
         <section className="status-card">
-          <div className="section-heading"><div><span className="chapter">New invoice</span><h2>Issue or prepare an invoice</h2></div></div>
+          <div className="section-heading">
+            <div>
+              <span className="chapter">New invoice</span>
+              <h2>Issue or prepare an invoice</h2>
+            </div>
+          </div>
           <Form method="post" className="profile-form">
             <input type="hidden" name="intent" value="create-invoice" />
             <div className="form-grid two-column-grid">
-              <label>Invoice number<input name="invoiceNumber" maxLength={80} required /></label>
-              <label>Customer<input name="customerName" maxLength={160} required /></label>
-              <label>Customer email<input name="customerEmail" type="email" maxLength={254} /></label>
-              <label>Currency<input name="currency" defaultValue="USD" maxLength={12} required /></label>
-              <label>Subtotal<input name="subtotal" inputMode="decimal" defaultValue="0.00" required /></label>
-              <label>Tax<input name="tax" inputMode="decimal" defaultValue="0.00" required /></label>
-              <label>Discount<input name="discount" inputMode="decimal" defaultValue="0.00" required /></label>
-              <label>Due date<input name="dueAt" type="date" /></label>
-              <OptionSelect name="workspaceId" label="Workspace" options={loaderData.workspaces} />
-              <OptionSelect name="projectId" label="Project" options={loaderData.projects} />
-              <OptionSelect name="campaignId" label="Campaign" options={loaderData.campaigns} />
-              <OptionSelect name="agreementId" label="Agreement" options={loaderData.agreements} />
-              <label>Owner<select name="ownerUserId" defaultValue=""><option value="">Unassigned</option>{loaderData.owners.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}</select></label>
-              <label>External invoice URL<input name="externalInvoiceUrl" type="url" placeholder="https://" /></label>
-              <label>External reference<input name="externalReference" maxLength={300} /></label>
-              <label className="checkbox-row"><input type="checkbox" name="issueNow" value="1" /> Issue now</label>
+              <label>
+                Invoice number
+                <input name="invoiceNumber" maxLength={80} required />
+              </label>
+              <label>
+                Customer
+                <input name="customerName" maxLength={160} required />
+              </label>
+              <label>
+                Customer email
+                <input name="customerEmail" type="email" maxLength={254} />
+              </label>
+              <label>
+                Currency
+                <input
+                  name="currency"
+                  defaultValue="USD"
+                  maxLength={12}
+                  required
+                />
+              </label>
+              <label>
+                Subtotal
+                <input
+                  name="subtotal"
+                  inputMode="decimal"
+                  defaultValue="0.00"
+                  required
+                />
+              </label>
+              <label>
+                Tax
+                <input
+                  name="tax"
+                  inputMode="decimal"
+                  defaultValue="0.00"
+                  required
+                />
+              </label>
+              <label>
+                Discount
+                <input
+                  name="discount"
+                  inputMode="decimal"
+                  defaultValue="0.00"
+                  required
+                />
+              </label>
+              <label>
+                Due date
+                <input name="dueAt" type="date" />
+              </label>
+              <OptionSelect
+                name="workspaceId"
+                label="Workspace"
+                options={loaderData.workspaces}
+              />
+              <OptionSelect
+                name="projectId"
+                label="Project"
+                options={loaderData.projects}
+              />
+              <OptionSelect
+                name="campaignId"
+                label="Campaign"
+                options={loaderData.campaigns}
+              />
+              <OptionSelect
+                name="agreementId"
+                label="Agreement"
+                options={loaderData.agreements}
+              />
+              <label>
+                Owner
+                <select name="ownerUserId" defaultValue="">
+                  <option value="">Unassigned</option>
+                  {loaderData.owners.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                External invoice URL
+                <input
+                  name="externalInvoiceUrl"
+                  type="url"
+                  placeholder="https://"
+                />
+              </label>
+              <label>
+                External reference
+                <input name="externalReference" maxLength={300} />
+              </label>
+              <label className="checkbox-row">
+                <input type="checkbox" name="issueNow" value="1" /> Issue now
+              </label>
             </div>
-            <label>Internal note<textarea name="note" maxLength={3000} rows={3} /></label>
-            <button className="primary-action" disabled={pending}>Create invoice</button>
+            <label>
+              Internal note
+              <textarea name="note" maxLength={3000} rows={3} />
+            </label>
+            <button className="primary-action" disabled={pending}>
+              Create invoice
+            </button>
           </Form>
         </section>
 
         <section className="status-card">
-          <div className="section-heading"><div><span className="chapter">Accounts receivable</span><h2>Invoices</h2></div></div>
-          <div className="table-scroll"><table className="admin-table"><thead><tr><th>Invoice</th><th>Customer</th><th>Amount</th><th>Collected</th><th>Outstanding</th><th>Due</th><th>Context</th><th>Stage</th></tr></thead><tbody>
-            {loaderData.invoices.map((invoice) => (
-              <tr key={invoice.id}>
-                <td><strong>{invoice.invoiceNumber}</strong><br /><small>{invoice.ownerName}</small></td>
-                <td>{invoice.customerName}</td>
-                <td>{moneyLabel(invoice.totalCents, invoice.currency)}</td>
-                <td>{moneyLabel(invoice.clearedNetCents, invoice.currency)}</td>
-                <td>{moneyLabel(outstandingInvoiceCents(invoice.totalCents, invoice.clearedNetCents), invoice.currency)}</td>
-                <td><span className={isOverdue(invoice) ? "status-pill status-overdue" : ""}>{invoice.dueAt ?? "Not set"}</span></td>
-                <td>{invoice.workspaceName ?? invoice.projectTitle ?? invoice.campaignTitle ?? invoice.agreementTitle ?? "General"}</td>
-                <td>
-                  <Form method="post" className="inline-form"><input type="hidden" name="intent" value="set-invoice-status" /><input type="hidden" name="invoiceId" value={invoice.id} /><select name="status" defaultValue={["draft", "issued", "void"].includes(invoice.status) ? invoice.status : "issued"}><option value="draft">Draft</option><option value="issued">Issued</option><option value="void">Void</option></select><button disabled={pending}>Save</button></Form>
-                  <small>{invoice.status.replaceAll("_", " ")}</small>
-                </td>
-              </tr>
-            ))}
-            {loaderData.invoices.length === 0 && <tr><td colSpan={8}>No invoices match this view.</td></tr>}
-          </tbody></table></div>
+          <div className="section-heading">
+            <div>
+              <span className="chapter">Accounts receivable</span>
+              <h2>Invoices</h2>
+            </div>
+          </div>
+          <div className="table-scroll">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Invoice</th>
+                  <th>Customer</th>
+                  <th>Amount</th>
+                  <th>Collected</th>
+                  <th>Outstanding</th>
+                  <th>Due</th>
+                  <th>Context</th>
+                  <th>Stage</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loaderData.invoices.map((invoice) => (
+                  <tr key={invoice.id}>
+                    <td>
+                      <strong>{invoice.invoiceNumber}</strong>
+                      <br />
+                      <small>{invoice.ownerName}</small>
+                    </td>
+                    <td>{invoice.customerName}</td>
+                    <td>{moneyLabel(invoice.totalCents, invoice.currency)}</td>
+                    <td>
+                      {moneyLabel(invoice.clearedNetCents, invoice.currency)}
+                    </td>
+                    <td>
+                      {moneyLabel(
+                        outstandingInvoiceCents(
+                          invoice.totalCents,
+                          invoice.clearedNetCents,
+                        ),
+                        invoice.currency,
+                      )}
+                    </td>
+                    <td>
+                      <span
+                        className={
+                          isOverdue(invoice) ? "status-pill status-overdue" : ""
+                        }
+                      >
+                        {invoice.dueAt ?? "Not set"}
+                      </span>
+                    </td>
+                    <td>
+                      {invoice.workspaceName ??
+                        invoice.projectTitle ??
+                        invoice.campaignTitle ??
+                        invoice.agreementTitle ??
+                        "General"}
+                    </td>
+                    <td>
+                      <Form method="post" className="inline-form">
+                        <input
+                          type="hidden"
+                          name="intent"
+                          value="set-invoice-status"
+                        />
+                        <input
+                          type="hidden"
+                          name="invoiceId"
+                          value={invoice.id}
+                        />
+                        <select
+                          name="status"
+                          defaultValue={
+                            ["draft", "issued", "void"].includes(invoice.status)
+                              ? invoice.status
+                              : "issued"
+                          }
+                        >
+                          <option value="draft">Draft</option>
+                          <option value="issued">Issued</option>
+                          <option value="void">Void</option>
+                        </select>
+                        <button disabled={pending}>Save</button>
+                      </Form>
+                      <small>{invoice.status.replaceAll("_", " ")}</small>
+                    </td>
+                  </tr>
+                ))}
+                {loaderData.invoices.length === 0 && (
+                  <tr>
+                    <td colSpan={8}>No invoices match this view.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section className="status-card">
-          <div className="section-heading"><div><span className="chapter">Collections</span><h2>Record payment</h2></div></div>
-          <Form method="post" className="profile-form"><input type="hidden" name="intent" value="record-payment" /><div className="form-grid two-column-grid">
-            <label>Invoice<select name="invoiceId" required defaultValue=""><option value="" disabled>Select invoice</option>{loaderData.invoices.filter((i) => !["void", "paid"].includes(i.status)).map((i) => <option key={i.id} value={i.id}>{i.invoiceNumber} · {i.customerName}</option>)}</select></label>
-            <label>Amount<input name="amount" inputMode="decimal" required /></label>
-            <label>Status<select name="status" defaultValue="cleared"><option value="cleared">Cleared</option><option value="pending">Pending</option><option value="failed">Failed</option></select></label>
-            <label>Payment method<input name="paymentMethod" maxLength={120} /></label>
-            <label>Paid date<input name="paidAt" type="date" /></label>
-            <label>External reference<input name="externalReference" maxLength={300} /></label>
-            <label>Evidence URL<input name="evidenceUrl" type="url" placeholder="https://" /></label>
-          </div><button className="primary-action" disabled={pending}>Record payment</button></Form>
-          <div className="table-scroll"><table className="admin-table"><thead><tr><th>Invoice</th><th>Amount</th><th>Status</th><th>Reference</th><th>Refunded</th></tr></thead><tbody>{loaderData.payments.map((p) => <tr key={p.id}><td>{p.invoiceNumber}</td><td>{moneyLabel(p.amountCents, p.currency)}</td><td>{p.status}</td><td>{p.externalReference || p.paymentMethod || "Manual"}</td><td><Form method="post" className="inline-form"><input type="hidden" name="intent" value="record-refund" /><input type="hidden" name="paymentId" value={p.id} /><input name="refundedAmount" inputMode="decimal" defaultValue={(p.refundedAmountCents / 100).toFixed(2)} aria-label={`Refund for ${p.invoiceNumber}`} /><button disabled={pending}>Save</button></Form></td></tr>)}</tbody></table></div>
+          <div className="section-heading">
+            <div>
+              <span className="chapter">Collections</span>
+              <h2>Record payment</h2>
+            </div>
+          </div>
+          <Form method="post" className="profile-form">
+            <input type="hidden" name="intent" value="record-payment" />
+            <div className="form-grid two-column-grid">
+              <label>
+                Invoice
+                <select name="invoiceId" required defaultValue="">
+                  <option value="" disabled>
+                    Select invoice
+                  </option>
+                  {loaderData.invoices
+                    .filter((i) => !["void", "paid"].includes(i.status))
+                    .map((i) => (
+                      <option key={i.id} value={i.id}>
+                        {i.invoiceNumber} · {i.customerName}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                Amount
+                <input name="amount" inputMode="decimal" required />
+              </label>
+              <label>
+                Status
+                <select name="status" defaultValue="cleared">
+                  <option value="cleared">Cleared</option>
+                  <option value="pending">Pending</option>
+                  <option value="failed">Failed</option>
+                </select>
+              </label>
+              <label>
+                Payment method
+                <input name="paymentMethod" maxLength={120} />
+              </label>
+              <label>
+                Paid date
+                <input name="paidAt" type="date" />
+              </label>
+              <label>
+                External reference
+                <input name="externalReference" maxLength={300} />
+              </label>
+              <label>
+                Evidence URL
+                <input name="evidenceUrl" type="url" placeholder="https://" />
+              </label>
+            </div>
+            <button className="primary-action" disabled={pending}>
+              Record payment
+            </button>
+          </Form>
+          <div className="table-scroll">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Invoice</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Reference</th>
+                  <th>Refunded</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loaderData.payments.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.invoiceNumber}</td>
+                    <td>{moneyLabel(p.amountCents, p.currency)}</td>
+                    <td>{p.status}</td>
+                    <td>
+                      {p.externalReference || p.paymentMethod || "Manual"}
+                    </td>
+                    <td>
+                      <Form method="post" className="inline-form">
+                        <input
+                          type="hidden"
+                          name="intent"
+                          value="record-refund"
+                        />
+                        <input type="hidden" name="paymentId" value={p.id} />
+                        <input
+                          name="refundedAmount"
+                          inputMode="decimal"
+                          defaultValue={(p.refundedAmountCents / 100).toFixed(
+                            2,
+                          )}
+                          aria-label={`Refund for ${p.invoiceNumber}`}
+                        />
+                        <button disabled={pending}>Save</button>
+                      </Form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section className="status-card">
-          <div className="section-heading"><div><span className="chapter">Operating costs</span><h2>Record non-creator cost</h2></div><p>Creator payouts are not entered here. They are read from Campaign Settlement.</p></div>
-          <Form method="post" className="profile-form"><input type="hidden" name="intent" value="record-cost" /><div className="form-grid two-column-grid">
-            <label>Description<input name="description" maxLength={240} required /></label>
-            <label>Category<select name="category" defaultValue="vendor">{commercialCostCategories.map((v) => <option key={v} value={v}>{v}</option>)}</select></label>
-            <label>Amount<input name="amount" inputMode="decimal" required /></label>
-            <label>Currency<input name="currency" defaultValue="USD" maxLength={12} required /></label>
-            <label>Status<select name="status" defaultValue="approved">{commercialCostStatuses.map((v) => <option key={v} value={v}>{v}</option>)}</select></label>
-            <label>Incurred date<input name="incurredAt" type="date" /></label>
-            <OptionSelect name="workspaceId" label="Workspace" options={loaderData.workspaces} />
-            <OptionSelect name="projectId" label="Project" options={loaderData.projects} />
-            <OptionSelect name="campaignId" label="Campaign" options={loaderData.campaigns} />
-            <label>External reference<input name="externalReference" maxLength={300} /></label>
-            <label>Evidence URL<input name="evidenceUrl" type="url" placeholder="https://" /></label>
-          </div><label>Internal note<textarea name="note" rows={2} maxLength={2000} /></label><button className="primary-action" disabled={pending}>Record cost</button></Form>
-          <div className="table-scroll"><table className="admin-table"><thead><tr><th>Cost</th><th>Amount</th><th>Context</th><th>Stage</th></tr></thead><tbody>{loaderData.costs.map((cost) => <tr key={cost.id}><td>{cost.description}<br /><small>{cost.category}</small></td><td>{moneyLabel(cost.amountCents, cost.currency)}</td><td>{cost.workspaceName ?? cost.projectTitle ?? "General"}</td><td><Form method="post" className="inline-form"><input type="hidden" name="intent" value="set-cost-status" /><input type="hidden" name="costId" value={cost.id} /><select name="status" defaultValue={cost.status}>{commercialCostStatuses.map((v) => <option key={v} value={v}>{v}</option>)}</select><button disabled={pending}>Save</button></Form></td></tr>)}</tbody></table></div>
+          <div className="section-heading">
+            <div>
+              <span className="chapter">Operating costs</span>
+              <h2>Record non-creator cost</h2>
+            </div>
+            <p>
+              Creator payouts are not entered here. They are read from Campaign
+              Settlement.
+            </p>
+          </div>
+          <Form method="post" className="profile-form">
+            <input type="hidden" name="intent" value="record-cost" />
+            <div className="form-grid two-column-grid">
+              <label>
+                Description
+                <input name="description" maxLength={240} required />
+              </label>
+              <label>
+                Category
+                <select name="category" defaultValue="vendor">
+                  {commercialCostCategories.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Amount
+                <input name="amount" inputMode="decimal" required />
+              </label>
+              <label>
+                Currency
+                <input
+                  name="currency"
+                  defaultValue="USD"
+                  maxLength={12}
+                  required
+                />
+              </label>
+              <label>
+                Status
+                <select name="status" defaultValue="approved">
+                  {commercialCostStatuses.map((v) => (
+                    <option key={v} value={v}>
+                      {v}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Incurred date
+                <input name="incurredAt" type="date" />
+              </label>
+              <OptionSelect
+                name="workspaceId"
+                label="Workspace"
+                options={loaderData.workspaces}
+              />
+              <OptionSelect
+                name="projectId"
+                label="Project"
+                options={loaderData.projects}
+              />
+              <OptionSelect
+                name="campaignId"
+                label="Campaign"
+                options={loaderData.campaigns}
+              />
+              <label>
+                External reference
+                <input name="externalReference" maxLength={300} />
+              </label>
+              <label>
+                Evidence URL
+                <input name="evidenceUrl" type="url" placeholder="https://" />
+              </label>
+            </div>
+            <label>
+              Internal note
+              <textarea name="note" rows={2} maxLength={2000} />
+            </label>
+            <button className="primary-action" disabled={pending}>
+              Record cost
+            </button>
+          </Form>
+          <div className="table-scroll">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Cost</th>
+                  <th>Amount</th>
+                  <th>Context</th>
+                  <th>Stage</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loaderData.costs.map((cost) => (
+                  <tr key={cost.id}>
+                    <td>
+                      {cost.description}
+                      <br />
+                      <small>{cost.category}</small>
+                    </td>
+                    <td>{moneyLabel(cost.amountCents, cost.currency)}</td>
+                    <td>
+                      {cost.workspaceName ?? cost.projectTitle ?? "General"}
+                    </td>
+                    <td>
+                      <Form method="post" className="inline-form">
+                        <input
+                          type="hidden"
+                          name="intent"
+                          value="set-cost-status"
+                        />
+                        <input type="hidden" name="costId" value={cost.id} />
+                        <select name="status" defaultValue={cost.status}>
+                          {commercialCostStatuses.map((v) => (
+                            <option key={v} value={v}>
+                              {v}
+                            </option>
+                          ))}
+                        </select>
+                        <button disabled={pending}>Save</button>
+                      </Form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
-        <p><Link to="/admin/operating-rhythm">Open Operating Rhythm</Link></p>
+        <p>
+          <Link to="/admin/operating-rhythm">Open Operating Rhythm</Link>
+        </p>
       </main>
     </div>
   );

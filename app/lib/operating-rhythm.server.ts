@@ -10,6 +10,8 @@ import {
   type AttentionState,
   type OperatingReportType,
 } from "./operating-rhythm";
+import { loadCommercialAttentionSignals } from "./commercial-attention.server";
+import { commercialCurrencySummary } from "./commercial-saas.server";
 
 type SignalInput = Omit<AttentionSignal, "attentionKey" | "severity"> & {
   severity?: AttentionSeverity;
@@ -390,6 +392,7 @@ export async function loadAttentionSignals(db: D1Database, now = new Date()) {
         now,
       ),
     );
+  signals.push(...(await loadCommercialAttentionSignals(db, now)));
   return signals;
 }
 
@@ -435,6 +438,15 @@ function reportSignals(
     );
   if (reportType === "relationship_followup")
     return signals.filter((item) => item.sourceType === "relationship");
+  if (reportType === "revenue")
+    return signals.filter((item) =>
+      [
+        "invoice",
+        "settlement",
+        "workspace_subscription",
+        "campaign_renewal",
+      ].includes(item.sourceType),
+    );
   return signals;
 }
 
@@ -453,12 +465,17 @@ export async function createOperatingReport(
   const period = weeklyPeriod(now);
   const active = await loadActiveAttention(db, now);
   const items = reportSignals(options.reportType, active, projectId);
+  const finance =
+    options.reportType === "revenue"
+      ? await commercialCurrencySummary(db)
+      : undefined;
   const snapshot = {
     generatedAt: now.toISOString(),
     period,
     reportType: options.reportType,
     projectId,
     summary: summarizeAttention(items),
+    ...(finance ? { finance } : {}),
     items: items.slice(0, 250).map((item) => ({
       attentionKey: item.attentionKey,
       sourceType: item.sourceType,

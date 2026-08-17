@@ -1,7 +1,11 @@
 import { Link } from "react-router";
 import type { Route } from "./+types/saas-workspace";
 import { SiteHeader } from "~/components/SiteHeader";
-import { moneyLabel, workspaceModuleLabels, workspaceModules } from "~/lib/commercial-saas";
+import {
+  moneyLabel,
+  workspaceModuleLabels,
+  workspaceModules,
+} from "~/lib/commercial-saas";
 import {
   loadWorkspaceEntitlements,
   requireWorkspaceAccess,
@@ -22,7 +26,13 @@ type WorkspaceRecord = {
 };
 
 type MemberRow = { label: string; role: string };
-type ProjectRow = { id: string; title: string; slug: string; summary: string; stage: string };
+type ProjectRow = {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string;
+  stage: string;
+};
 type InvoiceRow = {
   invoiceNumber: string;
   customerName: string;
@@ -34,16 +44,25 @@ type InvoiceRow = {
 };
 
 export const meta: Route.MetaFunction = ({ data }) => [
-  { title: data ? `${data.workspace.name} Workspace | AKARI` : "Workspace | AKARI" },
+  {
+    title: data
+      ? `${data.workspace.name} Workspace | AKARI`
+      : "Workspace | AKARI",
+  },
   {
     name: "description",
-    content: "Private AKARI workspace for team, modules, linked Projects and commercial status.",
+    content:
+      "Private AKARI workspace for team, modules, linked Projects and commercial status.",
   },
 ];
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
-  const { user, access } = await requireWorkspaceAccess(request, db, params.slug);
+  const { user, access } = await requireWorkspaceAccess(
+    request,
+    db,
+    params.slug,
+  );
   const [workspace, entitlements, members, projects] = await Promise.all([
     db
       .prepare(
@@ -108,7 +127,8 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     members: members.results,
     projects: projects.results,
     invoices,
-    canViewFinance: entitlements.modules.finance && workspaceCanViewFinance(access),
+    canViewFinance:
+      entitlements.modules.finance && workspaceCanViewFinance(access),
   };
 }
 
@@ -120,7 +140,9 @@ export default function SaasWorkspace({ loaderData }: Route.ComponentProps) {
         <header className="directory-heading">
           <div>
             <span className="eyebrow">Private workspace</span>
-            <h1>{loaderData.workspace.brandName || loaderData.workspace.name}</h1>
+            <h1>
+              {loaderData.workspace.brandName || loaderData.workspace.name}
+            </h1>
             <p>
               {loaderData.access.supportAccess
                 ? "Superadmin support view. Workspace membership boundaries remain in effect for normal users."
@@ -130,39 +152,164 @@ export default function SaasWorkspace({ loaderData }: Route.ComponentProps) {
           <span className="status-pill">{loaderData.workspace.status}</span>
         </header>
 
-        <section className="admin-stat-grid" aria-label="Workspace subscription">
-          <article className="status-card"><span className="chapter">Plan</span><strong>{loaderData.entitlements.planName}</strong><small>{loaderData.entitlements.subscriptionStatus}</small></article>
-          <article className="status-card"><span className="chapter">Seats</span><strong>{loaderData.members.length} / {loaderData.entitlements.seatLimit}</strong><small>Active team members</small></article>
-          <article className="status-card"><span className="chapter">Storage limit</span><strong>{loaderData.entitlements.storageLimitMb} MB</strong><small>Usage is not shown until R2 objects are attributable to this workspace.</small></article>
-          <article className="status-card"><span className="chapter">Billing</span><strong>{loaderData.workspace.billingEmail || "Not set"}</strong><small>Period ends {loaderData.workspace.currentPeriodEnd?.slice(0, 10) ?? "not set"}</small></article>
+        <section
+          className="admin-stat-grid"
+          aria-label="Workspace subscription"
+        >
+          <article className="status-card">
+            <span className="chapter">Plan</span>
+            <strong>{loaderData.entitlements.planName}</strong>
+            <small>{loaderData.entitlements.subscriptionStatus}</small>
+          </article>
+          <article className="status-card">
+            <span className="chapter">Seats</span>
+            <strong>
+              {loaderData.members.length} / {loaderData.entitlements.seatLimit}
+            </strong>
+            <small>Active team members</small>
+          </article>
+          <article className="status-card">
+            <span className="chapter">Storage limit</span>
+            <strong>{loaderData.entitlements.storageLimitMb} MB</strong>
+            <small>
+              Usage is not shown until R2 objects are attributable to this
+              workspace.
+            </small>
+          </article>
+          <article className="status-card">
+            <span className="chapter">Billing</span>
+            <strong>{loaderData.workspace.billingEmail || "Not set"}</strong>
+            <small>
+              Period ends{" "}
+              {loaderData.workspace.currentPeriodEnd?.slice(0, 10) ?? "not set"}
+            </small>
+          </article>
         </section>
 
         <section className="status-card">
-          <div className="section-heading"><div><span className="chapter">Modules</span><h2>Workspace access</h2></div></div>
+          <div className="section-heading">
+            <div>
+              <span className="chapter">Modules</span>
+              <h2>Workspace access</h2>
+            </div>
+          </div>
           <div className="chip-list">
             {workspaceModules.map((module) => (
               <span className="status-pill" key={module}>
-                {workspaceModuleLabels[module]}: {loaderData.entitlements.modules[module] ? "Enabled" : "Off"}
+                {workspaceModuleLabels[module]}:{" "}
+                {loaderData.entitlements.modules[module] ? "Enabled" : "Off"}
               </span>
             ))}
           </div>
         </section>
 
         <section className="status-card">
-          <div className="section-heading"><div><span className="chapter">Team</span><h2>{loaderData.members.length} active members</h2></div></div>
-          <div className="table-scroll"><table className="admin-table"><thead><tr><th>Member</th><th>Role</th></tr></thead><tbody>{loaderData.members.map((member, index) => <tr key={`${member.label}-${index}`}><td>{member.label}</td><td>{member.role}</td></tr>)}</tbody></table></div>
+          <div className="section-heading">
+            <div>
+              <span className="chapter">Team</span>
+              <h2>{loaderData.members.length} active members</h2>
+            </div>
+          </div>
+          <div className="table-scroll">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loaderData.members.map((member, index) => (
+                  <tr key={`${member.label}-${index}`}>
+                    <td>{member.label}</td>
+                    <td>{member.role}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section className="status-card">
-          <div className="section-heading"><div><span className="chapter">Projects</span><h2>Linked workspace Projects</h2></div><p>Only explicitly linked Projects appear here.</p></div>
-          {loaderData.projects.length === 0 && <p>No Projects are linked to this workspace.</p>}
-          <div className="admin-stat-grid">{loaderData.projects.map((project) => <article className="status-card" key={project.id}><span className="chapter">{project.stage.replaceAll("_", " ")}</span><strong>{project.title}</strong><p>{project.summary}</p><Link to={`/projects/${project.slug}`}>Open public Project profile</Link></article>)}</div>
+          <div className="section-heading">
+            <div>
+              <span className="chapter">Projects</span>
+              <h2>Linked workspace Projects</h2>
+            </div>
+            <p>Only explicitly linked Projects appear here.</p>
+          </div>
+          {loaderData.projects.length === 0 && (
+            <p>No Projects are linked to this workspace.</p>
+          )}
+          <div className="admin-stat-grid">
+            {loaderData.projects.map((project) => (
+              <article className="status-card" key={project.id}>
+                <span className="chapter">
+                  {project.stage.replaceAll("_", " ")}
+                </span>
+                <strong>{project.title}</strong>
+                <p>{project.summary}</p>
+                <Link to={`/projects/${project.slug}`}>
+                  Open public Project profile
+                </Link>
+              </article>
+            ))}
+          </div>
         </section>
 
-        {loaderData.canViewFinance && <section className="status-card">
-          <div className="section-heading"><div><span className="chapter">Finance</span><h2>Workspace invoices</h2></div><p>Visible only to Owner, Admin, Finance and Superadmin support access.</p></div>
-          <div className="table-scroll"><table className="admin-table"><thead><tr><th>Invoice</th><th>Amount</th><th>Collected</th><th>Due</th><th>Status</th></tr></thead><tbody>{loaderData.invoices.map((invoice) => <tr key={invoice.invoiceNumber}><td>{invoice.invoiceNumber}<br /><small>{invoice.customerName}</small></td><td>{moneyLabel(invoice.totalCents, invoice.currency)}</td><td>{moneyLabel(invoice.collectedCents, invoice.currency)}</td><td>{invoice.dueAt ?? "Not set"}</td><td>{invoice.status.replaceAll("_", " ")}</td></tr>)}{loaderData.invoices.length === 0 && <tr><td colSpan={5}>No invoices are linked to this workspace.</td></tr>}</tbody></table></div>
-        </section>}
+        {loaderData.canViewFinance && (
+          <section className="status-card">
+            <div className="section-heading">
+              <div>
+                <span className="chapter">Finance</span>
+                <h2>Workspace invoices</h2>
+              </div>
+              <p>
+                Visible only to Owner, Admin, Finance and Superadmin support
+                access.
+              </p>
+            </div>
+            <div className="table-scroll">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Invoice</th>
+                    <th>Amount</th>
+                    <th>Collected</th>
+                    <th>Due</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loaderData.invoices.map((invoice) => (
+                    <tr key={invoice.invoiceNumber}>
+                      <td>
+                        {invoice.invoiceNumber}
+                        <br />
+                        <small>{invoice.customerName}</small>
+                      </td>
+                      <td>
+                        {moneyLabel(invoice.totalCents, invoice.currency)}
+                      </td>
+                      <td>
+                        {moneyLabel(invoice.collectedCents, invoice.currency)}
+                      </td>
+                      <td>{invoice.dueAt ?? "Not set"}</td>
+                      <td>{invoice.status.replaceAll("_", " ")}</td>
+                    </tr>
+                  ))}
+                  {loaderData.invoices.length === 0 && (
+                    <tr>
+                      <td colSpan={5}>
+                        No invoices are linked to this workspace.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
       </main>
     </div>
   );

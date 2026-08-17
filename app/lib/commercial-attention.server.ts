@@ -3,7 +3,11 @@ import {
   classifyDueDate,
   type AttentionSignal,
 } from "./operating-rhythm";
-import { moneyLabel, outstandingInvoiceCents, type InvoiceStatus } from "./commercial-saas";
+import {
+  moneyLabel,
+  outstandingInvoiceCents,
+  type InvoiceStatus,
+} from "./commercial-saas";
 
 export async function loadCommercialAttentionSignals(
   db: D1Database,

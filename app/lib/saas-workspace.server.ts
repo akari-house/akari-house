@@ -92,7 +92,10 @@ export async function requireWorkspaceManager(
   slug: string | undefined,
 ) {
   const result = await requireWorkspaceAccess(request, db, slug);
-  if (!result.access.supportAccess && !workspaceRoleCanManage(result.access.role))
+  if (
+    !result.access.supportAccess &&
+    !workspaceRoleCanManage(result.access.role)
+  )
     throw new Response("Workspace manager access required.", { status: 403 });
   return result;
 }

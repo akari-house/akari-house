@@ -151,7 +151,8 @@ export function applyAttentionStates(
     .filter((signal) => {
       const state = byKey.get(signal.attentionKey);
       if (!state) return true;
-      if (state.status === "resolved" || state.status === "ignored") return false;
+      if (state.status === "resolved" || state.status === "ignored")
+        return false;
       if (state.status !== "snoozed" || !state.snoozedUntil) return true;
       const snoozedUntil = new Date(state.snoozedUntil).getTime();
       return !Number.isFinite(snoozedUntil) || snoozedUntil <= nowMs;
@@ -181,7 +182,9 @@ export function applyAttentionStates(
 }
 
 export function weeklyPeriod(now = new Date()) {
-  const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const date = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
   const day = date.getUTCDay();
   const distanceFromMonday = (day + 6) % 7;
   date.setUTCDate(date.getUTCDate() - distanceFromMonday);

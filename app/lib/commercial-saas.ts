@@ -1,4 +1,9 @@
-export const workspaceStatuses = ["trial", "active", "suspended", "closed"] as const;
+export const workspaceStatuses = [
+  "trial",
+  "active",
+  "suspended",
+  "closed",
+] as const;
 export type WorkspaceStatus = (typeof workspaceStatuses)[number];
 
 export const workspaceRoles = ["owner", "admin", "finance", "member"] as const;
@@ -72,7 +77,9 @@ export function isWorkspaceRole(value: string): value is WorkspaceRole {
   return workspaceRoles.includes(value as WorkspaceRole);
 }
 
-export function isSubscriptionStatus(value: string): value is SubscriptionStatus {
+export function isSubscriptionStatus(
+  value: string,
+): value is SubscriptionStatus {
   return subscriptionStatuses.includes(value as SubscriptionStatus);
 }
 
@@ -161,7 +168,10 @@ export function invoiceCollectionState(
   return "issued";
 }
 
-export function outstandingInvoiceCents(totalCents: number, clearedNetCents: number) {
+export function outstandingInvoiceCents(
+  totalCents: number,
+  clearedNetCents: number,
+) {
   return Math.max(0, totalCents - Math.max(0, clearedNetCents));
 }
 

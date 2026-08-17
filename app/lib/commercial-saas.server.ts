@@ -1,7 +1,4 @@
-import {
-  invoiceCollectionState,
-  type InvoiceStatus,
-} from "./commercial-saas";
+import { invoiceCollectionState, type InvoiceStatus } from "./commercial-saas";
 
 export async function clearedInvoiceNetCents(
   db: D1Database,
