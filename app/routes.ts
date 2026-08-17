@@ -79,6 +79,7 @@ export default [
   route("admin/workspaces", "routes/admin-saas-workspaces.tsx"),
   route("admin/operations", "routes/admin-operations.tsx"),
   route("admin/production", "routes/admin-production.tsx"),
+  route("admin/launch-completion", "routes/admin-launch-completion.tsx"),
   route("admin/resilience", "routes/admin-resilience.tsx"),
   route("admin/campaign-operations", "routes/admin-campaign-operations.tsx"),
   route(

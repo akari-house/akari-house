@@ -177,6 +177,14 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     superadminOnly: true,
   },
   {
+    key: "launch-completion",
+    label: "Launch completion",
+    description:
+      "Measure live seed inventory, real pilot coverage, journey evidence and launch blockers.",
+    to: "/admin/launch-completion",
+    superadminOnly: true,
+  },
+  {
     key: "production",
     label: "Production",
     description: "Review release evidence and production readiness.",

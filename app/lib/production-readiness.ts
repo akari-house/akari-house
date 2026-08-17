@@ -18,6 +18,24 @@ export const productionCheckDefinitions = [
     expiresAfterDays: 30,
   },
   {
+    key: "real_device_auth",
+    label: "Real-device auth on Safari, iOS Safari, Android Chrome and Firefox",
+    category: "launch",
+    expiresAfterDays: 30,
+  },
+  {
+    key: "human_visual_review",
+    label: "Human visual review of public, member, role and admin workspaces",
+    category: "launch",
+    expiresAfterDays: 30,
+  },
+  {
+    key: "analytics_privacy",
+    label: "Analytics, CSP and privacy posture verified in production",
+    category: "security",
+    expiresAfterDays: 30,
+  },
+  {
     key: "google_oauth_export",
     label: "Google OAuth and reviewed Sheet export",
     category: "integration",

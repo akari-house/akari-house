@@ -88,6 +88,28 @@ await record("custom_domain", "Custom domain serves AKARI", async () => {
   return finalUrl.origin;
 });
 
+await record(
+  "analytics_privacy",
+  "Browser analytics remains disabled under the strict CSP posture",
+  async () => {
+    const response = await request("/", { redirect: "follow" });
+    requireStatus(response, [200], "Homepage");
+    const body = (await response.text()).toLowerCase();
+    const injectedMarkers = ["static.cloudflareinsights.com", "beacon.min.js"];
+    const found = injectedMarkers.filter((marker) => body.includes(marker));
+    if (found.length > 0)
+      throw new Error(
+        `Unexpected browser analytics injection: ${found.join(", ")}.`,
+      );
+    const csp = (
+      response.headers.get("content-security-policy") || ""
+    ).toLowerCase();
+    if (csp.includes("cloudflareinsights"))
+      throw new Error("CSP unexpectedly permits Cloudflare browser analytics.");
+    return "No Cloudflare browser analytics injection and CSP remains narrow";
+  },
+);
+
 const publicMenuRoutes = [
   ["projects", "/projects", "Projects"],
   ["deals", "/deals", "Investor deals"],
@@ -146,6 +168,11 @@ const protectedRoutes = [
   ["investor_settings_auth", "/settings/investor", "Investor preferences"],
   ["operations_auth", "/admin/operations", "Operations administration"],
   ["production_auth", "/admin/production", "Production administration"],
+  [
+    "launch_completion_auth",
+    "/admin/launch-completion",
+    "Launch completion administration",
+  ],
   ["launch_gate_auth", "/admin/launch-gate", "Launch-gate administration"],
   [
     "opportunity_admin_auth",
@@ -212,7 +239,7 @@ await record(
 
 const failed = checks.filter((check) => check.status === "failed");
 const report = {
-  schemaVersion: 4,
+  schemaVersion: 5,
   environment: "production",
   baseUrl: baseUrl.origin,
   commitSha: process.env.GITHUB_SHA || null,

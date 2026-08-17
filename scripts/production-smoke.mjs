@@ -172,6 +172,7 @@ await run(
     const protectedRoutes = [
       "/app",
       "/admin/launch-gate",
+      "/admin/launch-completion",
       "/admin/opportunities",
       "/admin/opportunities/documents",
     ];

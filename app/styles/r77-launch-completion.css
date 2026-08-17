@@ -1,0 +1,42 @@
+/* R77 launch-completion safeguards. Keep the first-view Arrival fully rendered. */
+
+.turnstile-shell {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.turnstile-slot {
+  width: 100%;
+  max-width: 100%;
+  min-height: 65px;
+}
+
+.turnstile-status {
+  margin: 0.45rem 0 0;
+  color: var(--muted, #b9bdc9);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
+.turnstile-shell[data-turnstile-state="error"] .turnstile-status {
+  color: #ffd8d8;
+}
+
+@media (max-width: 360px) {
+  .turnstile-slot {
+    min-height: 140px;
+  }
+}
+
+/* Skip layout and paint work for story chapters that begin below the fold.
+   The browser retains an intrinsic placeholder, so scroll position remains stable. */
+@supports (content-visibility: auto) {
+  .common-section,
+  .journey-section,
+  .archive-section,
+  .final-welcome {
+    content-visibility: auto;
+    contain-intrinsic-size: 900px;
+  }
+}
