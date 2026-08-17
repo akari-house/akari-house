@@ -364,8 +364,9 @@ export async function action({ request, context, params }: Route.ActionArgs) {
          token_relevant = excluded.token_relevant,
          tokenomics_reference = excluded.tokenomics_reference,
          closing_target = excluded.closing_target,
-         CASE WHEN readiness_status = 'ready_for_outreach' THEN
-           readiness_status = 'in_preparation'
+         readiness_status = CASE
+           WHEN readiness_status = 'ready_for_outreach' THEN 'in_preparation'
+           ELSE readiness_status
          END,
          updated_at = datetime('now')`,
     )
