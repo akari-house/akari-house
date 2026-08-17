@@ -28,7 +28,9 @@ test.describe("R79 profile sharing and event publishing", () => {
     const card = page.locator(".glass-profile-card");
     await expect(card).toBeVisible();
     await expect(card.locator('img[alt="AKARI"]')).toBeVisible();
-    await expect(page.getByText("Midnight Glass", { exact: true })).toBeVisible();
+    await expect(
+      page.getByText("Midnight Glass", { exact: true }),
+    ).toBeVisible();
     await expect(page.getByText("Pearl Glass", { exact: true })).toBeVisible();
     await expect(page.getByText("Sakura Glass", { exact: true })).toBeVisible();
     await expect(page.getByText("Blossom Plum", { exact: true })).toBeVisible();
@@ -53,8 +55,12 @@ test.describe("R79 profile sharing and event publishing", () => {
       });
     }
 
-    const viewportWidth = await page.evaluate(() => document.documentElement.clientWidth);
-    const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+    const viewportWidth = await page.evaluate(
+      () => document.documentElement.clientWidth,
+    );
+    const scrollWidth = await page.evaluate(
+      () => document.documentElement.scrollWidth,
+    );
     expect(scrollWidth).toBeLessThanOrEqual(viewportWidth + 1);
   });
 
@@ -71,7 +77,9 @@ test.describe("R79 profile sharing and event publishing", () => {
     await expect(
       page.getByRole("button", { name: "Publish event" }),
     ).toBeVisible();
-    await expect(page.getByText("Publish now is enabled", { exact: false })).toBeVisible();
+    await expect(
+      page.getByText("Publish now is enabled", { exact: false }),
+    ).toBeVisible();
 
     const title = `R79 Launch Event ${Date.now()}`;
     const startsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
@@ -82,8 +90,12 @@ test.describe("R79 profile sharing and event publishing", () => {
     await page
       .getByLabel("Summary")
       .fill("A controlled AKARI browser test for direct event publishing.");
-    await page.getByLabel("Starts in the event timezone").fill(localInput(startsAt));
-    await page.getByLabel("Ends in the event timezone").fill(localInput(endsAt));
+    await page
+      .getByLabel("Starts in the event timezone")
+      .fill(localInput(startsAt));
+    await page
+      .getByLabel("Ends in the event timezone")
+      .fill(localInput(endsAt));
     await page.getByLabel("Event timezone").fill("UTC");
     await page
       .getByLabel("HTTPS meeting URL")
