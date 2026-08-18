@@ -122,7 +122,7 @@ export async function readCrmNdaStatus(
   houseProjectId: string,
   houseMemberId: string,
 ): Promise<CrmNdaStatus | null> {
-  const bridgeEnv = env as CrmBridgeEnvironment;
+  const bridgeEnv: CrmBridgeEnvironment = env;
   const baseUrl = String(bridgeEnv.CRM_API_URL || "").trim().replace(/\/$/, "");
   const apiKey = String(bridgeEnv.CRM_API_KEY || "").trim();
   if (!baseUrl || !apiKey) return null;
@@ -171,7 +171,7 @@ export async function ndaBridgeDecision(
   projectId: string,
   investorUserId: string,
 ): Promise<NdaBridgeDecision> {
-  const mode = bridgeMode(env as CrmBridgeEnvironment);
+  const mode = bridgeMode(env);
 
   if (mode === "legacy") {
     const signed = await legacySignedNda(db, projectId, investorUserId);
