@@ -140,4 +140,19 @@ describe("R85 reconciliation inventory checkpoint", () => {
     expect(workflow).not.toContain("/house-bridge");
     expect(workflow).not.toContain("production-d1-backup");
   });
+
+  it("reports only a sanitized failure stage and GitHub run link", () => {
+    const workflow = readFileSync(
+      ".github/workflows/r85-reconciliation-inventory.yml",
+      "utf8",
+    );
+    expect(workflow).toContain("R85_STAGE=database-resolution");
+    expect(workflow).toContain("R85_STAGE=encrypted-backup");
+    expect(workflow).toContain("R85_STAGE=count-only-inventory");
+    expect(workflow).toContain("R85_STAGE=private-persistence");
+    expect(workflow).toContain("GITHUB_RUN_ID");
+    expect(workflow).toContain("at sanitized stage");
+    expect(workflow).not.toContain("Failure counts:");
+    expect(workflow).not.toContain("Failure tenant id:");
+  });
 });
