@@ -7,7 +7,11 @@
   border-right: 1px solid rgb(255 255 255 / 10%);
   background:
     radial-gradient(circle at 24% 5%, rgb(255 211 61 / 10%), transparent 15rem),
-    radial-gradient(circle at 88% 24%, rgb(240 79 135 / 13%), transparent 18rem),
+    radial-gradient(
+      circle at 88% 24%,
+      rgb(240 79 135 / 13%),
+      transparent 18rem
+    ),
     linear-gradient(180deg, rgb(14 13 21 / 97%), rgb(8 10 17 / 98%));
   box-shadow:
     20px 0 56px rgb(0 0 0 / 24%),
@@ -135,7 +139,8 @@
   font-size: 0.82rem;
 }
 
-.house-native-navigation .house-workspace-sidebar-link.is-active
+.house-native-navigation
+  .house-workspace-sidebar-link.is-active
   .house-workspace-sidebar-glyph {
   color: #ffd33d;
 }
