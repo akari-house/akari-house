@@ -13,7 +13,6 @@ import {
 } from "~/lib/profile-card";
 import "~/styles/profile-card-enhancements.css";
 import "~/styles/profile-card-glass.css";
-import "~/styles/profile-card-r82.css";
 
 type PaletteConfig = {
   label: string;
@@ -82,31 +81,22 @@ const palettes: Record<ProfileCardPalette, PaletteConfig> = {
 const socialLabels: Record<ProfileCardSocialPlatform, string> = {
   x: "X",
   linkedin: "LinkedIn",
-  youtube: "YouTube",
-  instagram: "Instagram",
   tiktok: "TikTok",
+  instagram: "Instagram",
   facebook: "Facebook",
-  telegram: "Telegram",
-  website: "Website",
+  youtube: "YouTube",
 };
 
+function flagFor(code: string) {
+  return /^[A-Z]{2}$/.test(code)
+    ? String.fromCodePoint(
+        ...[...code].map((letter) => 127397 + letter.charCodeAt(0)),
+      )
+    : "";
+}
+
 function titleCaseRole(role: string) {
-  return role
-    .split(/[_-]/)
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-}
-
-function flagFor(countryCode: string) {
-  if (!/^[A-Z]{2}$/.test(countryCode)) return "";
-  return String.fromCodePoint(
-    ...countryCode.split("").map((character) => 127397 + character.charCodeAt(0)),
-  );
-}
-
-function avatarUrl(model: ProfileCardModel) {
-  return `/media/profile/${encodeURIComponent(model.username)}`;
+  return role ? role[0].toUpperCase() + role.slice(1) : role;
 }
 
 function SocialIcon({ platform }: { platform: ProfileCardSocialPlatform }) {
@@ -116,71 +106,61 @@ function SocialIcon({ platform }: { platform: ProfileCardSocialPlatform }) {
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: 1.8,
+    strokeWidth: 1.9,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
     "aria-hidden": true,
   };
 
-  switch (platform) {
-    case "x":
-      return (
-        <svg {...common}>
-          <path d="M5 4l14 16M19 4L5 20" />
-        </svg>
-      );
-    case "linkedin":
-      return (
-        <svg {...common}>
-          <rect x="4" y="9" width="4" height="11" rx="1" />
-          <path d="M6 4.7v.1M11 20V9h4v2c1-1.7 5-2.1 5 2.8V20" />
-        </svg>
-      );
-    case "youtube":
-      return (
-        <svg {...common}>
-          <path d="M4 7.5c0-1.4 1.1-2.5 2.5-2.5h11C18.9 5 20 6.1 20 7.5v9c0 1.4-1.1 2.5-2.5 2.5h-11A2.5 2.5 0 014 16.5v-9z" />
-          <path d="M10 9l5 3-5 3V9z" />
-        </svg>
-      );
-    case "instagram":
-      return (
-        <svg {...common}>
-          <rect x="4" y="4" width="16" height="16" rx="5" />
-          <circle cx="12" cy="12" r="3.5" />
-          <path d="M17.4 6.6h.1" />
-        </svg>
-      );
-    case "tiktok":
-      return (
-        <svg {...common}>
-          <path d="M14 4v10.3a4.3 4.3 0 11-3.2-4.2" />
-          <path d="M14 4c.6 2.8 2.3 4.3 5 4.6" />
-        </svg>
-      );
-    case "facebook":
-      return (
-        <svg {...common}>
-          <path d="M14 20v-7h3l.5-3H14V8.5c0-1 .4-1.5 1.7-1.5H18V4.3c-.7-.2-1.7-.3-2.8-.3C12.4 4 11 5.7 11 8.3V10H8v3h3v7" />
-        </svg>
-      );
-    case "telegram":
-      return (
-        <svg {...common}>
-          <path d="M4 11.4L20 5l-3 14-5.5-4-3 2.4.8-5.2L17 7.6" />
-        </svg>
-      );
-    default:
-      return (
-        <svg {...common}>
-          <circle cx="12" cy="12" r="8" />
-          <path d="M4 12h16M12 4c2.2 2.3 3.3 5 3.3 8S14.2 17.7 12 20M12 4C9.8 6.3 8.7 9 8.7 12S9.8 17.7 12 20" />
-        </svg>
-      );
+  if (platform === "x") {
+    return (
+      <svg {...common}>
+        <path d="M5 4l14 16M19 4L5 20" />
+      </svg>
+    );
   }
+  if (platform === "linkedin") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="3" width="18" height="18" rx="3" />
+        <path d="M8 10v7M8 7.3v.2M12 17v-4.1c0-1.7 1-2.9 2.6-2.9 1.5 0 2.4 1 2.4 2.9V17M12 10v7" />
+      </svg>
+    );
+  }
+  if (platform === "instagram") {
+    return (
+      <svg {...common}>
+        <rect x="3" y="3" width="18" height="18" rx="5" />
+        <circle cx="12" cy="12" r="4" />
+        <circle cx="17.4" cy="6.7" r=".7" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+  if (platform === "youtube") {
+    return (
+      <svg {...common}>
+        <path d="M21 12c0 3.1-.4 5-1.2 5.8C19 18.6 16.4 19 12 19s-7-.4-7.8-1.2C3.4 17 3 15.1 3 12s.4-5 1.2-5.8C5 5.4 7.6 5 12 5s7 .4 7.8 1.2C20.6 7 21 8.9 21 12z" />
+        <path d="M10 9l5 3-5 3z" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+  if (platform === "facebook") {
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M13.5 20v-7h2.5l.4-3h-2.9V8.1c0-.9.3-1.5 1.6-1.5H17V4a23 23 0 00-2.4-.1c-2.4 0-4.1 1.5-4.1 4.2V10H8v3h2.5v7" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common}>
+      <path d="M14.5 4v9.2a3.8 3.8 0 11-3.2-3.8" />
+      <path d="M14.5 4c.8 2.6 2.4 4 5 4.3" />
+    </svg>
+  );
 }
 
-function LinkGlyph({ size = 22 }: { size?: number }) {
+function LinkGlyph({ size = 20 }: { size?: number }) {
   return (
     <svg
       width={size}
@@ -188,16 +168,36 @@ function LinkGlyph({ size = 22 }: { size?: number }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.8"
+      strokeWidth="1.9"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
     >
       <path d="M10.5 13.5l3-3" />
-      <path d="M8.2 15.8l-1.4 1.4a3.5 3.5 0 01-5-5l3.5-3.5a3.5 3.5 0 014.9 0" />
-      <path d="M15.8 8.2l1.4-1.4a3.5 3.5 0 015 5l-3.5 3.5a3.5 3.5 0 01-4.9 0" />
+      <path
+        d="M7.4 16.6l-1 1a3.5 3.5 0 01-5-5l3.1-3.1a3.5 3.5 0 014.9 0"
+        transform="translate(3 0)"
+      />
+      <path
+        d="M16.6 7.4l1-1a3.5 3.5 0 015 5l-3.1 3.1a3.5 3.5 0 01-4.9 0"
+        transform="translate(-3 0)"
+      />
     </svg>
   );
+}
+
+function avatarUrl(model: ProfileCardModel) {
+  return model.avatarKey
+    ? `/media/profile/${encodeURIComponent(model.username)}?v=${encodeURIComponent(model.avatarKey)}`
+    : "";
+}
+
+async function loadImage(src: string) {
+  const image = new Image();
+  image.decoding = "async";
+  image.src = src;
+  await image.decode();
+  return image;
 }
 
 function roundedRect(
@@ -212,78 +212,50 @@ function roundedRect(
   ctx.roundRect(x, y, width, height, radius);
 }
 
-async function loadImage(src: string) {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error(`Unable to load ${src}`));
-    image.src = src;
-  });
-}
-
 function drawSocialMark(
   ctx: CanvasRenderingContext2D,
   platform: ProfileCardSocialPlatform,
   x: number,
   y: number,
-  ink: string,
+  colour: string,
 ) {
   ctx.save();
-  ctx.strokeStyle = ink;
-  ctx.fillStyle = ink;
-  ctx.lineWidth = 2.2;
+  ctx.translate(x, y);
+  ctx.strokeStyle = colour;
+  ctx.fillStyle = colour;
+  ctx.lineWidth = 3;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   if (platform === "x") {
     ctx.beginPath();
-    ctx.moveTo(x, y);
-    ctx.lineTo(x + 24, y + 24);
-    ctx.moveTo(x + 24, y);
-    ctx.lineTo(x, y + 24);
+    ctx.moveTo(2, 2);
+    ctx.lineTo(22, 22);
+    ctx.moveTo(22, 2);
+    ctx.lineTo(2, 22);
     ctx.stroke();
-  } else if (platform === "youtube") {
-    roundedRect(ctx, x, y + 3, 28, 20, 6);
+  } else if (platform === "instagram") {
+    ctx.strokeRect(2, 2, 20, 20);
+    ctx.beginPath();
+    ctx.arc(12, 12, 5, 0, Math.PI * 2);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(x + 11, y + 8);
-    ctx.lineTo(x + 20, y + 13);
-    ctx.lineTo(x + 11, y + 18);
+    ctx.arc(18, 6, 1.2, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (platform === "youtube") {
+    ctx.strokeRect(1, 4, 22, 16);
+    ctx.beginPath();
+    ctx.moveTo(10, 8);
+    ctx.lineTo(17, 12);
+    ctx.lineTo(10, 16);
     ctx.closePath();
     ctx.fill();
-  } else if (platform === "linkedin") {
-    ctx.font = "700 23px Inter, sans-serif";
-    ctx.fillText("in", x + 1, y + 22);
-  } else if (platform === "instagram") {
-    roundedRect(ctx, x, y, 25, 25, 7);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(x + 12.5, y + 12.5, 5, 0, Math.PI * 2);
-    ctx.stroke();
-  } else if (platform === "telegram") {
-    ctx.beginPath();
-    ctx.moveTo(x, y + 10);
-    ctx.lineTo(x + 27, y);
-    ctx.lineTo(x + 21, y + 25);
-    ctx.lineTo(x + 12, y + 17);
-    ctx.closePath();
-    ctx.stroke();
-  } else if (platform === "tiktok") {
-    ctx.beginPath();
-    ctx.moveTo(x + 16, y + 2);
-    ctx.lineTo(x + 16, y + 17);
-    ctx.arc(x + 10, y + 17, 6, 0, Math.PI * 2);
-    ctx.stroke();
-  } else if (platform === "facebook") {
-    ctx.font = "800 27px Inter, sans-serif";
-    ctx.fillText("f", x + 8, y + 24);
   } else {
-    ctx.beginPath();
-    ctx.arc(x + 13, y + 13, 11, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(x + 2, y + 13);
-    ctx.lineTo(x + 24, y + 13);
-    ctx.stroke();
+    ctx.font = "700 20px Inter, sans-serif";
+    ctx.fillText(
+      platform === "linkedin" ? "in" : platform === "facebook" ? "f" : "♪",
+      2,
+      20,
+    );
   }
   ctx.restore();
 }
@@ -294,97 +266,191 @@ async function drawCard(
   settings: ProfileCardSettings,
 ) {
   canvas.width = 1600;
-  canvas.height = 1008;
+  canvas.height = 1009;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
+
   const palette = palettes[settings.palette];
-  const languages = parseProfileCardLanguages(settings.languagesJson);
+  const languages = settings.showLanguages
+    ? parseProfileCardLanguages(settings.languagesJson)
+    : [];
   const verifiedRoles = model.verificationStates
     .filter((state) => state.status === "verified")
     .map((state) => titleCaseRole(state.role));
-  const canonicalUrl = `akarihouse.com/profiles/${model.username}`;
+  const opportunities =
+    model.opportunityStats.created + model.opportunityStats.received;
+  const canonicalUrl =
+    model.accessTier === "member" && model.visibility === "public"
+      ? `akarihouse.com/profiles/${model.username}`
+      : "Private AKARI profile";
 
   ctx.fillStyle = palette.background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  gradient.addColorStop(0, `${palette.highlight}1f`);
-  gradient.addColorStop(0.44, `${palette.ink}09`);
-  gradient.addColorStop(1, `${palette.accent}2d`);
-  ctx.fillStyle = gradient;
+  const ambient = ctx.createRadialGradient(1400, 120, 0, 1400, 120, 800);
+  ambient.addColorStop(0, `${palette.accent}55`);
+  ambient.addColorStop(0.48, `${palette.accent}16`);
+  ambient.addColorStop(1, `${palette.accent}00`);
+  ctx.fillStyle = ambient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  roundedRect(ctx, 45, 45, 1510, 918, 62);
-  ctx.strokeStyle = `${palette.ink}62`;
-  ctx.lineWidth = 2;
+  const warm = ctx.createRadialGradient(90, 860, 0, 90, 860, 620);
+  warm.addColorStop(0, `${palette.highlight}38`);
+  warm.addColorStop(1, `${palette.highlight}00`);
+  ctx.fillStyle = warm;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.save();
+  ctx.shadowColor = palette.shadow;
+  ctx.shadowBlur = 60;
+  roundedRect(ctx, 34, 34, 1532, 941, 72);
+  ctx.fillStyle = palette.surface;
+  ctx.fill();
+  ctx.restore();
+
+  const edge = ctx.createLinearGradient(40, 40, 1560, 970);
+  edge.addColorStop(0, palette.highlight);
+  edge.addColorStop(0.38, `${palette.ink}aa`);
+  edge.addColorStop(0.72, palette.accent);
+  edge.addColorStop(1, palette.accent);
+  roundedRect(ctx, 32, 32, 1536, 945, 74);
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = edge;
   ctx.stroke();
-  roundedRect(ctx, 61, 61, 1478, 886, 52);
-  ctx.strokeStyle = `${palette.accent}49`;
+  roundedRect(ctx, 51, 51, 1498, 907, 58);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = `${palette.ink}55`;
   ctx.stroke();
 
+  const gloss = ctx.createLinearGradient(250, 50, 900, 500);
+  gloss.addColorStop(0, `${palette.ink}22`);
+  gloss.addColorStop(0.45, `${palette.ink}05`);
+  gloss.addColorStop(1, `${palette.ink}00`);
+  ctx.beginPath();
+  ctx.moveTo(90, 65);
+  ctx.lineTo(760, 65);
+  ctx.lineTo(480, 470);
+  ctx.lineTo(80, 470);
+  ctx.closePath();
+  ctx.fillStyle = gloss;
+  ctx.fill();
+
   try {
-    const watermark = await loadImage("/assets/brand/akari-flower-mark.png");
-    ctx.globalAlpha = 0.08;
-    ctx.drawImage(watermark, 1110, 620, 430, 430);
-    ctx.globalAlpha = 1;
+    const flower = await loadImage("/assets/brand/akari-flower-mark.png");
+    ctx.save();
+    ctx.globalAlpha = 0.1;
+    ctx.drawImage(flower, 1140, 545, 330, 330);
+    ctx.restore();
   } catch {
-    // Decorative watermark is optional if decoding fails.
+    // Decorative watermark only.
   }
 
   try {
     const logo = await loadImage("/assets/brand/akari-logo-horizontal.png");
-    ctx.drawImage(logo, 1080, 95, 350, 96);
-    ctx.fillStyle = palette.accent;
-    ctx.font = "900 25px Inter, sans-serif";
-    ctx.fillText("HOUSE", 1432, 157);
-  } catch {
+    const logoWidth = 330;
+    const logoHeight = logoWidth * (logo.naturalHeight / logo.naturalWidth);
+    ctx.drawImage(logo, 1050, 92, logoWidth, logoHeight);
     ctx.fillStyle = palette.ink;
-    ctx.font = "800 48px Inter, sans-serif";
-    ctx.fillText("AKARI HOUSE", 1080, 155);
+    ctx.font = "600 19px Inter, sans-serif";
+    ctx.fillText("AKARI HOUSE", 1050, 92 + logoHeight + 29);
+  } catch {
+    ctx.fillStyle = palette.accent;
+    ctx.font = "800 32px Inter, sans-serif";
+    ctx.fillText("AKARI HOUSE", 1050, 132);
   }
+
+  const photoX = 115;
+  const photoY = 145;
+  const photoSize = 310;
+  const avatarRing = ctx.createLinearGradient(
+    photoX,
+    photoY,
+    photoX + photoSize,
+    photoY + photoSize,
+  );
+  avatarRing.addColorStop(0, palette.highlight);
+  avatarRing.addColorStop(0.52, palette.accent);
+  avatarRing.addColorStop(1, `${palette.ink}88`);
+  ctx.beginPath();
+  ctx.arc(
+    photoX + photoSize / 2,
+    photoY + photoSize / 2,
+    photoSize / 2 + 18,
+    0,
+    Math.PI * 2,
+  );
+  ctx.strokeStyle = avatarRing;
+  ctx.lineWidth = 9;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(
+    photoX + photoSize / 2,
+    photoY + photoSize / 2,
+    photoSize / 2 + 5,
+    0,
+    Math.PI * 2,
+  );
+  ctx.strokeStyle = `${palette.ink}66`;
+  ctx.lineWidth = 3;
+  ctx.stroke();
 
   ctx.save();
   ctx.beginPath();
-  ctx.arc(288, 354, 170, 0, Math.PI * 2);
+  ctx.arc(
+    photoX + photoSize / 2,
+    photoY + photoSize / 2,
+    photoSize / 2,
+    0,
+    Math.PI * 2,
+  );
   ctx.clip();
-  if (model.avatarKey) {
+  const imageUrl = avatarUrl(model);
+  if (imageUrl) {
     try {
-      const avatar = await loadImage(avatarUrl(model));
-      ctx.drawImage(avatar, 118, 184, 340, 340);
+      const photo = await loadImage(imageUrl);
+      const scale = Math.max(
+        photoSize / photo.naturalWidth,
+        photoSize / photo.naturalHeight,
+      );
+      const width = photo.naturalWidth * scale;
+      const height = photo.naturalHeight * scale;
+      ctx.drawImage(
+        photo,
+        photoX + (photoSize - width) / 2,
+        photoY + (photoSize - height) / 2,
+        width,
+        height,
+      );
     } catch {
       ctx.fillStyle = palette.accent;
-      ctx.fillRect(118, 184, 340, 340);
-      ctx.fillStyle = palette.background;
-      ctx.font = "800 100px Inter, sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText(profileCardInitials(model.displayName), 288, 390);
-      ctx.textAlign = "left";
+      ctx.fillRect(photoX, photoY, photoSize, photoSize);
     }
   } else {
     ctx.fillStyle = palette.accent;
-    ctx.fillRect(118, 184, 340, 340);
-    ctx.fillStyle = palette.background;
-    ctx.font = "800 100px Inter, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(profileCardInitials(model.displayName), 288, 390);
-    ctx.textAlign = "left";
+    ctx.fillRect(photoX, photoY, photoSize, photoSize);
   }
   ctx.restore();
-  ctx.beginPath();
-  ctx.arc(288, 354, 178, 0, Math.PI * 2);
-  ctx.strokeStyle = `${palette.accent}dd`;
-  ctx.lineWidth = 12;
-  ctx.stroke();
+  if (!imageUrl) {
+    ctx.fillStyle = palette.background;
+    ctx.font = "800 92px Inter, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(
+      profileCardInitials(model.displayName),
+      photoX + photoSize / 2,
+      photoY + photoSize / 2 + 30,
+    );
+    ctx.textAlign = "left";
+  }
+
   try {
     const flower = await loadImage("/assets/brand/akari-flower-mark.png");
-    ctx.beginPath();
-    ctx.arc(410, 474, 48, 0, Math.PI * 2);
-    ctx.fillStyle = palette.background;
+    roundedRect(ctx, 366, 387, 94, 94, 47);
+    ctx.fillStyle = `${palette.background}e8`;
     ctx.fill();
     ctx.strokeStyle = `${palette.ink}55`;
     ctx.lineWidth = 2;
     ctx.stroke();
-    ctx.drawImage(flower, 380, 444, 60, 60);
+    ctx.drawImage(flower, 380, 401, 66, 66);
   } catch {
     // Avatar brand seal is optional if decoding fails.
   }
@@ -392,72 +458,162 @@ async function drawCard(
   const identityX = 520;
   ctx.fillStyle = palette.ink;
   ctx.font = "800 72px Inter, sans-serif";
-  ctx.fillText(model.displayName.slice(0, 24), identityX, 325);
+  ctx.fillText(model.displayName.slice(0, 24), identityX, 305);
   ctx.font = "500 30px Inter, sans-serif";
-  ctx.globalAlpha = 0.72;
-  ctx.fillText(`@${model.username}`, identityX, 374);
+  ctx.globalAlpha = 0.78;
+  ctx.fillText(`@${model.username}`, identityX, 354);
   ctx.globalAlpha = 1;
   ctx.fillStyle = palette.highlight;
   ctx.font = "650 31px Inter, sans-serif";
   ctx.fillText(
     model.roles.map(titleCaseRole).join(" · ").slice(0, 48) || "AKARI Member",
     identityX,
-    430,
+    413,
   );
   if (model.headline) {
     ctx.fillStyle = palette.ink;
-    ctx.globalAlpha = 0.8;
-    ctx.font = "500 23px Inter, sans-serif";
-    ctx.fillText(model.headline.slice(0, 62), identityX, 478);
+    ctx.globalAlpha = 0.83;
+    ctx.font = "500 24px Inter, sans-serif";
+    ctx.fillText(model.headline.slice(0, 57), identityX, 461);
     ctx.globalAlpha = 1;
   }
+  ctx.fillStyle = palette.accent;
+  ctx.font = "700 18px Inter, sans-serif";
+  ctx.fillText(
+    verifiedRoles.length
+      ? `AKARI VERIFIED · ${verifiedRoles.join(" · ")}`
+      : "AKARI MEMBER",
+    identityX,
+    505,
+  );
 
   let pillX = identityX;
   model.roles.slice(0, 3).forEach((role) => {
     const label = titleCaseRole(role);
-    ctx.font = "650 18px Inter, sans-serif";
-    const width = Math.max(104, ctx.measureText(label).width + 44);
-    roundedRect(ctx, pillX, 515, width, 46, 23);
-    ctx.fillStyle = `${palette.ink}0d`;
+    ctx.font = "650 20px Inter, sans-serif";
+    const width = Math.max(112, ctx.measureText(label).width + 54);
+    roundedRect(ctx, pillX, 534, width, 52, 26);
+    ctx.fillStyle = palette.surface;
     ctx.fill();
-    ctx.strokeStyle = `${palette.accent}70`;
-    ctx.lineWidth = 1.2;
+    ctx.strokeStyle = `${palette.accent}88`;
+    ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.fillStyle = palette.ink;
-    ctx.fillText(label, pillX + 22, 545);
-    pillX += width + 14;
+    ctx.fillText(label, pillX + 27, 568);
+    pillX += width + 16;
   });
 
-  roundedRect(ctx, 520, 665, 790, 110, 30);
-  ctx.fillStyle = `${palette.ink}0a`;
+  roundedRect(ctx, 1190, 260, 280, 310, 38);
+  ctx.fillStyle = palette.surface;
   ctx.fill();
-  ctx.strokeStyle = `${palette.ink}28`;
-  ctx.lineWidth = 1.3;
+  ctx.strokeStyle = `${palette.accent}99`;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = palette.accent;
+  ctx.font = "700 17px Inter, sans-serif";
+  ctx.fillText("PROFILE LINK", 1230, 320);
+  try {
+    const flower = await loadImage("/assets/brand/akari-flower-mark.png");
+    ctx.drawImage(flower, 1278, 345, 100, 100);
+  } catch {
+    // Brand mark is decorative here.
+  }
+  ctx.fillStyle = palette.ink;
+  ctx.font = "650 21px Inter, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("Connect on AKARI", 1330, 480);
+  ctx.font = "500 15px Inter, sans-serif";
+  ctx.globalAlpha = 0.72;
+  ctx.fillText(canonicalUrl.slice(0, 34), 1330, 514);
+  ctx.globalAlpha = 1;
+  ctx.textAlign = "left";
+
+  const metrics = [
+    [String(opportunities), "OPPORTUNITIES"],
+    [formatProfileReach(model.followerCount), "REACH"],
+    [
+      model.percentile.topPercent
+        ? `TOP ${model.percentile.topPercent}%`
+        : "BUILDING",
+      "SIGNAL",
+    ],
+  ] as const;
+  roundedRect(ctx, 115, 625, 1010, 116, 30);
+  ctx.fillStyle = palette.surface;
+  ctx.fill();
+  ctx.strokeStyle = `${palette.ink}2f`;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  metrics.forEach(([value, label], index) => {
+    const x = 165 + index * 315;
+    ctx.fillStyle = index === 0 ? palette.highlight : palette.accent;
+    ctx.font = "750 29px Inter, sans-serif";
+    ctx.fillText(value, x, 677);
+    ctx.fillStyle = palette.ink;
+    ctx.globalAlpha = 0.65;
+    ctx.font = "700 13px Inter, sans-serif";
+    ctx.fillText(label, x, 708);
+    ctx.globalAlpha = 1;
+  });
+
+  roundedRect(ctx, 115, 765, 1010, 104, 28);
+  ctx.fillStyle = palette.surface;
+  ctx.fill();
+  ctx.strokeStyle = `${palette.ink}2f`;
   ctx.stroke();
   ctx.fillStyle = palette.ink;
-  ctx.font = "600 21px Inter, sans-serif";
-  ctx.fillText("Connect with me", 565, 730);
+  ctx.font = "600 23px Inter, sans-serif";
+  ctx.fillText("Connect with me", 165, 827);
   const visibleSocials = model.socials.slice(0, 6);
   visibleSocials.forEach((social, index) => {
-    const circleX = 805 + index * 72;
+    const circleX = 475 + index * 76;
     ctx.beginPath();
-    ctx.arc(circleX, 720, 26, 0, Math.PI * 2);
-    ctx.strokeStyle = `${palette.ink}3c`;
+    ctx.arc(circleX, 817, 28, 0, Math.PI * 2);
+    ctx.fillStyle = `${palette.ink}0d`;
+    ctx.fill();
+    ctx.strokeStyle = `${palette.ink}45`;
     ctx.stroke();
-    drawSocialMark(ctx, social.platform, circleX - 12, 708, palette.ink);
+    drawSocialMark(ctx, social.platform, circleX - 12, 805, palette.ink);
   });
 
+  roundedRect(ctx, 1150, 625, 320, 244, 30);
+  ctx.fillStyle = palette.surface;
+  ctx.fill();
+  ctx.strokeStyle = `${palette.ink}2f`;
+  ctx.stroke();
   ctx.fillStyle = palette.ink;
+  ctx.font = "700 15px Inter, sans-serif";
   ctx.globalAlpha = 0.62;
+  ctx.fillText("PROFILE DETAILS", 1190, 675);
+  ctx.globalAlpha = 1;
+  ctx.font = "600 18px Inter, sans-serif";
+  const location =
+    settings.showLocation && model.location
+      ? `${flagFor(settings.countryCode)} ${model.location}`.trim()
+      : "Location private";
+  ctx.fillText(location.slice(0, 30), 1190, 718);
+  if (languages.length) {
+    ctx.font = "500 15px Inter, sans-serif";
+    ctx.globalAlpha = 0.73;
+    ctx.fillText(languages.slice(0, 3).join(" · ").slice(0, 36), 1190, 754);
+    ctx.globalAlpha = 1;
+  }
+  ctx.fillStyle = palette.accent;
+  ctx.font = "700 16px Inter, sans-serif";
+  ctx.fillText(
+    settings.design === "passport" ? "MEMBER PASSPORT" : "PROFILE SIGNATURE",
+    1190,
+    816,
+  );
+
+  ctx.fillStyle = palette.ink;
+  ctx.globalAlpha = 0.66;
   ctx.font = "500 17px Inter, sans-serif";
-  ctx.fillText(canonicalUrl, 118, 905);
+  ctx.fillText("akarihouse.com", 118, 925);
   ctx.textAlign = "right";
-  ctx.fillText("A private ecosystem for high-signal connections.", 1480, 905);
+  ctx.fillText("A private ecosystem for high-signal connections.", 1470, 925);
   ctx.textAlign = "left";
   ctx.globalAlpha = 1;
-
-  void languages;
-  void verifiedRoles;
 }
 
 export function ProfileShareCard({
@@ -577,9 +733,9 @@ export function ProfileShareCard({
           <span className="eyebrow">Your AKARI identity</span>
           <h1>Profile sharing card</h1>
           <p>
-            A compact AKARI identity card built from your real member data.
-            Choose your glass color, control private details, then download or
-            share.
+            A premium AKARI credit-card profile built from your real member
+            data. Choose your glass color, control private details, then
+            download or share.
           </p>
         </div>
         <Link className="quiet-link" to={`/profiles/${model.username}`}>
@@ -742,8 +898,8 @@ export function ProfileShareCard({
           <div className="glass-card-note">
             <strong>Credit-card format</strong>
             <span>
-              85.6 × 53.98 proportion. The downloaded PNG uses the same compact
-              identity hierarchy.
+              85.6 × 54 proportion. The downloaded PNG uses the same branded
+              glass design.
             </span>
           </div>
           <p className="share-card-confidence">
@@ -826,28 +982,80 @@ export function ProfileShareCard({
             </div>
           </fieldset>
 
-          <label className="switch-row">
-            <span>
-              <strong>Show location</strong>
-              <small>{location}</small>
-            </span>
+          <label className="share-card-check">
             <input
               type="checkbox"
-              name="showLocation"
-              checked={settings.showLocation}
+              name="showLanguages"
+              checked={Boolean(settings.showLanguages)}
               onChange={(event) =>
-                setSettings({ ...settings, showLocation: event.target.checked })
+                setSettings({
+                  ...settings,
+                  showLanguages: event.target.checked ? 1 : 0,
+                })
               }
             />
+            Show spoken languages
           </label>
 
+          <div className="profile-card-language-control">
+            <span>Languages</span>
+            <div className="profile-card-language-add">
+              <select
+                aria-label="Add spoken language"
+                value={languageToAdd}
+                disabled={languages.length >= MAX_PROFILE_CARD_LANGUAGES}
+                onChange={(event) => setLanguageToAdd(event.target.value)}
+              >
+                <option value="">Select a language</option>
+                {availableLanguages.map((language) => (
+                  <option key={language} value={language}>
+                    {language}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="button button-quiet"
+                onClick={addLanguage}
+                disabled={
+                  !languageToAdd ||
+                  languages.length >= MAX_PROFILE_CARD_LANGUAGES
+                }
+              >
+                Add
+              </button>
+            </div>
+            <input type="hidden" name="languages" value={languages.join(",")} />
+            <div className="profile-card-language-tags" aria-live="polite">
+              {languages.map((language) => (
+                <span key={language} className="profile-card-language-tag">
+                  {language}
+                  <button
+                    type="button"
+                    aria-label={`Remove ${language}`}
+                    onClick={() =>
+                      updateLanguages(
+                        languages.filter((item) => item !== language),
+                      )
+                    }
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+            <small>
+              {languages.length}/{MAX_PROFILE_CARD_LANGUAGES} languages selected
+            </small>
+          </div>
+
           <label>
-            Country code for flag
+            Country code
             <input
               name="countryCode"
               maxLength={2}
-              value={settings.countryCode}
               placeholder="DE"
+              value={settings.countryCode}
               onChange={(event) =>
                 setSettings({
                   ...settings,
@@ -857,92 +1065,57 @@ export function ProfileShareCard({
             />
           </label>
 
-          <label className="switch-row">
-            <span>
-              <strong>Show languages</strong>
-              <small>Choose up to {MAX_PROFILE_CARD_LANGUAGES}.</small>
-            </span>
+          <label className="share-card-check">
             <input
               type="checkbox"
-              name="showLanguages"
-              checked={settings.showLanguages}
+              name="showLocation"
+              checked={Boolean(settings.showLocation)}
               onChange={(event) =>
-                setSettings({ ...settings, showLanguages: event.target.checked })
+                setSettings({
+                  ...settings,
+                  showLocation: event.target.checked ? 1 : 0,
+                })
               }
             />
+            Show profile location
           </label>
 
-          <div className="profile-card-language-control">
-            <span>Languages</span>
-            <div className="profile-card-language-add">
-              <select
-                value={languageToAdd}
-                aria-label="Language to add"
-                disabled={languages.length >= MAX_PROFILE_CARD_LANGUAGES}
-                onChange={(event) => setLanguageToAdd(event.target.value)}
-              >
-                <option value="">Choose a language</option>
-                {availableLanguages.map((language) => (
-                  <option key={language} value={language}>
-                    {language}
-                  </option>
-                ))}
-              </select>
-              <button
-                className="button button-quiet"
-                type="button"
-                disabled={
-                  !languageToAdd || languages.length >= MAX_PROFILE_CARD_LANGUAGES
-                }
-                onClick={addLanguage}
-              >
-                Add
-              </button>
-            </div>
-            <div
-              className="profile-card-language-tags"
-              aria-label="Selected languages"
-            >
-              {languages.map((language) => (
-                <span className="profile-card-language-tag" key={language}>
-                  {language}
-                  <button
-                    type="button"
-                    aria-label={`Remove ${language}`}
-                    onClick={() =>
-                      updateLanguages(
-                        languages.filter((candidate) => candidate !== language),
-                      )
-                    }
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
+          <button
+            className="button button-secondary"
+            disabled={navigation.state !== "idle"}
+          >
+            {navigation.state === "idle" ? "Save preferences" : "Saving..."}
+          </button>
 
-          <input
-            type="hidden"
-            name="languagesJson"
-            value={JSON.stringify(languages)}
-          />
           <div className="share-card-actions">
             <button
+              type="button"
               className="button button-primary"
-              type="submit"
-              disabled={navigation.state !== "idle"}
+              onClick={() => void download()}
             >
-              {navigation.state !== "idle" ? "Saving…" : "Save preferences"}
-            </button>
-            <button className="button button-quiet" type="button" onClick={download}>
               Download PNG
             </button>
-            <button className="button button-quiet" type="button" onClick={share}>
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={() => void share()}
+            >
               Share card
             </button>
           </div>
-          {shareStatus && <small role="status">{shareStatus}</small>}
+
+          {shareStatus && (
+            <p className="glass-share-status" role="status">
+              {shareStatus}
+            </p>
+          )}
+
+          <small>
+            {canSharePublicProfile
+              ? "Sharing uses your canonical public profile URL."
+              : "Your profile is not public, so sharing uses the AKARI homepage."}{" "}
+            Hidden location and languages never appear on the card.
+          </small>
         </Form>
       </div>
     </main>
