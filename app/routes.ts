@@ -3,7 +3,7 @@ import { index, route, type RouteConfig } from "@react-router/dev/routes";
 export default [
   index("routes/home.tsx"),
   route("health", "routes/health.ts"),
-  route("api/crm/creators", "routes/crm-creator-feed.ts"),
+  route("api/creator-directory", "routes/public-creator-directory.ts"),
   route("api/activation/next-actions", "routes/activation-next-actions.ts"),
   route("api/activation/events", "routes/activation-events.ts"),
   route("__test__/personas/:persona", "routes/test-persona.ts"),
