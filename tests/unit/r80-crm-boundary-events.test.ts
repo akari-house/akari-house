@@ -1,9 +1,9 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
-describe("R80 CRM boundary", () => {
+describe("R82 CRM boundary", () => {
   it("keeps CRM-only operating routes out of AKARI House", () => {
     const routes = read("app/routes.ts");
 
@@ -25,6 +25,46 @@ describe("R80 CRM boundary", () => {
     );
   });
 
+  it("removes duplicate CRM implementation modules from House", () => {
+    for (const legacyFile of [
+      "app/lib/agreement-tracking.ts",
+      "app/lib/operating-rhythm.server.ts",
+      "app/lib/operating-rhythm.ts",
+      "app/lib/relationship-intelligence.ts",
+      "app/lib/commercial-attention.server.ts",
+      "app/lib/commercial-saas.server.ts",
+      "app/lib/commercial-saas.ts",
+      "app/lib/saas-workspace.server.ts",
+      "app/lib/workspace-invitations.server.ts",
+    ]) {
+      expect(existsSync(legacyFile), legacyFile).toBe(false);
+    }
+
+    // This read-only bridge is intentionally retained so CRM can consume
+    // creator profile data without re-introducing CRM operations into House.
+    expect(existsSync("app/lib/crm-creator-feed.server.ts")).toBe(true);
+  });
+
+  it("keeps CRM promotion and workflow language out of House admin UI", () => {
+    const workspaceRoute = read("app/routes/admin-workspace.tsx");
+
+    expect(workspaceRoute).not.toContain("https://crm.akarihouse.com");
+    expect(workspaceRoute).not.toContain("One CRM source of truth.");
+    expect(workspaceRoute).not.toContain("agreement operations");
+    expect(workspaceRoute).not.toContain("relationship operations");
+    expect(workspaceRoute).toContain("membership, verification");
+  });
+
+  it("preserves historical CRM-era tables until data reconciliation is complete", () => {
+    const agreements = read("migrations/0116_agreement_tracking.sql");
+    const relationships = read("migrations/0119_relationship_intelligence.sql");
+    const commercial = read("migrations/0121_commercial_saas_completion.sql");
+
+    expect(agreements).toContain("CREATE TABLE agreement_records");
+    expect(relationships).toContain("CREATE TABLE relationship_records");
+    expect(commercial).toContain("CREATE TABLE saas_workspaces");
+  });
+
   it("removes duplicate CRM modules from House admin navigation", () => {
     const workspace = read("app/lib/admin-workspace.ts");
 
@@ -40,13 +80,6 @@ describe("R80 CRM boundary", () => {
     ]) {
       expect(workspace).not.toContain(route);
     }
-  });
-
-  it("directs operators to the canonical CRM application", () => {
-    const workspaceRoute = read("app/routes/admin-workspace.tsx");
-
-    expect(workspaceRoute).toContain("https://crm.akarihouse.com");
-    expect(workspaceRoute).toContain("One CRM source of truth.");
   });
 });
 
