@@ -57,9 +57,6 @@ test.describe("R80 profile sharing fidelity and event publishing", () => {
       expect(ratio).toBeLessThan(1.63);
     }
 
-    await page.getByText("Pearl Glass", { exact: true }).click();
-    await expect(card).toHaveClass(/palette-pearl/);
-
     if (testInfo.project.name === "desktop-chromium") {
       const screenshot = await card.screenshot();
       await testInfo.attach("r80-approved-akari-profile-card", {
@@ -67,6 +64,9 @@ test.describe("R80 profile sharing fidelity and event publishing", () => {
         contentType: "image/png",
       });
     }
+
+    await page.getByText("Pearl Glass", { exact: true }).click();
+    await expect(card).toHaveClass(/palette-pearl/);
 
     const viewportWidth = await page.evaluate(
       () => document.documentElement.clientWidth,
