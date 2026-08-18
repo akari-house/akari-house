@@ -179,7 +179,10 @@ function drawCoverImage(
   x = 0,
   y = 0,
 ) {
-  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+  const scale = Math.max(
+    width / image.naturalWidth,
+    height / image.naturalHeight,
+  );
   const w = image.naturalWidth * scale;
   const h = image.naturalHeight * scale;
   ctx.drawImage(image, x + (width - w) / 2, y + (height - h) / 2, w, h);
@@ -584,8 +587,8 @@ export function ProfileShareCard({
           <span className="eyebrow">Your AKARI identity</span>
           <h1>Profile sharing card</h1>
           <p>
-            One approved glass design. Choose the color, control private details,
-            then download or share it.
+            One approved glass design. Choose the color, control private
+            details, then download or share it.
           </p>
         </div>
         <Link className="quiet-link" to={`/profiles/${model.username}`}>
@@ -731,7 +734,9 @@ export function ProfileShareCard({
                     <small>
                       {[
                         location,
-                        ...(settings.showLanguages ? languages.slice(0, 4) : []),
+                        ...(settings.showLanguages
+                          ? languages.slice(0, 4)
+                          : []),
                       ]
                         .filter(Boolean)
                         .join(" · ")}

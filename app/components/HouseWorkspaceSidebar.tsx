@@ -280,7 +280,10 @@ export function HouseWorkspaceSidebar({
                 rel="noreferrer"
                 aria-label={`${crmProductBoundary.label}, opens separate CRM`}
               >
-                <span className="house-workspace-sidebar-glyph" aria-hidden="true">
+                <span
+                  className="house-workspace-sidebar-glyph"
+                  aria-hidden="true"
+                >
                   ↗
                 </span>
                 <span aria-hidden="true">{crmProductBoundary.label}</span>
