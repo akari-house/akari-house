@@ -15,8 +15,8 @@ function localInput(date: Date) {
   return date.toISOString().slice(0, 16);
 }
 
-test.describe("R79 profile sharing and event publishing", () => {
-  test("renders the real AKARI glass card in credit-card proportions", async ({
+test.describe("R82 profile sharing and event publishing", () => {
+  test("renders a compact AKARI glass card in credit-card proportions", async ({
     page,
   }, testInfo) => {
     await activateSuperadmin(page);
@@ -42,14 +42,18 @@ test.describe("R79 profile sharing and event publishing", () => {
       const ratio = box.width / box.height;
       expect(ratio).toBeGreaterThan(1.55);
       expect(ratio).toBeLessThan(1.63);
+
+      // The share card is an identity artifact, not a hero/banner. Keep the
+      // desktop presentation physically compact so it cannot fill the page.
+      expect(box.width).toBeLessThanOrEqual(570);
     }
 
     await page.getByText("Pearl Glass", { exact: true }).click();
     await expect(card).toHaveClass(/palette-pearl/);
 
     if (testInfo.project.name === "desktop-chromium") {
-      const screenshot = await card.screenshot();
-      await testInfo.attach("r79-akari-glass-profile-card", {
+      const screenshot = await page.locator(".glass-card-stage").screenshot();
+      await testInfo.attach("r82-compact-akari-profile-card-stage", {
         body: screenshot,
         contentType: "image/png",
       });
