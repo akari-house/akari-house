@@ -1,5 +1,9 @@
 export type AdminScope =
-  "membership" | "verification" | "projects" | "campaigns" | "moderation";
+  | "membership"
+  | "verification"
+  | "projects"
+  | "campaigns"
+  | "moderation";
 
 export const adminScopes: AdminScope[] = [
   "membership",
@@ -30,7 +34,7 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     key: "reviews",
     label: "Review inbox",
     description:
-      "Triage Membership, Verification, Project Claims and Moderation together.",
+      "Triage Membership, Verification, Project Claims, Events and Moderation together.",
     to: "/admin/reviews",
     superadminOnly: true,
   },
@@ -40,14 +44,6 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     description:
       "Measure next-action engagement and role readiness without copying profile content.",
     to: "/admin/activation",
-    superadminOnly: true,
-  },
-  {
-    key: "agreements",
-    label: "Agreement tracking",
-    description:
-      "Track external agreement stages, document references, expiry and follow-up ownership.",
-    to: "/admin/agreements",
     superadminOnly: true,
   },
   {
@@ -64,38 +60,6 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     description:
       "Review Data Room completeness, NDA policy, Investor access and open diligence requests.",
     to: "/admin/diligence",
-    superadminOnly: true,
-  },
-  {
-    key: "relationships",
-    label: "Relationship intelligence",
-    description:
-      "Own relationships, record interactions, find warm paths and review connected account context.",
-    to: "/admin/relationships",
-    superadminOnly: true,
-  },
-  {
-    key: "operating-rhythm",
-    label: "Operating rhythm",
-    description:
-      "Review cross-system attention signals, follow-up ownership and recurring report snapshots.",
-    to: "/admin/operating-rhythm",
-    superadminOnly: true,
-  },
-  {
-    key: "finance",
-    label: "Finance & revenue",
-    description:
-      "Track invoices, collections, refunds, operating costs and currency-level contribution.",
-    to: "/admin/finance",
-    superadminOnly: true,
-  },
-  {
-    key: "saas-workspaces",
-    label: "SaaS workspaces",
-    description:
-      "Provision workspaces, teams, plans, subscriptions and module entitlements.",
-    to: "/admin/workspaces",
     superadminOnly: true,
   },
   {
@@ -128,8 +92,9 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
   },
   {
     key: "projects",
-    label: "Projects & interests",
-    description: "Review projects, opportunities and member interests.",
+    label: "Projects, events & interests",
+    description:
+      "Review projects, publish submitted events and manage member interest requests.",
     to: "/admin/interests",
     scope: "projects",
   },
