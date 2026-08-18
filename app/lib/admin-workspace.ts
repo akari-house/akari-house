@@ -91,10 +91,17 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     scope: "moderation",
   },
   {
-    key: "projects",
-    label: "Projects, events & interests",
+    key: "events",
+    label: "Event publishing",
     description:
-      "Review projects, publish submitted events and manage member interest requests.",
+      "Review submitted events and publish valid gatherings without a second review hop.",
+    to: "/admin/events",
+    scope: "projects",
+  },
+  {
+    key: "projects",
+    label: "Projects & interests",
+    description: "Review projects and manage member interest requests.",
     to: "/admin/interests",
     scope: "projects",
   },
