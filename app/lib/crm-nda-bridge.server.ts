@@ -154,7 +154,7 @@ export async function readCrmNdaStatus(
       });
       return null;
     }
-    return parseCrmStatus((await response.json()) as CrmNdaPayload);
+    return parseCrmStatus(await response.json());
   } catch (error) {
     console.error("CRM NDA bridge request failed.", {
       projectId: houseProjectId,
