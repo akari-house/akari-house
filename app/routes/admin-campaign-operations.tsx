@@ -21,8 +21,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
               o.escalation_status AS escalationStatus,
               o.internal_notes AS internalNotes,
               co.status AS closeoutStatus,
-              co.closed_at AS closedAt,
-              co.renewal_stage AS renewalStage
+              co.closed_at AS closedAt
        FROM ambassador_campaigns c
        LEFT JOIN campaign_ownership o ON o.campaign_id = c.id
        LEFT JOIN campaign_closeouts co ON co.campaign_id = c.id
@@ -40,7 +39,6 @@ export async function loader({ request, context }: Route.LoaderArgs) {
         internalNotes: string | null;
         closeoutStatus: string | null;
         closedAt: string | null;
-        renewalStage: string | null;
       }>(),
     db
       .prepare(
@@ -224,12 +222,7 @@ export default function AdminCampaignOperations({
                     : "Unassigned"}
                 </p>
                 {campaign.campaignKind !== "iio" && (
-                  <p>
-                    Closeout: {campaign.closeoutStatus ?? "active"}
-                    {campaign.renewalStage && campaign.renewalStage !== "none"
-                      ? ` · renewal ${campaign.renewalStage}`
-                      : ""}
-                  </p>
+                  <p>Closeout: {campaign.closeoutStatus ?? "active"}</p>
                 )}
                 <div className="button-row">
                   <Link
@@ -243,7 +236,7 @@ export default function AdminCampaignOperations({
                       className="button button-primary"
                       to={`/campaigns/${campaign.slug}/closeout`}
                     >
-                      Closeout & renewal
+                      Campaign closeout
                     </Link>
                   )}
                 </div>
