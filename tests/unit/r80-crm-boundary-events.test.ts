@@ -1,9 +1,9 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
-describe("R80 CRM boundary", () => {
+describe("R82 CRM hard boundary", () => {
   it("keeps CRM-only operating routes out of AKARI House", () => {
     const routes = read("app/routes.ts");
 
@@ -42,11 +42,28 @@ describe("R80 CRM boundary", () => {
     }
   });
 
-  it("directs operators to the canonical CRM application", () => {
+  it("keeps the CRM product itself out of House UI", () => {
     const workspaceRoute = read("app/routes/admin-workspace.tsx");
 
-    expect(workspaceRoute).toContain("https://crm.akarihouse.com");
-    expect(workspaceRoute).toContain("One CRM source of truth.");
+    expect(workspaceRoute).not.toContain("https://crm.akarihouse.com");
+    expect(workspaceRoute).not.toContain("Open CRM by AKARI");
+    expect(workspaceRoute).not.toContain("One CRM source of truth.");
+  });
+
+  it("removes retired CRM implementation modules from the House codebase", () => {
+    for (const path of [
+      "app/lib/agreement-tracking.ts",
+      "app/lib/relationship-intelligence.ts",
+      "app/lib/operating-rhythm.ts",
+      "app/lib/operating-rhythm.server.ts",
+      "app/lib/commercial-attention.server.ts",
+      "app/lib/commercial-saas.ts",
+      "app/lib/commercial-saas.server.ts",
+      "app/lib/saas-workspace.server.ts",
+      "app/lib/workspace-invitations.server.ts",
+    ]) {
+      expect(existsSync(path), path).toBe(false);
+    }
   });
 });
 
