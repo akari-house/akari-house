@@ -4,7 +4,9 @@
 
 R81 did not meet the approved profile-card direction. It made the identity card too large and turned it into a dense credit-card/dashboard composition. R80 also removed the visible CRM routes but stopped short of fully removing retired CRM implementation modules and a CRM product panel from AKARI House.
 
-R82 corrects both problems as a product-boundary and design-fidelity release.
+The re-audit also found a deeper presentation coupling: historical commit `90d87894347da3baf707005f6725a5578c3e36fb` explicitly introduced a **shared CRM-style workspace sidebar** across AKARI member, investor and admin workspaces. Even where the links were House-specific, that visual/system intent blurred the separation between `akarihouse.com` and `crm.akarihouse.com`.
+
+R82 corrects all three problems as a product-boundary and design-fidelity release.
 
 ## Review lenses
 
@@ -12,8 +14,8 @@ The implementation was re-audited through six disciplines:
 
 1. **Product architecture** — AKARI House must remain the member/network/project/event/campaign product. CRM by AKARI must remain a separate operating product.
 2. **Brand and creative direction** — the profile card should feel like a premium AKARI glass identity object, not a generic dashboard or a literal bank card.
-3. **UX/UI** — the card must be compact enough to read as a floating identity card, with enough surrounding art/background visible to create the frosted-glass effect.
-4. **Front-end engineering** — card dimensions, aspect ratio and responsive behavior need explicit regression guards.
+3. **UX/UI** — the card must be compact enough to read as a floating identity card, with enough surrounding art/background visible to create the frosted-glass effect. Authenticated House navigation must also read as AKARI House rather than enterprise CRM chrome.
+4. **Front-end engineering** — card dimensions, aspect ratio and responsive behavior need explicit regression guards. The authenticated navigation can retain its permission-aware route behavior while receiving an independent House-native presentation layer.
 5. **Back-end/data architecture** — duplicate CRM domain code must not remain active in House. Historic data structures must not be destructively removed until their data is reconciled.
 6. **QA/release safety** — browser tests must fail if the card grows back into a full-width panel or CRM product UI returns to House.
 
@@ -34,6 +36,21 @@ The web preview at `/profile-card` must:
 - remain usable without horizontal overflow on mobile.
 
 The configuration form may remain below the card; it must not squeeze the card into a narrow side-by-side editor layout.
+
+## House-native authenticated navigation
+
+The persistent authenticated navigation remains because members need fast access to House, Members, Connections, Projects, Creator Campaigns, Events, Deals, Notifications and role-specific workspaces. Its behavior is House functionality, not CRM functionality.
+
+R82 separates the presentation from the old CRM-style intent by applying a dedicated `house-native-navigation` layer:
+
+- AKARI pink and blossom-yellow are used as restrained identity accents rather than enterprise selection bars;
+- the rail uses translucent House glass, softer section labels and less administrative chrome;
+- active states use a small blossom-yellow signal and subtle pink light;
+- the member/footer area is treated as a House identity card instead of a CRM account block;
+- mobile continues to use the existing AKARI drawer rather than duplicating the desktop rail;
+- no CRM product link or CRM domain navigation is added to the rail.
+
+This preserves route permissions and usability while removing the visual/product assumption that House should share CRM chrome.
 
 ## CRM hard boundary
 
@@ -86,6 +103,7 @@ R82 adds automated checks that:
 - the House admin UI contains no `crm.akarihouse.com` product link or CRM product panel;
 - retired CRM implementation modules do not exist in the House source tree;
 - the Creator-feed integration route remains available;
+- the authenticated navigation declares the House-native presentation layer instead of the old CRM-style shell intent;
 - the profile card stays under the desktop size limit;
 - the profile card keeps the approved landscape aspect ratio;
 - metrics and footer dashboard elements remain hidden;
