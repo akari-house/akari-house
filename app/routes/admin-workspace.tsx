@@ -183,8 +183,8 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
                 No review queue needs action.
               </h2>
               <p>
-                Membership, verification, Project claims, Events, moderation
-                and the operational queues are currently clear.
+                Membership, verification, Project claims, Events, moderation and
+                the operational queues are currently clear.
               </p>
             </>
           )}
