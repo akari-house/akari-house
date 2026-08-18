@@ -15,18 +15,21 @@ function localInput(date: Date) {
   return date.toISOString().slice(0, 16);
 }
 
-test.describe("R82 profile sharing and event publishing", () => {
-  test("renders a compact AKARI glass card in credit-card proportions", async ({
+test.describe("R83 profile sharing and event publishing", () => {
+  test("renders an optimized AKARI card workspace in credit-card proportions", async ({
     page,
   }, testInfo) => {
     await activateSuperadmin(page);
-    await page.goto("/profile-card");
+    await page.goto("/profile-card", { waitUntil: "networkidle" });
 
     await expect(
       page.getByRole("heading", { name: "Profile sharing card" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 10_000 });
     const card = page.locator(".glass-profile-card");
+    const stage = page.locator(".glass-card-stage");
+    const controls = page.locator(".glass-card-controls");
     await expect(card).toBeVisible();
+    await expect(controls).toBeVisible();
     await expect(card.locator('img[alt="AKARI"]')).toBeVisible();
     await expect(
       page.getByText("Midnight Glass", { exact: true }),
@@ -42,22 +45,30 @@ test.describe("R82 profile sharing and event publishing", () => {
       const ratio = box.width / box.height;
       expect(ratio).toBeGreaterThan(1.55);
       expect(ratio).toBeLessThan(1.63);
-
-      // The share card is an identity artifact, not a hero/banner. Keep the
-      // desktop presentation physically compact so it cannot fill the page.
-      expect(box.width).toBeLessThanOrEqual(570);
+      expect(box.width).toBeLessThanOrEqual(510);
     }
 
-    await page.getByText("Pearl Glass", { exact: true }).click();
-    await expect(card).toHaveClass(/palette-pearl/);
-
     if (testInfo.project.name === "desktop-chromium") {
-      const screenshot = await page.locator(".glass-card-stage").screenshot();
-      await testInfo.attach("r82-compact-akari-profile-card-stage", {
+      const stageBox = await stage.boundingBox();
+      const controlsBox = await controls.boundingBox();
+      expect(stageBox).not.toBeNull();
+      expect(controlsBox).not.toBeNull();
+      if (stageBox && controlsBox) {
+        expect(controlsBox.x).toBeGreaterThan(stageBox.x + stageBox.width - 4);
+        expect(Math.abs(controlsBox.y - stageBox.y)).toBeLessThanOrEqual(8);
+      }
+
+      const screenshot = await page.locator(".share-card-layout").screenshot();
+      await testInfo.attach("r83-optimized-akari-profile-card-workspace", {
         body: screenshot,
         contentType: "image/png",
       });
     }
+
+    await page
+      .locator('label.glass-palette-choice:has(input[value="pearl"])')
+      .click({ force: true });
+    await expect(card).toHaveClass(/palette-pearl/);
 
     const viewportWidth = await page.evaluate(
       () => document.documentElement.clientWidth,

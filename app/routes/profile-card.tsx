@@ -292,6 +292,95 @@ export async function action({ request, context }: Route.ActionArgs) {
   throw redirect("/profile-card?saved=1");
 }
 
+const profileCardWorkspaceStyles = `
+@media (min-width: 981px) {
+  .glass-share-page.share-card-main {
+    width: min(980px, calc(100% - 2rem)) !important;
+  }
+
+  .glass-share-page .share-card-heading {
+    max-width: none !important;
+    margin-bottom: 1rem;
+    align-items: center;
+  }
+
+  .glass-share-page .share-card-heading h1 {
+    margin-block: 0.35rem 0.45rem;
+    font-size: clamp(2rem, 3.2vw, 2.7rem);
+  }
+
+  .glass-share-page .share-card-heading p {
+    max-width: 56ch;
+    font-size: 0.94rem;
+    line-height: 1.5;
+  }
+
+  .glass-share-page .share-card-layout {
+    grid-template-columns: minmax(0, 540px) minmax(300px, 340px) !important;
+    justify-content: center !important;
+    align-items: start !important;
+    gap: 1.25rem !important;
+  }
+
+  .glass-share-page .share-card-stage.glass-card-stage {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0.75rem !important;
+    border-radius: 18px !important;
+  }
+
+  .glass-card-stage .glass-profile-card.akari-share-card {
+    width: min(100%, 500px) !important;
+  }
+
+  .glass-share-page .glass-card-note {
+    margin-top: 0.6rem !important;
+    font-size: 0.68rem !important;
+  }
+
+  .glass-share-page .share-card-confidence {
+    margin-top: 0.45rem;
+    font-size: 0.68rem;
+  }
+
+  .glass-share-page .share-card-controls.glass-card-controls {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0.95rem !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.75rem !important;
+    border-radius: 18px !important;
+  }
+
+  .glass-share-page .glass-card-controls .glass-palette-fieldset,
+  .glass-share-page .glass-card-controls .profile-card-language-control,
+  .glass-share-page .glass-card-controls .share-card-actions,
+  .glass-share-page .glass-card-controls > small {
+    grid-column: 1 / -1 !important;
+  }
+
+  .glass-share-page .glass-palette-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+  }
+
+  .glass-share-page .glass-palette-choice {
+    min-height: 58px !important;
+    padding: 0.5rem !important;
+    gap: 0.45rem !important;
+  }
+
+  .glass-share-page .glass-palette-choice small {
+    display: none !important;
+  }
+
+  .glass-share-page .glass-palette-swatch {
+    width: 1.7rem !important;
+    height: 1.7rem !important;
+  }
+}
+`;
+
 export default function ProfileCard({
   loaderData,
   actionData,
@@ -299,6 +388,7 @@ export default function ProfileCard({
   return (
     <div className="site-shell">
       <SiteHeader user={loaderData.user} />
+      <style>{profileCardWorkspaceStyles}</style>
       <ProfileShareCard
         model={loaderData.model}
         saved={loaderData.saved}

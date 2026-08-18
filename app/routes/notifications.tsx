@@ -63,14 +63,11 @@ const notificationKindLabels: Record<string, string> = {
   "event.registration": "Event registration",
   "event.reviewed": "Event review",
   "interest.reviewed": "Access request",
-  "operating.relationship": "Relationship follow-up",
-  "operating.agreement": "Agreement attention",
   "operating.diligence": "Diligence attention",
   "operating.introduction": "Investor introduction",
   "operating.settlement": "Settlement attention",
   "operating.dispute": "Campaign dispute",
   "operating.campaign_closeout": "Campaign closeout",
-  "operating.campaign_renewal": "Campaign renewal",
   "operating.review_sla": "Review SLA",
   "operating.fundraising": "Fundraising attention",
 };
@@ -116,7 +113,7 @@ export default function Notifications({
                 <div>
                   <span className="chapter">
                     {notificationKindLabels[notification.kind] ??
-                      "Account update"}
+                      "House update"}
                   </span>
                   <h2>{notification.title}</h2>
                   <p>{notification.body}</p>

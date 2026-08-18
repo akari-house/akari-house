@@ -263,7 +263,7 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
         key: "investor-interest-status",
         eyebrow: "Investor outcome",
         title: "Continue your active Founder relationships",
-        description: `${snapshot.investorProgressedCount} Investor relationship${snapshot.investorProgressedCount === 1 ? " has" : "s have"} progressed beyond initial interest. Continue the strongest conversations before widening the pipeline.`,
+        description: `${snapshot.investorProgressedCount} Investor relationship${snapshot.investorProgressedCount === 1 ? " has" : "s have"} progressed beyond initial interest. Continue the strongest conversations before exploring more opportunities.`,
         to: "/deals",
         actionLabel: "Open active relationships",
         priority: 68,
