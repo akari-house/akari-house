@@ -7,7 +7,7 @@ import {
   safeExternalUrl,
 } from "../app/lib/campaign-closeout";
 
-describe("R69 campaign settlement reconciliation", () => {
+describe("R82 campaign settlement reconciliation", () => {
   it("combines final base compensation and approved bonuses exactly once", () => {
     expect(creatorApprovedCompensationCents(45_000, 5_000)).toBe(50_000);
     const result = campaignReconciliation([
@@ -51,12 +51,11 @@ describe("R69 campaign settlement reconciliation", () => {
         reportFinal: false,
         reportDelivered: false,
         closed: false,
-        renewalConverted: false,
       }),
     ).toBe("awaiting_approvals");
   });
 
-  it("moves through settlement, reporting, client delivery, close and renewal", () => {
+  it("moves through settlement, reporting, client delivery and close", () => {
     const base = {
       campaignEnded: true,
       unresolvedApprovalCount: 0,
@@ -66,7 +65,6 @@ describe("R69 campaign settlement reconciliation", () => {
       reportFinal: false,
       reportDelivered: false,
       closed: false,
-      renewalConverted: false,
     };
     expect(deriveCampaignCloseoutStatus(base)).toBe("settled");
     expect(deriveCampaignCloseoutStatus({ ...base, reportFinal: true })).toBe(
@@ -87,15 +85,6 @@ describe("R69 campaign settlement reconciliation", () => {
         closed: true,
       }),
     ).toBe("closed");
-    expect(
-      deriveCampaignCloseoutStatus({
-        ...base,
-        reportFinal: true,
-        reportDelivered: true,
-        closed: true,
-        renewalConverted: true,
-      }),
-    ).toBe("renewed");
   });
 
   it("accepts only external HTTP(S) references", () => {
@@ -106,7 +95,7 @@ describe("R69 campaign settlement reconciliation", () => {
   });
 });
 
-describe("R69 production wiring and safety", () => {
+describe("R82 production wiring and CRM boundary", () => {
   it("registers a dedicated non-IIO closeout route", () => {
     const routes = readFileSync("app/routes.ts", "utf8");
     const closeout = readFileSync("app/routes/campaign-closeout.tsx", "utf8");
@@ -137,15 +126,19 @@ describe("R69 production wiring and safety", () => {
     );
   });
 
-  it("keeps client acknowledgement operational rather than legal", () => {
+  it("keeps client acknowledgement as campaign completion evidence, not CRM", () => {
     const closeout = readFileSync("app/routes/campaign-closeout.tsx", "utf8");
     expect(closeout).toContain(
-      "This is an operational CRM marker only. It is not a legal signature",
+      "This records campaign completion evidence only. It is not a legal",
     );
-    expect(closeout).toContain("or agreement workflow.");
+    expect(closeout).not.toContain("operational CRM marker");
+    expect(closeout).not.toContain("Renewal and upsell");
+    expect(closeout).not.toContain("Commercial CRM / reference link");
+    expect(closeout).not.toContain('intent === "save-renewal"');
+    expect(closeout).not.toContain("campaign.renewal_recorded");
   });
 
-  it("uses an additive closeout migration with external reference links", () => {
+  it("preserves the historical additive migration for reconciliation only", () => {
     const migration = readFileSync(
       "migrations/0115_campaign_closeout_renewal.sql",
       "utf8",
