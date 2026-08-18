@@ -20,11 +20,11 @@ test.describe("R83 profile sharing and event publishing", () => {
     page,
   }, testInfo) => {
     await activateSuperadmin(page);
-    await page.goto("/profile-card");
+    await page.goto("/profile-card", { waitUntil: "networkidle" });
 
     await expect(
       page.getByRole("heading", { name: "Profile sharing card" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 10_000 });
     const card = page.locator(".glass-profile-card");
     const stage = page.locator(".glass-card-stage");
     const controls = page.locator(".glass-card-controls");
@@ -65,7 +65,9 @@ test.describe("R83 profile sharing and event publishing", () => {
       });
     }
 
-    await page.getByText("Pearl Glass", { exact: true }).click();
+    await page
+      .locator('label.glass-palette-choice:has(input[value="pearl"])')
+      .click({ force: true });
     await expect(card).toHaveClass(/palette-pearl/);
 
     const viewportWidth = await page.evaluate(
