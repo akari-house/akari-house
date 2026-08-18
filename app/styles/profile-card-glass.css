@@ -1,28 +1,62 @@
 .glass-share-page {
   --glass-page-accent: #f04f87;
-  width: min(1500px, calc(100% - 2rem));
+  width: min(980px, calc(100% - 2rem));
 }
 
 .glass-share-page .share-card-heading {
-  max-width: 1180px;
+  max-width: 760px;
   margin-inline: auto;
 }
 
 .glass-share-page .share-card-layout {
   grid-template-columns: minmax(0, 1fr);
-  gap: clamp(1.5rem, 3vw, 2.5rem);
+  gap: 1.4rem;
 }
 
 .glass-card-stage {
-  width: 100%;
-  padding: clamp(1rem, 2.4vw, 2rem);
-  border: 1px solid rgb(255 255 255 / 8%);
+  position: relative;
+  width: min(100%, 860px);
+  margin-inline: auto;
+  padding: clamp(2rem, 5vw, 4.25rem) clamp(1rem, 4vw, 3rem);
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 7%);
   border-radius: 28px;
   background:
-    radial-gradient(circle at 9% 8%, rgb(255 211 61 / 10%), transparent 28%),
-    radial-gradient(circle at 92% 88%, rgb(240 79 135 / 16%), transparent 33%),
-    linear-gradient(145deg, #05070d, #0a0810 72%, #10070d);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 4%);
+    radial-gradient(circle at 15% 18%, rgb(255 211 61 / 20%), transparent 24%),
+    radial-gradient(circle at 82% 28%, rgb(240 79 135 / 27%), transparent 30%),
+    radial-gradient(circle at 54% 100%, rgb(105 63 117 / 18%), transparent 38%),
+    linear-gradient(145deg, #0b0c12, #151019 58%, #090b11);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
+}
+
+.glass-card-stage::before,
+.glass-card-stage::after {
+  position: absolute;
+  pointer-events: none;
+  content: "";
+}
+
+.glass-card-stage::before {
+  width: 210px;
+  height: 210px;
+  top: -70px;
+  right: 10%;
+  border: 1px solid rgb(240 79 135 / 20%);
+  border-radius: 50%;
+  box-shadow:
+    0 0 55px rgb(240 79 135 / 12%),
+    inset 0 0 55px rgb(240 79 135 / 8%);
+}
+
+.glass-card-stage::after {
+  width: 140px;
+  height: 140px;
+  left: 5%;
+  bottom: -65px;
+  border-radius: 42% 58% 52% 48%;
+  background: rgb(255 211 61 / 7%);
+  filter: blur(2px);
+  transform: rotate(24deg);
 }
 
 .glass-profile-card {
@@ -31,41 +65,37 @@
   --card-accent: #f04f87;
   --card-highlight: #ffd33d;
   --card-surface: rgb(255 255 255 / 7%);
-  --card-shadow: rgb(0 0 0 / 72%);
+  --card-shadow: rgb(0 0 0 / 45%);
   container-type: inline-size;
   position: relative;
-  width: min(100%, 1120px);
+  z-index: 1;
+  width: min(100%, 680px);
   aspect-ratio: 85.6 / 53.98;
+  margin-inline: auto;
   min-height: 0;
   padding: 0;
   display: block;
   overflow: hidden;
-  border: 2px solid color-mix(in srgb, var(--card-ink) 34%, transparent);
-  border-radius: clamp(22px, 4cqi, 46px);
+  border: 1px solid color-mix(in srgb, var(--card-ink) 28%, transparent);
+  border-radius: clamp(18px, 3.1cqi, 26px);
   color: var(--card-ink);
   background:
-    radial-gradient(
-      circle at 4% 8%,
-      color-mix(in srgb, var(--card-highlight) 18%, transparent),
-      transparent 27%
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--card-ink) 12%, transparent),
+      transparent 36%
     ),
     radial-gradient(
-      circle at 96% 92%,
-      color-mix(in srgb, var(--card-accent) 22%, transparent),
+      circle at 96% 94%,
+      color-mix(in srgb, var(--card-accent) 16%, transparent),
       transparent 34%
     ),
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--card-bg) 91%, white 9%),
-      var(--card-bg) 42%,
-      color-mix(in srgb, var(--card-bg) 90%, var(--card-accent) 10%)
-    );
+    color-mix(in srgb, var(--card-bg) 70%, transparent);
   box-shadow:
-    0 38px 95px var(--card-shadow),
-    -10px 0 32px color-mix(in srgb, var(--card-highlight) 40%, transparent),
-    12px 0 36px color-mix(in srgb, var(--card-accent) 45%, transparent),
-    inset 0 1px 0 color-mix(in srgb, var(--card-ink) 68%, transparent),
-    inset 0 -1px 0 color-mix(in srgb, var(--card-accent) 44%, transparent);
+    0 24px 54px var(--card-shadow),
+    inset 0 1px 0 color-mix(in srgb, var(--card-ink) 30%, transparent);
+  backdrop-filter: blur(24px) saturate(1.15);
+  -webkit-backdrop-filter: blur(24px) saturate(1.15);
   isolation: isolate;
 }
 
@@ -77,101 +107,93 @@
 }
 
 .glass-profile-card::before {
-  inset: clamp(7px, 1.3cqi, 14px);
+  inset: 0 auto 0 0;
   z-index: 2;
-  border: 1px solid color-mix(in srgb, var(--card-ink) 42%, transparent);
-  border-radius: calc(clamp(22px, 4cqi, 46px) - 8px);
-  box-shadow:
-    inset 4px 0 0 color-mix(in srgb, var(--card-highlight) 78%, transparent),
-    inset -4px 0 0 color-mix(in srgb, var(--card-accent) 82%, transparent),
-    0 0 18px color-mix(in srgb, var(--card-accent) 20%, transparent);
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    transparent 8%,
+    color-mix(in srgb, var(--card-highlight) 78%, transparent) 32%,
+    color-mix(in srgb, var(--card-accent) 72%, transparent) 70%,
+    transparent 94%
+  );
 }
 
 .glass-profile-card::after {
-  inset: clamp(13px, 2cqi, 22px);
-  z-index: 2;
-  border: 1px solid color-mix(in srgb, var(--card-ink) 13%, transparent);
-  border-radius: calc(clamp(22px, 4cqi, 46px) - 14px);
+  width: 6px;
+  height: 6px;
+  right: 5.2%;
+  top: 7.5%;
+  z-index: 3;
+  border-radius: 50%;
+  background: var(--card-highlight);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--card-highlight) 55%, transparent);
 }
 
 .glass-card-gloss {
   position: absolute;
-  top: -30%;
-  left: -8%;
+  top: -26%;
+  left: -10%;
   z-index: -1;
-  width: 72%;
-  height: 92%;
+  width: 62%;
+  height: 80%;
   pointer-events: none;
   background: linear-gradient(
     130deg,
-    color-mix(in srgb, var(--card-ink) 24%, transparent),
-    color-mix(in srgb, var(--card-ink) 5%, transparent) 48%,
-    transparent 49%
+    color-mix(in srgb, var(--card-ink) 14%, transparent),
+    color-mix(in srgb, var(--card-ink) 3%, transparent) 52%,
+    transparent 53%
   );
-  filter: blur(1px);
-  transform: rotate(-3deg);
+  transform: rotate(-5deg);
 }
 
 .glass-card-watermark {
   position: absolute;
-  right: 1.5%;
-  bottom: -10%;
+  right: -1%;
+  bottom: -17%;
   z-index: -1;
-  width: 31%;
+  width: 34%;
   height: auto;
   pointer-events: none;
-  opacity: 0.1;
-  filter: grayscale(0.45) saturate(0.65) contrast(1.1);
+  opacity: 0.055;
+  filter: grayscale(0.35) saturate(0.72);
 }
 
 .glass-card-topline {
   position: absolute;
-  top: 7.2%;
+  top: 7%;
   right: 7%;
   z-index: 3;
-  width: 39%;
+  width: auto;
   display: flex;
-  align-items: flex-start;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: flex-end;
 }
 
 .glass-card-brand {
-  position: relative;
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: clamp(0.28rem, 0.8cqi, 0.6rem);
-  padding-bottom: clamp(0.8rem, 2.2cqi, 1.4rem);
+  gap: 0.6cqi;
 }
 
 .glass-card-brand img {
-  width: clamp(7.4rem, 22cqi, 15.5rem);
+  width: 18.5cqi;
+  max-width: 138px;
   height: auto;
   display: block;
   object-fit: contain;
-  filter: drop-shadow(0 3px 5px rgb(0 0 0 / 24%));
+  filter: drop-shadow(0 2px 4px rgb(0 0 0 / 18%));
 }
 
 .glass-card-brand span {
   color: var(--card-accent);
-  font-size: clamp(0.62rem, 2cqi, 1.25rem);
-  font-weight: 900;
-  letter-spacing: 0.12em;
+  font-size: 1.35cqi;
+  font-weight: 850;
+  letter-spacing: 0.11em;
 }
 
-.glass-card-brand::after {
-  position: absolute;
-  left: clamp(3.7rem, 11cqi, 7.4rem);
-  bottom: 0;
-  width: max-content;
-  color: var(--card-ink);
-  content: "Illuminate. Connect. Elevate.";
-  font-size: clamp(0.38rem, 1.15cqi, 0.72rem);
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  opacity: 0.66;
-}
-
+.glass-card-brand::after,
 .glass-card-edition {
   display: none;
 }
@@ -185,9 +207,9 @@
 
 .glass-card-person {
   position: absolute;
-  top: 17.5%;
-  left: 7.6%;
-  width: 28.5%;
+  top: 22%;
+  left: 7.5%;
+  width: 24%;
   height: auto;
   display: block;
 }
@@ -195,23 +217,18 @@
 .glass-card-avatar {
   position: relative;
   width: 100%;
-  max-width: none;
   aspect-ratio: 1;
   display: grid;
   place-items: center;
   overflow: visible;
-  border: 2px solid color-mix(in srgb, var(--card-ink) 64%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-ink) 45%, transparent);
   border-radius: 50%;
   color: var(--card-bg);
   background: var(--card-accent);
   box-shadow:
-    0 0 0 clamp(4px, 0.7cqi, 8px)
-      color-mix(in srgb, var(--card-bg) 92%, transparent),
-    0 0 0 clamp(8px, 1.25cqi, 14px)
-      color-mix(in srgb, var(--card-accent) 76%, transparent),
-    -9px 0 28px color-mix(in srgb, var(--card-highlight) 58%, transparent),
-    9px 0 32px color-mix(in srgb, var(--card-accent) 58%, transparent),
-    0 20px 44px rgb(0 0 0 / 36%);
+    0 0 0 0.75cqi color-mix(in srgb, var(--card-bg) 63%, transparent),
+    0 12px 30px rgb(0 0 0 / 24%),
+    0 0 20px color-mix(in srgb, var(--card-accent) 18%, transparent);
 }
 
 .glass-card-avatar > img:not(.glass-avatar-seal img) {
@@ -223,56 +240,52 @@
 
 .glass-avatar-seal {
   position: absolute;
-  right: -7%;
-  bottom: -4%;
-  width: 30%;
+  right: -5%;
+  bottom: -3%;
+  width: 25%;
   aspect-ratio: 1;
   display: grid;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--card-ink) 52%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-ink) 30%, transparent);
   border-radius: 50%;
-  background: color-mix(in srgb, var(--card-bg) 84%, transparent);
-  box-shadow:
-    0 10px 22px rgb(0 0 0 / 36%),
-    0 0 15px color-mix(in srgb, var(--card-accent) 25%, transparent);
-  backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--card-bg) 67%, transparent);
+  box-shadow: 0 7px 15px rgb(0 0 0 / 22%);
+  backdrop-filter: blur(10px);
 }
 
 .glass-avatar-seal img {
-  width: 72%;
+  width: 70%;
   height: auto;
 }
 
 .glass-card-identity {
   position: absolute;
-  top: 25.5%;
-  left: 38.2%;
-  width: 35.5%;
+  top: 28%;
+  left: 36%;
+  width: 50%;
   max-width: none;
   min-width: 0;
-  align-self: auto;
 }
 
 .glass-card-identity h2 {
   max-width: 100%;
-  margin: 0 0 0.5cqi;
+  margin: 0 0 0.55cqi;
   overflow: hidden;
   color: var(--card-ink);
-  font-size: clamp(1.4rem, 5.2cqi, 3.6rem);
-  font-weight: 800;
-  line-height: 0.98;
-  letter-spacing: -0.055em;
+  font-size: clamp(1.35rem, 4.65cqi, 2rem);
+  font-weight: 760;
+  line-height: 1;
+  letter-spacing: -0.045em;
   text-overflow: ellipsis;
-  text-shadow: 0 2px 10px rgb(0 0 0 / 20%);
   white-space: nowrap;
 }
 
 .glass-card-handle {
-  margin: 0 0 1.6cqi !important;
+  margin: 0 0 1.35cqi !important;
   color: var(--card-ink);
-  font-size: clamp(0.7rem, 2.15cqi, 1.45rem);
+  font-size: clamp(0.66rem, 1.7cqi, 0.86rem);
   font-weight: 450;
-  opacity: 0.68 !important;
+  opacity: 0.58 !important;
 }
 
 .glass-role-line {
@@ -280,8 +293,8 @@
   max-width: 100%;
   overflow: hidden;
   color: var(--card-highlight);
-  font-size: clamp(0.72rem, 2.05cqi, 1.35rem) !important;
-  font-weight: 600;
+  font-size: clamp(0.68rem, 1.82cqi, 0.9rem) !important;
+  font-weight: 620;
   line-height: 1.15;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -289,308 +302,150 @@
 
 .glass-card-headline {
   max-width: 34ch;
-  margin: 1.2cqi 0 0 !important;
+  margin: 1.1cqi 0 0 !important;
   display: -webkit-box;
   overflow: hidden;
   color: var(--card-ink) !important;
-  font-size: clamp(0.58rem, 1.65cqi, 1.08rem) !important;
-  line-height: 1.35;
-  opacity: 0.78 !important;
+  font-size: clamp(0.58rem, 1.42cqi, 0.76rem) !important;
+  line-height: 1.38;
+  opacity: 0.66 !important;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
-.glass-card-verification {
-  display: none;
-}
-
-.glass-role-pills {
-  margin-top: clamp(0.5rem, 1.5cqi, 1rem);
-  display: flex;
-  flex-wrap: nowrap;
-  gap: clamp(0.3rem, 0.8cqi, 0.6rem);
-}
-
-.glass-role-pills span {
-  min-width: 0;
-  padding: clamp(0.3rem, 0.8cqi, 0.55rem) clamp(0.6rem, 1.25cqi, 0.95rem);
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--card-accent) 62%, transparent);
-  border-radius: 999px;
-  color: var(--card-ink);
-  background: color-mix(in srgb, var(--card-bg) 70%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--card-ink) 20%, transparent),
-    0 7px 18px rgb(0 0 0 / 13%);
-  font-size: clamp(0.42rem, 1.15cqi, 0.73rem);
-  font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  backdrop-filter: blur(12px);
-}
-
-.glass-role-pills span:first-child {
-  border-color: color-mix(in srgb, var(--card-highlight) 72%, transparent);
-  color: var(--card-highlight);
+.glass-card-verification,
+.glass-role-pills,
+.glass-card-metrics,
+.profile-card-private-details,
+.glass-card-footer {
+  display: none !important;
 }
 
 .glass-profile-link {
   position: absolute;
-  top: 25.5%;
-  right: 7.3%;
-  width: 17.5%;
-  min-height: 39%;
-  padding: clamp(0.5rem, 1.35cqi, 0.95rem);
+  right: 7%;
+  bottom: 8.5%;
+  width: 29%;
+  min-height: 0;
+  padding: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   flex-direction: column;
-  gap: clamp(0.18rem, 0.55cqi, 0.42rem);
-  overflow: hidden;
-  border: 1.5px solid color-mix(in srgb, var(--card-accent) 78%, transparent);
-  border-radius: clamp(15px, 3cqi, 28px);
-  background:
-    radial-gradient(
-      circle at 50% 3%,
-      color-mix(in srgb, var(--card-highlight) 12%, transparent),
-      transparent 50%
-    ),
-    color-mix(in srgb, var(--card-bg) 68%, var(--card-surface));
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--card-ink) 26%, transparent),
-    0 16px 32px rgb(0 0 0 / 18%),
-    0 0 18px color-mix(in srgb, var(--card-accent) 18%, transparent);
-  text-align: center;
-  backdrop-filter: blur(16px);
-}
-
-.glass-profile-link-icon {
-  position: relative;
-  width: 61%;
-  aspect-ratio: 1;
-  display: grid;
-  place-items: center;
+  gap: 0.28cqi;
   overflow: hidden;
   border: 0;
-  border-radius: clamp(4px, 0.8cqi, 8px);
-  color: transparent;
-  background-color: #fff;
-  background-image:
-    linear-gradient(
-      90deg,
-      #111 12%,
-      transparent 12% 24%,
-      #111 24% 36%,
-      transparent 36% 48%,
-      #111 48% 62%,
-      transparent 62% 74%,
-      #111 74% 88%,
-      transparent 88%
-    ),
-    linear-gradient(
-      #111 10%,
-      transparent 10% 24%,
-      #111 24% 36%,
-      transparent 36% 51%,
-      #111 51% 62%,
-      transparent 62% 77%,
-      #111 77% 90%,
-      transparent 90%
-    );
-  background-size:
-    23px 19px,
-    19px 23px;
-  box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: right;
+  backdrop-filter: none;
 }
 
-.glass-profile-link-icon::before,
-.glass-profile-link-icon::after {
-  position: absolute;
-  width: 29%;
-  aspect-ratio: 1;
-  border: max(2px, 0.45cqi) solid #111;
-  background: #fff;
-  box-shadow:
-    inset 0 0 0 max(2px, 0.42cqi) #fff,
-    inset 0 0 0 max(4px, 0.8cqi) #111;
-  content: "";
-}
-
-.glass-profile-link-icon::before {
-  top: 7%;
-  left: 7%;
-}
-
-.glass-profile-link-icon::after {
-  top: 7%;
-  right: 7%;
-}
-
-.glass-profile-link-icon svg {
+.glass-profile-link-icon,
+.glass-profile-link small,
+.glass-profile-link > span:last-child {
   display: none;
 }
 
-.glass-profile-link small {
-  margin-top: 0.25cqi;
-  color: var(--card-accent);
-  font-size: clamp(0.34rem, 0.9cqi, 0.52rem);
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
 .glass-profile-link strong {
-  color: var(--card-ink);
-  font-size: clamp(0.45rem, 1.08cqi, 0.67rem);
-}
-
-.glass-profile-link > span:last-child {
-  width: 100%;
+  max-width: 100%;
   overflow: hidden;
   color: var(--card-ink);
-  font-size: clamp(0.31rem, 0.74cqi, 0.46rem);
-  opacity: 0.58;
+  font-size: clamp(0.54rem, 1.35cqi, 0.7rem);
+  font-weight: 600;
+  opacity: 0.64;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.glass-card-metrics {
-  display: none;
+.glass-profile-link strong::after {
+  margin-left: 0.5cqi;
+  color: var(--card-accent);
+  content: "↗";
 }
 
 .glass-connect-strip {
   position: absolute;
-  left: 7.3%;
-  bottom: 17.4%;
+  left: 36%;
+  bottom: 7.5%;
   z-index: 1;
-  width: 61.5%;
+  width: 31%;
   min-width: 0;
-  min-height: 11.5%;
-  padding: 0 3.2cqi;
+  min-height: 0;
+  padding: 0;
   display: flex;
   align-items: center;
-  gap: clamp(0.8rem, 2.5cqi, 1.7rem);
-  border: 1px solid color-mix(in srgb, var(--card-ink) 30%, transparent);
-  border-radius: clamp(13px, 2.6cqi, 25px);
-  background: color-mix(in srgb, var(--card-bg) 70%, var(--card-surface));
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--card-ink) 20%, transparent),
-    0 14px 28px rgb(0 0 0 / 15%);
-  backdrop-filter: blur(15px);
+  gap: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
-.glass-connect-strip::after {
-  position: absolute;
-  top: 18%;
-  bottom: 18%;
-  left: 29%;
-  width: 1px;
-  background: color-mix(in srgb, var(--card-ink) 26%, transparent);
-  content: "";
-}
-
+.glass-connect-strip::after,
 .glass-connect-strip > strong {
-  width: 25%;
-  flex: 0 0 25%;
-  color: var(--card-ink);
-  font-size: clamp(0.58rem, 1.6cqi, 1rem);
-  font-weight: 600;
-  white-space: nowrap;
+  display: none;
 }
 
 .glass-card-socials {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: clamp(0.35rem, 1cqi, 0.8rem);
+  gap: 0.9cqi;
 }
 
 .glass-card-socials a {
-  width: clamp(1.65rem, 4cqi, 2.8rem);
-  height: clamp(1.65rem, 4cqi, 2.8rem);
+  width: 4.2cqi;
+  min-width: 25px;
+  max-width: 31px;
+  height: 4.2cqi;
+  min-height: 25px;
+  max-height: 31px;
   display: grid;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--card-ink) 34%, transparent);
+  border: 1px solid color-mix(in srgb, var(--card-ink) 25%, transparent);
   border-radius: 50%;
   color: var(--card-ink);
-  background: color-mix(in srgb, var(--card-bg) 72%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--card-ink) 12%, transparent);
+  background: color-mix(in srgb, var(--card-ink) 4%, transparent);
   transition:
-    transform 160ms ease,
-    border-color 160ms ease,
-    background 160ms ease;
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
 }
 
 .glass-card-socials a:hover,
 .glass-card-socials a:focus-visible {
-  border-color: var(--card-accent);
-  background: color-mix(in srgb, var(--card-accent) 14%, var(--card-bg));
-  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--card-accent) 72%, transparent);
+  background: color-mix(in srgb, var(--card-accent) 11%, transparent);
+  transform: translateY(-1px);
 }
 
 .glass-card-socials svg {
-  width: clamp(0.8rem, 1.8cqi, 1.2rem);
-  height: clamp(0.8rem, 1.8cqi, 1.2rem);
+  width: 1.75cqi;
+  min-width: 12px;
+  max-width: 15px;
+  height: 1.75cqi;
+  min-height: 12px;
+  max-height: 15px;
 }
 
 .glass-no-socials {
   color: var(--card-ink);
-  font-size: clamp(0.4rem, 1cqi, 0.65rem);
-  opacity: 0.62;
-}
-
-.glass-card-footer {
-  position: absolute;
-  right: 7.3%;
-  bottom: 5.9%;
-  left: 7.3%;
-  z-index: 1;
-  min-height: 8.2%;
-  padding: 0 2.4cqi;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-  gap: 1.8cqi !important;
-  border: 1px solid color-mix(in srgb, var(--card-ink) 30%, transparent);
-  border-radius: clamp(12px, 2.4cqi, 23px);
-  color: var(--card-ink);
-  background: color-mix(in srgb, var(--card-bg) 74%, var(--card-surface));
-  opacity: 1 !important;
-  backdrop-filter: blur(14px);
-}
-
-.glass-card-footer::before {
-  color: var(--card-accent);
-  content: "◎";
-  font-size: clamp(0.75rem, 1.9cqi, 1.25rem);
-}
-
-.glass-card-footer::after {
-  margin-left: auto;
-  color: var(--card-ink);
-  content: "A private ecosystem for high-signal connections.";
-  font-size: clamp(0.4rem, 1.12cqi, 0.74rem);
-  opacity: 0.66;
-}
-
-.profile-card-private-details {
-  display: none !important;
-}
-
-.glass-card-footer-brand {
-  color: var(--card-ink);
-  font-size: clamp(0.52rem, 1.3cqi, 0.84rem);
-  font-weight: 650;
+  font-size: clamp(0.5rem, 1.2cqi, 0.66rem);
+  opacity: 0.52;
 }
 
 .glass-card-note {
-  margin-top: clamp(0.85rem, 1.8vw, 1.4rem);
+  width: min(100%, 680px);
+  margin: 1rem auto 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.55rem;
+  gap: 0.45rem;
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
   text-align: center;
 }
 
@@ -598,25 +453,20 @@
   color: #ffd33d;
 }
 
-.glass-card-controls {
-  width: min(100%, 1120px);
-  margin: 0 auto;
-  padding: clamp(1rem, 2vw, 1.5rem);
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  border: 1px solid rgb(255 255 255 / 9%);
-  border-radius: 22px;
-  background:
-    radial-gradient(circle at 100% 0%, rgb(240 79 135 / 8%), transparent 32%),
-    var(--surface);
+.share-card-confidence {
+  width: min(100%, 680px);
+  margin-inline: auto;
+  text-align: center;
 }
 
-.glass-card-controls > fieldset,
-.glass-card-controls > label,
-.glass-card-controls > .profile-card-language-control,
-.glass-card-controls > .share-card-actions,
-.glass-card-controls > button,
-.glass-card-controls > small {
-  min-width: 0;
+.glass-card-controls {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: clamp(1rem, 2vw, 1.35rem);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
 }
 
 .glass-card-controls .glass-palette-fieldset,
@@ -630,25 +480,25 @@
   width: 100%;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.7rem;
+  gap: 0.6rem;
 }
 
 .glass-palette-choice {
   min-width: 0;
-  min-height: 82px;
-  padding: 0.7rem;
+  min-height: 70px;
+  padding: 0.62rem;
   display: flex !important;
   align-items: center;
-  gap: 0.6rem;
-  border: 1px solid rgb(255 255 255 / 9%) !important;
-  border-radius: 14px !important;
-  background: rgb(255 255 255 / 3%) !important;
+  gap: 0.5rem;
+  border: 1px solid var(--border) !important;
+  border-radius: 13px !important;
+  background: var(--surface-raised) !important;
   cursor: pointer;
 }
 
 .glass-palette-choice.is-selected {
-  border-color: rgb(240 79 135 / 70%) !important;
-  box-shadow: 0 0 0 2px rgb(240 79 135 / 10%);
+  border-color: rgb(240 79 135 / 62%) !important;
+  box-shadow: 0 0 0 2px rgb(240 79 135 / 8%);
 }
 
 .glass-palette-choice input {
@@ -659,16 +509,15 @@
 }
 
 .glass-palette-swatch {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2rem;
+  height: 2rem;
   flex: 0 0 auto;
-  border: 1px solid rgb(255 255 255 / 30%);
+  border: 1px solid rgb(255 255 255 / 25%);
   border-radius: 50%;
   background:
     linear-gradient(135deg, var(--swatch-highlight), transparent 42%),
     radial-gradient(circle at 78% 75%, var(--swatch-accent), transparent 48%),
     var(--swatch-bg);
-  box-shadow: 0 6px 16px rgb(0 0 0 / 20%);
 }
 
 .glass-palette-choice strong,
@@ -678,33 +527,37 @@
 
 .glass-palette-choice strong {
   color: var(--text);
-  font-size: 0.76rem;
+  font-size: 0.72rem;
 }
 
 .glass-palette-choice small {
-  margin-top: 0.18rem;
-  font-size: 0.64rem;
-  line-height: 1.35;
+  margin-top: 0.12rem;
+  font-size: 0.6rem;
+  line-height: 1.3;
 }
 
-.palette-pearl.glass-profile-card {
+.palette-pearl.glass-profile-card,
+.palette-lantern.glass-profile-card {
   box-shadow:
-    0 36px 75px rgb(91 49 63 / 18%),
-    -8px 0 26px color-mix(in srgb, var(--card-highlight) 30%, transparent),
-    9px 0 28px color-mix(in srgb, var(--card-accent) 30%, transparent),
-    inset 0 1px 0 rgb(255 255 255 / 95%);
+    0 22px 50px rgb(72 41 54 / 18%),
+    inset 0 1px 0 rgb(255 255 255 / 68%);
 }
 
-.palette-pearl .glass-profile-link,
-.palette-pearl .glass-connect-strip,
-.palette-pearl .glass-card-footer,
-.palette-lantern .glass-profile-link,
-.palette-lantern .glass-connect-strip,
-.palette-lantern .glass-card-footer {
-  background: color-mix(in srgb, var(--card-bg) 75%, white 25%);
-}
+@media (max-width: 800px) {
+  .glass-share-page {
+    width: min(100% - 1rem, 980px);
+  }
 
-@media (max-width: 980px) {
+  .glass-card-stage {
+    padding: clamp(1.25rem, 7vw, 2.5rem) 0.65rem;
+    border-radius: 20px;
+  }
+
+  .glass-profile-card {
+    width: min(100%, 620px);
+    border-radius: 18px;
+  }
+
   .glass-card-controls {
     grid-template-columns: 1fr;
   }
@@ -718,115 +571,44 @@
   }
 }
 
-@media (max-width: 700px) {
-  .glass-share-page {
-    width: min(100% - 0.75rem, 1500px);
-  }
-
+@media (max-width: 520px) {
   .glass-card-stage {
-    padding: 0.45rem;
-    border-radius: 18px;
+    padding: 1rem 0.35rem;
   }
 
   .glass-profile-card {
     width: 100%;
-    border-radius: 18px;
-  }
-
-  .glass-profile-card::before {
-    inset: 5px;
     border-radius: 14px;
   }
 
-  .glass-profile-card::after {
-    inset: 9px;
-    border-radius: 10px;
-  }
-
-  .glass-card-brand::after,
-  .glass-card-headline,
-  .glass-profile-link small,
-  .glass-profile-link > span:last-child,
-  .glass-card-footer::after {
-    display: none;
-  }
-
-  .glass-card-brand img {
-    width: 22cqi;
-  }
-
-  .glass-card-brand span {
-    font-size: 2cqi;
-  }
-
-  .glass-card-avatar {
-    box-shadow:
-      0 0 0 3px color-mix(in srgb, var(--card-bg) 92%, transparent),
-      0 0 0 5px color-mix(in srgb, var(--card-accent) 76%, transparent),
-      -4px 0 12px color-mix(in srgb, var(--card-highlight) 48%, transparent),
-      4px 0 12px color-mix(in srgb, var(--card-accent) 48%, transparent);
-  }
-
-  .glass-avatar-seal {
-    right: -5%;
+  .glass-card-person {
+    top: 23%;
+    left: 7%;
+    width: 23%;
   }
 
   .glass-card-identity {
-    top: 27%;
+    top: 29%;
+    left: 35%;
+    width: 56%;
   }
 
-  .glass-card-handle {
-    margin-bottom: 1cqi !important;
-  }
-
-  .glass-role-pills {
-    margin-top: 1cqi;
-    gap: 0.45cqi;
-  }
-
-  .glass-role-pills span {
-    padding: 0.55cqi 0.8cqi;
-    font-size: 1.25cqi;
-  }
-
-  .glass-profile-link {
-    top: 28%;
-    min-height: 34%;
-    padding: 1cqi;
-  }
-
-  .glass-profile-link strong {
-    font-size: 1.05cqi;
+  .glass-card-headline {
+    display: none;
   }
 
   .glass-connect-strip {
-    bottom: 17%;
-    min-height: 11%;
-    padding-inline: 2.4cqi;
+    left: 35%;
+    width: 34%;
   }
 
-  .glass-connect-strip::after {
-    left: 31%;
-  }
-
-  .glass-connect-strip > strong {
-    width: 27%;
-    flex-basis: 27%;
-    font-size: 1.45cqi;
-  }
-
-  .glass-card-socials {
-    gap: 0.7cqi;
-  }
-
-  .glass-card-socials a {
-    width: 3.9cqi;
-    height: 3.9cqi;
+  .glass-profile-link {
+    width: 25%;
   }
 
   .glass-card-note,
   .share-card-confidence {
-    font-size: 0.68rem;
+    font-size: 0.65rem;
   }
 
   .glass-palette-grid {
