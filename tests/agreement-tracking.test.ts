@@ -52,29 +52,24 @@ describe("R70 agreement tracking", () => {
     );
   });
 
-  it("keeps legal work outside AKARI and the route Superadmin-only", () => {
-    const route = readFileSync("app/routes/admin-agreements.tsx", "utf8");
-    expect(route).toContain("requireSuperAdmin");
-    expect(route).toContain("Operational tracking only.");
-    expect(route).toContain(
-      "AKARI does not generate, draft, review or sign agreements",
-    );
-    expect(route).toContain("external HTTPS document link");
-    expect(route).not.toContain("Generate agreement");
-    expect(route).not.toContain("AI contract");
-    expect(route).not.toContain("e-signature");
-  });
-
-  it("uses an additive metadata table and audit log rather than document storage", () => {
+  it("preserves the old metadata table for safe CRM reconciliation", () => {
     const migration = readFileSync(
       "migrations/0116_agreement_tracking.sql",
       "utf8",
     );
-    const route = readFileSync("app/routes/admin-agreements.tsx", "utf8");
     expect(migration).toContain("CREATE TABLE agreement_records");
     expect(migration).toContain("external_document_url");
     expect(migration).not.toContain("BLOB");
-    expect(route).toContain("INSERT INTO audit_logs");
-    expect(route).toContain("'agreement'");
+  });
+
+  it("no longer exposes agreement operations as an AKARI House route", () => {
+    const routes = readFileSync("app/routes.ts", "utf8");
+    const boundary = readFileSync(
+      "docs/R80_CRM_BOUNDARY_EVENT_PUBLISHING.md",
+      "utf8",
+    );
+    expect(routes).not.toContain('route("admin/agreements"');
+    expect(boundary).toContain("CRM by AKARI");
+    expect(boundary).toContain("agreement tracking");
   });
 });

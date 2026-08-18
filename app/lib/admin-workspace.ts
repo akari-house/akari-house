@@ -43,14 +43,6 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     superadminOnly: true,
   },
   {
-    key: "agreements",
-    label: "Agreement tracking",
-    description:
-      "Track external agreement stages, document references, expiry and follow-up ownership.",
-    to: "/admin/agreements",
-    superadminOnly: true,
-  },
-  {
     key: "fundraising-readiness",
     label: "Fundraising readiness",
     description:
@@ -64,38 +56,6 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     description:
       "Review Data Room completeness, NDA policy, Investor access and open diligence requests.",
     to: "/admin/diligence",
-    superadminOnly: true,
-  },
-  {
-    key: "relationships",
-    label: "Relationship intelligence",
-    description:
-      "Own relationships, record interactions, find warm paths and review connected account context.",
-    to: "/admin/relationships",
-    superadminOnly: true,
-  },
-  {
-    key: "operating-rhythm",
-    label: "Operating rhythm",
-    description:
-      "Review cross-system attention signals, follow-up ownership and recurring report snapshots.",
-    to: "/admin/operating-rhythm",
-    superadminOnly: true,
-  },
-  {
-    key: "finance",
-    label: "Finance & revenue",
-    description:
-      "Track invoices, collections, refunds, operating costs and currency-level contribution.",
-    to: "/admin/finance",
-    superadminOnly: true,
-  },
-  {
-    key: "saas-workspaces",
-    label: "SaaS workspaces",
-    description:
-      "Provision workspaces, teams, plans, subscriptions and module entitlements.",
-    to: "/admin/workspaces",
     superadminOnly: true,
   },
   {
@@ -127,9 +87,17 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     scope: "moderation",
   },
   {
+    key: "events",
+    label: "Event publishing",
+    description:
+      "Review submitted events and publish valid gatherings without a second review hop.",
+    to: "/admin/events",
+    scope: "projects",
+  },
+  {
     key: "projects",
     label: "Projects & interests",
-    description: "Review projects, opportunities and member interests.",
+    description: "Review projects and manage member interest requests.",
     to: "/admin/interests",
     scope: "projects",
   },

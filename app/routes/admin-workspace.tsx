@@ -16,9 +16,9 @@ interface QueueCounts {
   verification: number;
   "project-claims": number;
   moderation: number;
+  events: number;
   projects: number;
   campaigns: number;
-  agreements: number;
   contact: number;
   operations: number;
   team: number;
@@ -60,17 +60,10 @@ export async function loader({ request, context }: Route.LoaderArgs) {
           WHERE claim_status = 'pending') AS "project-claims",
         (SELECT COUNT(*) FROM moderation_reports
           WHERE status IN ('open', 'reviewing')) AS moderation,
+        (SELECT COUNT(*) FROM events WHERE status = 'submitted') AS events,
         ((SELECT COUNT(*) FROM projects WHERE status = 'submitted') +
          (SELECT COUNT(*) FROM interest_requests WHERE status = 'pending')) AS projects,
         (SELECT COUNT(*) FROM ambassador_campaigns WHERE status = 'submitted') AS campaigns,
-        (SELECT COUNT(*) FROM agreement_records
-          WHERE (
-            status IN ('required', 'with_lawyer', 'ready_to_send', 'sent', 'negotiation')
-            AND (next_follow_up_at IS NULL OR next_follow_up_at <= date('now'))
-          ) OR (
-            status = 'signed' AND expires_at IS NOT NULL
-            AND expires_at <= date('now', '+30 days')
-          )) AS agreements,
         (SELECT COUNT(*) FROM contact_messages
           WHERE status IN ('open', 'reviewing')) AS contact,
         ((SELECT COUNT(*) FROM delivery_outbox
@@ -87,9 +80,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     verification: 0,
     "project-claims": 0,
     moderation: 0,
+    events: 0,
     projects: 0,
     campaigns: 0,
-    agreements: 0,
     contact: 0,
     operations: 0,
     team: 0,
@@ -129,13 +122,21 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
             <span className="eyebrow">Superadmin operations</span>
             <h1>Admin workspace</h1>
             <p>
-              Start with what needs a decision. The operational views stay dense
-              and practical while the public House keeps the cinematic brand.
+              Start with what needs a House decision. CRM, revenue, agreement
+              and relationship operations now live only in CRM by AKARI.
             </p>
           </div>
-          <Link className="button button-quiet" to="/app">
-            Return to your House
-          </Link>
+          <div className="button-row">
+            <a
+              className="button button-primary"
+              href="https://crm.akarihouse.com"
+            >
+              Open CRM by AKARI
+            </a>
+            <Link className="button button-quiet" to="/app">
+              Return to your House
+            </Link>
+          </div>
         </header>
         <AdminWorkspaceNav access={loaderData.access} />
 
@@ -182,11 +183,25 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
                 No review queue needs action.
               </h2>
               <p>
-                Membership, verification, Project claims, agreements, moderation
-                and the operational queues are currently clear.
+                Membership, verification, Project claims, Events, moderation and
+                the operational queues are currently clear.
               </p>
             </>
           )}
+        </section>
+
+        <section className="status-card" aria-labelledby="crm-boundary-title">
+          <span className="chapter">Product boundary</span>
+          <h2 id="crm-boundary-title">One CRM source of truth.</h2>
+          <p>
+            Agreements, governed relationship intelligence, operating rhythm,
+            finance and SaaS workspace administration are no longer operated in
+            AKARI House. Use CRM by AKARI for those workflows. House keeps the
+            professional network, projects, diligence, events and campaigns.
+          </p>
+          <a className="button button-quiet" href="https://crm.akarihouse.com">
+            Continue in CRM
+          </a>
         </section>
 
         <section

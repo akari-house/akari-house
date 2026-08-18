@@ -89,7 +89,7 @@ describe("R73 relationship intelligence", () => {
     ).toBe("Investor Name");
   });
 
-  it("keeps member connections and project claims canonical while adding internal CRM metadata", () => {
+  it("keeps the historical relationship schema intact for reconciliation", () => {
     const migration = readFileSync(
       "migrations/0119_relationship_intelligence.sql",
       "utf8",
@@ -102,18 +102,9 @@ describe("R73 relationship intelligence", () => {
     expect(migration).not.toContain("DROP TABLE project_relationships");
   });
 
-  it("keeps relationship intelligence Superadmin-only", () => {
-    const listRoute = readFileSync(
-      "app/routes/admin-relationships.tsx",
-      "utf8",
-    );
-    const detailRoute = readFileSync(
-      "app/routes/admin-relationship-detail.tsx",
-      "utf8",
-    );
-    expect(listRoute).toContain("requireSuperAdmin");
-    expect(detailRoute).toContain("requireSuperAdmin");
-    expect(detailRoute).toContain("Internal relationship intelligence");
-    expect(detailRoute).toContain("INSERT INTO audit_logs");
+  it("does not expose the internal CRM relationship UI in AKARI House", () => {
+    const routes = readFileSync("app/routes.ts", "utf8");
+    expect(routes).not.toContain('route("admin/relationships"');
+    expect(routes).not.toContain('route("admin/relationships/:relationshipId"');
   });
 });
