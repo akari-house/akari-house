@@ -46,7 +46,9 @@ export default function EventManage({ loaderData }: Route.ComponentProps) {
               {direct ? "AKARI event publishing" : "Event host desk"}
             </span>
             <h1>
-              {direct ? "Manage and publish gatherings." : "Manage your gatherings."}
+              {direct
+                ? "Manage and publish gatherings."
+                : "Manage your gatherings."}
             </h1>
             {direct && (
               <p>
@@ -104,7 +106,9 @@ export default function EventManage({ loaderData }: Route.ComponentProps) {
                   : "Start with a clear date, timezone and purpose. AKARI reviews every proposal before it enters the public calendar."}
               </p>
               <Link className="button button-primary" to="/events/new">
-                {direct ? "Publish your first event" : "Propose your first event"}
+                {direct
+                  ? "Publish your first event"
+                  : "Propose your first event"}
               </Link>
             </div>
           )}
