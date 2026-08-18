@@ -1,6 +1,6 @@
-import type { Route } from "./+types/crm-creator-feed";
+import type { Route } from "./+types/public-creator-directory";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import { loadPublicCrmCreatorFeed } from "~/lib/crm-creator-feed.server";
+import { loadPublicCreatorDirectory } from "~/lib/public-creator-directory.server";
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
@@ -8,7 +8,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   const after = url.searchParams.get("after") ?? "";
   const requestedLimit = Number(url.searchParams.get("limit") ?? 200);
   const limit = Number.isFinite(requestedLimit) ? requestedLimit : 200;
-  const feed = await loadPublicCrmCreatorFeed(db, { after, limit });
+  const feed = await loadPublicCreatorDirectory(db, { after, limit });
   return Response.json(
     {
       ...feed,

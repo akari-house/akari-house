@@ -7,25 +7,9 @@ export const campaignCloseoutStatuses = [
   "reporting",
   "client_delivered",
   "closed",
-  "renewed",
 ] as const;
 
 export type CampaignCloseoutStatus = (typeof campaignCloseoutStatuses)[number];
-
-export const campaignRenewalTypes = [
-  "none",
-  "follow_up",
-  "renew_campaign",
-  "retainer",
-  "upsell_service",
-] as const;
-
-export const campaignRenewalStages = [
-  "none",
-  "planned",
-  "converted",
-  "declined",
-] as const;
 
 export type SettlementRollupItem = {
   applicationId: string;
@@ -98,13 +82,11 @@ export type CloseoutStateInput = {
   reportFinal: boolean;
   reportDelivered: boolean;
   closed: boolean;
-  renewalConverted: boolean;
 };
 
 export function deriveCampaignCloseoutStatus(
   input: CloseoutStateInput,
 ): CampaignCloseoutStatus {
-  if (input.renewalConverted) return "renewed";
   if (input.closed) return "closed";
   if (input.reportDelivered) return "client_delivered";
   if (input.reportFinal) return "reporting";

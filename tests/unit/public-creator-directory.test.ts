@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { mapPublicCreatorRow } from "../../app/lib/crm-creator-feed.server";
+import { mapPublicCreatorRow } from "../../app/lib/public-creator-directory.server";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
@@ -24,7 +24,7 @@ const baseRow = {
   xScoreSource: "partner_verified",
 };
 
-describe("AKARI House public-safe CRM Creator feed", () => {
+describe("AKARI House public Creator directory", () => {
   it("keeps the stable House identity while respecting profile privacy switches", () => {
     const creator = mapPublicCreatorRow(baseRow, [
       {
@@ -56,8 +56,9 @@ describe("AKARI House public-safe CRM Creator feed", () => {
   });
 
   it("enforces public Creator eligibility and excludes private contact data at the source", () => {
-    const source = read("app/lib/crm-creator-feed.server.ts");
-    const route = read("app/routes/crm-creator-feed.ts");
+    const source = read("app/lib/public-creator-directory.server.ts");
+    const route = read("app/routes/public-creator-directory.ts");
+    const routes = read("app/routes.ts");
     expect(source).toContain("ur.role = 'creator'");
     expect(source).toContain("u.status = 'active'");
     expect(source).toContain(
@@ -70,5 +71,9 @@ describe("AKARI House public-safe CRM Creator feed", () => {
     expect(route).toContain(
       '"public, max-age=60, s-maxage=120, stale-while-revalidate=300"',
     );
+    expect(routes).toContain(
+      'route("api/creator-directory", "routes/public-creator-directory.ts")',
+    );
+    expect(routes).not.toContain('route("api/crm/creators"');
   });
 });

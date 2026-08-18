@@ -1,15 +1,15 @@
-export type CrmCreatorSocialSource = string;
+export type PublicCreatorSocialSource = string;
 
-export interface CrmCreatorSocial {
+export interface PublicCreatorSocial {
   platform: string;
   profileUrl: string;
   followerCount: number | null;
-  countSource: CrmCreatorSocialSource;
+  countSource: PublicCreatorSocialSource;
   syncStatus: string;
   lastSyncedAt: string | null;
 }
 
-export interface CrmCreatorDirectoryRecord {
+export interface PublicCreatorDirectoryRecord {
   akariCreatorId: string;
   username: string;
   profileUrl: string;
@@ -26,7 +26,7 @@ export interface CrmCreatorDirectoryRecord {
   sorsaSource: string;
   xScore: number | null;
   xScoreSource: string;
-  socials: CrmCreatorSocial[];
+  socials: PublicCreatorSocial[];
   identitySource: "AKARI_HOUSE";
   profileDataStatus: "PROFILE_PROVIDED";
 }
@@ -78,8 +78,8 @@ function safeLanguages(value: string, visible: boolean) {
 
 export function mapPublicCreatorRow(
   row: CreatorRow,
-  socials: CrmCreatorSocial[] = [],
-): CrmCreatorDirectoryRecord {
+  socials: PublicCreatorSocial[] = [],
+): PublicCreatorDirectoryRecord {
   const username = row.username.trim();
   return {
     akariCreatorId: row.userId,
@@ -106,7 +106,7 @@ export function mapPublicCreatorRow(
   };
 }
 
-export async function loadPublicCrmCreatorFeed(
+export async function loadPublicCreatorDirectory(
   db: D1Database,
   options: { after?: string; limit?: number } = {},
 ) {
@@ -152,7 +152,7 @@ export async function loadPublicCrmCreatorFeed(
     .all<CreatorRow>();
 
   const creatorIds = creators.results.map((row) => row.userId);
-  const socialsByCreator = new Map<string, CrmCreatorSocial[]>();
+  const socialsByCreator = new Map<string, PublicCreatorSocial[]>();
   if (creatorIds.length) {
     const placeholders = creatorIds.map(() => "?").join(",");
     const socials = await db

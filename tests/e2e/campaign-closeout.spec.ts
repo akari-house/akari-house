@@ -24,10 +24,15 @@ async function seedCloseout(page: Page) {
   return body.campaignSlug;
 }
 
-test.describe("R69 campaign closeout", () => {
-  test("settles, reports, closes and records a converted renewal", async ({
+test.describe("R82 campaign closeout", () => {
+  test("settles, reports and closes a campaign without CRM renewal", async ({
     page,
-  }) => {
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "desktop-chromium",
+      "Stateful closeout evidence runs once against the shared test database.",
+    );
+
     await activatePersona(page, "founder");
     await activatePersona(page, "creator_selected");
     await activatePersona(page, "superadmin");
@@ -48,7 +53,7 @@ test.describe("R69 campaign closeout", () => {
 
     await page.getByLabel("Payment status").selectOption("paid");
     await page.getByLabel("Payment method").fill("External bank transfer");
-    await page.getByLabel("Transaction reference").fill("R69-E2E-TX-001");
+    await page.getByLabel("Transaction reference").fill("R82-E2E-TX-001");
     await page.getByRole("button", { name: "Save settlement" }).click();
     await page.waitForLoadState("networkidle");
     await expect(page.getByText("1/1", { exact: true })).toBeVisible();
@@ -64,10 +69,10 @@ test.describe("R69 campaign closeout", () => {
       }),
     ).toBeVisible();
 
-    await page.getByLabel("Recipient").fill("R69 Test Client");
+    await page.getByLabel("Recipient").fill("R82 Test Client");
     await page.getByRole("button", { name: "Mark report delivered" }).click();
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/Sent to R69 Test Client/)).toBeVisible();
+    await expect(page.getByText(/Sent to R82 Test Client/)).toBeVisible();
 
     await page.getByLabel("Acknowledgement").selectOption("acknowledged");
     await page
@@ -78,28 +83,29 @@ test.describe("R69 campaign closeout", () => {
 
     await page
       .getByLabel("Closeout note")
-      .fill("All R69 campaign obligations completed and reconciled.");
+      .fill("All campaign obligations completed and reconciled.");
     await page.getByRole("button", { name: "Close campaign" }).click();
     await page.waitForLoadState("networkidle");
     await expect(
       page.getByText("closed", { exact: true }).first(),
     ).toBeVisible();
 
-    await page.getByLabel("Next step").selectOption("renew_campaign");
-    await page.getByLabel("Stage").selectOption("converted");
-    await page
-      .getByLabel("Renewal note")
-      .fill("Client confirmed the next campaign cycle.");
-    await page.getByRole("button", { name: "Save renewal outcome" }).click();
-    await page.waitForLoadState("networkidle");
+    await expect(page.getByLabel("Next step")).toHaveCount(0);
+    await expect(page.getByLabel("Stage")).toHaveCount(0);
+    await expect(page.getByLabel("Renewal note")).toHaveCount(0);
     await expect(
-      page.getByText("renewed", { exact: true }).first(),
-    ).toBeVisible();
+      page.getByRole("button", { name: "Save renewal outcome" }),
+    ).toHaveCount(0);
   });
 
-  test("rejects an accepted Creator from the private operator closeout", async ({
+  test("rejects a Creator from the private operator closeout", async ({
     page,
-  }) => {
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "desktop-chromium",
+      "Stateful closeout permission evidence runs once against the shared test database.",
+    );
+
     await activatePersona(page, "founder");
     await activatePersona(page, "creator_selected");
     await activatePersona(page, "superadmin");

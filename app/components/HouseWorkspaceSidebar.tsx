@@ -92,7 +92,7 @@ export function workspaceRoleItems(user: SessionUser): WorkspaceItem[] {
 /**
  * These routes keep the cinematic, chapter-led public House experience.
  * Operational children such as edit, manage, work and settlement routes are
- * intentionally excluded so they can use the CRM-style workspace shell.
+ * intentionally excluded so they can use the focused House workspace shell.
  */
 export function isImmersiveHousePath(pathname: string) {
   if (

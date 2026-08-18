@@ -251,3 +251,201 @@
     transition: none;
   }
 }
+
+/* R82: keep the live preview physically card-like instead of turning it into a hero panel. */
+.glass-share-page {
+  width: min(1040px, calc(100% - 2rem)) !important;
+}
+
+.glass-share-page .share-card-heading {
+  max-width: 820px !important;
+}
+
+.glass-share-page .share-card-layout {
+  justify-items: center !important;
+}
+
+.glass-card-stage {
+  width: min(100%, 680px) !important;
+  margin-inline: auto !important;
+  padding: clamp(0.7rem, 1.8vw, 1.15rem) !important;
+  border-radius: 22px !important;
+}
+
+.glass-profile-card {
+  width: min(100%, 560px) !important;
+  margin-inline: auto !important;
+  aspect-ratio: 85.6 / 53.98 !important;
+  border-width: 1px !important;
+  border-radius: clamp(16px, 3.2cqi, 24px) !important;
+  box-shadow:
+    0 20px 48px rgb(0 0 0 / 38%),
+    -5px 0 16px color-mix(in srgb, var(--card-highlight) 28%, transparent),
+    6px 0 18px color-mix(in srgb, var(--card-accent) 32%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--card-ink) 54%, transparent) !important;
+}
+
+.glass-profile-card::before {
+  inset: 6px !important;
+  border-radius: 16px !important;
+  box-shadow:
+    inset 2px 0 0 color-mix(in srgb, var(--card-highlight) 72%, transparent),
+    inset -2px 0 0 color-mix(in srgb, var(--card-accent) 76%, transparent) !important;
+}
+
+.glass-profile-card::after {
+  inset: 10px !important;
+  border-radius: 12px !important;
+}
+
+.glass-card-person {
+  top: 20% !important;
+  left: 7.8% !important;
+  width: 25.5% !important;
+}
+
+.glass-card-identity {
+  top: 26.5% !important;
+  left: 36.5% !important;
+  width: 36% !important;
+}
+
+.glass-card-identity h2 {
+  font-size: clamp(1.05rem, 4.45cqi, 1.75rem) !important;
+  letter-spacing: -0.04em !important;
+}
+
+.glass-card-handle {
+  margin-bottom: 1.05cqi !important;
+  font-size: clamp(0.58rem, 1.9cqi, 0.82rem) !important;
+}
+
+.glass-role-line {
+  font-size: clamp(0.56rem, 1.72cqi, 0.76rem) !important;
+}
+
+.glass-card-headline {
+  margin-top: 0.8cqi !important;
+  font-size: clamp(0.48rem, 1.35cqi, 0.64rem) !important;
+  -webkit-line-clamp: 1 !important;
+}
+
+.glass-role-pills {
+  margin-top: 1cqi !important;
+  gap: 0.45cqi !important;
+}
+
+.glass-role-pills span {
+  padding: 0.45cqi 0.75cqi !important;
+  font-size: clamp(0.38rem, 1.02cqi, 0.52rem) !important;
+}
+
+.glass-card-topline {
+  top: 7.5% !important;
+  right: 7.2% !important;
+  width: 35% !important;
+}
+
+.glass-card-brand img {
+  width: clamp(5rem, 19cqi, 7.25rem) !important;
+}
+
+.glass-card-brand span {
+  font-size: clamp(0.46rem, 1.45cqi, 0.62rem) !important;
+}
+
+.glass-card-brand::after {
+  left: 9.2cqi !important;
+  font-size: clamp(0.31rem, 0.82cqi, 0.4rem) !important;
+}
+
+.glass-profile-link {
+  top: 28% !important;
+  right: 7.5% !important;
+  width: 16.5% !important;
+  min-height: 34% !important;
+  padding: 0.9cqi !important;
+  border-radius: clamp(10px, 2.2cqi, 15px) !important;
+}
+
+.glass-profile-link small {
+  font-size: clamp(0.28rem, 0.72cqi, 0.36rem) !important;
+}
+
+.glass-profile-link strong {
+  font-size: clamp(0.35rem, 0.9cqi, 0.46rem) !important;
+}
+
+.glass-profile-link > span:last-child {
+  font-size: clamp(0.25rem, 0.58cqi, 0.32rem) !important;
+}
+
+.glass-connect-strip {
+  left: 7.5% !important;
+  bottom: 17% !important;
+  width: 61% !important;
+  min-height: 10.5% !important;
+  padding-inline: 2.2cqi !important;
+  gap: 1.4cqi !important;
+  border-radius: clamp(9px, 2cqi, 14px) !important;
+}
+
+.glass-connect-strip > strong {
+  font-size: clamp(0.46rem, 1.25cqi, 0.62rem) !important;
+}
+
+.glass-card-socials a {
+  width: clamp(1.15rem, 3.4cqi, 1.55rem) !important;
+  height: clamp(1.15rem, 3.4cqi, 1.55rem) !important;
+}
+
+.glass-card-socials svg {
+  width: clamp(0.58rem, 1.55cqi, 0.72rem) !important;
+  height: clamp(0.58rem, 1.55cqi, 0.72rem) !important;
+}
+
+.glass-card-footer {
+  right: 7.5% !important;
+  bottom: 6.5% !important;
+  left: 7.5% !important;
+  min-height: 7.2% !important;
+  padding-inline: 1.8cqi !important;
+  border-radius: clamp(8px, 1.8cqi, 13px) !important;
+}
+
+.glass-card-footer-brand {
+  font-size: clamp(0.38rem, 1cqi, 0.5rem) !important;
+}
+
+.glass-card-footer::after {
+  font-size: clamp(0.3rem, 0.8cqi, 0.4rem) !important;
+}
+
+.glass-card-note {
+  margin-top: 0.75rem !important;
+  font-size: 0.7rem !important;
+}
+
+.glass-card-controls {
+  width: min(100%, 760px) !important;
+  padding: clamp(0.85rem, 1.8vw, 1.2rem) !important;
+}
+
+@media (max-width: 700px) {
+  .glass-share-page {
+    width: min(100% - 0.75rem, 1040px) !important;
+  }
+
+  .glass-card-stage {
+    width: 100% !important;
+    padding: 0.45rem !important;
+  }
+
+  .glass-profile-card {
+    width: min(100%, 430px) !important;
+  }
+
+  .glass-card-note {
+    display: none !important;
+  }
+}

@@ -122,17 +122,11 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
             <span className="eyebrow">Superadmin operations</span>
             <h1>Admin workspace</h1>
             <p>
-              Start with what needs a House decision. CRM, revenue, agreement
-              and relationship operations now live only in CRM by AKARI.
+              Start with what needs a House decision: membership, verification,
+              project claims, events, campaigns, moderation and operations.
             </p>
           </div>
           <div className="button-row">
-            <a
-              className="button button-primary"
-              href="https://crm.akarihouse.com"
-            >
-              Open CRM by AKARI
-            </a>
             <Link className="button button-quiet" to="/app">
               Return to your House
             </Link>
@@ -188,20 +182,6 @@ export default function AdminWorkspace({ loaderData }: Route.ComponentProps) {
               </p>
             </>
           )}
-        </section>
-
-        <section className="status-card" aria-labelledby="crm-boundary-title">
-          <span className="chapter">Product boundary</span>
-          <h2 id="crm-boundary-title">One CRM source of truth.</h2>
-          <p>
-            Agreements, governed relationship intelligence, operating rhythm,
-            finance and SaaS workspace administration are no longer operated in
-            AKARI House. Use CRM by AKARI for those workflows. House keeps the
-            professional network, projects, diligence, events and campaigns.
-          </p>
-          <a className="button button-quiet" href="https://crm.akarihouse.com">
-            Continue in CRM
-          </a>
         </section>
 
         <section
