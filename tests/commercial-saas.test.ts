@@ -73,7 +73,7 @@ describe("R75 commercial and SaaS completion", () => {
     ).toEqual({ USD: 125_00, EUR: 40_00 });
   });
 
-  it("creates canonical finance and workspace tables and preserves R74 state during constraint extension", () => {
+  it("preserves the historical House schema for reconciliation", () => {
     const schema = readFileSync(
       "migrations/0121_commercial_saas_completion.sql",
       "utf8",
@@ -92,28 +92,13 @@ describe("R75 commercial and SaaS completion", () => {
     expect(extension).toContain("FROM attention_item_states;");
     expect(extension).toContain("INSERT INTO operating_report_runs_r75");
     expect(extension).toContain("FROM operating_report_runs;");
-    expect(extension).toContain("'invoice', 'workspace_subscription'");
-    expect(extension).toContain("'relationship_followup', 'revenue'");
   });
 
-  it("keeps finance and SaaS administration Superadmin-only while workspace member access is separate", () => {
-    const finance = readFileSync("app/routes/admin-finance.tsx", "utf8");
-    const adminWorkspaces = readFileSync(
-      "app/routes/admin-saas-workspaces.tsx",
-      "utf8",
-    );
-    const memberWorkspace = readFileSync(
-      "app/routes/saas-workspace.tsx",
-      "utf8",
-    );
-    const workspaceAccess = readFileSync(
-      "app/lib/saas-workspace.server.ts",
-      "utf8",
-    );
-    expect(finance).toContain("requireSuperAdmin");
-    expect(adminWorkspaces).toContain("requireSuperAdmin");
-    expect(memberWorkspace).toContain("requireWorkspaceAccess");
-    expect(workspaceAccess).toContain("saas_workspace_members");
-    expect(workspaceAccess).toContain("supportAccess");
+  it("does not expose the legacy finance or SaaS workspace UI in House", () => {
+    const routes = readFileSync("app/routes.ts", "utf8");
+    expect(routes).not.toContain('route("admin/finance"');
+    expect(routes).not.toContain('route("admin/workspaces"');
+    expect(routes).not.toContain('route("workspaces/:slug"');
+    expect(routes).not.toContain('route("workspace-invitations/accept"');
   });
 });
