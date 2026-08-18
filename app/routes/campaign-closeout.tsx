@@ -3,8 +3,6 @@ import type { Route } from "./+types/campaign-closeout";
 import { SiteHeader } from "~/components/SiteHeader";
 import {
   campaignReconciliation,
-  campaignRenewalStages,
-  campaignRenewalTypes,
   creatorApprovedCompensationCents,
   deriveCampaignCloseoutStatus,
   safeExternalUrl,
@@ -75,12 +73,6 @@ type CloseoutRow = {
   clientAcknowledgedAt: string | null;
   closeoutNote: string | null;
   closedAt: string | null;
-  renewalType: string;
-  renewalStage: string;
-  renewalFollowUpAt: string | null;
-  renewalReferenceUrl: string | null;
-  renewalNote: string | null;
-  renewedAt: string | null;
 };
 
 async function getCampaign(db: D1Database, slug: string | undefined) {
@@ -225,11 +217,7 @@ async function getCloseout(db: D1Database, campaignId: string) {
               client_acknowledgement_status AS clientAcknowledgementStatus,
               client_acknowledgement_note AS clientAcknowledgementNote,
               client_acknowledged_at AS clientAcknowledgedAt,
-              closeout_note AS closeoutNote, closed_at AS closedAt,
-              renewal_type AS renewalType, renewal_stage AS renewalStage,
-              renewal_follow_up_at AS renewalFollowUpAt,
-              renewal_reference_url AS renewalReferenceUrl,
-              renewal_note AS renewalNote, renewed_at AS renewedAt
+              closeout_note AS closeoutNote, closed_at AS closedAt
        FROM campaign_closeouts WHERE campaign_id = ?`,
     )
     .bind(campaignId)
@@ -286,7 +274,6 @@ function closeoutStatus(
     reportFinal: report?.status === "final",
     reportDelivered: Boolean(closeout?.reportSentAt),
     closed: Boolean(closeout?.closedAt),
-    renewalConverted: closeout?.renewalStage === "converted",
   });
 }
 
@@ -760,82 +747,6 @@ export async function action({ request, context, params }: Route.ActionArgs) {
     throw redirect(`/campaigns/${campaign.slug}/closeout?saved=closed`);
   }
 
-  if (intent === "save-renewal") {
-    const closeout = await getCloseout(db, campaign.id);
-    if (!closeout?.closedAt)
-      return {
-        error: "Close the completed campaign before recording renewal.",
-      };
-    const renewalType = formText(form.get("renewalType"));
-    const renewalStage = formText(form.get("renewalStage"));
-    const followUpAt = formText(form.get("renewalFollowUpAt")).trim();
-    const referenceValue = formText(form.get("renewalReferenceUrl")).trim();
-    const referenceUrl = safeExternalUrl(referenceValue);
-    const note = formText(form.get("renewalNote")).trim();
-    if (
-      !campaignRenewalTypes.includes(
-        renewalType as (typeof campaignRenewalTypes)[number],
-      ) ||
-      !campaignRenewalStages.includes(
-        renewalStage as (typeof campaignRenewalStages)[number],
-      ) ||
-      (referenceValue && !referenceUrl) ||
-      note.length > 1000 ||
-      (renewalType === "none" &&
-        !["none", "declined"].includes(renewalStage)) ||
-      (renewalType !== "none" && renewalStage === "none") ||
-      (renewalType === "follow_up" &&
-        renewalStage === "planned" &&
-        !followUpAt) ||
-      (renewalStage === "converted" && note.length < 5)
-    )
-      return {
-        error:
-          "Check the renewal type, stage, follow-up date, optional reference and note.",
-      };
-    await db.batch([
-      db
-        .prepare(
-          `UPDATE campaign_closeouts
-           SET renewal_type = ?, renewal_stage = ?, renewal_follow_up_at = ?,
-               renewal_reference_url = ?, renewal_note = ?,
-               renewal_recorded_by = ?, renewal_recorded_at = datetime('now'),
-               renewed_at = CASE WHEN ? = 'converted' THEN datetime('now') ELSE NULL END,
-               updated_at = datetime('now')
-           WHERE campaign_id = ?`,
-        )
-        .bind(
-          renewalType,
-          renewalStage,
-          followUpAt || null,
-          referenceUrl || null,
-          note || null,
-          operator.id,
-          renewalStage,
-          campaign.id,
-        ),
-      db
-        .prepare(
-          `INSERT INTO audit_logs
-           (id, actor_user_id, action, subject_type, subject_id, metadata_json)
-           VALUES (?, ?, 'campaign.renewal_recorded', 'campaign', ?, ?)`,
-        )
-        .bind(
-          crypto.randomUUID(),
-          operator.id,
-          campaign.id,
-          JSON.stringify({
-            renewalType,
-            renewalStage,
-            followUpAt,
-            referenceUrl,
-          }),
-        ),
-    ]);
-    await syncCloseoutStatus(db, campaign);
-    throw redirect(`/campaigns/${campaign.slug}/closeout?saved=renewal`);
-  }
-
   throw new Response("Unsupported campaign closeout action.", { status: 400 });
 }
 
@@ -882,7 +793,8 @@ export default function CampaignCloseout({
             <h1>{campaign.title}</h1>
             <p>
               Reconcile Creator compensation, confirm external payments, deliver
-              the final client report and record the commercial follow-up.
+              the final client report and close the campaign with auditable
+              completion evidence.
             </p>
           </div>
           <div className="button-row">
@@ -1224,8 +1136,8 @@ export default function CampaignCloseout({
           <span className="chapter">Completion acknowledgement</span>
           <h2>Record whether the client acknowledged completion.</h2>
           <p>
-            This is an operational CRM marker only. It is not a legal signature
-            or agreement workflow.
+            This records campaign completion evidence only. It is not a legal
+            signature or agreement workflow.
           </p>
           <Form method="post" className="profile-form">
             <input
@@ -1266,7 +1178,10 @@ export default function CampaignCloseout({
 
         <section className="admin-panel">
           <span className="chapter">Campaign completion</span>
-          <h2>Close only after the commercial obligations are complete.</h2>
+          <h2>
+            Close only after campaign delivery, settlement and reporting are
+            complete.
+          </h2>
           <Form method="post" className="profile-form">
             <input type="hidden" name="intent" value="close-campaign" />
             <label>
@@ -1286,76 +1201,6 @@ export default function CampaignCloseout({
               }
             >
               {closeout?.closedAt ? "Campaign closed" : "Close campaign"}
-            </button>
-          </Form>
-        </section>
-
-        <section className="admin-panel">
-          <span className="chapter">Renewal and upsell</span>
-          <h2>Record the commercial next step after closeout.</h2>
-          <p>
-            AKARI House does not map this to the Investor Opportunity system.
-            Use an optional external CRM/reference link until the commercial CRM
-            is connected to this product surface.
-          </p>
-          <Form method="post" className="profile-form">
-            <input type="hidden" name="intent" value="save-renewal" />
-            <div className="form-row form-row-three">
-              <label>
-                Next step
-                <select
-                  name="renewalType"
-                  defaultValue={closeout?.renewalType ?? "none"}
-                >
-                  <option value="none">No renewal</option>
-                  <option value="follow_up">Follow up later</option>
-                  <option value="renew_campaign">Renew campaign</option>
-                  <option value="retainer">Retainer opportunity</option>
-                  <option value="upsell_service">Upsell another service</option>
-                </select>
-              </label>
-              <label>
-                Stage
-                <select
-                  name="renewalStage"
-                  defaultValue={closeout?.renewalStage ?? "none"}
-                >
-                  <option value="none">No active follow-up</option>
-                  <option value="planned">Planned</option>
-                  <option value="converted">Converted</option>
-                  <option value="declined">Declined</option>
-                </select>
-              </label>
-              <label>
-                Follow-up date
-                <input
-                  name="renewalFollowUpAt"
-                  type="date"
-                  defaultValue={closeout?.renewalFollowUpAt?.slice(0, 10) ?? ""}
-                />
-              </label>
-            </div>
-            <label>
-              Commercial CRM / reference link
-              <input
-                name="renewalReferenceUrl"
-                type="url"
-                defaultValue={closeout?.renewalReferenceUrl ?? ""}
-              />
-            </label>
-            <label>
-              Renewal note
-              <textarea
-                name="renewalNote"
-                maxLength={1000}
-                defaultValue={closeout?.renewalNote ?? ""}
-              />
-            </label>
-            <button
-              className="button button-primary"
-              disabled={navigation.state !== "idle" || !closeout?.closedAt}
-            >
-              Save renewal outcome
             </button>
           </Form>
         </section>
