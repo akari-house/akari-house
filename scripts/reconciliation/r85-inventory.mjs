@@ -52,7 +52,10 @@ function sqlLiteral(value) {
 
 async function selectTenantCommand(inputPath, outputPath) {
   const payload = JSON.parse(await readFile(inputPath, "utf8"));
-  await writeFile(outputPath, `${JSON.stringify(selectTenant(payload), null, 2)}\n`);
+  await writeFile(
+    outputPath,
+    `${JSON.stringify(selectTenant(payload), null, 2)}\n`,
+  );
 }
 
 async function finalizeCommand(
