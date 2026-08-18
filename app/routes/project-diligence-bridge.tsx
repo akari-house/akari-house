@@ -237,9 +237,7 @@ export async function action(args: Route.ActionArgs) {
   const preview = await args.request.clone().formData();
   const intent = formText(preview.get("intent"));
   if (intent !== "ask-diligence-question") {
-    return legacyDiligenceAction(
-      args as Parameters<typeof legacyDiligenceAction>[0],
-    );
+    return legacyDiligenceAction(args);
   }
 
   assertSameOrigin(args.request);
