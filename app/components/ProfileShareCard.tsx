@@ -9,72 +9,61 @@ import {
   type ProfileCardModel,
   type ProfileCardPalette,
   type ProfileCardSettings,
+  type ProfileCardSocial,
   type ProfileCardSocialPlatform,
 } from "~/lib/profile-card";
 import "~/styles/profile-card-enhancements.css";
-import "~/styles/profile-card-glass.css";
+import "~/styles/profile-card-approved.css";
 
 type PaletteConfig = {
   label: string;
-  description: string;
-  background: string;
+  tint: string;
   ink: string;
   accent: string;
   highlight: string;
-  surface: string;
-  shadow: string;
+  glass: string;
 };
 
 const palettes: Record<ProfileCardPalette, PaletteConfig> = {
   midnight: {
     label: "Midnight Glass",
-    description: "Near-black glass with AKARI pink and blossom yellow light.",
-    background: "#070a12",
+    tint: "#080b12",
     ink: "#fffaf7",
     accent: "#f04f87",
     highlight: "#ffd33d",
-    surface: "rgba(255,255,255,0.075)",
-    shadow: "rgba(0,0,0,0.72)",
+    glass: "rgba(8, 11, 18, 0.48)",
   },
   pearl: {
     label: "Pearl Glass",
-    description: "Warm pearl glass with soft pink and yellow highlights.",
-    background: "#fff5ee",
-    ink: "#2b1720",
-    accent: "#f04f87",
-    highlight: "#e9b900",
-    surface: "rgba(255,255,255,0.58)",
-    shadow: "rgba(82,31,51,0.22)",
+    tint: "#e8d8d3",
+    ink: "#2c1821",
+    accent: "#d93c75",
+    highlight: "#b78a00",
+    glass: "rgba(255, 246, 242, 0.48)",
   },
   sakura: {
     label: "Sakura Glass",
-    description: "AKARI pink glass with a darker professional foundation.",
-    background: "#431225",
-    ink: "#fff8f7",
-    accent: "#ff6a9f",
+    tint: "#4a1329",
+    ink: "#fffaf9",
+    accent: "#ff6a9a",
     highlight: "#ffd33d",
-    surface: "rgba(255,255,255,0.08)",
-    shadow: "rgba(31,4,17,0.68)",
+    glass: "rgba(66, 15, 35, 0.44)",
   },
   blossom: {
     label: "Blossom Plum",
-    description: "Deep blossom glass for a richer pink-led identity.",
-    background: "#210914",
-    ink: "#fff8fa",
+    tint: "#220b17",
+    ink: "#fff9fb",
     accent: "#f04f87",
     highlight: "#ffd33d",
-    surface: "rgba(240,79,135,0.09)",
-    shadow: "rgba(19,3,11,0.72)",
+    glass: "rgba(34, 11, 23, 0.52)",
   },
   lantern: {
     label: "Lantern Gold",
-    description: "Blossom yellow glass with pink AKARI accents.",
-    background: "#f6ca37",
-    ink: "#21151b",
-    accent: "#e63f78",
-    highlight: "#fff8df",
-    surface: "rgba(255,255,255,0.24)",
-    shadow: "rgba(97,62,0,0.24)",
+    tint: "#6a4d0c",
+    ink: "#fffdf5",
+    accent: "#f04f87",
+    highlight: "#ffd33d",
+    glass: "rgba(75, 52, 5, 0.43)",
   },
 };
 
@@ -87,16 +76,16 @@ const socialLabels: Record<ProfileCardSocialPlatform, string> = {
   youtube: "YouTube",
 };
 
+function titleCaseRole(role: string) {
+  return role ? role[0].toUpperCase() + role.slice(1) : role;
+}
+
 function flagFor(code: string) {
   return /^[A-Z]{2}$/.test(code)
     ? String.fromCodePoint(
         ...[...code].map((letter) => 127397 + letter.charCodeAt(0)),
       )
     : "";
-}
-
-function titleCaseRole(role: string) {
-  return role ? role[0].toUpperCase() + role.slice(1) : role;
 }
 
 function SocialIcon({ platform }: { platform: ProfileCardSocialPlatform }) {
@@ -106,7 +95,7 @@ function SocialIcon({ platform }: { platform: ProfileCardSocialPlatform }) {
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: 1.9,
+    strokeWidth: 1.8,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
     "aria-hidden": true,
@@ -160,36 +149,16 @@ function SocialIcon({ platform }: { platform: ProfileCardSocialPlatform }) {
   );
 }
 
-function LinkGlyph({ size = 20 }: { size?: number }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.9"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M10.5 13.5l3-3" />
-      <path
-        d="M7.4 16.6l-1 1a3.5 3.5 0 01-5-5l3.1-3.1a3.5 3.5 0 014.9 0"
-        transform="translate(3 0)"
-      />
-      <path
-        d="M16.6 7.4l1-1a3.5 3.5 0 015 5l-3.1 3.1a3.5 3.5 0 01-4.9 0"
-        transform="translate(-3 0)"
-      />
-    </svg>
-  );
-}
-
 function avatarUrl(model: ProfileCardModel) {
   return model.avatarKey
     ? `/media/profile/${encodeURIComponent(model.username)}?v=${encodeURIComponent(model.avatarKey)}`
     : "";
+}
+
+function socialCountLabel(social: ProfileCardSocial) {
+  if (social.followerCount == null) return "Connected";
+  const count = formatProfileReach(social.followerCount);
+  return social.platform === "youtube" ? `${count} subscribers` : `${count} followers`;
 }
 
 async function loadImage(src: string) {
@@ -200,7 +169,19 @@ async function loadImage(src: string) {
   return image;
 }
 
-function roundedRect(
+function drawCoverImage(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  width: number,
+  height: number,
+) {
+  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+  const w = image.naturalWidth * scale;
+  const h = image.naturalHeight * scale;
+  ctx.drawImage(image, (width - w) / 2, (height - h) / 2, w, h);
+}
+
+function drawRoundRect(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
@@ -220,42 +201,29 @@ function drawSocialMark(
   colour: string,
 ) {
   ctx.save();
-  ctx.translate(x, y);
-  ctx.strokeStyle = colour;
   ctx.fillStyle = colour;
+  ctx.strokeStyle = colour;
   ctx.lineWidth = 3;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
   if (platform === "x") {
     ctx.beginPath();
-    ctx.moveTo(2, 2);
-    ctx.lineTo(22, 22);
-    ctx.moveTo(22, 2);
-    ctx.lineTo(2, 22);
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + 23, y + 23);
+    ctx.moveTo(x + 23, y);
+    ctx.lineTo(x, y + 23);
     ctx.stroke();
-  } else if (platform === "instagram") {
-    ctx.strokeRect(2, 2, 20, 20);
-    ctx.beginPath();
-    ctx.arc(12, 12, 5, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(18, 6, 1.2, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (platform === "youtube") {
-    ctx.strokeRect(1, 4, 22, 16);
-    ctx.beginPath();
-    ctx.moveTo(10, 8);
-    ctx.lineTo(17, 12);
-    ctx.lineTo(10, 16);
-    ctx.closePath();
-    ctx.fill();
   } else {
     ctx.font = "700 20px Inter, sans-serif";
-    ctx.fillText(
-      platform === "linkedin" ? "in" : platform === "facebook" ? "f" : "♪",
-      2,
-      20,
-    );
+    const glyph =
+      platform === "linkedin"
+        ? "in"
+        : platform === "instagram"
+          ? "IG"
+          : platform === "youtube"
+            ? "YT"
+            : platform === "facebook"
+              ? "f"
+              : "♪";
+    ctx.fillText(glyph, x, y + 20);
   }
   ctx.restore();
 }
@@ -269,350 +237,227 @@ async function drawCard(
   canvas.height = 1009;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-
   const palette = palettes[settings.palette];
   const languages = settings.showLanguages
     ? parseProfileCardLanguages(settings.languagesJson)
     : [];
-  const verifiedRoles = model.verificationStates
-    .filter((state) => state.status === "verified")
-    .map((state) => titleCaseRole(state.role));
-  const opportunities =
-    model.opportunityStats.created + model.opportunityStats.received;
+  const verified = model.verificationStates.some(
+    (state) => state.status === "verified",
+  );
+  const primarySocial =
+    model.socials.find((social) => social.platform === "x") ?? model.socials[0];
   const canonicalUrl =
     model.accessTier === "member" && model.visibility === "public"
       ? `akarihouse.com/profiles/${model.username}`
       : "Private AKARI profile";
 
-  ctx.fillStyle = palette.background;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  try {
+    const scene = await loadImage("/assets/house/arrival-v3.webp");
+    drawCoverImage(ctx, scene, canvas.width, canvas.height);
+  } catch {
+    ctx.fillStyle = palette.tint;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 
-  const ambient = ctx.createRadialGradient(1400, 120, 0, 1400, 120, 800);
-  ambient.addColorStop(0, `${palette.accent}55`);
-  ambient.addColorStop(0.48, `${palette.accent}16`);
-  ambient.addColorStop(1, `${palette.accent}00`);
-  ctx.fillStyle = ambient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  const warm = ctx.createRadialGradient(90, 860, 0, 90, 860, 620);
-  warm.addColorStop(0, `${palette.highlight}38`);
-  warm.addColorStop(1, `${palette.highlight}00`);
-  ctx.fillStyle = warm;
+  const tint = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+  tint.addColorStop(0, `${palette.tint}88`);
+  tint.addColorStop(0.52, `${palette.tint}42`);
+  tint.addColorStop(1, `${palette.tint}99`);
+  ctx.fillStyle = tint;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   ctx.save();
-  ctx.shadowColor = palette.shadow;
-  ctx.shadowBlur = 60;
-  roundedRect(ctx, 34, 34, 1532, 941, 72);
-  ctx.fillStyle = palette.surface;
+  ctx.shadowColor = "rgba(0,0,0,.46)";
+  ctx.shadowBlur = 48;
+  drawRoundRect(ctx, 60, 58, 1480, 893, 64);
+  ctx.fillStyle = palette.glass;
   ctx.fill();
   ctx.restore();
-
-  const edge = ctx.createLinearGradient(40, 40, 1560, 970);
-  edge.addColorStop(0, palette.highlight);
-  edge.addColorStop(0.38, `${palette.ink}aa`);
-  edge.addColorStop(0.72, palette.accent);
-  edge.addColorStop(1, palette.accent);
-  roundedRect(ctx, 32, 32, 1536, 945, 74);
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = edge;
-  ctx.stroke();
-  roundedRect(ctx, 51, 51, 1498, 907, 58);
+  drawRoundRect(ctx, 60, 58, 1480, 893, 64);
+  ctx.strokeStyle = "rgba(255,255,255,.42)";
   ctx.lineWidth = 2;
-  ctx.strokeStyle = `${palette.ink}55`;
   ctx.stroke();
 
-  const gloss = ctx.createLinearGradient(250, 50, 900, 500);
-  gloss.addColorStop(0, `${palette.ink}22`);
-  gloss.addColorStop(0.45, `${palette.ink}05`);
-  gloss.addColorStop(1, `${palette.ink}00`);
-  ctx.beginPath();
-  ctx.moveTo(90, 65);
-  ctx.lineTo(760, 65);
-  ctx.lineTo(480, 470);
-  ctx.lineTo(80, 470);
-  ctx.closePath();
-  ctx.fillStyle = gloss;
+  const sheen = ctx.createLinearGradient(80, 70, 900, 560);
+  sheen.addColorStop(0, "rgba(255,255,255,.22)");
+  sheen.addColorStop(0.38, "rgba(255,255,255,.045)");
+  sheen.addColorStop(1, "rgba(255,255,255,0)");
+  drawRoundRect(ctx, 61, 59, 1478, 891, 63);
+  ctx.fillStyle = sheen;
   ctx.fill();
-
-  try {
-    const flower = await loadImage("/assets/brand/akari-flower-mark.png");
-    ctx.save();
-    ctx.globalAlpha = 0.1;
-    ctx.drawImage(flower, 1140, 545, 330, 330);
-    ctx.restore();
-  } catch {
-    // Decorative watermark only.
-  }
 
   try {
     const logo = await loadImage("/assets/brand/akari-logo-horizontal.png");
-    const logoWidth = 330;
+    const logoWidth = 280;
     const logoHeight = logoWidth * (logo.naturalHeight / logo.naturalWidth);
-    ctx.drawImage(logo, 1050, 92, logoWidth, logoHeight);
-    ctx.fillStyle = palette.ink;
-    ctx.font = "600 19px Inter, sans-serif";
-    ctx.fillText("AKARI HOUSE", 1050, 92 + logoHeight + 29);
+    ctx.drawImage(logo, 112, 105, logoWidth, logoHeight);
   } catch {
     ctx.fillStyle = palette.accent;
-    ctx.font = "800 32px Inter, sans-serif";
-    ctx.fillText("AKARI HOUSE", 1050, 132);
+    ctx.font = "800 36px Inter, sans-serif";
+    ctx.fillText("AKARI", 112, 155);
   }
+  ctx.fillStyle = palette.ink;
+  ctx.globalAlpha = 0.7;
+  ctx.font = "700 18px Inter, sans-serif";
+  ctx.textAlign = "right";
+  ctx.fillText("PROFILE CARD", 1475, 142);
+  ctx.textAlign = "left";
+  ctx.globalAlpha = 1;
 
-  const photoX = 115;
-  const photoY = 145;
-  const photoSize = 310;
-  const avatarRing = ctx.createLinearGradient(
-    photoX,
-    photoY,
-    photoX + photoSize,
-    photoY + photoSize,
-  );
-  avatarRing.addColorStop(0, palette.highlight);
-  avatarRing.addColorStop(0.52, palette.accent);
-  avatarRing.addColorStop(1, `${palette.ink}88`);
+  const avatarX = 138;
+  const avatarY = 260;
+  const avatarSize = 276;
   ctx.beginPath();
   ctx.arc(
-    photoX + photoSize / 2,
-    photoY + photoSize / 2,
-    photoSize / 2 + 18,
+    avatarX + avatarSize / 2,
+    avatarY + avatarSize / 2,
+    avatarSize / 2 + 10,
     0,
     Math.PI * 2,
   );
-  ctx.strokeStyle = avatarRing;
-  ctx.lineWidth = 9;
+  ctx.strokeStyle = palette.accent;
+  ctx.lineWidth = 7;
   ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(
-    photoX + photoSize / 2,
-    photoY + photoSize / 2,
-    photoSize / 2 + 5,
-    0,
-    Math.PI * 2,
-  );
-  ctx.strokeStyle = `${palette.ink}66`;
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
   ctx.save();
   ctx.beginPath();
   ctx.arc(
-    photoX + photoSize / 2,
-    photoY + photoSize / 2,
-    photoSize / 2,
+    avatarX + avatarSize / 2,
+    avatarY + avatarSize / 2,
+    avatarSize / 2,
     0,
     Math.PI * 2,
   );
   ctx.clip();
-  const imageUrl = avatarUrl(model);
-  if (imageUrl) {
+  const photoUrl = avatarUrl(model);
+  if (photoUrl) {
     try {
-      const photo = await loadImage(imageUrl);
-      const scale = Math.max(
-        photoSize / photo.naturalWidth,
-        photoSize / photo.naturalHeight,
-      );
-      const width = photo.naturalWidth * scale;
-      const height = photo.naturalHeight * scale;
-      ctx.drawImage(
-        photo,
-        photoX + (photoSize - width) / 2,
-        photoY + (photoSize - height) / 2,
-        width,
-        height,
-      );
+      const photo = await loadImage(photoUrl);
+      drawCoverImage(ctx, photo, avatarSize, avatarSize);
     } catch {
       ctx.fillStyle = palette.accent;
-      ctx.fillRect(photoX, photoY, photoSize, photoSize);
+      ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
     }
   } else {
     ctx.fillStyle = palette.accent;
-    ctx.fillRect(photoX, photoY, photoSize, photoSize);
+    ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
   }
   ctx.restore();
-  if (!imageUrl) {
-    ctx.fillStyle = palette.background;
-    ctx.font = "800 92px Inter, sans-serif";
+  if (!photoUrl) {
+    ctx.fillStyle = palette.ink;
+    ctx.font = "800 84px Inter, sans-serif";
     ctx.textAlign = "center";
     ctx.fillText(
       profileCardInitials(model.displayName),
-      photoX + photoSize / 2,
-      photoY + photoSize / 2 + 30,
+      avatarX + avatarSize / 2,
+      avatarY + avatarSize / 2 + 28,
     );
     ctx.textAlign = "left";
   }
 
-  try {
-    const flower = await loadImage("/assets/brand/akari-flower-mark.png");
-    roundedRect(ctx, 366, 387, 94, 94, 47);
-    ctx.fillStyle = `${palette.background}e8`;
-    ctx.fill();
-    ctx.strokeStyle = `${palette.ink}55`;
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    ctx.drawImage(flower, 380, 401, 66, 66);
-  } catch {
-    // Avatar brand seal is optional if decoding fails.
-  }
-
-  const identityX = 520;
+  const identityX = 480;
   ctx.fillStyle = palette.ink;
   ctx.font = "800 72px Inter, sans-serif";
-  ctx.fillText(model.displayName.slice(0, 24), identityX, 305);
-  ctx.font = "500 30px Inter, sans-serif";
+  ctx.fillText(model.displayName.slice(0, 25), identityX, 340);
+  if (verified) {
+    ctx.fillStyle = palette.highlight;
+    ctx.font = "700 20px Inter, sans-serif";
+    ctx.fillText("AKARI VERIFIED", identityX, 386);
+  }
+  ctx.fillStyle = palette.ink;
   ctx.globalAlpha = 0.78;
-  ctx.fillText(`@${model.username}`, identityX, 354);
+  ctx.font = "500 29px Inter, sans-serif";
+  ctx.fillText(`@${model.username}`, identityX, 428);
   ctx.globalAlpha = 1;
   ctx.fillStyle = palette.highlight;
-  ctx.font = "650 31px Inter, sans-serif";
+  ctx.font = "700 26px Inter, sans-serif";
   ctx.fillText(
-    model.roles.map(titleCaseRole).join(" · ").slice(0, 48) || "AKARI Member",
+    model.roles.map(titleCaseRole).join("  ·  ").slice(0, 54) || "AKARI Member",
     identityX,
-    413,
+    480,
   );
   if (model.headline) {
     ctx.fillStyle = palette.ink;
-    ctx.globalAlpha = 0.83;
-    ctx.font = "500 24px Inter, sans-serif";
-    ctx.fillText(model.headline.slice(0, 57), identityX, 461);
+    ctx.globalAlpha = 0.82;
+    ctx.font = "500 22px Inter, sans-serif";
+    ctx.fillText(model.headline.slice(0, 64), identityX, 528);
     ctx.globalAlpha = 1;
   }
-  ctx.fillStyle = palette.accent;
-  ctx.font = "700 18px Inter, sans-serif";
-  ctx.fillText(
-    verifiedRoles.length
-      ? `AKARI VERIFIED · ${verifiedRoles.join(" · ")}`
-      : "AKARI MEMBER",
-    identityX,
-    505,
-  );
 
-  let pillX = identityX;
-  model.roles.slice(0, 3).forEach((role) => {
-    const label = titleCaseRole(role);
-    ctx.font = "650 20px Inter, sans-serif";
-    const width = Math.max(112, ctx.measureText(label).width + 54);
-    roundedRect(ctx, pillX, 534, width, 52, 26);
-    ctx.fillStyle = palette.surface;
+  if (primarySocial) {
+    drawRoundRect(ctx, 1134, 258, 338, 268, 38);
+    ctx.fillStyle = "rgba(255,255,255,.09)";
     ctx.fill();
-    ctx.strokeStyle = `${palette.accent}88`;
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "rgba(255,255,255,.24)";
+    ctx.lineWidth = 2;
     ctx.stroke();
+    drawSocialMark(ctx, primarySocial.platform, 1182, 307, palette.ink);
     ctx.fillStyle = palette.ink;
-    ctx.fillText(label, pillX + 27, 568);
-    pillX += width + 16;
-  });
+    ctx.font = "700 18px Inter, sans-serif";
+    ctx.fillText(socialLabels[primarySocial.platform].toUpperCase(), 1182, 370);
+    ctx.font = "800 38px Inter, sans-serif";
+    ctx.fillText(
+      primarySocial.followerCount == null
+        ? "Connected"
+        : formatProfileReach(primarySocial.followerCount),
+      1182,
+      426,
+    );
+    ctx.font = "500 18px Inter, sans-serif";
+    ctx.globalAlpha = 0.72;
+    ctx.fillText(
+      primarySocial.platform === "youtube" ? "subscribers" : "followers",
+      1182,
+      458,
+    );
+    ctx.globalAlpha = 1;
+  }
 
-  roundedRect(ctx, 1190, 260, 280, 310, 38);
-  ctx.fillStyle = palette.surface;
-  ctx.fill();
-  ctx.strokeStyle = `${palette.accent}99`;
-  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(112, 616);
+  ctx.lineTo(1480, 616);
+  ctx.strokeStyle = "rgba(255,255,255,.20)";
+  ctx.lineWidth = 1;
   ctx.stroke();
-  ctx.fillStyle = palette.accent;
+
+  ctx.fillStyle = palette.ink;
   ctx.font = "700 17px Inter, sans-serif";
-  ctx.fillText("PROFILE LINK", 1230, 320);
-  try {
-    const flower = await loadImage("/assets/brand/akari-flower-mark.png");
-    ctx.drawImage(flower, 1278, 345, 100, 100);
-  } catch {
-    // Brand mark is decorative here.
-  }
-  ctx.fillStyle = palette.ink;
-  ctx.font = "650 21px Inter, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("Connect on AKARI", 1330, 480);
-  ctx.font = "500 15px Inter, sans-serif";
-  ctx.globalAlpha = 0.72;
-  ctx.fillText(canonicalUrl.slice(0, 34), 1330, 514);
+  ctx.globalAlpha = 0.7;
+  ctx.fillText("SOCIAL REACH", 112, 669);
   ctx.globalAlpha = 1;
-  ctx.textAlign = "left";
-
-  const metrics = [
-    [String(opportunities), "OPPORTUNITIES"],
-    [formatProfileReach(model.followerCount), "REACH"],
-    [
-      model.percentile.topPercent
-        ? `TOP ${model.percentile.topPercent}%`
-        : "BUILDING",
-      "SIGNAL",
-    ],
-  ] as const;
-  roundedRect(ctx, 115, 625, 1010, 116, 30);
-  ctx.fillStyle = palette.surface;
-  ctx.fill();
-  ctx.strokeStyle = `${palette.ink}2f`;
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-  metrics.forEach(([value, label], index) => {
-    const x = 165 + index * 315;
-    ctx.fillStyle = index === 0 ? palette.highlight : palette.accent;
-    ctx.font = "750 29px Inter, sans-serif";
-    ctx.fillText(value, x, 677);
+  model.socials.slice(0, 5).forEach((social, index) => {
+    const x = 112 + index * 205;
+    drawSocialMark(ctx, social.platform, x, 706, palette.ink);
     ctx.fillStyle = palette.ink;
-    ctx.globalAlpha = 0.65;
-    ctx.font = "700 13px Inter, sans-serif";
-    ctx.fillText(label, x, 708);
+    ctx.font = "700 17px Inter, sans-serif";
+    ctx.fillText(socialLabels[social.platform], x + 38, 724);
+    ctx.globalAlpha = 0.72;
+    ctx.font = "500 15px Inter, sans-serif";
+    ctx.fillText(socialCountLabel(social), x + 38, 750);
     ctx.globalAlpha = 1;
   });
 
-  roundedRect(ctx, 115, 765, 1010, 104, 28);
-  ctx.fillStyle = palette.surface;
+  drawRoundRect(ctx, 112, 800, 530, 92, 24);
+  ctx.fillStyle = "rgba(255,255,255,.075)";
   ctx.fill();
-  ctx.strokeStyle = `${palette.ink}2f`;
+  ctx.strokeStyle = "rgba(255,255,255,.18)";
   ctx.stroke();
+  ctx.fillStyle = palette.accent;
+  ctx.font = "700 14px Inter, sans-serif";
+  ctx.fillText("AKARI PROFILE ID", 138, 834);
   ctx.fillStyle = palette.ink;
-  ctx.font = "600 23px Inter, sans-serif";
-  ctx.fillText("Connect with me", 165, 827);
-  const visibleSocials = model.socials.slice(0, 6);
-  visibleSocials.forEach((social, index) => {
-    const circleX = 475 + index * 76;
-    ctx.beginPath();
-    ctx.arc(circleX, 817, 28, 0, Math.PI * 2);
-    ctx.fillStyle = `${palette.ink}0d`;
-    ctx.fill();
-    ctx.strokeStyle = `${palette.ink}45`;
-    ctx.stroke();
-    drawSocialMark(ctx, social.platform, circleX - 12, 805, palette.ink);
-  });
+  ctx.font = "700 20px Inter, sans-serif";
+  ctx.fillText(`AKARI / @${model.username}`, 138, 866);
 
-  roundedRect(ctx, 1150, 625, 320, 244, 30);
-  ctx.fillStyle = palette.surface;
-  ctx.fill();
-  ctx.strokeStyle = `${palette.ink}2f`;
-  ctx.stroke();
   ctx.fillStyle = palette.ink;
-  ctx.font = "700 15px Inter, sans-serif";
-  ctx.globalAlpha = 0.62;
-  ctx.fillText("PROFILE DETAILS", 1190, 675);
-  ctx.globalAlpha = 1;
-  ctx.font = "600 18px Inter, sans-serif";
+  ctx.globalAlpha = 0.72;
+  ctx.font = "500 16px Inter, sans-serif";
+  ctx.fillText(canonicalUrl, 688, 835);
   const location =
     settings.showLocation && model.location
       ? `${flagFor(settings.countryCode)} ${model.location}`.trim()
-      : "Location private";
-  ctx.fillText(location.slice(0, 30), 1190, 718);
-  if (languages.length) {
-    ctx.font = "500 15px Inter, sans-serif";
-    ctx.globalAlpha = 0.73;
-    ctx.fillText(languages.slice(0, 3).join(" · ").slice(0, 36), 1190, 754);
-    ctx.globalAlpha = 1;
-  }
-  ctx.fillStyle = palette.accent;
-  ctx.font = "700 16px Inter, sans-serif";
-  ctx.fillText(
-    settings.design === "passport" ? "MEMBER PASSPORT" : "PROFILE SIGNATURE",
-    1190,
-    816,
-  );
-
-  ctx.fillStyle = palette.ink;
-  ctx.globalAlpha = 0.66;
-  ctx.font = "500 17px Inter, sans-serif";
-  ctx.fillText("akarihouse.com", 118, 925);
-  ctx.textAlign = "right";
-  ctx.fillText("A private ecosystem for high-signal connections.", 1470, 925);
-  ctx.textAlign = "left";
+      : "";
+  const privacyLine = [location, ...languages.slice(0, 4)].filter(Boolean).join("  ·  ");
+  if (privacyLine) ctx.fillText(privacyLine.slice(0, 72), 688, 870);
   ctx.globalAlpha = 1;
 }
 
@@ -628,6 +473,7 @@ export function ProfileShareCard({
   const navigation = useNavigation();
   const [settings, setSettings] = useState<ProfileCardSettings>({
     ...model.settings,
+    design: "signature",
     orientation: "landscape",
   });
   const [languageToAdd, setLanguageToAdd] = useState("");
@@ -637,18 +483,20 @@ export function ProfileShareCard({
     [settings.languagesJson],
   );
   const palette = palettes[settings.palette];
-  const verifiedRoles = model.verificationStates
-    .filter((state) => state.status === "verified")
-    .map((state) => titleCaseRole(state.role));
+  const verified = model.verificationStates.some(
+    (state) => state.status === "verified",
+  );
   const canSharePublicProfile =
     model.accessTier === "member" && model.visibility === "public";
-  const location =
-    settings.showLocation && model.location
-      ? `${flagFor(settings.countryCode)} ${model.location}`.trim()
-      : "Location private";
   const canonicalUrl = canSharePublicProfile
     ? `akarihouse.com/profiles/${model.username}`
     : "Private AKARI profile";
+  const primarySocial =
+    model.socials.find((social) => social.platform === "x") ?? model.socials[0];
+  const location =
+    settings.showLocation && model.location
+      ? `${flagFor(settings.countryCode)} ${model.location}`.trim()
+      : "";
   const availableLanguages = PROFILE_CARD_LANGUAGE_OPTIONS.filter(
     (language) =>
       !languages.some(
@@ -656,8 +504,6 @@ export function ProfileShareCard({
           selected.toLocaleLowerCase("en") === language.toLocaleLowerCase("en"),
       ),
   );
-  const opportunities =
-    model.opportunityStats.created + model.opportunityStats.received;
 
   function updateLanguages(next: string[]) {
     setSettings({ ...settings, languagesJson: JSON.stringify(next) });
@@ -718,24 +564,22 @@ export function ProfileShareCard({
   }
 
   const cardStyle = {
-    "--card-bg": palette.background,
-    "--card-ink": palette.ink,
-    "--card-accent": palette.accent,
-    "--card-highlight": palette.highlight,
-    "--card-surface": palette.surface,
-    "--card-shadow": palette.shadow,
+    "--approved-tint": palette.tint,
+    "--approved-ink": palette.ink,
+    "--approved-accent": palette.accent,
+    "--approved-highlight": palette.highlight,
+    "--approved-glass": palette.glass,
   } as CSSProperties;
 
   return (
-    <main id="main-content" className="share-card-main glass-share-page">
+    <main id="main-content" className="share-card-main approved-share-page">
       <header className="share-card-heading">
         <div>
           <span className="eyebrow">Your AKARI identity</span>
           <h1>Profile sharing card</h1>
           <p>
-            A premium AKARI credit-card profile built from your real member
-            data. Choose your glass color, control private details, then
-            download or share.
+            One approved glass design. Choose the color, control private details,
+            then download or share it.
           </p>
         </div>
         <Link className="quiet-link" to={`/profiles/${model.username}`}>
@@ -750,205 +594,148 @@ export function ProfileShareCard({
         </p>
       )}
 
-      <div className="share-card-layout">
-        <section
-          className="share-card-stage glass-card-stage"
-          aria-label="Card preview"
-        >
+      <div className="share-card-layout approved-share-layout">
+        <section className="share-card-stage approved-card-stage" aria-label="Card preview">
           <article
-            className={`akari-share-card glass-profile-card landscape ${settings.design} palette-${settings.palette}`}
+            className={`approved-profile-card glass-profile-card palette-${settings.palette}`}
             style={cardStyle}
           >
-            <div className="glass-card-gloss" aria-hidden="true" />
             <img
-              className="glass-card-watermark"
-              src="/assets/brand/akari-flower-mark.png"
+              className="approved-card-scene"
+              src="/assets/house/arrival-v3.webp"
               alt=""
               aria-hidden="true"
             />
+            <div className="approved-card-tint" aria-hidden="true" />
+            <div className="approved-card-glass" aria-hidden="true" />
+            <div className="approved-card-content">
+              <header className="approved-card-header">
+                <div className="approved-card-brand">
+                  <img src="/assets/brand/akari-logo-horizontal.png" alt="AKARI" />
+                </div>
+                <span>Profile card</span>
+              </header>
 
-            <div className="glass-card-topline">
-              <div className="glass-card-brand">
-                <img
-                  src="/assets/brand/akari-logo-horizontal.png"
-                  alt="AKARI"
-                />
-                <span>HOUSE</span>
-              </div>
-              <span className="glass-card-edition">
-                {settings.design === "passport"
-                  ? "Member passport"
-                  : "Profile signature"}
-              </span>
-            </div>
-
-            <div className="glass-card-core">
-              <div className="profile-card-person glass-card-person">
-                <div className="profile-card-avatar glass-card-avatar">
-                  {model.avatarKey ? (
-                    <img
-                      src={avatarUrl(model)}
-                      alt={`${model.displayName}'s profile`}
-                      width={180}
-                      height={180}
-                    />
-                  ) : (
-                    <span aria-hidden="true">
-                      {profileCardInitials(model.displayName)}
-                    </span>
-                  )}
-                  <span className="glass-avatar-seal" aria-hidden="true">
+              <div className="approved-card-main">
+                <div className="approved-card-avatar-wrap">
+                  <div className="approved-card-avatar">
+                    {model.avatarKey ? (
+                      <img
+                        src={avatarUrl(model)}
+                        alt={`${model.displayName}'s profile`}
+                        width={180}
+                        height={180}
+                      />
+                    ) : (
+                      <span aria-hidden="true">
+                        {profileCardInitials(model.displayName)}
+                      </span>
+                    )}
+                  </div>
+                  <span className="approved-avatar-seal" aria-hidden="true">
                     <img src="/assets/brand/akari-flower-mark.png" alt="" />
                   </span>
                 </div>
-              </div>
 
-              <div className="share-card-identity glass-card-identity">
-                <h2>{model.displayName}</h2>
-                <p className="glass-card-handle">@{model.username}</p>
-                <strong className="glass-role-line">
-                  {model.roles.length
-                    ? model.roles.map(titleCaseRole).join(" · ")
-                    : "AKARI Member"}
-                </strong>
-                {model.headline && (
-                  <p className="profile-card-headline glass-card-headline">
-                    {model.headline}
-                  </p>
-                )}
-                <span className="share-card-verification glass-card-verification">
-                  {verifiedRoles.length
-                    ? `AKARI verified · ${verifiedRoles.join(" · ")}`
-                    : "AKARI member"}
-                </span>
-                <div className="glass-role-pills" aria-label="AKARI roles">
-                  {model.roles.slice(0, 3).map((role) => (
-                    <span key={role}>{titleCaseRole(role)}</span>
-                  ))}
+                <div className="approved-card-identity">
+                  <div className="approved-name-line">
+                    <h2>{model.displayName}</h2>
+                    {verified && <span>Verified</span>}
+                  </div>
+                  <p className="approved-handle">@{model.username}</p>
+                  <strong className="approved-role-line">
+                    {model.roles.length
+                      ? model.roles.map(titleCaseRole).join(" · ")
+                      : "AKARI Member"}
+                  </strong>
+                  {model.headline && <p className="approved-headline">{model.headline}</p>}
                 </div>
+
+                {primarySocial && (
+                  <a
+                    className="approved-primary-social"
+                    href={primarySocial.profileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className="approved-social-icon">
+                      <SocialIcon platform={primarySocial.platform} />
+                    </span>
+                    <small>{socialLabels[primarySocial.platform]}</small>
+                    <strong>
+                      {primarySocial.followerCount == null
+                        ? "Connected"
+                        : formatProfileReach(primarySocial.followerCount)}
+                    </strong>
+                    <span>
+                      {primarySocial.platform === "youtube"
+                        ? "subscribers"
+                        : primarySocial.followerCount == null
+                          ? "profile linked"
+                          : "followers"}
+                    </span>
+                  </a>
+                )}
               </div>
 
-              <div className="glass-profile-link" aria-label="Profile link">
-                <span className="glass-profile-link-icon">
-                  <LinkGlyph size={22} />
-                </span>
-                <small>Profile link</small>
-                <strong>Connect on AKARI</strong>
-                <span>{canonicalUrl}</span>
-              </div>
-            </div>
-
-            <div className="share-card-metrics glass-card-metrics">
-              <div>
-                <strong>{opportunities}</strong>
-                <span>Opportunities</span>
-              </div>
-              <div>
-                <strong>{formatProfileReach(model.followerCount)}</strong>
-                <span>Reach</span>
-              </div>
-              <div>
-                <strong>
-                  {model.percentile.topPercent
-                    ? `Top ${model.percentile.topPercent}%`
-                    : "Building"}
-                </strong>
-                <span>AKARI signal</span>
-              </div>
-            </div>
-
-            <div className="glass-connect-strip">
-              <strong>Connect with me</strong>
-              <div
-                className="profile-card-socials glass-card-socials"
-                aria-label="Connected social platforms"
-              >
+              <div className="approved-card-social-row" aria-label="Connected social accounts">
                 {model.socials.length ? (
-                  model.socials.map((social) => (
+                  model.socials.slice(0, 5).map((social) => (
                     <a
                       key={social.platform}
                       href={social.profileUrl}
                       target="_blank"
                       rel="noreferrer"
-                      aria-label={socialLabels[social.platform]}
-                      title={socialLabels[social.platform]}
+                      title={`${socialLabels[social.platform]}: ${socialCountLabel(social)}`}
                     >
                       <SocialIcon platform={social.platform} />
+                      <span>
+                        <strong>{socialLabels[social.platform]}</strong>
+                        <small>{socialCountLabel(social)}</small>
+                      </span>
                     </a>
                   ))
                 ) : (
-                  <span className="glass-no-socials">
-                    Add social links to your profile
+                  <span className="approved-no-socials">
+                    Add social profiles to show your network reach here.
                   </span>
                 )}
               </div>
+
+              <footer className="approved-card-footer">
+                <div className="approved-profile-id">
+                  <small>AKARI profile ID</small>
+                  <strong>AKARI / @{model.username}</strong>
+                </div>
+                <div className="approved-card-meta">
+                  <span>{canonicalUrl}</span>
+                  {(location || (settings.showLanguages && languages.length > 0)) && (
+                    <small>
+                      {[location, ...(settings.showLanguages ? languages.slice(0, 4) : [])]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </small>
+                  )}
+                </div>
+              </footer>
             </div>
-
-            <footer className="profile-card-footer glass-card-footer">
-              <div className="profile-card-private-details">
-                <span>{location}</span>
-                {settings.showLanguages && languages.length > 0 && (
-                  <span>{languages.join(" · ")}</span>
-                )}
-              </div>
-              <span className="glass-card-footer-brand">akarihouse.com</span>
-            </footer>
           </article>
-
-          <div className="glass-card-note">
-            <strong>Credit-card format</strong>
-            <span>
-              85.6 × 54 proportion. The downloaded PNG uses the same branded
-              glass design.
-            </span>
-          </div>
-          <p className="share-card-confidence">
-            {model.percentile.confidence === "verified"
-              ? "Percentile uses verified member signals."
-              : model.percentile.confidence === "provisional"
-                ? "Provisional percentile: one or more signals are member-reported."
-                : "Your percentile appears after enough comparable member signals exist."}
+          <p className="approved-card-caption">
+            Transparent frosted glass. The official AKARI scene stays visible through the card.
           </p>
         </section>
 
-        <Form method="post" className="share-card-controls glass-card-controls">
+        <Form method="post" className="share-card-controls approved-card-controls">
+          <input type="hidden" name="design" value="signature" />
           <input type="hidden" name="orientation" value="landscape" />
 
-          <fieldset>
-            <legend>Card detail</legend>
-            <label>
-              <input
-                type="radio"
-                name="design"
-                value="signature"
-                checked={settings.design === "signature"}
-                onChange={() =>
-                  setSettings({ ...settings, design: "signature" })
-                }
-              />
-              Signature
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="design"
-                value="passport"
-                checked={settings.design === "passport"}
-                onChange={() =>
-                  setSettings({ ...settings, design: "passport" })
-                }
-              />
-              Passport
-            </label>
-          </fieldset>
-
-          <fieldset className="glass-palette-fieldset">
-            <legend>Glass color</legend>
-            <div className="glass-palette-grid">
+          <fieldset className="approved-palette-fieldset">
+            <legend>Card color</legend>
+            <div className="approved-palette-grid">
               {Object.entries(palettes).map(([value, item]) => (
                 <label
-                  className={`glass-palette-choice ${settings.palette === value ? "is-selected" : ""}`}
                   key={value}
+                  className={`approved-palette-choice ${settings.palette === value ? "is-selected" : ""}`}
                 >
                   <input
                     type="radio"
@@ -963,20 +750,16 @@ export function ProfileShareCard({
                     }
                   />
                   <span
-                    className="glass-palette-swatch"
+                    className="approved-palette-swatch"
                     style={
                       {
-                        "--swatch-bg": item.background,
+                        "--swatch-tint": item.tint,
                         "--swatch-accent": item.accent,
-                        "--swatch-highlight": item.highlight,
                       } as CSSProperties
                     }
                     aria-hidden="true"
                   />
-                  <span>
-                    <strong>{item.label}</strong>
-                    <small>{item.description}</small>
-                  </span>
+                  <span>{item.label}</span>
                 </label>
               ))}
             </div>
@@ -1017,10 +800,7 @@ export function ProfileShareCard({
                 type="button"
                 className="button button-quiet"
                 onClick={addLanguage}
-                disabled={
-                  !languageToAdd ||
-                  languages.length >= MAX_PROFILE_CARD_LANGUAGES
-                }
+                disabled={!languageToAdd || languages.length >= MAX_PROFILE_CARD_LANGUAGES}
               >
                 Add
               </button>
@@ -1034,9 +814,7 @@ export function ProfileShareCard({
                     type="button"
                     aria-label={`Remove ${language}`}
                     onClick={() =>
-                      updateLanguages(
-                        languages.filter((item) => item !== language),
-                      )
+                      updateLanguages(languages.filter((item) => item !== language))
                     }
                   >
                     ×
@@ -1044,9 +822,6 @@ export function ProfileShareCard({
                 </span>
               ))}
             </div>
-            <small>
-              {languages.length}/{MAX_PROFILE_CARD_LANGUAGES} languages selected
-            </small>
           </div>
 
           <label>
@@ -1088,33 +863,23 @@ export function ProfileShareCard({
           </button>
 
           <div className="share-card-actions">
-            <button
-              type="button"
-              className="button button-primary"
-              onClick={() => void download()}
-            >
+            <button type="button" className="button button-quiet" onClick={download}>
               Download PNG
             </button>
-            <button
-              type="button"
-              className="button button-secondary"
-              onClick={() => void share()}
-            >
+            <button type="button" className="button button-primary" onClick={share}>
               Share card
             </button>
           </div>
 
           {shareStatus && (
-            <p className="glass-share-status" role="status">
+            <p className="approved-share-status" role="status">
               {shareStatus}
             </p>
           )}
-
           <small>
             {canSharePublicProfile
               ? "Sharing uses your canonical public profile URL."
-              : "Your profile is not public, so sharing uses the AKARI homepage."}{" "}
-            Hidden location and languages never appear on the card.
+              : "Your profile is not public, so sharing links back to AKARI House."}
           </small>
         </Form>
       </div>
