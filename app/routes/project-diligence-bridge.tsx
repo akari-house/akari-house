@@ -1,11 +1,14 @@
-import { redirect } from "react-router";
+import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/project-diligence-bridge";
 import { action as legacyDiligenceAction } from "./project-diligence-completion";
-export { default, meta } from "./project-diligence-completion";
+import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { ndaBridgeDecision } from "~/lib/crm-nda-bridge.server";
 import {
+  diligenceCategories,
+  diligenceCategoryDescriptions,
+  diligenceCategoryLabels,
   diligenceCompleteness,
   isDiligenceCategory,
 } from "~/lib/diligence-completion";
@@ -48,6 +51,15 @@ type QuestionRow = {
   createdAt: string;
   updatedAt: string;
 };
+
+export const meta: Route.MetaFunction = () => [
+  { title: "Project Diligence | AKARI House" },
+  {
+    name: "description",
+    content:
+      "Founder diligence completeness, document versions and controlled Investor Q&A.",
+  },
+];
 
 export async function loader({ request, context, params }: Route.LoaderArgs) {
   const env = context.get(cloudflareContext).env;
@@ -174,15 +186,6 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
   let investorAccess = false;
   let ndaSigned = false;
-  let ndaBridge = {
-    mode: "legacy" as "legacy" | "shadow" | "crm",
-    source: "HOUSE_LEGACY" as
-      "HOUSE_LEGACY" | "HOUSE_LEGACY_SHADOW" | "CRM_BY_AKARI",
-    mismatch: false,
-    crmReason: null as string | null,
-    checkedAt: null as string | null,
-  };
-
   if (isInvestor) {
     const ownRoom = await db
       .prepare(
@@ -201,13 +204,6 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
 
     const decision = await ndaBridgeDecision(env, db, project.id, user.id);
     ndaSigned = decision.signed;
-    ndaBridge = {
-      mode: decision.mode,
-      source: decision.source,
-      mismatch: decision.mismatch,
-      crmReason: decision.crmStatus?.reason ?? null,
-      checkedAt: decision.crmStatus?.checkedAt ?? null,
-    };
   }
 
   return {
@@ -221,7 +217,6 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
     completeness,
     ndaRequired: Boolean(settings?.ndaRequired),
     ndaSigned,
-    ndaBridge,
     investorAccess,
     accessCounts: accessCounts ?? {
       pendingRequests: 0,
@@ -337,4 +332,404 @@ export async function action(args: Route.ActionArgs) {
   ]);
 
   throw redirect(`/projects/${project.slug}/diligence?question=sent`);
+}
+
+function formatDate(value: string | null) {
+  return value ? new Date(value).toLocaleString() : "Not set";
+}
+
+export default function ProjectDiligenceCompletion({
+  loaderData,
+  actionData,
+}: Route.ComponentProps) {
+  const navigation = useNavigation();
+  const pending = navigation.state !== "idle";
+  const currentIds = new Set(
+    loaderData.currentDocuments.map((item) => item.id),
+  );
+  return (
+    <div className="dashboard-shell">
+      <SiteHeader user={loaderData.user} />
+      <main id="main-content" className="admin-main">
+        <header className="admin-heading">
+          <div>
+            <span className="eyebrow">R72 · Data Room & Diligence</span>
+            <h1>{loaderData.project.title}</h1>
+            <p>
+              Complete institutional diligence without creating a second data
+              room. Documents, access controls and Investor Q&A remain attached
+              to this Project.
+            </p>
+          </div>
+          <div className="application-actions">
+            <Link
+              className="button button-primary"
+              to={`/projects/${loaderData.project.slug}/diligence/access`}
+            >
+              Trusted access
+            </Link>
+            <Link
+              className="button button-quiet"
+              to={`/projects/${loaderData.project.slug}`}
+            >
+              Project
+            </Link>
+          </div>
+        </header>
+
+        {actionData?.error && (
+          <p className="form-error" role="alert">
+            {actionData.error}
+          </p>
+        )}
+
+        <section className="admin-panel">
+          <span className="chapter">Institutional checklist</span>
+          <h2>{loaderData.completeness.percentage}% complete</h2>
+          <p>
+            {loaderData.completeness.complete} of{" "}
+            {loaderData.completeness.total} required diligence categories
+            currently have a current document.
+          </p>
+          <div className="application-list">
+            {loaderData.completeness.required.map((category) => {
+              const missing =
+                loaderData.completeness.missing.includes(category);
+              return (
+                <article className="application-card" key={category}>
+                  <div>
+                    <span className="chapter">
+                      {missing ? "missing" : "provided"}
+                    </span>
+                    <h3>{diligenceCategoryLabels[category]}</h3>
+                    <p>{diligenceCategoryDescriptions[category]}</p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="admin-panel">
+          <span className="chapter">Access governance</span>
+          <h2>NDA dependency</h2>
+          {loaderData.isFounder ? (
+            <Form method="post" className="form-stack">
+              <label className="inline-choice">
+                <input
+                  type="checkbox"
+                  name="ndaRequired"
+                  value="yes"
+                  defaultChecked={loaderData.ndaRequired}
+                />
+                Require a current signed external NDA record before Investor
+                diligence Q&A.
+              </label>
+              <p className="form-hint">
+                NDA records remain external legal references in CRM by AKARI.
+                AKARI House does not draft or sign the agreement.
+              </p>
+              <button
+                className="button button-primary"
+                name="intent"
+                value="set-nda-policy"
+                disabled={pending}
+              >
+                Save NDA policy
+              </button>
+            </Form>
+          ) : (
+            <p>
+              {loaderData.ndaRequired
+                ? loaderData.ndaSigned
+                  ? "A current signed NDA reference is on record for your access."
+                  : "This Project requires a current signed NDA reference before diligence Q&A."
+                : "This Project does not require an NDA reference in AKARI for diligence Q&A."}
+            </p>
+          )}
+          <p>
+            Pending room requests: {loaderData.accessCounts.pendingRequests} ·
+            Active document grants: {loaderData.accessCounts.activeGrants} ·
+            Logged access events: {loaderData.accessCounts.accessEvents}
+          </p>
+        </section>
+
+        {loaderData.isFounder && (
+          <>
+            <section className="admin-panel">
+              <span className="chapter">Current documents</span>
+              <h2>Classify diligence material</h2>
+              <p>
+                Upload source files in the existing Project editor, then
+                classify them here. Changing a category clears any prior AKARI
+                document approval so the material can be reviewed again.
+              </p>
+              <Link
+                className="button button-quiet"
+                to={`/projects/${loaderData.project.slug}/edit`}
+              >
+                Upload in Project editor
+              </Link>
+              <div className="application-list">
+                {loaderData.currentDocuments.map((document) => (
+                  <article className="application-card" key={document.id}>
+                    <div>
+                      <span className="chapter">
+                        v{document.versionNumber} · {document.category}
+                      </span>
+                      <h3>{document.title}</h3>
+                      <small>
+                        {document.approvedAt
+                          ? "AKARI reviewed"
+                          : "Review pending / not required yet"}
+                      </small>
+                    </div>
+                    <Form method="post" className="application-actions">
+                      <input
+                        type="hidden"
+                        name="documentId"
+                        value={document.id}
+                      />
+                      <label>
+                        Category
+                        <select
+                          name="category"
+                          defaultValue={
+                            diligenceCategories.includes(
+                              document.category as never,
+                            )
+                              ? document.category
+                              : "corporate"
+                          }
+                        >
+                          {diligenceCategories.map((category) => (
+                            <option key={category} value={category}>
+                              {diligenceCategoryLabels[category]}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <button
+                        className="button button-quiet"
+                        name="intent"
+                        value="classify-document"
+                        disabled={pending}
+                      >
+                        Save category
+                      </button>
+                    </Form>
+                  </article>
+                ))}
+                {!loaderData.currentDocuments.length && (
+                  <p>No AKARI project documents have been uploaded yet.</p>
+                )}
+              </div>
+            </section>
+
+            <section className="admin-panel">
+              <span className="chapter">Document versions</span>
+              <h2>Link a replacement as the next version</h2>
+              <p>
+                Upload the replacement as a normal Project document first.
+                Linking it below preserves both files, makes the replacement
+                current and automatically revokes active grants to the
+                superseded version.
+              </p>
+              {loaderData.currentDocuments.length >= 2 ? (
+                <Form method="post" className="form-stack">
+                  <label>
+                    Superseded document
+                    <select name="previousDocumentId" required>
+                      <option value="">Choose current document</option>
+                      {loaderData.currentDocuments.map((document) => (
+                        <option key={document.id} value={document.id}>
+                          {document.title} · v{document.versionNumber}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Replacement document
+                    <select name="nextDocumentId" required>
+                      <option value="">Choose uploaded replacement</option>
+                      {loaderData.currentDocuments.map((document) => (
+                        <option key={document.id} value={document.id}>
+                          {document.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Version note
+                    <textarea
+                      name="versionNote"
+                      maxLength={1000}
+                      placeholder="What changed in this version?"
+                    />
+                  </label>
+                  <button
+                    className="button button-primary"
+                    name="intent"
+                    value="link-document-version"
+                    disabled={pending}
+                  >
+                    Make replacement current
+                  </button>
+                </Form>
+              ) : (
+                <p>
+                  Upload at least two documents before linking a replacement
+                  version.
+                </p>
+              )}
+              <div className="application-list">
+                {loaderData.documents
+                  .filter((document) => !currentIds.has(document.id))
+                  .map((document) => (
+                    <article className="application-card" key={document.id}>
+                      <div>
+                        <span className="chapter">
+                          historical · v{document.versionNumber}
+                        </span>
+                        <h3>{document.title}</h3>
+                        <p>
+                          {document.versionNote || "No version note recorded."}
+                        </p>
+                      </div>
+                    </article>
+                  ))}
+              </div>
+            </section>
+          </>
+        )}
+
+        <section className="admin-panel">
+          <span className="chapter">Diligence requests</span>
+          <h2>Investor questions → Founder answers → supporting document</h2>
+          {loaderData.isInvestor &&
+            (loaderData.investorAccess ? (
+              <Form method="post" className="form-stack">
+                <label>
+                  Category
+                  <select name="requestedCategory" defaultValue="financials">
+                    {diligenceCategories.map((category) => (
+                      <option key={category} value={category}>
+                        {diligenceCategoryLabels[category]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Diligence question or document request
+                  <textarea
+                    name="question"
+                    minLength={10}
+                    maxLength={2000}
+                    required
+                  />
+                </label>
+                <button
+                  className="button button-primary"
+                  name="intent"
+                  value="ask-diligence-question"
+                  disabled={
+                    pending || (loaderData.ndaRequired && !loaderData.ndaSigned)
+                  }
+                >
+                  Submit diligence request
+                </button>
+              </Form>
+            ) : (
+              <p>
+                Approved Deal Room or data-room access is required before
+                diligence Q&A.
+              </p>
+            ))}
+          <div className="application-list">
+            {loaderData.questions.map((item) => (
+              <article className="application-card" key={item.id}>
+                <div>
+                  <span className="chapter">
+                    {item.resolvedAt ? "resolved" : item.status} ·{" "}
+                    {item.requestedCategory}
+                  </span>
+                  <h3>{item.question}</h3>
+                  <p>
+                    Asked by {item.askerName} (@{item.askerUsername})
+                  </p>
+                  {item.answer && (
+                    <p>
+                      <strong>Founder answer:</strong> {item.answer}
+                    </p>
+                  )}
+                  {item.documentTitle && (
+                    <p>
+                      <strong>Supporting document:</strong> {item.documentTitle}
+                    </p>
+                  )}
+                  <small>
+                    Opened {formatDate(item.createdAt)}
+                    {item.resolvedAt
+                      ? ` · Resolved ${formatDate(item.resolvedAt)}`
+                      : ""}
+                  </small>
+                </div>
+                {loaderData.isFounder && item.status === "submitted" && (
+                  <Form method="post" className="form-stack">
+                    <input type="hidden" name="questionId" value={item.id} />
+                    <label>
+                      Answer
+                      <textarea
+                        name="answer"
+                        minLength={5}
+                        maxLength={4000}
+                        required
+                      />
+                    </label>
+                    <label>
+                      Supporting current document
+                      <select name="documentId" defaultValue="">
+                        <option value="">No document</option>
+                        {loaderData.currentDocuments.map((document) => (
+                          <option key={document.id} value={document.id}>
+                            {document.title}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <button
+                      className="button button-primary"
+                      name="intent"
+                      value="answer-diligence-question"
+                      disabled={pending}
+                    >
+                      Answer request
+                    </button>
+                  </Form>
+                )}
+                {loaderData.isInvestor &&
+                  item.status === "answered" &&
+                  !item.resolvedAt && (
+                    <Form method="post">
+                      <input type="hidden" name="questionId" value={item.id} />
+                      <button
+                        className="button button-quiet"
+                        name="intent"
+                        value="resolve-diligence-question"
+                        disabled={pending}
+                      >
+                        Mark resolved
+                      </button>
+                    </Form>
+                  )}
+              </article>
+            ))}
+            {!loaderData.questions.length && (
+              <p>No diligence questions have been recorded.</p>
+            )}
+          </div>
+        </section>
+      </main>
+    </div>
+  );
 }
