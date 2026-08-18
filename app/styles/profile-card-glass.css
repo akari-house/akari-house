@@ -127,7 +127,8 @@
   z-index: 3;
   border-radius: 50%;
   background: var(--card-highlight);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--card-highlight) 55%, transparent);
+  box-shadow: 0 0 12px
+    color-mix(in srgb, var(--card-highlight) 55%, transparent);
 }
 
 .glass-card-gloss {
