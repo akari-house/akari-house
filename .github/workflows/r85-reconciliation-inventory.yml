@@ -35,12 +35,18 @@ jobs:
           cache: npm
       - run: npm ci
 
+      - name: Mark credential-check stage
+        run: echo "R85_STAGE=credentials" >> "$GITHUB_ENV"
+
       - name: Require encrypted-backup credentials
         run: |
           set -euo pipefail
           test -n "${CLOUDFLARE_API_TOKEN:-}" || { echo "CLOUDFLARE_API_TOKEN is required."; exit 1; }
           test -n "${CLOUDFLARE_ACCOUNT_ID:-}" || { echo "CLOUDFLARE_ACCOUNT_ID is required."; exit 1; }
           test -n "${RECOVERY_BACKUP_ENCRYPTION_KEY:-}" || { echo "RECOVERY_BACKUP_ENCRYPTION_KEY is required."; exit 1; }
+
+      - name: Mark database-resolution stage
+        run: echo "R85_STAGE=database-resolution" >> "$GITHUB_ENV"
 
       - name: Resolve House and CRM production D1 databases
         run: |
@@ -63,6 +69,9 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_ENV, `R85_HOUSE_DB_ID=${house}\nR85_CRM_DB_ID=${crm}\n`);
           NODE
           rm -f private/reconciliation/d1-list.json
+
+      - name: Mark encrypted-backup stage
+        run: echo "R85_STAGE=encrypted-backup" >> "$GITHUB_ENV"
 
       - name: Export, encrypt and verify fresh production backups
         run: |
@@ -108,6 +117,9 @@ jobs:
             private/reconciliation/house.sql.gz private/reconciliation/crm.sql.gz \
             private/reconciliation/house.verify.sql private/reconciliation/crm.verify.sql \
             private/reconciliation/house.verify.sql.gz private/reconciliation/crm.verify.sql.gz
+
+      - name: Mark count-only inventory stage
+        run: echo "R85_STAGE=count-only-inventory" >> "$GITHUB_ENV"
 
       - name: Run count-only House and CRM inventory
         run: |
@@ -156,6 +168,9 @@ jobs:
             printf '{"skipped":true}\n' > private/reconciliation/crm-inventory.json
           fi
 
+      - name: Mark private-persistence stage
+        run: echo "R85_STAGE=private-persistence" >> "$GITHUB_ENV"
+
       - name: Persist private reconciliation snapshot in House D1
         run: |
           set -euo pipefail
@@ -178,6 +193,9 @@ jobs:
           test "$(jq -r '(.errors // []) | length' private/reconciliation/audit-response.json)" = "0"
           rm -f private/reconciliation/audit.sql private/reconciliation/audit-payload.json private/reconciliation/audit-response.json
 
+      - name: Mark sanitized-artifact stage
+        run: echo "R85_STAGE=sanitized-artifact" >> "$GITHUB_ENV"
+
       - name: Upload sanitized R85 status only
         uses: actions/upload-artifact@v4
         with:
@@ -185,6 +203,9 @@ jobs:
           path: private/reconciliation/status.json
           retention-days: 30
           if-no-files-found: error
+
+      - name: Mark sanitized-status stage
+        run: echo "R85_STAGE=sanitized-status" >> "$GITHUB_ENV"
 
       - name: Record sanitized checkpoint status
         env:
@@ -204,4 +225,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue comment 31 --repo "${GITHUB_REPOSITORY}" --body "❌ R85 reconciliation inventory did not complete for commit \`${GITHUB_SHA}\`. No mapping or authority changes were attempted. Review the workflow run; production remains in \`legacy\` NDA mode."
+          stage="${R85_STAGE:-unknown}"
+          run_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          gh issue comment 31 --repo "${GITHUB_REPOSITORY}" --body "❌ R85 reconciliation inventory did not complete for commit \`${GITHUB_SHA}\` at sanitized stage \`${stage}\`. No mapping or authority changes were attempted; production remains in \`legacy\` NDA mode. Run: ${run_url}"
