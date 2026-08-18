@@ -1,0 +1,23 @@
+name: R80 Overflow Diagnostic
+
+on:
+  push:
+    branches:
+      - r80-card-fidelity-crm-boundary
+
+jobs:
+  diagnose:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r80-card-fidelity-crm-boundary
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run profile card overflow proof
+        run: npx playwright test tests/e2e/profile-card-events-r79.spec.ts --project=desktop-chromium --grep "renders the approved AKARI frosted card" --reporter=line

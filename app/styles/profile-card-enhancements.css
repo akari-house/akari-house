@@ -209,6 +209,65 @@
   text-align: left;
 }
 
+/* R80 profile-card workspace containment. The authenticated shell contributes
+   its own sidebar and page padding, so every card child must size inside the
+   available content box instead of increasing the document width. */
+.approved-share-page,
+.approved-share-page *,
+.approved-share-page *::before,
+.approved-share-page *::after {
+  box-sizing: border-box;
+}
+
+.approved-share-page {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+.approved-share-layout,
+.approved-share-layout > *,
+.approved-card-stage,
+.approved-card-controls {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.approved-share-layout,
+.approved-card-stage,
+.approved-card-controls {
+  width: 100%;
+}
+
+.approved-card-stage {
+  overflow: hidden;
+}
+
+.approved-profile-card {
+  width: min(100%, 880px);
+  max-width: 100%;
+}
+
+.approved-card-controls fieldset,
+.approved-card-controls .approved-palette-grid,
+.approved-card-controls label,
+.approved-card-controls input,
+.approved-card-controls select,
+.approved-card-controls button {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (max-width: 920px) {
+  .approved-share-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .approved-card-controls {
+    width: min(100%, 620px);
+  }
+}
+
 @media (max-width: 620px) {
   .profile-card-person {
     grid-template-columns: auto minmax(0, 1fr);
@@ -243,6 +302,10 @@
 
   .profile-card-language-add {
     grid-template-columns: 1fr;
+  }
+
+  .approved-card-controls {
+    padding-inline: 1rem;
   }
 }
 

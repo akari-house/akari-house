@@ -25,6 +25,16 @@ export type AdminWorkspaceItem = {
   superadminOnly?: boolean;
 };
 
+/**
+ * AKARI House owns member, project, campaign, event, Deal Room, verification,
+ * moderation and public-network administration.
+ *
+ * Business-development CRM, relationship intelligence, operating rhythm,
+ * finance/revenue operations and SaaS workspace administration belong to the
+ * separate tenant-isolated AKARI CRM at https://crm.akarihouse.com.
+ * Legacy House tables/routes are intentionally left intact until a controlled
+ * data migration is approved; they must not be promoted as active House tools.
+ */
 export const adminWorkspaceItems: AdminWorkspaceItem[] = [
   {
     key: "reviews",
@@ -43,14 +53,6 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     superadminOnly: true,
   },
   {
-    key: "agreements",
-    label: "Agreement tracking",
-    description:
-      "Track external agreement stages, document references, expiry and follow-up ownership.",
-    to: "/admin/agreements",
-    superadminOnly: true,
-  },
-  {
     key: "fundraising-readiness",
     label: "Fundraising readiness",
     description:
@@ -64,38 +66,6 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     description:
       "Review Data Room completeness, NDA policy, Investor access and open diligence requests.",
     to: "/admin/diligence",
-    superadminOnly: true,
-  },
-  {
-    key: "relationships",
-    label: "Relationship intelligence",
-    description:
-      "Own relationships, record interactions, find warm paths and review connected account context.",
-    to: "/admin/relationships",
-    superadminOnly: true,
-  },
-  {
-    key: "operating-rhythm",
-    label: "Operating rhythm",
-    description:
-      "Review cross-system attention signals, follow-up ownership and recurring report snapshots.",
-    to: "/admin/operating-rhythm",
-    superadminOnly: true,
-  },
-  {
-    key: "finance",
-    label: "Finance & revenue",
-    description:
-      "Track invoices, collections, refunds, operating costs and currency-level contribution.",
-    to: "/admin/finance",
-    superadminOnly: true,
-  },
-  {
-    key: "saas-workspaces",
-    label: "SaaS workspaces",
-    description:
-      "Provision workspaces, teams, plans, subscriptions and module entitlements.",
-    to: "/admin/workspaces",
     superadminOnly: true,
   },
   {
@@ -158,7 +128,7 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
   {
     key: "operations",
     label: "Operations centre",
-    description: "Monitor queues, delivery health and scheduled jobs.",
+    description: "Monitor House queues, delivery health and scheduled jobs.",
     to: "/admin/operations",
     superadminOnly: true,
   },
@@ -192,6 +162,18 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     superadminOnly: true,
   },
 ];
+
+export const crmProductBoundary = {
+  url: "https://crm.akarihouse.com",
+  label: "AKARI CRM",
+  legacyHouseAdminKeys: [
+    "agreements",
+    "relationships",
+    "operating-rhythm",
+    "finance",
+    "saas-workspaces",
+  ],
+} as const;
 
 export function canAccessAdminWorkspaceItem(
   access: AdminWorkspaceAccess,

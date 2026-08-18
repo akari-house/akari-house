@@ -1,5 +1,8 @@
 import { Form, Link } from "react-router";
-import { visibleAdminWorkspaceItems } from "~/lib/admin-workspace";
+import {
+  crmProductBoundary,
+  visibleAdminWorkspaceItems,
+} from "~/lib/admin-workspace";
 import type { SessionUser } from "~/lib/domain";
 
 export type WorkspaceItem = {
@@ -92,7 +95,7 @@ export function workspaceRoleItems(user: SessionUser): WorkspaceItem[] {
 /**
  * These routes keep the cinematic, chapter-led public House experience.
  * Operational children such as edit, manage, work and settlement routes are
- * intentionally excluded so they can use the CRM-style workspace shell.
+ * intentionally excluded so they can use the operational workspace shell.
  */
 export function isImmersiveHousePath(pathname: string) {
   if (
@@ -269,6 +272,23 @@ export function HouseWorkspaceSidebar({
               pathname={pathname}
               hash={hash}
             />
+            {user.adminAccess.accessLevel === "superadmin" && (
+              <a
+                className="house-workspace-sidebar-link house-workspace-sidebar-external"
+                href={crmProductBoundary.url}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${crmProductBoundary.label}, opens separate CRM`}
+              >
+                <span
+                  className="house-workspace-sidebar-glyph"
+                  aria-hidden="true"
+                >
+                  ↗
+                </span>
+                <span aria-hidden="true">{crmProductBoundary.label}</span>
+              </a>
+            )}
             {adminItems.map((item) => (
               <SidebarLink
                 key={item.key}
