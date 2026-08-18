@@ -83,7 +83,9 @@ describe("AKARI House workspace shell", () => {
 
   it("uses a House-native navigation treatment rather than CRM product styling", () => {
     expect(sidebar).toContain("house-native-navigation");
-    expect(sidebar).toContain('import "~/styles/r82-house-native-workspace.css"');
+    expect(sidebar).toContain(
+      'import "~/styles/r82-house-native-workspace.css"',
+    );
     expect(sidebar).not.toContain("CRM-style workspace shell");
     expect(houseNativeStyles).toContain(
       ".house-workspace-sidebar.house-native-navigation",
