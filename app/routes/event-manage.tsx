@@ -3,7 +3,7 @@ import type { Route } from "./+types/event-manage";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
-import { canHostEvents } from "~/lib/events.server";
+import { canHostEvents, canPublishEventsDirectly } from "~/lib/events.server";
 import { EventTimeDisplay } from "~/components/EventTimeDisplay";
 import { AkariMotif } from "~/components/AkariMotif";
 
@@ -29,23 +29,43 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   return {
     user,
     events: events.results,
+    canPublishDirectly: canPublishEventsDirectly(user),
     cancelled: new URL(request.url).searchParams.has("cancelled"),
   };
 }
 
 export default function EventManage({ loaderData }: Route.ComponentProps) {
+  const direct = loaderData.canPublishDirectly;
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
       <main id="main-content" className="directory-main">
         <header className="directory-heading event-directory-heading">
           <div>
-            <span className="eyebrow">Event host desk</span>
-            <h1>Manage your gatherings.</h1>
+            <span className="eyebrow">
+              {direct ? "AKARI event publishing" : "Event host desk"}
+            </span>
+            <h1>
+              {direct ? "Manage and publish gatherings." : "Manage your gatherings."}
+            </h1>
+            {direct && (
+              <p>
+                Your AKARI admin access publishes valid events immediately from
+                the editor. Submitted member events are reviewed in the Admin
+                Event Publishing queue.
+              </p>
+            )}
           </div>
-          <Link className="button button-primary" to="/events/new">
-            Propose event
-          </Link>
+          <div className="button-row">
+            {direct && (
+              <Link className="button button-quiet" to="/admin/events">
+                Review submitted events
+              </Link>
+            )}
+            <Link className="button button-primary" to="/events/new">
+              {direct ? "Publish event" : "Propose event"}
+            </Link>
+          </div>
         </header>
         {loaderData.cancelled && (
           <p className="notice success" role="status">
@@ -68,20 +88,23 @@ export default function EventManage({ loaderData }: Route.ComponentProps) {
                 </div>
                 <footer>
                   <Link to={`/events/${event.slug}`}>Open invitation</Link>
-                  <Link to={`/events/${event.slug}/edit`}>Refine</Link>
+                  <Link to={`/events/${event.slug}/edit`}>
+                    {direct ? "Edit & publish" : "Refine"}
+                  </Link>
                 </footer>
               </article>
             ))
           ) : (
             <div className="status-card event-host-empty">
               <AkariMotif motif="lantern" />
-              <h2>No gatherings proposed yet.</h2>
+              <h2>No gatherings created yet.</h2>
               <p>
-                Start with a clear date, timezone and purpose. AKARI reviews
-                every proposal before it enters the public calendar.
+                {direct
+                  ? "Create a clear event with a valid date, timezone and destination. Your admin account can publish it immediately."
+                  : "Start with a clear date, timezone and purpose. AKARI reviews every proposal before it enters the public calendar."}
               </p>
               <Link className="button button-primary" to="/events/new">
-                Propose your first event
+                {direct ? "Publish your first event" : "Propose your first event"}
               </Link>
             </div>
           )}
