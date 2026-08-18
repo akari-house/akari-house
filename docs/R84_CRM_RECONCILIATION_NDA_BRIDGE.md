@@ -10,9 +10,11 @@ R84 is deliberately non-destructive. Legacy House tables remain intact until rec
 
 ## Current legacy dependency
 
-The historical diligence route used House `agreement_records` to decide whether an Investor had a current signed NDA. That is the final active compatibility dependency preventing safe removal of the CRM-era agreement table.
+The historical diligence route used House `agreement_records` to decide whether an Investor had a current signed NDA. That is the final compatibility dependency preventing safe removal of the CRM-era agreement table.
 
 R84 routes the public diligence endpoint through `project-diligence-bridge.tsx` and centralizes the NDA decision in `crm-nda-bridge.server.ts`.
+
+The registered R84 loader no longer calls the historical loader, so CRM mode can operate without executing the old `agreement_records` query. The historical route module remains only as a compatibility source for the existing UI and non-NDA actions until the later destructive-cleanup release.
 
 ## Bridge modes
 
@@ -20,7 +22,7 @@ R84 routes the public diligence endpoint through `project-diligence-bridge.tsx` 
 
 ### `legacy` — production default
 
-- House `agreement_records` remains authoritative.
+- House `agreement_records` remains authoritative through the centralized bridge helper.
 - CRM is not called.
 - Existing Investor access behavior is preserved.
 - Safe to deploy before any CRM mappings or runtime API key exist.
@@ -37,7 +39,7 @@ Use this only after the CRM R84 bridge is deployed and a read-only CRM API key i
 ### `crm`
 
 - CRM becomes the NDA authority.
-- House no longer consults the legacy agreement table for authorization.
+- The registered diligence runtime does not execute the legacy agreement query.
 - if CRM is unavailable, misconfigured or returns a non-authoritative response, access fails closed.
 
 Do not enable this mode until mapping coverage and shadow comparisons are clean.
@@ -61,16 +63,17 @@ The secret is intentionally not in the required-secret deployment list while mod
 
 ## Diligence route behavior
 
-The existing large diligence route remains intact as a compatibility module.
+The existing large diligence route remains intact as a compatibility module so R84 does not unnecessarily rewrite stable UI and unrelated document-management actions.
 
-The registered route now uses a thin wrapper that:
+The registered route now:
 
-1. delegates the existing loader and UI
-2. replaces the Investor `ndaSigned` result with the configured bridge decision
+1. owns the full diligence loader
+2. obtains Investor NDA state only through `crm-nda-bridge.server.ts`
 3. owns the `ask-diligence-question` action so the same bridge authority is enforced server-side
-4. delegates all other actions to the existing diligence implementation
+4. reuses the existing rendered UI
+5. delegates only non-NDA actions to the historical implementation
 
-This avoids a risky rewrite of document versioning, access grants and Q&A behavior.
+The non-NDA delegated actions do not execute the historical NDA lookup. This means `crm` mode has no runtime dependency on the legacy agreement query.
 
 ## Data minimization
 
@@ -106,9 +109,9 @@ House does not receive or cache:
 11. Switch to `shadow` mode and review mismatches.
 12. Resolve mapping/data exceptions.
 13. Switch to `crm` mode only when shadow results are clean.
-14. Confirm there are zero active legacy CRM reads in House.
+14. Confirm there are zero active legacy CRM reads in the registered House runtime.
 15. Back up House D1.
-16. Remove frozen CRM-era tables in a separate destructive release.
+16. Remove frozen CRM-era tables and the historical compatibility implementation in a separate destructive release.
 
 ## Safety rules
 
