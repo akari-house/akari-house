@@ -158,7 +158,9 @@ function avatarUrl(model: ProfileCardModel) {
 function socialCountLabel(social: ProfileCardSocial) {
   if (social.followerCount == null) return "Connected";
   const count = formatProfileReach(social.followerCount);
-  return social.platform === "youtube" ? `${count} subscribers` : `${count} followers`;
+  return social.platform === "youtube"
+    ? `${count} subscribers`
+    : `${count} followers`;
 }
 
 async function loadImage(src: string) {
@@ -174,11 +176,13 @@ function drawCoverImage(
   image: HTMLImageElement,
   width: number,
   height: number,
+  x = 0,
+  y = 0,
 ) {
   const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
   const w = image.naturalWidth * scale;
   const h = image.naturalHeight * scale;
-  ctx.drawImage(image, (width - w) / 2, (height - h) / 2, w, h);
+  ctx.drawImage(image, x + (width - w) / 2, y + (height - h) / 2, w, h);
 }
 
 function drawRoundRect(
@@ -332,7 +336,7 @@ async function drawCard(
   if (photoUrl) {
     try {
       const photo = await loadImage(photoUrl);
-      drawCoverImage(ctx, photo, avatarSize, avatarSize);
+      drawCoverImage(ctx, photo, avatarSize, avatarSize, avatarX, avatarY);
     } catch {
       ctx.fillStyle = palette.accent;
       ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
@@ -456,7 +460,9 @@ async function drawCard(
     settings.showLocation && model.location
       ? `${flagFor(settings.countryCode)} ${model.location}`.trim()
       : "";
-  const privacyLine = [location, ...languages.slice(0, 4)].filter(Boolean).join("  ·  ");
+  const privacyLine = [location, ...languages.slice(0, 4)]
+    .filter(Boolean)
+    .join("  ·  ");
   if (privacyLine) ctx.fillText(privacyLine.slice(0, 72), 688, 870);
   ctx.globalAlpha = 1;
 }
@@ -595,7 +601,10 @@ export function ProfileShareCard({
       )}
 
       <div className="share-card-layout approved-share-layout">
-        <section className="share-card-stage approved-card-stage" aria-label="Card preview">
+        <section
+          className="share-card-stage approved-card-stage"
+          aria-label="Card preview"
+        >
           <article
             className={`approved-profile-card glass-profile-card palette-${settings.palette}`}
             style={cardStyle}
@@ -611,7 +620,10 @@ export function ProfileShareCard({
             <div className="approved-card-content">
               <header className="approved-card-header">
                 <div className="approved-card-brand">
-                  <img src="/assets/brand/akari-logo-horizontal.png" alt="AKARI" />
+                  <img
+                    src="/assets/brand/akari-logo-horizontal.png"
+                    alt="AKARI"
+                  />
                 </div>
                 <span>Profile card</span>
               </header>
@@ -648,7 +660,9 @@ export function ProfileShareCard({
                       ? model.roles.map(titleCaseRole).join(" · ")
                       : "AKARI Member"}
                   </strong>
-                  {model.headline && <p className="approved-headline">{model.headline}</p>}
+                  {model.headline && (
+                    <p className="approved-headline">{model.headline}</p>
+                  )}
                 </div>
 
                 {primarySocial && (
@@ -678,7 +692,10 @@ export function ProfileShareCard({
                 )}
               </div>
 
-              <div className="approved-card-social-row" aria-label="Connected social accounts">
+              <div
+                className="approved-card-social-row"
+                aria-label="Connected social accounts"
+              >
                 {model.socials.length ? (
                   model.socials.slice(0, 5).map((social) => (
                     <a
@@ -709,9 +726,13 @@ export function ProfileShareCard({
                 </div>
                 <div className="approved-card-meta">
                   <span>{canonicalUrl}</span>
-                  {(location || (settings.showLanguages && languages.length > 0)) && (
+                  {(location ||
+                    (settings.showLanguages && languages.length > 0)) && (
                     <small>
-                      {[location, ...(settings.showLanguages ? languages.slice(0, 4) : [])]
+                      {[
+                        location,
+                        ...(settings.showLanguages ? languages.slice(0, 4) : []),
+                      ]
                         .filter(Boolean)
                         .join(" · ")}
                     </small>
@@ -721,11 +742,15 @@ export function ProfileShareCard({
             </div>
           </article>
           <p className="approved-card-caption">
-            Transparent frosted glass. The official AKARI scene stays visible through the card.
+            Transparent frosted glass. The official AKARI scene stays visible
+            through the card.
           </p>
         </section>
 
-        <Form method="post" className="share-card-controls approved-card-controls">
+        <Form
+          method="post"
+          className="share-card-controls approved-card-controls"
+        >
           <input type="hidden" name="design" value="signature" />
           <input type="hidden" name="orientation" value="landscape" />
 
@@ -800,7 +825,10 @@ export function ProfileShareCard({
                 type="button"
                 className="button button-quiet"
                 onClick={addLanguage}
-                disabled={!languageToAdd || languages.length >= MAX_PROFILE_CARD_LANGUAGES}
+                disabled={
+                  !languageToAdd ||
+                  languages.length >= MAX_PROFILE_CARD_LANGUAGES
+                }
               >
                 Add
               </button>
@@ -814,7 +842,9 @@ export function ProfileShareCard({
                     type="button"
                     aria-label={`Remove ${language}`}
                     onClick={() =>
-                      updateLanguages(languages.filter((item) => item !== language))
+                      updateLanguages(
+                        languages.filter((item) => item !== language),
+                      )
                     }
                   >
                     ×
@@ -863,10 +893,18 @@ export function ProfileShareCard({
           </button>
 
           <div className="share-card-actions">
-            <button type="button" className="button button-quiet" onClick={download}>
+            <button
+              type="button"
+              className="button button-quiet"
+              onClick={() => void download()}
+            >
               Download PNG
             </button>
-            <button type="button" className="button button-primary" onClick={share}>
+            <button
+              type="button"
+              className="button button-primary"
+              onClick={() => void share()}
+            >
               Share card
             </button>
           </div>
