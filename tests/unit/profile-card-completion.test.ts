@@ -51,7 +51,7 @@ describe("completed AKARI profile card", () => {
     ]);
   });
 
-  it("renders the requested credit-card identity and privacy features", () => {
+  it("renders a compact frosted identity card instead of a full-width dashboard", () => {
     const component = read("app/components/ProfileShareCard.tsx");
     const styles = read("app/styles/profile-card-glass.css");
     const route = read("app/routes/profile-card.tsx");
@@ -69,6 +69,9 @@ describe("completed AKARI profile card", () => {
     );
     expect(component).toContain("Glass color");
     expect(styles).toContain("aspect-ratio: 85.6 / 53.98");
+    expect(styles).toContain("width: min(100%, 680px)");
+    expect(styles).not.toContain("width: min(100%, 1120px)");
+    expect(styles).toContain("backdrop-filter: blur(24px)");
     expect(styles).toContain("glass-card-gloss");
     expect(route).toContain(
       "languageCandidates.length > MAX_PROFILE_CARD_LANGUAGES",
