@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
+import process from "node:process";
 
 function flattenRows(payload) {
   const containers = Array.isArray(payload) ? payload : [payload];
