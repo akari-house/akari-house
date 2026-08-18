@@ -15,8 +15,8 @@ function localInput(date: Date) {
   return date.toISOString().slice(0, 16);
 }
 
-test.describe("R79 profile sharing and event publishing", () => {
-  test("renders the real AKARI glass card in credit-card proportions", async ({
+test.describe("R80 profile sharing fidelity and event publishing", () => {
+  test("renders the approved AKARI frosted card in credit-card proportions", async ({
     page,
   }, testInfo) => {
     await activateSuperadmin(page);
@@ -28,6 +28,13 @@ test.describe("R79 profile sharing and event publishing", () => {
     const card = page.locator(".glass-profile-card");
     await expect(card).toBeVisible();
     await expect(card.locator('img[alt="AKARI"]')).toBeVisible();
+    await expect(card.locator(".approved-card-scene")).toHaveAttribute(
+      "src",
+      "/assets/house/arrival-v3.webp",
+    );
+    await expect(page.getByText("AKARI profile ID", { exact: true })).toBeVisible();
+    await expect(page.getByText("Opportunities", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("AKARI signal", { exact: true })).toHaveCount(0);
     await expect(
       page.getByText("Midnight Glass", { exact: true }),
     ).toBeVisible();
@@ -49,7 +56,7 @@ test.describe("R79 profile sharing and event publishing", () => {
 
     if (testInfo.project.name === "desktop-chromium") {
       const screenshot = await card.screenshot();
-      await testInfo.attach("r79-akari-glass-profile-card", {
+      await testInfo.attach("r80-approved-akari-profile-card", {
         body: screenshot,
         contentType: "image/png",
       });
@@ -81,7 +88,7 @@ test.describe("R79 profile sharing and event publishing", () => {
       page.getByText("Publish now is enabled", { exact: false }),
     ).toBeVisible();
 
-    const title = `R79 Launch Event ${Date.now()}`;
+    const title = `R80 Launch Event ${Date.now()}`;
     const startsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     startsAt.setUTCMinutes(0, 0, 0);
     const endsAt = new Date(startsAt.getTime() + 60 * 60 * 1000);
@@ -99,10 +106,10 @@ test.describe("R79 profile sharing and event publishing", () => {
     await page.getByRole("combobox", { name: /Event timezone/ }).fill("UTC");
     await page
       .getByLabel("HTTPS meeting URL")
-      .fill("https://meet.example.com/akari-r79");
+      .fill("https://meet.example.com/akari-r80");
 
     await page.getByRole("button", { name: "Publish event" }).click();
-    await expect(page).toHaveURL(/\/events\/r79-launch-event-/);
+    await expect(page).toHaveURL(/\/events\/r80-launch-event-/);
     await expect(page.getByRole("heading", { name: title })).toBeVisible();
   });
 });
