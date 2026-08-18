@@ -4,7 +4,6 @@ import { processAccountRetention } from "../app/lib/account-retention.server";
 import { createCampaignWorkReminders } from "../app/lib/campaign-reminders.server";
 import { cloudflareContext } from "../app/lib/cloudflare-context";
 import { processDeliveryOutbox } from "../app/lib/delivery-outbox.server";
-import { syncOperatingRhythm } from "../app/lib/operating-rhythm.server";
 import { runOperationalResilienceMaintenance } from "../app/lib/operational-resilience.server";
 import { publicLoginFallbackResponse } from "../app/lib/public-login-fallback.server";
 import {
@@ -45,8 +44,6 @@ function runScheduledJob(job: ScheduledJobName, env: CloudflareEnvironment) {
       );
     case "operational_resilience":
       return runOperationalResilienceMaintenance(env);
-    case "operating_rhythm":
-      return syncOperatingRhythm(env);
   }
 }
 
