@@ -31,7 +31,9 @@ describe("R84 House / CRM reconciliation boundary", () => {
       '"CRM_API_URL": "https://crmakari.pages.dev/api/v1"',
     );
     expect(bridge).toContain('env.CRM_NDA_BRIDGE_MODE || "legacy"');
-    expect(bridge).toContain('mode === "shadow"');
+    expect(bridge).toContain(
+      'return value === "crm" || value === "shadow" ? value : "legacy";',
+    );
     expect(bridge).toContain('mode === "crm"');
   });
 
