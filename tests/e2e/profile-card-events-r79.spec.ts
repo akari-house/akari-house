@@ -11,6 +11,42 @@ async function activateSuperadmin(page: Page) {
   expect(response.status()).toBe(201);
 }
 
+async function overflowEvidence(page: Page) {
+  return page.evaluate(() => {
+    const viewportWidth = document.documentElement.clientWidth;
+    return [...document.querySelectorAll<HTMLElement>("body *")]
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        const style = getComputedStyle(element);
+        return {
+          tag: element.tagName.toLowerCase(),
+          id: element.id,
+          className: element.className.toString().slice(0, 120),
+          left: Math.round(rect.left),
+          right: Math.round(rect.right),
+          width: Math.round(rect.width),
+          scrollWidth: element.scrollWidth,
+          clientWidth: element.clientWidth,
+          position: style.position,
+          boxSizing: style.boxSizing,
+          overflowX: style.overflowX,
+        };
+      })
+      .filter(
+        (entry) =>
+          entry.right > viewportWidth + 1 ||
+          entry.left < -1 ||
+          entry.scrollWidth > entry.clientWidth + 1,
+      )
+      .sort(
+        (a, b) =>
+          Math.max(b.right - viewportWidth, b.scrollWidth - b.clientWidth) -
+          Math.max(a.right - viewportWidth, a.scrollWidth - a.clientWidth),
+      )
+      .slice(0, 12);
+  });
+}
+
 function localInput(date: Date) {
   return date.toISOString().slice(0, 16);
 }
@@ -74,7 +110,11 @@ test.describe("R80 profile sharing fidelity and event publishing", () => {
     const scrollWidth = await page.evaluate(
       () => document.documentElement.scrollWidth,
     );
-    expect(scrollWidth).toBeLessThanOrEqual(viewportWidth + 1);
+    const overflowing = await overflowEvidence(page);
+    expect(
+      scrollWidth,
+      `Horizontal overflow evidence: ${JSON.stringify(overflowing)}`,
+    ).toBeLessThanOrEqual(viewportWidth + 1);
   });
 
   test("shows Superadmin direct event publishing and publishes a valid event", async ({
