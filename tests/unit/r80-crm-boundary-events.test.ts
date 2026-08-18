@@ -15,17 +15,20 @@ describe("R82 CRM boundary", () => {
       'route("admin/workspaces"',
       'route("workspaces/:slug"',
       'route("workspace-invitations/accept"',
+      'route("api/crm/creators"',
     ]) {
       expect(routes).not.toContain(legacyRoute);
     }
 
-    expect(routes).toContain('route("api/crm/creators"');
+    expect(routes).toContain(
+      'route("api/creator-directory", "routes/public-creator-directory.ts")',
+    );
     expect(routes).toContain(
       'route("admin/events", "routes/admin-events.tsx")',
     );
   });
 
-  it("removes duplicate CRM implementation modules from House", () => {
+  it("removes duplicate and CRM-named implementation modules from House", () => {
     for (const legacyFile of [
       "app/lib/agreement-tracking.ts",
       "app/lib/operating-rhythm.server.ts",
@@ -36,13 +39,14 @@ describe("R82 CRM boundary", () => {
       "app/lib/commercial-saas.ts",
       "app/lib/saas-workspace.server.ts",
       "app/lib/workspace-invitations.server.ts",
+      "app/lib/crm-creator-feed.server.ts",
+      "app/routes/crm-creator-feed.ts",
     ]) {
       expect(existsSync(legacyFile), legacyFile).toBe(false);
     }
 
-    // This read-only bridge is intentionally retained so CRM can consume
-    // creator profile data without re-introducing CRM operations into House.
-    expect(existsSync("app/lib/crm-creator-feed.server.ts")).toBe(true);
+    expect(existsSync("app/lib/public-creator-directory.server.ts")).toBe(true);
+    expect(existsSync("app/routes/public-creator-directory.ts")).toBe(true);
   });
 
   it("keeps CRM promotion and workflow language out of House admin UI", () => {
@@ -53,6 +57,20 @@ describe("R82 CRM boundary", () => {
     expect(workspaceRoute).not.toContain("agreement operations");
     expect(workspaceRoute).not.toContain("relationship operations");
     expect(workspaceRoute).toContain("membership, verification");
+  });
+
+  it("keeps commercial renewal CRM workflow out of House campaign closeout", () => {
+    const closeout = read("app/routes/campaign-closeout.tsx");
+    const model = read("app/lib/campaign-closeout.ts");
+
+    expect(closeout).not.toContain("Renewal and upsell");
+    expect(closeout).not.toContain("Commercial CRM / reference link");
+    expect(closeout).not.toContain("operational CRM marker");
+    expect(closeout).not.toContain('intent === "save-renewal"');
+    expect(closeout).not.toContain("campaign.renewal_recorded");
+    expect(model).not.toContain("campaignRenewalTypes");
+    expect(model).not.toContain("campaignRenewalStages");
+    expect(model).not.toContain("renewalConverted");
   });
 
   it("preserves historical CRM-era tables until data reconciliation is complete", () => {
