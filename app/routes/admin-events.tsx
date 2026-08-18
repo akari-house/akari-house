@@ -220,11 +220,8 @@ export default function AdminEvents({
                     startsAt={event.startsAt}
                     timezone={event.timezone}
                   />
-                  <div className="button-row">
-                    <Link className="quiet-link" to={`/events/${event.slug}`}>
-                      Preview event
-                    </Link>
-                    {event.meetingUrl && (
+                  {event.meetingUrl && (
+                    <div className="button-row">
                       <a
                         className="quiet-link"
                         href={event.meetingUrl}
@@ -233,8 +230,8 @@ export default function AdminEvents({
                       >
                         Check meeting link
                       </a>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 <Form method="post" className="application-actions">
