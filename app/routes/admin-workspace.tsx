@@ -16,6 +16,7 @@ interface QueueCounts {
   verification: number;
   "project-claims": number;
   moderation: number;
+  events: number;
   projects: number;
   campaigns: number;
   contact: number;
@@ -59,8 +60,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
           WHERE claim_status = 'pending') AS "project-claims",
         (SELECT COUNT(*) FROM moderation_reports
           WHERE status IN ('open', 'reviewing')) AS moderation,
+        (SELECT COUNT(*) FROM events WHERE status = 'submitted') AS events,
         ((SELECT COUNT(*) FROM projects WHERE status = 'submitted') +
-         (SELECT COUNT(*) FROM events WHERE status = 'submitted') +
          (SELECT COUNT(*) FROM interest_requests WHERE status = 'pending')) AS projects,
         (SELECT COUNT(*) FROM ambassador_campaigns WHERE status = 'submitted') AS campaigns,
         (SELECT COUNT(*) FROM contact_messages
@@ -79,6 +80,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
     verification: 0,
     "project-claims": 0,
     moderation: 0,
+    events: 0,
     projects: 0,
     campaigns: 0,
     contact: 0,
