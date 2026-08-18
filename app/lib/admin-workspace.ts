@@ -34,7 +34,7 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     key: "reviews",
     label: "Review inbox",
     description:
-      "Triage Membership, Verification, Project Claims, Events and Moderation together.",
+      "Triage Membership, Verification, Project Claims and Moderation together.",
     to: "/admin/reviews",
     superadminOnly: true,
   },
