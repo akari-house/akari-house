@@ -1,17 +1,16 @@
 name: R80 Branch Finalizer
 
 on:
-  pull_request:
+  push:
     branches:
-      - main
-    types: [opened, synchronize, reopened]
+      - r80-card-fidelity-crm-boundary
 
 permissions:
   contents: write
 
 jobs:
   finalize:
-    if: github.actor != 'github-actions[bot]' && github.head_ref == 'r80-card-fidelity-crm-boundary'
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,7 +21,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Apply deterministic R80 cleanup
+      - name: Fix export positioning and async handlers
         run: |
           python <<'PY'
           from pathlib import Path
@@ -47,64 +46,22 @@ jobs:
   const h = image.naturalHeight * scale;
   ctx.drawImage(image, x + (width - w) / 2, y + (height - h) / 2, w, h);
 }'''
-          if old in text:
-              text = text.replace(old, new)
+          if old not in text:
+              raise SystemExit('drawCoverImage marker not found')
+          text = text.replace(old, new)
           text = text.replace(
               'drawCoverImage(ctx, photo, avatarSize, avatarSize);',
               'drawCoverImage(ctx, photo, avatarSize, avatarSize, avatarX, avatarY);'
           )
+          text = text.replace('onClick={download}', 'onClick={() => void download()}')
+          text = text.replace('onClick={share}', 'onClick={() => void share()}')
           card.write_text(text)
-
-          unit = Path('tests/unit/admin-workspace.test.ts')
-          text = unit.read_text()
-          if 'crmProductBoundary' not in text:
-              text = text.replace(
-                  'import {\n  visibleAdminWorkspaceItems,',
-                  'import {\n  crmProductBoundary,\n  visibleAdminWorkspaceItems,'
-              )
-              needle = '''    expect(keys).toContain("verification");
-    expect(keys).toContain("moderation");'''
-              repl = '''    expect(keys).toContain("verification");
-    expect(keys).toContain("moderation");
-    expect(keys).not.toContain("agreements");
-    expect(keys).not.toContain("relationships");
-    expect(keys).not.toContain("operating-rhythm");
-    expect(keys).not.toContain("finance");
-    expect(keys).not.toContain("saas-workspaces");
-    expect(crmProductBoundary.url).toBe("https://crm.akarihouse.com");'''
-              text = text.replace(needle, repl)
-              unit.write_text(text)
-
-          e2e = Path('tests/e2e/profile-card-events-r79.spec.ts')
-          text = e2e.read_text()
-          text = text.replace(
-              'test.describe("R79 profile sharing and event publishing", () => {',
-              'test.describe("R80 profile sharing fidelity and event publishing", () => {'
-          )
-          if 'approved-card-scene' not in text:
-              marker = '''    await expect(card.locator('img[alt="AKARI"]')).toBeVisible();'''
-              replacement = '''    await expect(card.locator('img[alt="AKARI"]')).toBeVisible();
-    await expect(card.locator(".approved-card-scene")).toHaveAttribute(
-      "src",
-      "/assets/house/arrival-v3.webp",
-    );
-    await expect(page.getByText("AKARI profile ID", { exact: true })).toBeVisible();
-    await expect(page.getByText("Opportunities", { exact: true })).toHaveCount(0);
-    await expect(page.getByText("AKARI signal", { exact: true })).toHaveCount(0);'''
-              text = text.replace(marker, replacement)
-          text = text.replace('"r79-akari-glass-profile-card"', '"r80-approved-akari-profile-card"')
-          text = text.replace('R79 Launch Event', 'R80 Launch Event')
-          text = text.replace('akari-r79', 'akari-r80')
-          e2e.write_text(text)
           PY
       - run: npx prettier --write app/components/ProfileShareCard.tsx app/components/HouseWorkspaceSidebar.tsx app/components/AdminWorkspaceNav.tsx app/lib/admin-workspace.ts app/styles/profile-card-approved.css tests/unit/admin-workspace.test.ts tests/e2e/profile-card-events-r79.spec.ts
-      - name: Commit final R80 files
+      - name: Commit formatted R80 files
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add app/components/ProfileShareCard.tsx app/components/HouseWorkspaceSidebar.tsx app/components/AdminWorkspaceNav.tsx app/lib/admin-workspace.ts app/styles/profile-card-approved.css tests/unit/admin-workspace.test.ts tests/e2e/profile-card-events-r79.spec.ts
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m 'fix: finalize R80 profile card and CRM boundary'
+          git commit -m 'fix: finalize R80 card export and formatting'
           git push origin HEAD:r80-card-fidelity-crm-boundary
