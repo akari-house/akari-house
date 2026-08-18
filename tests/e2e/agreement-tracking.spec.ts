@@ -15,8 +15,8 @@ async function activatePersona(page: Page, persona: string) {
   expect(response.status()).toBe(201);
 }
 
-test.describe("R80 CRM agreement boundary", () => {
-  test("retires House agreement operations and directs Superadmin to CRM by AKARI", async ({
+test.describe("R82 hard CRM boundary", () => {
+  test("keeps CRM operations and CRM product promotion out of AKARI House", async ({
     page,
   }) => {
     await activatePersona(page, "superadmin");
@@ -28,10 +28,9 @@ test.describe("R80 CRM agreement boundary", () => {
     await expect(
       page.getByRole("heading", { name: "Admin workspace" }),
     ).toBeVisible();
-    await expect(page.getByText("One CRM source of truth.")).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Open CRM by AKARI" }),
-    ).toHaveAttribute("href", "https://crm.akarihouse.com");
+    await expect(page.getByText("One CRM source of truth.")).toHaveCount(0);
+    await expect(page.getByText("Open CRM by AKARI")).toHaveCount(0);
+    await expect(page.locator('a[href*="crm.akarihouse.com"]')).toHaveCount(0);
     await expect(
       page.getByRole("link", { name: "Agreement tracking" }),
     ).toHaveCount(0);
