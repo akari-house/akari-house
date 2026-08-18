@@ -17,7 +17,7 @@
     "test:e2e:serve": "npm run db:migrate:local && react-router dev --host 127.0.0.1",
     "test:watch": "vitest",
     "format": "prettier --write .",
-    "format:check": "prettier app/routes/project-diligence-bridge.tsx",
+    "format:check": "prettier --check .",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "cf:typegen": "wrangler types --strict-vars false"
   },
