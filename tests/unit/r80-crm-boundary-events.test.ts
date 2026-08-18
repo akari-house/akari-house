@@ -20,7 +20,9 @@ describe("R80 CRM boundary", () => {
     }
 
     expect(routes).toContain('route("api/crm/creators"');
-    expect(routes).toContain('route("admin/events", "routes/admin-events.tsx")');
+    expect(routes).toContain(
+      'route("admin/events", "routes/admin-events.tsx")',
+    );
   });
 
   it("removes duplicate CRM modules from House admin navigation", () => {
