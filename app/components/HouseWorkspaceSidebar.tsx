@@ -1,6 +1,7 @@
 import { Form, Link } from "react-router";
 import { visibleAdminWorkspaceItems } from "~/lib/admin-workspace";
 import type { SessionUser } from "~/lib/domain";
+import "~/styles/r82-house-native-workspace.css";
 
 export type WorkspaceItem = {
   label: string;
@@ -90,9 +91,9 @@ export function workspaceRoleItems(user: SessionUser): WorkspaceItem[] {
 }
 
 /**
- * These routes keep the cinematic, chapter-led public House experience.
- * Operational children such as edit, manage, work and settlement routes are
- * intentionally excluded so they can use the CRM-style workspace shell.
+ * Public discovery routes keep the cinematic chapter-led House experience.
+ * Private operational children use AKARI's own House workspace navigation;
+ * CRM by AKARI remains a separate product and is not a UI dependency here.
  */
 export function isImmersiveHousePath(pathname: string) {
   if (
@@ -193,7 +194,10 @@ export function HouseWorkspaceSidebar({
   );
 
   return (
-    <aside className="house-workspace-sidebar" aria-label="AKARI workspace">
+    <aside
+      className="house-workspace-sidebar house-native-navigation"
+      aria-label="AKARI House navigation"
+    >
       <Link
         className="house-workspace-sidebar-brand"
         to="/"
