@@ -155,14 +155,10 @@ jobs:
             curl --fail --silent --show-error \
               "https://raw.githubusercontent.com/akari-house/CRMAKARI/bab2777a984b0dfdd95a3de84de695e206469661/docs/house-crm-reconciliation-inventory.sql" \
               -o private/reconciliation/crm-inventory-source.sql
-            node --input-type=module <<'NODE'
-            import fs from "node:fs";
-            const tenant = JSON.parse(fs.readFileSync("private/reconciliation/tenant-selection.json", "utf8")).tenantId;
-            if (!tenant) throw new Error("Unique tenant selection has no tenant id.");
-            const literal = `'${String(tenant).replaceAll("'", "''")}'`;
-            const source = fs.readFileSync("private/reconciliation/crm-inventory-source.sql", "utf8");
-            fs.writeFileSync("private/reconciliation/crm-inventory.sql", source.replaceAll(":tenant_id", literal));
-            NODE
+            node scripts/reconciliation/r85-inventory.mjs prepare-crm-sql \
+              private/reconciliation/crm-inventory-source.sql \
+              private/reconciliation/tenant-selection.json \
+              private/reconciliation/crm-inventory.sql
             query_d1 "${R85_CRM_DB_ID}" private/reconciliation/crm-inventory.sql private/reconciliation/crm-inventory.json
           else
             printf '{"skipped":true}\n' > private/reconciliation/crm-inventory.json
