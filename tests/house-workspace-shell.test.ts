@@ -10,13 +10,17 @@ const auth = readFileSync("app/lib/auth.server.ts", "utf8");
 const access = readFileSync("app/lib/admin-workspace.server.ts", "utf8");
 const root = readFileSync("app/root.tsx", "utf8");
 const styles = readFileSync("app/styles/house-workspace-shell.css", "utf8");
+const houseNativeStyles = readFileSync(
+  "app/styles/r82-house-native-workspace.css",
+  "utf8",
+);
 const artworkStyles = readFileSync(
   "app/styles/house-workspace-art.css",
   "utf8",
 );
 const artwork = readFileSync("public/assets/house/workspace-house.svg", "utf8");
 
-describe("shared AKARI workspace shell", () => {
+describe("AKARI House workspace shell", () => {
   it("activates the sidebar across member, settings and admin workspaces", () => {
     for (const route of [
       'pathname === "/app"',
@@ -75,6 +79,18 @@ describe("shared AKARI workspace shell", () => {
     ])
       expect(sidebar).toContain(destination);
     expect(sidebar).toContain("workspace navigation");
+  });
+
+  it("uses a House-native navigation treatment rather than CRM product styling", () => {
+    expect(sidebar).toContain("house-native-navigation");
+    expect(sidebar).toContain('import "~/styles/r82-house-native-workspace.css"');
+    expect(sidebar).not.toContain("CRM-style workspace shell");
+    expect(houseNativeStyles).toContain(
+      ".house-workspace-sidebar.house-native-navigation",
+    );
+    expect(houseNativeStyles).toContain("#ffd33d");
+    expect(houseNativeStyles).toContain("#f04f87");
+    expect(houseNativeStyles).toContain("backdrop-filter: blur(22px)");
   });
 
   it("uses dedicated House artwork responsively", () => {
