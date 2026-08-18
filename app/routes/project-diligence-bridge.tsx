@@ -177,9 +177,7 @@ export async function loader({ request, context, params }: Route.LoaderArgs) {
   let ndaBridge = {
     mode: "legacy" as "legacy" | "shadow" | "crm",
     source: "HOUSE_LEGACY" as
-      | "HOUSE_LEGACY"
-      | "HOUSE_LEGACY_SHADOW"
-      | "CRM_BY_AKARI",
+      "HOUSE_LEGACY" | "HOUSE_LEGACY_SHADOW" | "CRM_BY_AKARI",
     mismatch: false,
     crmReason: null as string | null,
     checkedAt: null as string | null,
