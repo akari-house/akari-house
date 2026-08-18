@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Form, Link, useLocation } from "react-router";
-import {
-  HouseWorkspaceSidebar,
-  isHouseWorkspacePath,
-} from "~/components/HouseWorkspaceSidebar";
 import { Icon } from "~/components/Icon";
 import { JourneyBack } from "~/components/JourneyBack";
 import type { SessionUser } from "~/lib/domain";
@@ -25,9 +21,6 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
   const [interactive, setInteractive] = useState(false);
   const menuRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
-  const workspaceSidebar = Boolean(
-    user && isHouseWorkspacePath(location.pathname),
-  );
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setInteractive(true));
@@ -166,13 +159,6 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
-      {workspaceSidebar && user && (
-        <HouseWorkspaceSidebar
-          user={user}
-          pathname={location.pathname}
-          hash={location.hash}
-        />
-      )}
       <header className="site-header">
         <Link to="/" className="wordmark" aria-label="AKARI House home">
           <img
