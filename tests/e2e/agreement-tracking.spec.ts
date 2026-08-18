@@ -15,6 +15,7 @@ async function activatePersona(page: Page, persona: string) {
   expect(response.status()).toBe(201);
 }
 
+// prettier-ignore
 test.describe("R82 CRM boundary", () => {
   test("removes CRM operations from House", async ({ page }) => {
     await activatePersona(page, "superadmin");
