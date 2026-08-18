@@ -1,6 +1,8 @@
 import { redirect } from "react-router";
 import type { Route } from "./+types/project-diligence-bridge";
-import { action as legacyDiligenceAction } from "./project-diligence-completion";
+import {
+  action as legacyDiligenceAction,
+} from "./project-diligence-completion";
 export { default, meta } from "./project-diligence-completion";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
