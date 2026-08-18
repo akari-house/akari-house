@@ -52,29 +52,33 @@ describe("R70 agreement tracking", () => {
     );
   });
 
-  it("keeps legal work outside AKARI and the route Superadmin-only", () => {
-    const route = readFileSync("app/routes/admin-agreements.tsx", "utf8");
-    expect(route).toContain("requireSuperAdmin");
-    expect(route).toContain("Operational tracking only.");
-    expect(route).toContain(
-      "AKARI does not generate, draft, review or sign agreements",
+  it("keeps legal work outside House and redirects the legacy route to AKARI CRM", () => {
+    const routes = readFileSync("app/routes.ts", "utf8");
+    const boundary = readFileSync(
+      "app/routes/crm-boundary-agreements.ts",
+      "utf8",
     );
-    expect(route).toContain("external HTTPS document link");
-    expect(route).not.toContain("Generate agreement");
-    expect(route).not.toContain("AI contract");
-    expect(route).not.toContain("e-signature");
+    const sharedRedirect = readFileSync(
+      "app/routes/crm-boundary-redirect.ts",
+      "utf8",
+    );
+    expect(routes).toContain(
+      'route("admin/agreements", "routes/crm-boundary-agreements.ts")',
+    );
+    expect(boundary).toContain('from "./crm-boundary-redirect"');
+    expect(sharedRedirect).toContain("crmProductBoundary.url");
+    expect(sharedRedirect).not.toContain("Generate agreement");
+    expect(sharedRedirect).not.toContain("AI contract");
+    expect(sharedRedirect).not.toContain("e-signature");
   });
 
-  it("uses an additive metadata table and audit log rather than document storage", () => {
+  it("preserves the additive agreement metadata schema without document blobs", () => {
     const migration = readFileSync(
       "migrations/0116_agreement_tracking.sql",
       "utf8",
     );
-    const route = readFileSync("app/routes/admin-agreements.tsx", "utf8");
     expect(migration).toContain("CREATE TABLE agreement_records");
     expect(migration).toContain("external_document_url");
     expect(migration).not.toContain("BLOB");
-    expect(route).toContain("INSERT INTO audit_logs");
-    expect(route).toContain("'agreement'");
   });
 });
