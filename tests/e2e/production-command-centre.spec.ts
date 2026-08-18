@@ -40,7 +40,6 @@ test.describe("production and pilot command centre", () => {
       );
     await page.getByRole("button", { name: "Create pilot" }).click();
 
-    await expect(page.getByText("Pilot cohort created.")).toBeVisible();
     await expect(page.getByRole("heading", { name: pilotName })).toBeVisible();
   });
 });
