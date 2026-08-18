@@ -115,7 +115,9 @@ describe("R73 relationship intelligence", () => {
     expect(routes).toContain(
       'route("admin/relationships", "routes/crm-boundary-relationships.ts")',
     );
-    expect(routes).toContain('"routes/crm-boundary-relationship-detail.ts"');
+    expect(routes).toContain(
+      '"routes/crm-boundary-relationship-detail.ts"',
+    );
     expect(listBoundary).toContain('from "./crm-boundary-redirect"');
     expect(detailBoundary).toContain('from "./crm-boundary-redirect"');
   });
