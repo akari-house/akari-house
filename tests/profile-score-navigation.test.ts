@@ -1,11 +1,7 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const dashboard = readFileSync("app/routes/dashboard.tsx", "utf8");
-const houseSidebar = readFileSync(
-  "app/components/HouseWorkspaceSidebar.tsx",
-  "utf8",
-);
 const investorSidebar = readFileSync(
   "app/components/InvestorHouseSidebar.tsx",
   "utf8",
@@ -26,26 +22,16 @@ describe("profile score and AKARI navigation consistency", () => {
     expect(dashboard).toContain('actionData.errorCode === "reputation"');
   });
 
-  it("uses the URL hash so only the correct sidebar destination is active", () => {
-    expect(houseSidebar).toContain(
-      "function isActive(pathname: string, hash: string, item: WorkspaceItem)",
-    );
-    expect(houseSidebar).toContain(
-      "if (itemHash) return pathname === path && hash === `#${itemHash}`",
-    );
-    expect(houseSidebar).toContain(
-      'if (item.exact) return pathname === path && hash === ""',
-    );
-    expect(siteHeader).toContain("hash={location.hash}");
+  it("uses one House header/account navigation model instead of the shared sidebar", () => {
+    expect(existsSync("app/components/HouseWorkspaceSidebar.tsx")).toBe(false);
+    expect(siteHeader).not.toContain("HouseWorkspaceSidebar");
+    expect(siteHeader).toContain('aria-label="Your AKARI account"');
+    expect(siteHeader).toContain('className="header-account-link"');
+    expect(siteHeader).toContain("My House");
+    expect(investorSidebar).toContain("return null");
   });
 
-  it("makes every AKARI brand mark return to the public House home", () => {
-    expect(houseSidebar).toContain('className="house-workspace-sidebar-brand"');
-    expect(houseSidebar).toContain('to="/"');
-    expect(investorSidebar).toContain(
-      'className="investor-house-sidebar-brand"',
-    );
-    expect(investorSidebar).toContain('to="/"');
+  it("makes every visible AKARI brand mark return to the public House home", () => {
     expect(siteHeader).toContain('className="wordmark"');
     expect(siteHeader).toContain('to="/"');
     expect(authLayout).toContain('className="auth-brand" to="/"');
