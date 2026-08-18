@@ -16,9 +16,7 @@ async function activatePersona(page: Page, persona: string) {
 }
 
 test.describe("R82 CRM boundary", () => {
-  test("keeps retired CRM operations and CRM promotion out of AKARI House", async ({
-    page,
-  }) => {
+  test("removes CRM operations from House", async ({ page }) => {
     await activatePersona(page, "superadmin");
 
     for (const legacyRoute of [
@@ -58,20 +56,17 @@ test.describe("R82 CRM boundary", () => {
     ).toHaveCount(0);
   });
 
-  test(
-    "does not expose retired CRM endpoints to Founders",
-    async ({ page }) => {
-      await activatePersona(page, "founder");
-      for (const legacyRoute of [
-        "/admin/agreements",
-        "/admin/relationships",
-        "/admin/operating-rhythm",
-        "/admin/finance",
-        "/admin/workspaces",
-      ]) {
-        const response = await page.goto(legacyRoute);
-        expect(response?.status(), legacyRoute).toBe(404);
-      }
-    },
-  );
+  test("hides retired CRM routes from Founders", async ({ page }) => {
+    await activatePersona(page, "founder");
+    for (const legacyRoute of [
+      "/admin/agreements",
+      "/admin/relationships",
+      "/admin/operating-rhythm",
+      "/admin/finance",
+      "/admin/workspaces",
+    ]) {
+      const response = await page.goto(legacyRoute);
+      expect(response?.status(), legacyRoute).toBe(404);
+    }
+  });
 });
