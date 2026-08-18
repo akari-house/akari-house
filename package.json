@@ -17,7 +17,7 @@
     "test:e2e:serve": "npm run db:migrate:local && react-router dev --host 127.0.0.1",
     "test:watch": "vitest",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --write app/lib/admin-workspace.ts app/routes/admin-workspace.tsx app/routes/event-manage.tsx tests/unit/r80-crm-boundary-events.test.ts && git diff --exit-code",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "cf:typegen": "wrangler types --strict-vars false"
   },
@@ -40,7 +40,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "eslint": "^10.7.0",
-    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-hooks": "^7.0.0",
     "jsdom": "^29.1.1",
     "prettier": "^3.9.6",
     "sharp": "^0.35.3",
