@@ -35,12 +35,12 @@ test.describe("R80 profile sharing fidelity and event publishing", () => {
     await expect(
       card.getByText("AKARI profile ID", { exact: true }),
     ).toBeVisible();
-    await expect(
-      card.getByText("Opportunities", { exact: true }),
-    ).toHaveCount(0);
-    await expect(
-      card.getByText("AKARI signal", { exact: true }),
-    ).toHaveCount(0);
+    await expect(card.getByText("Opportunities", { exact: true })).toHaveCount(
+      0,
+    );
+    await expect(card.getByText("AKARI signal", { exact: true })).toHaveCount(
+      0,
+    );
     await expect(
       page.getByText("Midnight Glass", { exact: true }),
     ).toBeVisible();
