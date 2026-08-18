@@ -96,24 +96,27 @@ describe("R75 commercial and SaaS completion", () => {
     expect(extension).toContain("'relationship_followup', 'revenue'");
   });
 
-  it("keeps finance and SaaS administration Superadmin-only while workspace member access is separate", () => {
-    const finance = readFileSync("app/routes/admin-finance.tsx", "utf8");
-    const adminWorkspaces = readFileSync(
-      "app/routes/admin-saas-workspaces.tsx",
-      "utf8",
-    );
-    const memberWorkspace = readFileSync(
-      "app/routes/saas-workspace.tsx",
-      "utf8",
-    );
+  it("preserves workspace access logic but redirects House finance and workspace UI to AKARI CRM", () => {
+    const routes = readFileSync("app/routes.ts", "utf8");
     const workspaceAccess = readFileSync(
       "app/lib/saas-workspace.server.ts",
       "utf8",
     );
-    expect(finance).toContain("requireSuperAdmin");
-    expect(adminWorkspaces).toContain("requireSuperAdmin");
-    expect(memberWorkspace).toContain("requireWorkspaceAccess");
+    const boundary = readFileSync(
+      "app/routes/crm-boundary-redirect.ts",
+      "utf8",
+    );
+    expect(routes).toContain(
+      'route("admin/finance", "routes/crm-boundary-finance.ts")',
+    );
+    expect(routes).toContain(
+      'route("admin/workspaces", "routes/crm-boundary-workspaces-admin.ts")',
+    );
+    expect(routes).toContain(
+      'route("workspaces/:slug", "routes/crm-boundary-workspace.ts")',
+    );
     expect(workspaceAccess).toContain("saas_workspace_members");
     expect(workspaceAccess).toContain("supportAccess");
+    expect(boundary).toContain("crmProductBoundary.url");
   });
 });
