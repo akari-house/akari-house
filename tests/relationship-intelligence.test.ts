@@ -102,18 +102,23 @@ describe("R73 relationship intelligence", () => {
     expect(migration).not.toContain("DROP TABLE project_relationships");
   });
 
-  it("keeps relationship intelligence Superadmin-only", () => {
-    const listRoute = readFileSync(
-      "app/routes/admin-relationships.tsx",
+  it("preserves relationship data while redirecting House relationship UI to AKARI CRM", () => {
+    const routes = readFileSync("app/routes.ts", "utf8");
+    const listBoundary = readFileSync(
+      "app/routes/crm-boundary-relationships.ts",
       "utf8",
     );
-    const detailRoute = readFileSync(
-      "app/routes/admin-relationship-detail.tsx",
+    const detailBoundary = readFileSync(
+      "app/routes/crm-boundary-relationship-detail.ts",
       "utf8",
     );
-    expect(listRoute).toContain("requireSuperAdmin");
-    expect(detailRoute).toContain("requireSuperAdmin");
-    expect(detailRoute).toContain("Internal relationship intelligence");
-    expect(detailRoute).toContain("INSERT INTO audit_logs");
+    expect(routes).toContain(
+      'route("admin/relationships", "routes/crm-boundary-relationships.ts")',
+    );
+    expect(routes).toContain(
+      '"routes/crm-boundary-relationship-detail.ts"',
+    );
+    expect(listBoundary).toContain('from "./crm-boundary-redirect"');
+    expect(detailBoundary).toContain('from "./crm-boundary-redirect"');
   });
 });
