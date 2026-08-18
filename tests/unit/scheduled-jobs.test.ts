@@ -2,13 +2,18 @@ import { describe, expect, it } from "vitest";
 import { scheduledCrons, scheduledJobPlan } from "../../app/lib/scheduled-jobs";
 
 describe("scheduled job plans", () => {
-  it("runs heavy maintenance only on the daily trigger", () => {
+  it("runs House maintenance only on the daily trigger", () => {
     expect(scheduledJobPlan(scheduledCrons.daily)).toEqual([
       "social_metrics",
       "account_retention",
       "operational_resilience",
-      "operating_rhythm",
     ]);
+  });
+
+  it("does not run the retired House CRM operating rhythm job", () => {
+    expect(scheduledJobPlan(scheduledCrons.daily)).not.toContain(
+      "operating_rhythm",
+    );
   });
 
   it("runs delivery work on the frequent trigger", () => {
