@@ -58,6 +58,25 @@ async function selectTenantCommand(inputPath, outputPath) {
   );
 }
 
+async function prepareCrmSqlCommand(sourcePath, tenantPath, outputPath) {
+  const tenant = JSON.parse(await readFile(tenantPath, "utf8"));
+  if (tenant.status !== "unique" || !tenant.tenantId) {
+    throw new Error(
+      "CRM inventory SQL requires one explicitly selected tenant.",
+    );
+  }
+  const source = await readFile(sourcePath, "utf8");
+  if (!source.includes(":tenant_id")) {
+    throw new Error(
+      "CRM inventory SQL does not contain the tenant placeholder.",
+    );
+  }
+  await writeFile(
+    outputPath,
+    source.replaceAll(":tenant_id", sqlLiteral(tenant.tenantId)),
+  );
+}
+
 async function finalizeCommand(
   housePath,
   crmPath,
@@ -108,10 +127,12 @@ async function finalizeCommand(
 const [command, ...args] = process.argv.slice(2);
 if (command === "select-tenant" && args.length === 2) {
   await selectTenantCommand(...args);
+} else if (command === "prepare-crm-sql" && args.length === 3) {
+  await prepareCrmSqlCommand(...args);
 } else if (command === "finalize" && args.length === 6) {
   await finalizeCommand(...args);
 } else {
   throw new Error(
-    "Usage: r85-inventory.mjs select-tenant <input.json> <output.json> | finalize <house.json> <crm.json> <tenant.json> <backups.json> <audit.sql> <status.json>",
+    "Usage: r85-inventory.mjs select-tenant <input.json> <output.json> | prepare-crm-sql <source.sql> <tenant.json> <output.sql> | finalize <house.json> <crm.json> <tenant.json> <backups.json> <audit.sql> <status.json>",
   );
 }
