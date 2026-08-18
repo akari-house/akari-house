@@ -66,19 +66,17 @@ describe("investor profile to deal discovery", () => {
     ).toEqual({ score: null, reasons: [] });
   });
 
-  it("keeps every Investor House menu connected to a server-backed view", () => {
+  it("keeps investor discovery server-backed after retiring the fixed rail", () => {
     const deals = readFileSync("app/routes/deals.tsx", "utf8");
     const sidebar = readFileSync(
       "app/components/InvestorHouseSidebar.tsx",
       "utf8",
     );
-    expect(sidebar).toContain("/deals?view=saved");
-    expect(sidebar).toContain("/deals?view=requested");
-    expect(sidebar).toContain("/deals?view=approved");
-    expect(sidebar).toContain("/settings/investor");
+    expect(sidebar).toContain("return null");
     expect(deals).toContain("loadInvestorPreferenceProfile");
     expect(deals).toContain("matchOpportunityToInvestor");
     expect(deals).toContain("opportunity_user_states");
     expect(deals).toContain("data_room_requests");
+    expect(deals).toContain("navigationCounts");
   });
 });
