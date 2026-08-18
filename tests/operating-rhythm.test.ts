@@ -151,18 +151,17 @@ describe("R74 operating rhythm", () => {
     expect(summary.source.agreement).toBe(1);
   });
 
-  it("keeps R74 additive and Superadmin-only", () => {
+  it("preserves historical schema but stops House operating-rhythm execution", () => {
     const migration = readFileSync(
       "migrations/0120_reporting_notifications_operating_rhythm.sql",
       "utf8",
     );
-    const route = readFileSync("app/routes/admin-operating-rhythm.tsx", "utf8");
+    const routes = readFileSync("app/routes.ts", "utf8");
     const worker = readFileSync("worker/index.ts", "utf8");
     expect(migration).toContain("CREATE TABLE attention_item_states");
     expect(migration).toContain("CREATE TABLE operating_report_runs");
     expect(migration).not.toContain("DROP TABLE");
-    expect(route).toContain("requireSuperAdmin");
-    expect(route).toContain("What needs AKARI attention now.");
-    expect(worker).toContain("syncOperatingRhythm");
+    expect(routes).not.toContain('route("admin/operating-rhythm"');
+    expect(worker).not.toContain("syncOperatingRhythm");
   });
 });
