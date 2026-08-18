@@ -1,0 +1,152 @@
+name: R80 Branch Finalizer
+
+on:
+  push:
+    branches:
+      - r80-card-fidelity-crm-boundary
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r80-card-fidelity-crm-boundary
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Apply deterministic R80 cleanup
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          card = Path('app/components/ProfileShareCard.tsx')
+          text = card.read_text()
+          text = text.replace(
+              '  width: number,\n  height: number,\n) {\n  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);\n  const w = image.naturalWidth * scale;\n  const h = image.naturalHeight * scale;\n  ctx.drawImage(image, (width - w) / 2, (height - h) / 2, w, h);\n}',
+              '  width: number,\n  height: number,\n  x = 0,\n  y = 0,\n) {\n  const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);\n  const w = image.naturalWidth * scale;\n  const h = image.naturalHeight * scale;\n  ctx.drawImage(image, x + (width - w) / 2, y + (height - h) / 2, w, h);\n}'
+          )
+          text = text.replace(
+              '      drawCoverImage(ctx, photo, avatarSize, avatarSize);',
+              '      drawCoverImage(ctx, photo, avatarSize, avatarSize, avatarX, avatarY);'
+          )
+          card.write_text(text)
+
+          sidebar = Path('app/components/HouseWorkspaceSidebar.tsx')
+          text = sidebar.read_text()
+          text = text.replace(
+              'import { visibleAdminWorkspaceItems } from "~/lib/admin-workspace";',
+              'import {\n  crmProductBoundary,\n  visibleAdminWorkspaceItems,\n} from "~/lib/admin-workspace";'
+          )
+          text = text.replace(
+              ' * intentionally excluded so they can use the CRM-style workspace shell.',
+              ' * intentionally excluded so they can use the operational workspace shell.'
+          )
+          marker = '''            <SidebarLink
+              item={{
+                label: "Admin overview",
+                href: "/admin",
+                glyph: "◆",
+                exact: true,
+              }}
+              pathname={pathname}
+              hash={hash}
+            />
+            {adminItems.map((item) => ('''
+          replacement = '''            <SidebarLink
+              item={{
+                label: "Admin overview",
+                href: "/admin",
+                glyph: "◆",
+                exact: true,
+              }}
+              pathname={pathname}
+              hash={hash}
+            />
+            {user.adminAccess.accessLevel === "superadmin" && (
+              <a
+                className="house-workspace-sidebar-link house-workspace-sidebar-external"
+                href={crmProductBoundary.url}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`${crmProductBoundary.label}, opens separate CRM`}
+              >
+                <span className="house-workspace-sidebar-glyph" aria-hidden="true">
+                  ↗
+                </span>
+                <span aria-hidden="true">{crmProductBoundary.label}</span>
+              </a>
+            )}
+            {adminItems.map((item) => ('''
+          if marker not in text:
+              raise SystemExit('House sidebar insertion marker not found')
+          sidebar.write_text(text.replace(marker, replacement))
+
+          unit = Path('tests/unit/admin-workspace.test.ts')
+          text = unit.read_text()
+          text = text.replace(
+              'import {\n  visibleAdminWorkspaceItems,',
+              'import {\n  crmProductBoundary,\n  visibleAdminWorkspaceItems,'
+          )
+          needle = '''    expect(keys).toContain("verification");
+    expect(keys).toContain("moderation");
+  });'''
+          repl = '''    expect(keys).toContain("verification");
+    expect(keys).toContain("moderation");
+    expect(keys).not.toContain("agreements");
+    expect(keys).not.toContain("relationships");
+    expect(keys).not.toContain("operating-rhythm");
+    expect(keys).not.toContain("finance");
+    expect(keys).not.toContain("saas-workspaces");
+    expect(crmProductBoundary.url).toBe("https://crm.akarihouse.com");
+  });'''
+          if needle not in text:
+              raise SystemExit('Admin workspace test marker not found')
+          unit.write_text(text.replace(needle, repl))
+
+          e2e = Path('tests/e2e/profile-card-events-r79.spec.ts')
+          text = e2e.read_text()
+          text = text.replace(
+              'test.describe("R79 profile sharing and event publishing", () => {',
+              'test.describe("R80 profile sharing fidelity and event publishing", () => {'
+          )
+          marker = '''    await expect(card.locator('img[alt="AKARI"]')).toBeVisible();
+    await expect(
+      page.getByText("Midnight Glass", { exact: true }),
+    ).toBeVisible();'''
+          replacement = '''    await expect(card.locator('img[alt="AKARI"]')).toBeVisible();
+    await expect(card.locator(".approved-card-scene")).toHaveAttribute(
+      "src",
+      "/assets/house/arrival-v3.webp",
+    );
+    await expect(page.getByText("AKARI profile ID", { exact: true })).toBeVisible();
+    await expect(page.getByText("Opportunities", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("AKARI signal", { exact: true })).toHaveCount(0);
+    await expect(
+      page.getByText("Midnight Glass", { exact: true }),
+    ).toBeVisible();'''
+          if marker not in text:
+              raise SystemExit('Profile card E2E marker not found')
+          text = text.replace(marker, replacement)
+          text = text.replace('"r79-akari-glass-profile-card"', '"r80-approved-akari-profile-card"')
+          text = text.replace('R79 Launch Event', 'R80 Launch Event')
+          text = text.replace('akari-r79', 'akari-r80')
+          e2e.write_text(text)
+          PY
+      - run: npx prettier --write app/components/ProfileShareCard.tsx app/components/HouseWorkspaceSidebar.tsx app/components/AdminWorkspaceNav.tsx app/lib/admin-workspace.ts app/styles/profile-card-approved.css tests/unit/admin-workspace.test.ts tests/e2e/profile-card-events-r79.spec.ts
+      - name: Commit final R80 files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/components/ProfileShareCard.tsx app/components/HouseWorkspaceSidebar.tsx app/components/AdminWorkspaceNav.tsx app/lib/admin-workspace.ts app/styles/profile-card-approved.css tests/unit/admin-workspace.test.ts tests/e2e/profile-card-events-r79.spec.ts
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m 'fix: finalize R80 profile card and CRM boundary'
+          git push origin HEAD:r80-card-fidelity-crm-boundary
