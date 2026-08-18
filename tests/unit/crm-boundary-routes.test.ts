@@ -18,7 +18,7 @@ describe("AKARI House and CRM route boundary", () => {
       "workspaces/:slug",
       "workspace-invitations/accept",
     ]) {
-      expect(routes).toContain(`\"${path}\"`);
+      expect(routes).toContain(`"${path}"`);
     }
 
     expect(routes.match(/routes\/crm-boundary-[\w-]+\.ts/g)?.length).toBe(8);
