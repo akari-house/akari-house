@@ -7,7 +7,11 @@ import { describe, expect, it } from "vitest";
 const script = "scripts/reconciliation/r85-inventory.mjs";
 
 function d1Result(rows: Record<string, unknown>[]) {
-  return { success: true, errors: [], result: [{ success: true, results: rows }] };
+  return {
+    success: true,
+    errors: [],
+    result: [{ success: true, results: rows }],
+  };
 }
 
 type SanitizedStatus = {
@@ -71,7 +75,10 @@ describe("R85 reconciliation inventory checkpoint", () => {
         ]),
       ),
     );
-    writeFileSync(tenant, JSON.stringify({ status: "unique", tenantId: "crm-t1" }));
+    writeFileSync(
+      tenant,
+      JSON.stringify({ status: "unique", tenantId: "crm-t1" }),
+    );
     writeFileSync(
       backups,
       JSON.stringify({
@@ -116,13 +123,17 @@ describe("R85 reconciliation inventory checkpoint", () => {
       "utf8",
     );
     expect(workflow).toContain("backup-crypto.mjs encrypt");
-    expect(workflow).toContain('r2 object put "akari-house-media/${house_key}"');
+    expect(workflow).toContain(
+      'r2 object put "akari-house-media/${house_key}"',
+    );
     expect(workflow).toContain('r2 object put "akari-house-media/${crm_key}"');
     expect(workflow).toContain("docs/r84-house-legacy-crm-inventory.sql");
     expect(workflow).toContain(
       "CRMAKARI/bab2777a984b0dfdd95a3de84de695e206469661/docs/house-crm-reconciliation-inventory.sql",
     );
-    expect(workflow).toContain('SELECT id FROM tenants ORDER BY created_at, id;');
+    expect(workflow).toContain(
+      "SELECT id FROM tenants ORDER BY created_at, id;",
+    );
     expect(workflow).toContain("No mapping writes were made");
     expect(workflow).not.toContain("INSERT INTO external_entity_links");
     expect(workflow).not.toContain("UPDATE external_entity_links");
