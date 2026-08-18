@@ -20,6 +20,7 @@ describe("R84 House / CRM reconciliation boundary", () => {
     expect(route.match(/ndaBridgeDecision\(/g)?.length).toBe(2);
     expect(route).not.toContain("agreement_records");
     expect(route).not.toContain("counterparty_email");
+    expect(route).not.toContain("legacyDiligenceLoader");
   });
 
   it("keeps the deploy-safe cutover default on legacy authority", () => {
