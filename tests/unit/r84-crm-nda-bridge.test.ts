@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ndaBridgeDecision, readCrmNdaStatus } from "~/lib/crm-nda-bridge.server";
+import {
+  ndaBridgeDecision,
+  readCrmNdaStatus,
+} from "~/lib/crm-nda-bridge.server";
 
 class FakeDb {
   signed: boolean;
@@ -75,7 +78,9 @@ describe("R84 CRM NDA bridge", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       crmResponse(false, "NO_ACTIVE_NDA"),
     );
-    const warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const warning = vi
+      .spyOn(console, "warn")
+      .mockImplementation(() => undefined);
     const db = new FakeDb(true);
 
     const decision = await ndaBridgeDecision(
@@ -152,7 +157,8 @@ describe("R84 CRM NDA bridge", () => {
     });
     const request = fetchSpy.mock.calls[0]?.[0];
     expect(request).toBeInstanceOf(URL);
-    if (!(request instanceof URL)) throw new Error("CRM bridge must fetch a URL");
+    if (!(request instanceof URL))
+      throw new Error("CRM bridge must fetch a URL");
     expect(request.searchParams.get("houseProjectId")).toBe("project_a");
     expect(request.searchParams.get("houseMemberId")).toBe("investor_a");
     const init = fetchSpy.mock.calls[0]?.[1];
