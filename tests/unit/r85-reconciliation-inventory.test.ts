@@ -10,6 +10,15 @@ function d1Result(rows: Record<string, unknown>[]) {
   return { success: true, errors: [], result: [{ success: true, results: rows }] };
 }
 
+type SanitizedStatus = {
+  bridgeMode: string;
+  mappingWrites: number;
+  backupLocation: string;
+  houseMetrics?: unknown;
+  crmMetrics?: unknown;
+  crmTenantId?: unknown;
+};
+
 describe("R85 reconciliation inventory checkpoint", () => {
   it("selects a tenant only when the CRM has exactly one tenant", () => {
     const dir = mkdtempSync(join(tmpdir(), "akari-r85-"));
@@ -90,7 +99,9 @@ describe("R85 reconciliation inventory checkpoint", () => {
     expect(auditSql).toContain('"legacy_current_signed_ndas":3');
     expect(auditSql).toContain('"crm_current_ndas":4');
 
-    const publicStatus = JSON.parse(readFileSync(status, "utf8"));
+    const publicStatus = JSON.parse(
+      readFileSync(status, "utf8"),
+    ) as SanitizedStatus;
     expect(publicStatus.bridgeMode).toBe("legacy");
     expect(publicStatus.mappingWrites).toBe(0);
     expect(publicStatus.backupLocation).toBe("encrypted-r2");
