@@ -14,7 +14,7 @@ class FakeDb {
       bind: (...bindings: unknown[]) => {
         this.calls.push({ sql, bindings });
         return {
-          first: async () => (this.signed ? { ok: 1 } : null),
+          first: () => Promise.resolve(this.signed ? { ok: 1 } : null),
         };
       },
     };
@@ -151,8 +151,10 @@ describe("R84 CRM NDA bridge", () => {
       },
     });
     const request = fetchSpy.mock.calls[0]?.[0];
-    expect(String(request)).toContain("houseProjectId=project_a");
-    expect(String(request)).toContain("houseMemberId=investor_a");
+    expect(request).toBeInstanceOf(URL);
+    if (!(request instanceof URL)) throw new Error("CRM bridge must fetch a URL");
+    expect(request.searchParams.get("houseProjectId")).toBe("project_a");
+    expect(request.searchParams.get("houseMemberId")).toBe("investor_a");
     const init = fetchSpy.mock.calls[0]?.[1];
     expect(new Headers(init?.headers).get("authorization")).toBe(
       "Bearer ak_live_test",
