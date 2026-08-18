@@ -68,6 +68,7 @@ export default [
   route("admin/activation", "routes/admin-activation.tsx"),
   route("admin/fundraising", "routes/admin-fundraising-readiness.tsx"),
   route("admin/diligence", "routes/admin-diligence.tsx"),
+  route("admin/events", "routes/admin-events.tsx"),
   route("admin/operations", "routes/admin-operations.tsx"),
   route("admin/production", "routes/admin-production.tsx"),
   route("admin/launch-completion", "routes/admin-launch-completion.tsx"),
