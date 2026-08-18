@@ -33,14 +33,14 @@ test.describe("R80 profile sharing fidelity and event publishing", () => {
       "/assets/house/arrival-v3.webp",
     );
     await expect(
-      page.getByText("AKARI profile ID", { exact: true }),
+      card.getByText("AKARI profile ID", { exact: true }),
     ).toBeVisible();
-    await expect(page.getByText("Opportunities", { exact: true })).toHaveCount(
-      0,
-    );
-    await expect(page.getByText("AKARI signal", { exact: true })).toHaveCount(
-      0,
-    );
+    await expect(
+      card.getByText("Opportunities", { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      card.getByText("AKARI signal", { exact: true }),
+    ).toHaveCount(0);
     await expect(
       page.getByText("Midnight Glass", { exact: true }),
     ).toBeVisible();
