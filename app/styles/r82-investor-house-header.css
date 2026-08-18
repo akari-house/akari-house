@@ -1,0 +1,34 @@
+/* R82: Deals and Deal Rooms use the standard AKARI House header instead of
+   the fixed CRM-style investor rail introduced by the shared workspace work. */
+
+.investor-house-shell > .site-header {
+  display: flex !important;
+}
+
+.investor-house-shell > .journey-back,
+.investor-house-shell > .journey-back-button {
+  display: flex !important;
+}
+
+.investor-house-shell .deals-main,
+.investor-house-shell .deal-room-main {
+  width: min(1440px, calc(100% - 2rem)) !important;
+  max-width: none !important;
+  margin: 0 auto !important;
+  padding: clamp(7rem, 10vw, 8.5rem) 0 4.5rem !important;
+}
+
+.investor-house-shell > .public-footer,
+.investor-house-shell > .akari-footer {
+  width: auto !important;
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+}
+
+@media (max-width: 700px) {
+  .investor-house-shell .deals-main,
+  .investor-house-shell .deal-room-main {
+    width: min(100% - 1rem, 1440px) !important;
+    padding-top: 6.4rem !important;
+  }
+}
