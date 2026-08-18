@@ -48,6 +48,33 @@ describe("R85 reconciliation inventory checkpoint", () => {
     });
   });
 
+  it("prepares CRM inventory SQL only for one explicitly selected tenant", () => {
+    const dir = mkdtempSync(join(tmpdir(), "akari-r85-"));
+    const source = join(dir, "source.sql");
+    const tenant = join(dir, "tenant.json");
+    const output = join(dir, "crm.sql");
+
+    writeFileSync(
+      source,
+      "SELECT COUNT(*) FROM agreements WHERE tenant_id = :tenant_id;\n",
+    );
+    writeFileSync(
+      tenant,
+      JSON.stringify({ status: "unique", tenantId: "tenant'oak" }),
+    );
+    execFileSync(process.execPath, [
+      script,
+      "prepare-crm-sql",
+      source,
+      tenant,
+      output,
+    ]);
+
+    expect(readFileSync(output, "utf8")).toBe(
+      "SELECT COUNT(*) FROM agreements WHERE tenant_id = 'tenant''oak';\n",
+    );
+  });
+
   it("stores counts only in the private audit SQL and emits a sanitized status", () => {
     const dir = mkdtempSync(join(tmpdir(), "akari-r85-"));
     const house = join(dir, "house.json");
@@ -134,6 +161,7 @@ describe("R85 reconciliation inventory checkpoint", () => {
     expect(workflow).toContain(
       "SELECT id FROM tenants ORDER BY created_at, id;",
     );
+    expect(workflow).toContain("prepare-crm-sql");
     expect(workflow).toContain("No mapping writes were made");
     expect(workflow).not.toContain("INSERT INTO external_entity_links");
     expect(workflow).not.toContain("UPDATE external_entity_links");
