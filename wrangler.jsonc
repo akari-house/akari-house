@@ -16,6 +16,8 @@
     "APP_ENV": "production",
     "APP_URL": "https://akarihouse.com",
     "TURNSTILE_HOSTNAME": "akarihouse.com",
+    "CRM_API_URL": "https://crmakari.pages.dev/api/v1",
+    "CRM_NDA_BRIDGE_MODE": "legacy",
   },
   "secrets": {
     "required": [

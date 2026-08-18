@@ -35,7 +35,7 @@ export default [
   ),
   route("projects/:slug/opportunity", "routes/project-opportunity.tsx"),
   route("projects/:slug/opportunity/manage", "routes/opportunity-manage.tsx"),
-  route("projects/:slug/diligence", "routes/project-diligence-completion.tsx"),
+  route("projects/:slug/diligence", "routes/project-diligence-bridge.tsx"),
   route("projects/:slug/diligence/access", "routes/project-diligence.tsx"),
   route("projects/:slug/documents/:documentId", "routes/project-document.ts"),
   route("projects/:slug", "routes/project-detail.tsx"),
