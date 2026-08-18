@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const read = (path: string) => readFileSync(path, "utf8");
 
-describe("R82 CRM boundary", () => {
+describe("R83 CRM boundary", () => {
   it("keeps CRM-only operating routes out of AKARI House", () => {
     const routes = read("app/routes.ts");
 
@@ -59,8 +59,9 @@ describe("R82 CRM boundary", () => {
     expect(workspaceRoute).toContain("membership, verification");
   });
 
-  it("keeps commercial renewal CRM workflow out of House campaign closeout", () => {
+  it("keeps commercial renewal CRM workflow out of all active House campaign surfaces", () => {
     const closeout = read("app/routes/campaign-closeout.tsx");
+    const campaignOperations = read("app/routes/admin-campaign-operations.tsx");
     const model = read("app/lib/campaign-closeout.ts");
 
     expect(closeout).not.toContain("Renewal and upsell");
@@ -68,9 +69,24 @@ describe("R82 CRM boundary", () => {
     expect(closeout).not.toContain("operational CRM marker");
     expect(closeout).not.toContain('intent === "save-renewal"');
     expect(closeout).not.toContain("campaign.renewal_recorded");
+    expect(campaignOperations).not.toContain("renewal_stage");
+    expect(campaignOperations).not.toContain("renewalStage");
+    expect(campaignOperations).not.toContain("Closeout & renewal");
     expect(model).not.toContain("campaignRenewalTypes");
     expect(model).not.toContain("campaignRenewalStages");
     expect(model).not.toContain("renewalConverted");
+  });
+
+  it("does not expose CRM-era relationship, agreement or renewal notification concepts", () => {
+    const notifications = read("app/routes/notifications.tsx");
+
+    expect(notifications).not.toContain('"operating.relationship"');
+    expect(notifications).not.toContain('"operating.agreement"');
+    expect(notifications).not.toContain('"operating.campaign_renewal"');
+    expect(notifications).not.toContain("Relationship follow-up");
+    expect(notifications).not.toContain("Agreement attention");
+    expect(notifications).not.toContain("Campaign renewal");
+    expect(notifications).toContain('"House update"');
   });
 
   it("preserves historical CRM-era tables until data reconciliation is complete", () => {
