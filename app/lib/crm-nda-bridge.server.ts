@@ -123,7 +123,9 @@ export async function readCrmNdaStatus(
   houseMemberId: string,
 ): Promise<CrmNdaStatus | null> {
   const bridgeEnv: CrmBridgeEnvironment = env;
-  const baseUrl = String(bridgeEnv.CRM_API_URL || "").trim().replace(/\/$/, "");
+  const baseUrl = String(bridgeEnv.CRM_API_URL || "")
+    .trim()
+    .replace(/\/$/, "");
   const apiKey = String(bridgeEnv.CRM_API_KEY || "").trim();
   if (!baseUrl || !apiKey) return null;
 
