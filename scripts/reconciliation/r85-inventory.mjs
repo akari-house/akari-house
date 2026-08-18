@@ -61,11 +61,15 @@ async function selectTenantCommand(inputPath, outputPath) {
 async function prepareCrmSqlCommand(sourcePath, tenantPath, outputPath) {
   const tenant = JSON.parse(await readFile(tenantPath, "utf8"));
   if (tenant.status !== "unique" || !tenant.tenantId) {
-    throw new Error("CRM inventory SQL requires one explicitly selected tenant.");
+    throw new Error(
+      "CRM inventory SQL requires one explicitly selected tenant.",
+    );
   }
   const source = await readFile(sourcePath, "utf8");
   if (!source.includes(":tenant_id")) {
-    throw new Error("CRM inventory SQL does not contain the tenant placeholder.");
+    throw new Error(
+      "CRM inventory SQL does not contain the tenant placeholder.",
+    );
   }
   await writeFile(
     outputPath,
