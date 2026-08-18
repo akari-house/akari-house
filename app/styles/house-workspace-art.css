@@ -1,4 +1,4 @@
-/* Purpose-built CRM and administration hero art.
+/* Purpose-built AKARI House operations and administration artwork.
    Public House routes keep their chapter-led landing-page presentation. */
 :where(.dashboard-shell, .site-shell):has(> .house-workspace-sidebar)
   :is(.dashboard-heading, .admin-heading, .directory-heading),

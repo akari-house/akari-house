@@ -6,10 +6,6 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { afterEach, describe, expect, it } from "vitest";
 import { HouseHall } from "~/components/house/HouseHall";
 import { BlossomJourney } from "~/components/house/BlossomJourney";
-import {
-  HouseWorkspaceSidebar,
-  workspaceRoleItems,
-} from "~/components/HouseWorkspaceSidebar";
 import { SiteHeader } from "~/components/SiteHeader";
 import type { SessionUser } from "~/lib/domain";
 
@@ -63,52 +59,6 @@ describe("house interactions", () => {
     expect(
       container.querySelectorAll(".journey-connector.is-complete"),
     ).toHaveLength(3);
-  });
-
-  it("prioritises the real first task for Creators and Investors", () => {
-    expect(workspaceRoleItems(memberWithRoles(["creator"]))[0]).toMatchObject({
-      label: "Find campaigns",
-      href: "/campaigns",
-    });
-    expect(workspaceRoleItems(memberWithRoles(["investor"]))[0]).toMatchObject({
-      label: "Explore matched Deals",
-      href: "/deals",
-    });
-  });
-
-  it("deduplicates overlapping destinations for multi-role members", () => {
-    const items = workspaceRoleItems(
-      memberWithRoles(["founder", "creator", "investor"]),
-    );
-    const destinations = items.map((item) => item.href);
-
-    expect(destinations.filter((href) => href === "/campaigns")).toHaveLength(
-      1,
-    );
-    expect(destinations.filter((href) => href === "/deals")).toHaveLength(1);
-    expect(destinations[0]).toBe("/projects/manage");
-  });
-
-  it("places role tasks before general network discovery", () => {
-    const { container } = withRouter(
-      <HouseWorkspaceSidebar
-        user={memberWithRoles(["creator"])}
-        pathname="/app"
-      />,
-      "/app",
-    );
-    const sections = [
-      ...container.querySelectorAll(".house-workspace-sidebar-section"),
-    ].map((section) => section.textContent);
-
-    expect(sections.indexOf("Start with your role")).toBeLessThan(
-      sections.indexOf("Network & discovery"),
-    );
-    expect(
-      screen.getByRole("link", {
-        name: "Find campaigns, workspace navigation",
-      }),
-    ).toHaveAttribute("href", "/campaigns");
   });
 
   it("previews rooms before exposing one dedicated entry link", async () => {
@@ -204,7 +154,7 @@ describe("house interactions", () => {
     ).toHaveAttribute("href", "/projects");
   });
 
-  it("exposes authenticated destinations in mobile navigation", async () => {
+  it("exposes authenticated role destinations in the House account drawer", async () => {
     const user = userEvent.setup();
     withRouter(
       <SiteHeader user={memberWithRoles(["founder"])} />,
