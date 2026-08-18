@@ -58,17 +58,20 @@ test.describe("R82 CRM boundary", () => {
     ).toHaveCount(0);
   });
 
-  test("does not expose retired CRM endpoints to Founders", async ({ page }) => {
-    await activatePersona(page, "founder");
-    for (const legacyRoute of [
-      "/admin/agreements",
-      "/admin/relationships",
-      "/admin/operating-rhythm",
-      "/admin/finance",
-      "/admin/workspaces",
-    ]) {
-      const response = await page.goto(legacyRoute);
-      expect(response?.status(), legacyRoute).toBe(404);
-    }
-  });
+  test(
+    "does not expose retired CRM endpoints to Founders",
+    async ({ page }) => {
+      await activatePersona(page, "founder");
+      for (const legacyRoute of [
+        "/admin/agreements",
+        "/admin/relationships",
+        "/admin/operating-rhythm",
+        "/admin/finance",
+        "/admin/workspaces",
+      ]) {
+        const response = await page.goto(legacyRoute);
+        expect(response?.status(), legacyRoute).toBe(404);
+      }
+    },
+  );
 });
