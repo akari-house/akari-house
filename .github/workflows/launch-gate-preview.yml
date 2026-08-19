@@ -21,6 +21,7 @@ permissions:
 jobs:
   launch-gate:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -28,7 +29,9 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - name: Install Chromium for launch evidence
+        timeout-minutes: 10
+        run: npx playwright install --with-deps chromium
       - name: Run role and security permission matrix
         id: launch-tests
         continue-on-error: true
