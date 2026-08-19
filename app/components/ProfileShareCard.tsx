@@ -99,6 +99,59 @@ function titleCaseRole(role: string) {
   return role ? role[0].toUpperCase() + role.slice(1) : role;
 }
 
+function profileCardCode(username: string) {
+  const clean = username.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const prefix = clean.slice(0, 4).padEnd(4, "X");
+  let hash = 2166136261;
+  for (const character of username) {
+    hash ^= character.charCodeAt(0);
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+  const suffix = hash.toString(36).toUpperCase().padStart(7, "0").slice(-7);
+  return `AKARI-${prefix}-${suffix}`;
+}
+
+function barcodePattern(value: string) {
+  const codes = [...value].map((character) => character.charCodeAt(0));
+  return Array.from({ length: 54 }, (_, index) => {
+    const code = codes[index % Math.max(codes.length, 1)] ?? 65;
+    return {
+      width: 1 + ((code + index * 5) % 3),
+      gap: 1 + ((code + index * 7) % 2),
+    };
+  });
+}
+
+function ProfileBarcode({ value }: { value: string }) {
+  const bars = barcodePattern(value);
+  const total = bars.reduce((sum, bar) => sum + bar.width + bar.gap, 0);
+  let cursor = 0;
+  return (
+    <svg
+      viewBox={`0 0 ${total} 32`}
+      preserveAspectRatio="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {bars.map((bar, index) => {
+        const x = cursor;
+        cursor += bar.width + bar.gap;
+        const inset = index % 7 === 0 ? 3 : index % 5 === 0 ? 1.5 : 0;
+        return (
+          <rect
+            key={`${x}-${index}`}
+            x={x}
+            y={inset}
+            width={bar.width}
+            height={32 - inset * 2}
+            rx={0.2}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
 function SocialIcon({ platform }: { platform: ProfileCardSocialPlatform }) {
   const common = {
     width: 18,
@@ -212,6 +265,34 @@ function roundedRect(
   ctx.roundRect(x, y, width, height, radius);
 }
 
+function drawBarcode(
+  ctx: CanvasRenderingContext2D,
+  value: string,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  colour: string,
+) {
+  const bars = barcodePattern(value);
+  const total = bars.reduce((sum, bar) => sum + bar.width + bar.gap, 0);
+  const scale = width / total;
+  let cursor = 0;
+  ctx.save();
+  ctx.fillStyle = colour;
+  bars.forEach((bar, index) => {
+    const inset = index % 7 === 0 ? 7 : index % 5 === 0 ? 3 : 0;
+    ctx.fillRect(
+      x + cursor * scale,
+      y + inset,
+      Math.max(1.2, bar.width * scale),
+      height - inset * 2,
+    );
+    cursor += bar.width + bar.gap;
+  });
+  ctx.restore();
+}
+
 function drawSocialMark(
   ctx: CanvasRenderingContext2D,
   platform: ProfileCardSocialPlatform,
@@ -279,6 +360,7 @@ async function drawCard(
     .map((state) => titleCaseRole(state.role));
   const opportunities =
     model.opportunityStats.created + model.opportunityStats.received;
+  const profileCode = profileCardCode(model.username);
   const canonicalUrl =
     model.accessTier === "member" && model.visibility === "public"
       ? `akarihouse.com/profiles/${model.username}`
@@ -511,31 +593,29 @@ async function drawCard(
   ctx.stroke();
   ctx.fillStyle = palette.accent;
   ctx.font = "700 17px Inter, sans-serif";
-  ctx.fillText("PROFILE LINK", 1230, 320);
-  try {
-    const flower = await loadImage("/assets/brand/akari-flower-mark.png");
-    ctx.drawImage(flower, 1278, 345, 100, 100);
-  } catch {
-    // Brand mark is decorative here.
-  }
+  ctx.fillText("AKARI ID", 1230, 314);
+  drawBarcode(ctx, profileCode, 1222, 344, 216, 76, palette.ink);
   ctx.fillStyle = palette.ink;
-  ctx.font = "650 21px Inter, sans-serif";
+  ctx.font = "700 16px Inter, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("Connect on AKARI", 1330, 480);
-  ctx.font = "500 15px Inter, sans-serif";
-  ctx.globalAlpha = 0.72;
-  ctx.fillText(canonicalUrl.slice(0, 34), 1330, 514);
+  ctx.fillText(profileCode, 1330, 455);
+  ctx.font = "650 20px Inter, sans-serif";
+  ctx.fillText("Connect on AKARI", 1330, 493);
+  ctx.font = "500 14px Inter, sans-serif";
+  ctx.globalAlpha = 0.66;
+  ctx.fillText(canonicalUrl.slice(0, 34), 1330, 526);
   ctx.globalAlpha = 1;
   ctx.textAlign = "left";
 
   const metrics = [
     [String(opportunities), "OPPORTUNITIES"],
-    [formatProfileReach(model.followerCount), "REACH"],
+    [formatProfileReach(model.followerCount), "SOCIAL REACH"],
+    [String(model.socials.length), "CONNECTED SOCIALS"],
     [
       model.percentile.topPercent
         ? `TOP ${model.percentile.topPercent}%`
         : "BUILDING",
-      "SIGNAL",
+      "AKARI SIGNAL",
     ],
   ] as const;
   roundedRect(ctx, 115, 625, 1010, 116, 30);
@@ -545,13 +625,13 @@ async function drawCard(
   ctx.lineWidth = 1.5;
   ctx.stroke();
   metrics.forEach(([value, label], index) => {
-    const x = 165 + index * 315;
-    ctx.fillStyle = index === 0 ? palette.highlight : palette.accent;
-    ctx.font = "750 29px Inter, sans-serif";
+    const x = 150 + index * 245;
+    ctx.fillStyle = index % 2 === 0 ? palette.highlight : palette.accent;
+    ctx.font = "750 28px Inter, sans-serif";
     ctx.fillText(value, x, 677);
     ctx.fillStyle = palette.ink;
     ctx.globalAlpha = 0.65;
-    ctx.font = "700 13px Inter, sans-serif";
+    ctx.font = "700 12px Inter, sans-serif";
     ctx.fillText(label, x, 708);
     ctx.globalAlpha = 1;
   });
@@ -611,7 +691,7 @@ async function drawCard(
   ctx.font = "500 17px Inter, sans-serif";
   ctx.fillText("akarihouse.com", 118, 925);
   ctx.textAlign = "right";
-  ctx.fillText("A private ecosystem for high-signal connections.", 1470, 925);
+  ctx.fillText("A private membership for high-signal connections.", 1470, 925);
   ctx.textAlign = "left";
   ctx.globalAlpha = 1;
 }
@@ -659,6 +739,7 @@ export function ProfileShareCard({
   const opportunities =
     model.opportunityStats.created + model.opportunityStats.received;
 
+  const profileCode = profileCardCode(model.username);
   function updateLanguages(next: string[]) {
     setSettings({ ...settings, languagesJson: JSON.stringify(next) });
   }
@@ -733,9 +814,8 @@ export function ProfileShareCard({
           <span className="eyebrow">Your AKARI identity</span>
           <h1>Profile sharing card</h1>
           <p>
-            A premium AKARI credit-card profile built from your real member
-            data. Choose your glass color, control private details, then
-            download or share.
+            A premium AKARI member card built from your real member data. Choose
+            your glass color, control what stays public, then download or share.
           </p>
         </div>
         <Link className="quiet-link" to={`/profiles/${model.username}`}>
@@ -828,24 +908,34 @@ export function ProfileShareCard({
                 </div>
               </div>
 
-              <div className="glass-profile-link" aria-label="Profile link">
-                <span className="glass-profile-link-icon">
-                  <LinkGlyph size={22} />
+              <div
+                className="glass-profile-link"
+                aria-label="AKARI identity code"
+              >
+                <small>AKARI ID</small>
+                <span className="glass-profile-barcode" aria-hidden="true">
+                  <ProfileBarcode value={profileCode} />
                 </span>
-                <small>Profile link</small>
-                <strong>Connect on AKARI</strong>
+                <strong>{profileCode}</strong>
                 <span>{canonicalUrl}</span>
               </div>
             </div>
 
-            <div className="share-card-metrics glass-card-metrics">
+            <div
+              className="share-card-metrics glass-card-metrics"
+              aria-label="Profile credibility signals"
+            >
               <div>
                 <strong>{opportunities}</strong>
                 <span>Opportunities</span>
               </div>
               <div>
                 <strong>{formatProfileReach(model.followerCount)}</strong>
-                <span>Reach</span>
+                <span>Social reach</span>
+              </div>
+              <div>
+                <strong>{model.socials.length}</strong>
+                <span>Connected socials</span>
               </div>
               <div>
                 <strong>
@@ -896,18 +986,15 @@ export function ProfileShareCard({
           </article>
 
           <div className="glass-card-note">
-            <strong>Credit-card format</strong>
-            <span>
-              85.6 × 54 proportion. The downloaded PNG uses the same branded
-              glass design.
-            </span>
+            <strong>Built for sharing.</strong>
+            <span>Export as PNG and share your AKARI identity anywhere.</span>
           </div>
           <p className="share-card-confidence">
             {model.percentile.confidence === "verified"
-              ? "Percentile uses verified member signals."
+              ? "Credibility signals use verified member data."
               : model.percentile.confidence === "provisional"
-                ? "Provisional percentile: one or more signals are member-reported."
-                : "Your percentile appears after enough comparable member signals exist."}
+                ? "Credibility signals include member-reported data."
+                : "Credibility signals grow as more comparable member data becomes available."}
           </p>
         </section>
 
