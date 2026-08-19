@@ -34,62 +34,65 @@ function renderWithRouter(element: React.ReactNode) {
 }
 
 describe("dashboard role actions", () => {
-  it("links approved founders to multi-project management", () => {
+  it("gives approved Founders one ordered project-to-people-to-campaign path", () => {
     renderWithRouter(<DashboardRoleActions user={user()} />);
 
     expect(
-      screen.getByRole("link", { name: /create or manage your projects/i }),
+      screen.getByRole("link", { name: /keep your project actionable/i }),
     ).toHaveAttribute("href", "/projects/manage");
-    expect(screen.getByText(/multiple project profiles/i)).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /discover members/i }),
-    ).toHaveAttribute("href", "/members");
+      screen.getByRole("link", { name: /find the right creators/i }),
+    ).toHaveAttribute("href", "/members?role=creator");
     expect(
-      screen.getByRole("link", { name: /build your akari network/i }),
-    ).toHaveAttribute("href", "/connections");
+      screen.getByRole("link", { name: /turn support into a campaign/i }),
+    ).toHaveAttribute("href", "/campaigns");
     expect(screen.queryByText(/sample data/i)).not.toBeInTheDocument();
   });
 
-  it("takes Creators to campaign discovery with readiness requirements explained", () => {
+  it("keeps Creator readiness explicit before campaign discovery", () => {
     const actions = dashboardRoleActions(user({ roles: ["creator"] }));
     expect(actions[0]).toMatchObject({
-      eyebrow: "Creator",
-      title: "Find campaigns you can join",
-      to: "/campaigns",
+      eyebrow: "01 · Signal",
+      title: "Make your profile useful",
+      to: "/app#profile-editor",
     });
+    expect(actions[0].description).toContain("follower count");
     expect(actions[0].description).toContain("XScore");
     expect(actions[0].description).toContain("Sorsa");
+    expect(actions[1]?.to).toBe("/campaigns");
   });
 
   it("takes Investors directly to opportunity discovery", () => {
     const actions = dashboardRoleActions(user({ roles: ["investor"] }));
     expect(actions[0]).toMatchObject({
-      eyebrow: "Investor",
-      title: "Discover relevant opportunities",
+      eyebrow: "01 · Opportunity",
+      title: "See opportunities first",
       to: "/deals",
     });
+    expect(actions[1]?.to).toBe("/settings/investor");
   });
 
   it("keeps each selected role distinct for multi-role members", () => {
-    const actions = dashboardRoleActions(
-      user({ roles: ["founder", "creator", "investor"] }),
-    );
-    expect(actions.slice(0, 3).map((action) => action.to)).toEqual([
+    const multiRoleUser = user({ roles: ["founder", "creator", "investor"] });
+    expect(dashboardRoleActions(multiRoleUser, "founder")[0]?.to).toBe(
       "/projects/manage",
-      "/campaigns",
+    );
+    expect(dashboardRoleActions(multiRoleUser, "creator")[0]?.to).toBe(
+      "/app#profile-editor",
+    );
+    expect(dashboardRoleActions(multiRoleUser, "investor")[0]?.to).toBe(
       "/deals",
-    ]);
+    );
   });
 
-  it("keeps applicant actions within currently available routes", () => {
+  it("keeps applicant actions inside profile and privacy preparation", () => {
     const actions = dashboardRoleActions(
       user({ accessTier: "applicant", roles: ["creator"] }),
     );
 
     expect(actions.map((action) => action.to)).toEqual([
-      "/app",
-      "/projects",
-      "/events",
+      "/app#profile-editor",
+      "/settings/account",
     ]);
     expect(actions[0].description).toContain("stays private");
   });
