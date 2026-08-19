@@ -1,6 +1,5 @@
 import { redirect } from "react-router";
 import { action as trustedDiligenceAction } from "~/routes/project-diligence";
-import type { Route } from "~/routes/+types/project-diligence-bridge";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { isDiligenceCategory } from "~/lib/diligence-completion";
@@ -9,6 +8,8 @@ import { recordOpportunityAudit } from "~/lib/opportunity-access.server";
 import { userCanManageProject } from "~/lib/project-access.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
+
+type HouseDiligenceActionArgs = Parameters<typeof trustedDiligenceAction>[0];
 
 const trustedAccessIntents = new Set([
   "request-data-room",
@@ -27,7 +28,7 @@ const trustedAccessIntents = new Set([
  * here prevents AKARI House product flows from depending on the retired
  * CRM-era agreement route implementation.
  */
-export async function houseDiligenceAction(args: Route.ActionArgs) {
+export async function houseDiligenceAction(args: HouseDiligenceActionArgs) {
   const preview = await args.request.clone().formData();
   const previewIntent = formText(preview.get("intent"));
 
