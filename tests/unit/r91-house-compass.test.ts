@@ -5,10 +5,8 @@ import type { SessionUser } from "~/lib/domain";
 function member(roles: SessionUser["roles"]): SessionUser {
   return {
     id: "member-1",
-    email: "member@example.com",
     username: "member",
     displayName: "Member",
-    status: "active",
     accessTier: "member",
     roles,
     adminAccess: null,
