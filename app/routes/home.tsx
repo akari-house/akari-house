@@ -54,7 +54,7 @@ interface HomepageRoleCountRow {
 
 export async function loadHomepageRolePresence(
   db: D1Database,
-  role: Extract<Role, "creator" | "investor">,
+  role: Extract<Role, "founder" | "creator" | "investor">,
 ): Promise<HouseRolePresence> {
   const [total, rows] = await Promise.all([
     db
@@ -108,7 +108,7 @@ export async function loadHomepageRolePresence(
 
 export async function loader({ request, context }: Route.LoaderArgs) {
   const db = context.get(cloudflareContext).env.DB;
-  const [user, project, event, directory, creators, investors] =
+  const [user, project, event, directory, founders, creators, investors] =
     await Promise.all([
       optionalHomepageValue(() => getOptionalUser(request, db)),
       optionalHomepageValue(() =>
@@ -168,6 +168,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
           }>(),
       ),
       optionalHomepageValue(() => getPublishedHouseDirectory(db)),
+      optionalHomepageValue(() => loadHomepageRolePresence(db, "founder")),
       optionalHomepageValue(() => loadHomepageRolePresence(db, "creator")),
       optionalHomepageValue(() => loadHomepageRolePresence(db, "investor")),
     ]);
@@ -184,6 +185,7 @@ export async function loader({ request, context }: Route.LoaderArgs) {
       (entry) => entry.category === "partner" || entry.category === "provider",
     ),
     memberPresence: {
+      founders: founders ?? emptyPresence,
       creators: creators ?? emptyPresence,
       investors: investors ?? emptyPresence,
     },
@@ -249,6 +251,7 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </section>
 
         <HouseMemberPresence
+          founders={loaderData.memberPresence.founders}
           creators={loaderData.memberPresence.creators}
           investors={loaderData.memberPresence.investors}
         />
