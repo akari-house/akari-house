@@ -4,6 +4,10 @@ import {
   cloudflareContext,
   type AkariCloudflareContext,
 } from "~/lib/cloudflare-context";
+import {
+  houseDiligenceAccessAction,
+  houseDiligenceAccessIntents,
+} from "~/lib/house-diligence-access-actions.server";
 import { isDiligenceCategory } from "~/lib/diligence-completion";
 import { ensureDiligenceSchema } from "~/lib/diligence-schema.server";
 import { recordOpportunityAudit } from "~/lib/opportunity-access.server";
@@ -28,6 +32,12 @@ type HouseDiligenceActionArgs = {
  * CRM-era agreement route implementation.
  */
 export async function houseDiligenceAction(args: HouseDiligenceActionArgs) {
+  const preview = await args.request.clone().formData();
+  const previewIntent = formText(preview.get("intent"));
+  if (houseDiligenceAccessIntents.has(previewIntent)) {
+    return houseDiligenceAccessAction(args);
+  }
+
   assertSameOrigin(args.request);
   const db = args.context.get(cloudflareContext).env.DB;
   await ensureDiligenceSchema(db);
