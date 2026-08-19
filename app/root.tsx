@@ -289,20 +289,6 @@ export const links: Route.LinksFunction = () => [
   },
   { rel: "manifest", href: "/site.webmanifest" },
   { rel: "sitemap", type: "application/xml", href: "/sitemap.xml" },
-  {
-    rel: "preload",
-    href: "/assets/optimized/arrival-960.webp",
-    as: "image",
-    type: "image/webp",
-    media: "(max-width: 768px)",
-  },
-  {
-    rel: "preload",
-    href: "/assets/optimized/arrival-1440.webp",
-    as: "image",
-    type: "image/webp",
-    media: "(min-width: 769px)",
-  },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
