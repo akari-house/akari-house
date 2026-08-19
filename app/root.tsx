@@ -191,13 +191,15 @@ function pageSeo(pathname: string): PageSeo {
   if (pathname === "/contact") {
     return {
       title: "Contact | AKARI House",
-      description: "Contact the AKARI House team about membership and the network.",
+      description:
+        "Contact the AKARI House team about membership and the network.",
     };
   }
   if (pathname === "/privacy") {
     return {
       title: "Privacy Notice | AKARI House",
-      description: "Read how AKARI House handles privacy and member information.",
+      description:
+        "Read how AKARI House handles privacy and member information.",
     };
   }
   if (pathname === "/terms") {
