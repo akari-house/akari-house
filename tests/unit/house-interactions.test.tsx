@@ -71,7 +71,7 @@ describe("house interactions", () => {
       href: "/campaigns",
     });
     expect(workspaceRoleItems(memberWithRoles(["investor"]))[0]).toMatchObject({
-      label: "Explore matched Deals",
+      label: "Opportunities",
       href: "/deals",
     });
   });
@@ -89,7 +89,7 @@ describe("house interactions", () => {
     expect(destinations[0]).toBe("/projects/manage");
   });
 
-  it("places role tasks before general network discovery", () => {
+  it("places role tasks before general discovery", () => {
     const { container } = withRouter(
       <HouseWorkspaceSidebar
         user={memberWithRoles(["creator"])}
@@ -101,8 +101,8 @@ describe("house interactions", () => {
       ...container.querySelectorAll(".house-workspace-sidebar-section"),
     ].map((section) => section.textContent);
 
-    expect(sections.indexOf("Start with your role")).toBeLessThan(
-      sections.indexOf("Network & discovery"),
+    expect(sections.indexOf("Your role")).toBeLessThan(
+      sections.indexOf("Discover"),
     );
     expect(
       screen.getByRole("link", {
@@ -165,6 +165,9 @@ describe("house interactions", () => {
     expect(
       screen.getByRole("dialog", { name: "Site navigation" }),
     ).toHaveAttribute("aria-modal", "true");
+    expect(screen.getAllByRole("link", { name: "Projects" }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("link", { name: "Archive" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Team" })).not.toBeInTheDocument();
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Close menu" })).toHaveFocus(),
     );
@@ -204,7 +207,7 @@ describe("house interactions", () => {
     ).toHaveAttribute("href", "/projects");
   });
 
-  it("exposes authenticated destinations in mobile navigation", async () => {
+  it("exposes role-relevant authenticated destinations in mobile navigation", async () => {
     const user = userEvent.setup();
     withRouter(
       <SiteHeader user={memberWithRoles(["founder"])} />,
@@ -224,9 +227,9 @@ describe("house interactions", () => {
       "aria-current",
       "page",
     );
-    expect(screen.getByRole("link", { name: "Telegram" })).toHaveAttribute(
-      "href",
-      "/settings/telegram",
-    );
+    expect(
+      screen.getByRole("link", { name: "Account & privacy" }),
+    ).toHaveAttribute("href", "/settings/account");
+    expect(screen.queryByRole("link", { name: "Telegram" })).not.toBeInTheDocument();
   });
 });
