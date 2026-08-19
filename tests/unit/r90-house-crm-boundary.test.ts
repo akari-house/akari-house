@@ -39,8 +39,12 @@ describe("R90 House / CRM boundary hardening", () => {
   it("keeps canonical House hosts and redirects noncanonical production hosts", () => {
     const worker = read("worker/index.ts");
     const root = read("app/root.tsx");
-    expect(root).toContain('const productionOrigin = "https://akarihouse.com"');
-    expect(worker).toContain('const productionCanonicalHost = "akarihouse.com"');
+    expect(root).toContain(
+      'const productionOrigin = "https://akarihouse.com"',
+    );
+    expect(worker).toContain(
+      'const productionCanonicalHost = "akarihouse.com"',
+    );
     expect(worker).toContain('"www.akarihouse.com"');
     expect(worker).toContain('"akari-house.spacematesxyz.workers.dev"');
     expect(worker).toContain("Response.redirect(url.toString(), 308)");
@@ -48,7 +52,9 @@ describe("R90 House / CRM boundary hardening", () => {
 
   it("declares the server-only CRM bridge explicitly in production deploy config", () => {
     const workflow = read(".github/workflows/deploy-production.yml");
-    expect(workflow).toContain('CRM_API_URL: "https://crmakari.pages.dev/api/v1"');
+    expect(workflow).toContain(
+      'CRM_API_URL: "https://crmakari.pages.dev/api/v1"',
+    );
     expect(workflow).toContain('CRM_NDA_BRIDGE_MODE: "legacy"');
     expect(workflow).toContain(
       "Confirm noncanonical Worker redirects to AKARI House",
