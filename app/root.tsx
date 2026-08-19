@@ -205,7 +205,8 @@ function pageSeo(pathname: string): PageSeo {
   if (pathname === "/terms") {
     return {
       title: "Terms | AKARI House",
-      description: "Read the terms that apply to AKARI House membership and use.",
+      description:
+        "Read the terms that apply to AKARI House membership and use.",
     };
   }
   if (pathname === "/community-guidelines") {
