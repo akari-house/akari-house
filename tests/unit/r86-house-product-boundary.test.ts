@@ -45,9 +45,9 @@ describe("R86 AKARI House product boundary", () => {
     expect(existsSync("app/routes/project-diligence-completion.tsx")).toBe(
       false,
     );
-    expect(existsSync("app/routes/+types/project-diligence-completion.ts")).toBe(
-      false,
-    );
+    expect(
+      existsSync("app/routes/+types/project-diligence-completion.ts"),
+    ).toBe(false);
 
     const route = read("app/routes/project-diligence-bridge.tsx");
     const actions = read("app/lib/house-diligence-actions.server.ts");
