@@ -77,7 +77,9 @@ test("desktop journey reaches the Hall, active House and Membership Desk", async
   await expect(page).toHaveURL(/\/hall$/);
   await page.goto("/#common");
   await expect(
-    page.getByRole("heading", { name: "See what is moving through the House." }),
+    page.getByRole("heading", {
+      name: "See what is moving through the House.",
+    }),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: "Explore projects" }),
