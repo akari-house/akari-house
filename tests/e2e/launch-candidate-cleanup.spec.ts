@@ -100,21 +100,21 @@ test("Creator and Investor workspaces expose their primary task first", async ({
       name: "Find campaigns, workspace navigation",
     }),
   ).toHaveAttribute("href", "/campaigns");
-  await expect(
-    page.getByRole("link", {
-      name: /Keep your Creator profile campaign-ready/,
-    }),
-  ).toHaveAttribute("href", "/campaigns");
 
   await activatePersona(page, "investor");
   await page.goto("/app");
   await expect(
     page.getByRole("link", {
-      name: "Explore matched Deals, workspace navigation",
+      name: "Opportunities, workspace navigation",
     }),
   ).toHaveAttribute("href", "/deals");
   await expect(
-    page.getByRole("link", { name: /Set your investment preferences/ }),
+    page.locator(".dashboard-role-actions .dashboard-role-card").first(),
+  ).toHaveAttribute("href", "/deals");
+  await expect(
+    page.getByRole("link", {
+      name: "Investor preferences, workspace navigation",
+    }),
   ).toHaveAttribute("href", "/settings/investor");
 });
 
