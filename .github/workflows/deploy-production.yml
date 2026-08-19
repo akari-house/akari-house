@@ -96,6 +96,8 @@ jobs:
               APP_ENV: "production",
               APP_URL: "https://akarihouse.com",
               TURNSTILE_HOSTNAME: "akarihouse.com",
+              CRM_API_URL: "https://crmakari.pages.dev/api/v1",
+              CRM_NDA_BRIDGE_MODE: "legacy",
             },
             d1_databases: [
               {
@@ -165,6 +167,10 @@ jobs:
             throw new Error("Generated Worker is not in production mode.");
           if (generated.vars?.APP_URL !== "https://akarihouse.com")
             throw new Error("Generated Worker has the wrong APP_URL.");
+          if (generated.vars?.CRM_API_URL !== "https://crmakari.pages.dev/api/v1")
+            throw new Error("Generated Worker has the wrong CRM_API_URL.");
+          if (generated.vars?.CRM_NDA_BRIDGE_MODE !== "legacy")
+            throw new Error("Generated Worker has the wrong CRM NDA bridge mode.");
 
           console.log(
             `Generated deployment is production-safe: ${generated.name}, DB ${db.database_id}, R2 ${media.bucket_name}.`,
@@ -201,6 +207,14 @@ jobs:
           done
           echo "The Worker deployment did not return the expected public release."
           exit 1
+      - name: Confirm noncanonical Worker redirects to AKARI House
+        run: |
+          set -euo pipefail
+          location=$(curl -sS --max-time 20 -o /dev/null -D - "${PUBLIC_WORKER_URL}/" | awk 'BEGIN{IGNORECASE=1} /^location:/{gsub("\r",""); print $2; exit}')
+          if [ "$location" != "https://akarihouse.com/" ]; then
+            echo "Unexpected noncanonical Worker redirect: ${location:-missing}"
+            exit 1
+          fi
       - name: Create short-lived authenticated production smoke session
         run: |
           set -euo pipefail
