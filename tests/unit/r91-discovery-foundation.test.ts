@@ -30,10 +30,13 @@ describe("R91 discovery and installability foundation", () => {
       icons: Array<{ sizes: string; purpose: string }>;
       shortcuts?: unknown[];
     };
+    const iconSizes = manifest.icons.map((icon) => icon.sizes);
+    const iconPurposes = manifest.icons.map((icon) => icon.purpose);
+
     expect(routes).toContain('route("sitemap.xml", "routes/sitemap.ts")');
-    expect(manifest.icons.some((icon) => icon.sizes === "192x192")).toBe(true);
-    expect(manifest.icons.some((icon) => icon.sizes === "512x512")).toBe(true);
-    expect(manifest.icons.some((icon) => icon.purpose === "maskable")).toBe(true);
+    expect(iconSizes).toContain("192x192");
+    expect(iconSizes).toContain("512x512");
+    expect(iconPurposes).toContain("maskable");
     expect(manifest.shortcuts?.length).toBeGreaterThanOrEqual(3);
   });
 
