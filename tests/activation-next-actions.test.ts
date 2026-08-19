@@ -105,7 +105,7 @@ describe("R76F/R76H member next action engine", () => {
     expect(actions[0]?.to).toBe("/projects/manage");
   });
 
-  it("prioritizes incomplete Investor preferences for multi-role members", () => {
+  it("keeps opportunity discovery ahead of incomplete Investor preferences", () => {
     const actions = buildMemberNextActions({
       ...baseMember,
       roles: ["founder", "investor"],
@@ -113,8 +113,12 @@ describe("R76F/R76H member next action engine", () => {
       investorProfileStatus: "claimed",
     });
 
-    expect(actions[0]?.key).toBe("investor-preferences");
-    expect(actions[0]?.to).toBe("/settings/investor");
+    expect(actions[0]?.key).toBe("investor-opportunities");
+    expect(actions[0]?.to).toBe("/deals");
+    const preferences = actions.find(
+      (action) => action.key === "investor-preferences",
+    );
+    expect(preferences?.to).toBe("/settings/investor");
   });
 
   it("keeps a verified Investor focused on progressed relationships", () => {
