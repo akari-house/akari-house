@@ -59,6 +59,6 @@ describe("homepage optional data resilience", () => {
     expect(prepare.mock.calls[1]?.[0]).toContain(
       "COALESCE(pv.visibility, p.visibility) = 'public'",
     );
-    expect(prepare.mock.calls[1]?.[0]).toContain("LIMIT 10");
+    expect(prepare.mock.calls[1]?.[0]).toContain("LIMIT 4");
   });
 });
