@@ -49,5 +49,3 @@ await Promise.all([
     .png({ compressionLevel: 9 })
     .toFile(`${brandDir}/app-icon-maskable-512.png`),
 ]);
-
-console.log("Prepared responsive AKARI UI and install icons.");
