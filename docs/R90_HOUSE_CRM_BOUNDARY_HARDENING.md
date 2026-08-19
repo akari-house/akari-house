@@ -16,6 +16,8 @@ The products may integrate through explicit server-to-server contracts. They are
 - make `CRM_API_URL` and `CRM_NDA_BRIDGE_MODE` explicit in the generated production deployment config;
 - add regression tests that fail if CRM-only routes or dead workspace behavior return.
 
+The changed TypeScript sources are formatted with the repository-pinned Prettier version and are validated by the normal CI and launch-gate workflows before merge.
+
 ## R84 safety gate
 
 R90 deliberately does **not** drop the frozen CRM-era House tables or automatically switch NDA authority. Production remains in `CRM_NDA_BRIDGE_MODE=legacy` until reconciliation evidence is complete.
