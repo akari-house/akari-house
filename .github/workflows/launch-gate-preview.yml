@@ -31,7 +31,7 @@ jobs:
       - run: npm ci
       - name: Install Chromium for launch evidence
         timeout-minutes: 10
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
       - name: Run role and security permission matrix
         id: launch-tests
         continue-on-error: true
