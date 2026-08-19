@@ -28,8 +28,14 @@ export function HouseInMotion({
           <div className="discovery-empty is-project">
             <span className="empty-lantern" aria-hidden="true" />
             <div>
-              <strong>The first lanterns are being prepared.</strong>
-              <p>Approved Founder projects will appear in this gallery.</p>
+              <strong>No published projects yet.</strong>
+              <p>
+                Founder projects will appear here after publication review. If
+                you are building, you can start your Founder path now.
+              </p>
+              <Link className="button button-small" to="/register?role=founder">
+                Join as a Founder
+              </Link>
             </div>
           </div>
         )}
@@ -46,8 +52,14 @@ export function HouseInMotion({
           <div className="discovery-empty is-event">
             <span className="empty-date-seal" aria-hidden="true" />
             <div>
-              <strong>The next gathering is taking shape.</strong>
-              <p>Approved online and in-person events will appear here.</p>
+              <strong>No upcoming gatherings right now.</strong>
+              <p>
+                Explore the people already inside the House while the next event
+                is being prepared.
+              </p>
+              <Link className="button button-small" to="/members">
+                Explore members
+              </Link>
             </div>
           </div>
         )}

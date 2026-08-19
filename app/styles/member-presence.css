@@ -66,7 +66,7 @@
 .house-member-presence__groups {
   min-width: 0;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.65rem;
 }
 
@@ -81,6 +81,10 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.025);
+}
+
+.house-member-presence__group[data-role="founder"] {
+  box-shadow: inset 2px 0 rgba(255, 255, 255, 0.28);
 }
 
 .house-member-presence__group[data-role="creator"] {
@@ -166,6 +170,12 @@
 .dashboard-nav > a.dashboard-nav-admin {
   border-left-color: rgba(255, 211, 61, 0.58);
   background: linear-gradient(90deg, rgba(255, 211, 61, 0.07), transparent);
+}
+
+@media (max-width: 1080px) {
+  .house-member-presence__groups {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 900px) {

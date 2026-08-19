@@ -23,7 +23,7 @@ function PresenceGroup({
   presence,
 }: {
   label: string;
-  role: "creator" | "investor";
+  role: "founder" | "creator" | "investor";
   presence: HouseRolePresence;
 }) {
   const remaining = remainingMemberCount(
@@ -77,9 +77,11 @@ function PresenceGroup({
 }
 
 export function HouseMemberPresence({
+  founders,
   creators,
   investors,
 }: {
+  founders: HouseRolePresence;
   creators: HouseRolePresence;
   investors: HouseRolePresence;
 }) {
@@ -96,6 +98,7 @@ export function HouseMemberPresence({
         </p>
       </div>
       <div className="house-member-presence__groups">
+        <PresenceGroup label="Founders" role="founder" presence={founders} />
         <PresenceGroup label="Creators" role="creator" presence={creators} />
         <PresenceGroup label="Investors" role="investor" presence={investors} />
       </div>
