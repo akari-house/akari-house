@@ -40,7 +40,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
   const workspaceSidebar = Boolean(
     user && isHouseWorkspacePath(location.pathname),
   );
-  const primaryLinks = primaryLinksForUser(user);
+  const primaryLinks = workspaceSidebar ? [] : primaryLinksForUser(user);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setInteractive(true));
@@ -111,6 +111,11 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
         </span>
         <span>My House</span>
       </Link>
+      {workspaceSidebar && (
+        <Link className="header-update-link" to="/connections">
+          Connections
+        </Link>
+      )}
       <Link className="header-update-link" to="/notifications">
         Updates
       </Link>
@@ -188,7 +193,9 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
           hash={location.hash}
         />
       )}
-      <header className="site-header">
+      <header
+        className={`site-header${workspaceSidebar ? " is-workspace-header" : ""}`}
+      >
         <Link to="/" className="wordmark" aria-label="AKARI House home">
           <img
             className="wordmark-image"
@@ -250,18 +257,20 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
           <Icon name="close" />
           <span>Close menu</span>
         </button>
-        <nav aria-label="Mobile navigation">
-          {primaryLinks.map(([label, href]) => (
-            <a
-              href={href}
-              key={label}
-              aria-current={isCurrent(href) ? "page" : undefined}
-              onClick={() => setOpen(false)}
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
+        {primaryLinks.length > 0 && (
+          <nav aria-label="Mobile navigation">
+            {primaryLinks.map(([label, href]) => (
+              <a
+                href={href}
+                key={label}
+                aria-current={isCurrent(href) ? "page" : undefined}
+                onClick={() => setOpen(false)}
+              >
+                {label}
+              </a>
+            ))}
+          </nav>
+        )}
         {user && (
           <nav className="mobile-member-nav" aria-label="Your AKARI account">
             <span>Your House</span>
