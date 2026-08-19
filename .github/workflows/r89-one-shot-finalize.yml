@@ -1,0 +1,106 @@
+name: R89 One-Shot Finalize
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  finalize:
+    if: github.head_ref == 'r89-profile-card-final' && github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r89-profile-card-final
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Fix source, validate, and remove this helper
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('app/components/ProfileShareCard.tsx')
+          text = path.read_text()
+          replacement = '''function ProfileBarcode({ value }: { value: string }) {
+            const bars = barcodePattern(value);
+            const positionedBars = bars.reduce<
+              Array<{ width: number; gap: number; x: number }>
+            >((items, bar) => {
+              const previous = items.at(-1);
+              const x = previous
+                ? previous.x + previous.width + previous.gap
+                : 0;
+              return [...items, { ...bar, x }];
+            }, []);
+            const total = positionedBars.reduce(
+              (sum, bar) => sum + bar.width + bar.gap,
+              0,
+            );
+            return (
+              <svg
+                viewBox={`0 0 ${total} 32`}
+                preserveAspectRatio="none"
+                aria-hidden="true"
+                focusable="false"
+              >
+                {positionedBars.map((bar, index) => {
+                  const inset = index % 7 === 0 ? 3 : index % 5 === 0 ? 1.5 : 0;
+                  return (
+                    <rect
+                      key={`${bar.x}-${index}`}
+                      x={bar.x}
+                      y={inset}
+                      width={bar.width}
+                      height={32 - inset * 2}
+                      rx={0.2}
+                    />
+                  );
+                })}
+              </svg>
+            );
+          }
+
+          function SocialIcon'''
+
+          text, count = re.subn(
+            r'function ProfileBarcode\(\{ value \}: \{ value: string \}\) \{.*?\n\}\n\nfunction SocialIcon',
+            replacement,
+            text,
+            count=1,
+            flags=re.S,
+          )
+          if count != 1:
+            raise SystemExit('ProfileBarcode replacement failed')
+
+          text, count = re.subn(
+            r'\nfunction LinkGlyph\(\{ size = 20 \}: \{ size\?: number \}\) \{.*?\n\}\n\nfunction avatarUrl',
+            '\nfunction avatarUrl',
+            text,
+            count=1,
+            flags=re.S,
+          )
+          if count != 1:
+            raise SystemExit('LinkGlyph removal failed')
+
+          path.write_text(text)
+          PY
+          npx prettier --write app/components/ProfileShareCard.tsx app/styles/profile-card-glass.css tests/unit/profile-card-completion.test.ts
+          npm run lint
+          npm run typecheck
+          rm -f .github/workflows/r89-one-shot-finalize.yml .r89-final-trigger
+      - name: Commit clean final source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "R89: finalize profile sharing card"
+          git push origin HEAD:r89-profile-card-final

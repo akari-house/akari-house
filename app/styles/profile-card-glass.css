@@ -568,7 +568,7 @@
 .glass-card-footer::after {
   margin-left: auto;
   color: var(--card-ink);
-  content: "A private ecosystem for high-signal connections.";
+  content: "A private membership for high-signal connections.";
   font-size: clamp(0.4rem, 1.12cqi, 0.74rem);
   opacity: 0.66;
 }
@@ -837,5 +837,84 @@
 @media (prefers-reduced-motion: reduce) {
   .glass-card-socials a {
     transition: none;
+  }
+}
+
+/* R89 credibility */
+.glass-profile-barcode {
+  width: 82%;
+  height: clamp(1.55rem, 5.3cqi, 3.5rem);
+  margin: 0.15cqi 0 0.35cqi;
+  display: block;
+  overflow: hidden;
+  border-radius: clamp(3px, 0.7cqi, 7px);
+  color: var(--card-ink);
+  background: color-mix(in srgb, var(--card-ink) 7%, transparent);
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--card-ink) 13%, transparent);
+}
+.glass-profile-barcode svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  fill: currentColor;
+}
+.glass-profile-link {
+  gap: clamp(0.16rem, 0.48cqi, 0.34rem);
+}
+.glass-profile-link small {
+  margin-top: 0;
+}
+.glass-profile-link strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--card-ink);
+  font-size: clamp(0.38rem, 0.9cqi, 0.58rem);
+  letter-spacing: 0.035em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.glass-card-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding-inline: 1.5cqi;
+}
+.glass-card-metrics > div {
+  min-width: 0;
+  padding-inline: 0.8cqi;
+}
+.glass-card-metrics > div + div {
+  border-left: 1px solid color-mix(in srgb, var(--card-ink) 18%, transparent);
+}
+.glass-card-metrics strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.glass-card-metrics span {
+  overflow: hidden;
+  font-size: clamp(0.34rem, 0.72cqi, 0.48rem);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.glass-card-socials a {
+  border-color: color-mix(in srgb, var(--card-ink) 42%, transparent);
+  background: color-mix(in srgb, var(--card-bg) 62%, var(--card-surface));
+}
+.glass-card-note strong {
+  font-weight: 800;
+}
+@media (max-width: 700px) {
+  .glass-profile-barcode {
+    height: 4.6cqi;
+  }
+  .glass-card-metrics {
+    padding-inline: 0.9cqi;
+  }
+  .glass-card-metrics > div {
+    padding-inline: 0.4cqi;
+  }
+  .glass-card-metrics span {
+    font-size: 0.69cqi;
+    letter-spacing: 0.01em;
   }
 }
