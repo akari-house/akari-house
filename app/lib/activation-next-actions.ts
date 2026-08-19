@@ -219,19 +219,56 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
   }
 
   if (snapshot.roles.includes("investor")) {
+    if (snapshot.investorProgressedCount > 0) {
+      addUnique(actions, {
+        key: "investor-interest-status",
+        eyebrow: "Investor outcome",
+        title: "Continue your active Founder relationships",
+        description: `${snapshot.investorProgressedCount} Investor relationship${snapshot.investorProgressedCount === 1 ? " has" : "s have"} progressed beyond initial interest. Continue the strongest conversations before exploring more opportunities.`,
+        to: "/deals",
+        actionLabel: "Open active relationships",
+        priority: 106,
+        role: "investor",
+      });
+    } else if (snapshot.investorInterestCount > 0) {
+      addUnique(actions, {
+        key: "investor-interest-status",
+        eyebrow: "Investor outcome",
+        title: "Track your expressed Project interest",
+        description: `You have ${snapshot.investorInterestCount} active interest or introduction signal${snapshot.investorInterestCount === 1 ? "" : "s"}. Review those before adding more opportunities.`,
+        to: "/deals",
+        actionLabel: "Review interest",
+        priority: 104,
+        role: "investor",
+      });
+    } else {
+      addUnique(actions, {
+        key: "investor-opportunities",
+        eyebrow: "Investor workspace",
+        title: "Review relevant opportunities",
+        description: snapshot.investorPreferencesComplete
+          ? "Use your investment preferences to evaluate Founder Projects and opportunities inside the House."
+          : "Browse Founder Projects and opportunities now. Completing your Investor preferences can improve what AKARI brings into view.",
+        to: "/deals",
+        actionLabel: "Review opportunities",
+        priority: 104,
+        role: "investor",
+      });
+    }
+
     if (
       !snapshot.investorPreferencesComplete ||
       snapshot.investorProfileStatus === "claimed"
     ) {
       addUnique(actions, {
         key: "investor-preferences",
-        eyebrow: "Investor next action",
+        eyebrow: "Investor preferences",
         title: "Complete your investment preferences",
         description:
-          "Add sectors, stages, regions, cheque range and eligibility context before reviewing matched opportunities.",
+          "Add sectors, stages, regions, cheque range and eligibility context to improve the relevance of opportunities you discover.",
         to: "/settings/investor",
         actionLabel: "Set Investor preferences",
-        priority: 103,
+        priority: 56,
         role: "investor",
       });
     } else if (snapshot.investorProfileStatus === "profile_complete") {
@@ -243,7 +280,7 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
           "Your preferences are complete. Submit the professional context required for AKARI verification.",
         to: "/settings/investor",
         actionLabel: "Open Investor profile",
-        priority: 82,
+        priority: 54,
         role: "investor",
       });
     } else if (snapshot.investorProfileStatus === "verification_pending") {
@@ -255,41 +292,7 @@ export function buildMemberNextActions(snapshot: MemberActivationSnapshot) {
           "No action is required unless AKARI requests additional information. You can keep your preferences current meanwhile.",
         to: "/settings/investor",
         actionLabel: "Review profile",
-        priority: 48,
-        role: "investor",
-      });
-    } else if (snapshot.investorProgressedCount > 0) {
-      addUnique(actions, {
-        key: "investor-interest-status",
-        eyebrow: "Investor outcome",
-        title: "Continue your active Founder relationships",
-        description: `${snapshot.investorProgressedCount} Investor relationship${snapshot.investorProgressedCount === 1 ? " has" : "s have"} progressed beyond initial interest. Continue the strongest conversations before exploring more opportunities.`,
-        to: "/deals",
-        actionLabel: "Open active relationships",
-        priority: 68,
-        role: "investor",
-      });
-    } else if (snapshot.investorInterestCount > 0) {
-      addUnique(actions, {
-        key: "investor-interest-status",
-        eyebrow: "Investor outcome",
-        title: "Track your expressed Project interest",
-        description: `You have ${snapshot.investorInterestCount} active interest or introduction signal${snapshot.investorInterestCount === 1 ? "" : "s"}. Review those before adding more opportunities.`,
-        to: "/deals",
-        actionLabel: "Review interest",
-        priority: 66,
-        role: "investor",
-      });
-    } else {
-      addUnique(actions, {
-        key: "investor-opportunities",
-        eyebrow: "Investor workspace",
-        title: "Review relevant opportunities",
-        description:
-          "Use your investment preferences to evaluate Founder Projects and opportunities inside the House.",
-        to: "/deals",
-        actionLabel: "Review opportunities",
-        priority: 62,
+        priority: 38,
         role: "investor",
       });
     }

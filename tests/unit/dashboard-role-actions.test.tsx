@@ -34,7 +34,7 @@ function renderWithRouter(element: React.ReactNode) {
 }
 
 describe("dashboard role actions", () => {
-  it("links approved founders to a multi-project Founder workspace", () => {
+  it("links approved founders to multi-project management", () => {
     renderWithRouter(<DashboardRoleActions user={user()} />);
 
     expect(
@@ -42,10 +42,10 @@ describe("dashboard role actions", () => {
     ).toHaveAttribute("href", "/projects/manage");
     expect(screen.getByText(/multiple project profiles/i)).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: /find people by role/i }),
+      screen.getByRole("link", { name: /discover members/i }),
     ).toHaveAttribute("href", "/members");
     expect(
-      screen.getByRole("link", { name: /continue connections/i }),
+      screen.getByRole("link", { name: /build your akari network/i }),
     ).toHaveAttribute("href", "/connections");
     expect(screen.queryByText(/sample data/i)).not.toBeInTheDocument();
   });
@@ -53,20 +53,20 @@ describe("dashboard role actions", () => {
   it("takes Creators to campaign discovery with readiness requirements explained", () => {
     const actions = dashboardRoleActions(user({ roles: ["creator"] }));
     expect(actions[0]).toMatchObject({
-      eyebrow: "Creator workspace",
-      title: "Keep your Creator profile campaign-ready",
+      eyebrow: "Creator",
+      title: "Find campaigns you can join",
       to: "/campaigns",
     });
     expect(actions[0].description).toContain("XScore");
     expect(actions[0].description).toContain("Sorsa");
   });
 
-  it("takes Investors to preference setup before opportunity review", () => {
+  it("takes Investors directly to opportunity discovery", () => {
     const actions = dashboardRoleActions(user({ roles: ["investor"] }));
     expect(actions[0]).toMatchObject({
-      eyebrow: "Investor workspace",
-      title: "Set your investment preferences",
-      to: "/settings/investor",
+      eyebrow: "Investor",
+      title: "Discover relevant opportunities",
+      to: "/deals",
     });
   });
 
@@ -77,7 +77,7 @@ describe("dashboard role actions", () => {
     expect(actions.slice(0, 3).map((action) => action.to)).toEqual([
       "/projects/manage",
       "/campaigns",
-      "/settings/investor",
+      "/deals",
     ]);
   });
 
@@ -91,7 +91,7 @@ describe("dashboard role actions", () => {
       "/projects",
       "/events",
     ]);
-    expect(actions[0].description).toContain("remains private");
+    expect(actions[0].description).toContain("stays private");
   });
 });
 

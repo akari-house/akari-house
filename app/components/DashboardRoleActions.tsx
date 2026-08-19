@@ -18,26 +18,25 @@ export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
   if (user.accessTier === "applicant") {
     return [
       {
-        eyebrow: "Your introduction",
-        title: "Continue your private profile",
+        eyebrow: "Your profile",
+        title: "Complete your AKARI profile",
         description:
-          "Add professional context, socials and interests only when you are ready. Your applicant profile remains private while your membership request is reviewed.",
+          "Add the professional context and social links you want to share. Your applicant profile stays private while your membership request is reviewed.",
         to: "/app",
         actionLabel: "Continue profile",
       },
       {
-        eyebrow: "Explore the House",
-        title: "Discover projects",
+        eyebrow: "Projects",
+        title: "Discover what members are building",
         description:
-          "See the public Founder projects already gathering collaborators.",
+          "Browse published Founder projects and see where teams are looking for support.",
         to: "/projects",
         actionLabel: "Browse projects",
       },
       {
-        eyebrow: "Upcoming gatherings",
-        title: "Explore events",
-        description:
-          "Read the invitations currently open across the AKARI community.",
+        eyebrow: "Events",
+        title: "See what is happening in the House",
+        description: "Explore approved online and in-person AKARI gatherings.",
         to: "/events",
         actionLabel: "Browse events",
       },
@@ -47,57 +46,57 @@ export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
   const actions: WorkspaceAction[] = [];
   if (user.roles.includes("founder")) {
     actions.push({
-      eyebrow: "Founder workspace",
+      eyebrow: "Founder",
       title: "Create or manage your projects",
       description:
-        "One Founder account can manage multiple project profiles, support needs, campaigns and investor-facing information.",
+        "One Founder account can manage multiple project profiles, update what each project needs and launch Creator campaigns.",
       to: "/projects/manage",
-      actionLabel: "Open Founder workspace",
+      actionLabel: "Manage projects",
     });
   }
   if (user.roles.includes("creator")) {
     actions.push({
-      eyebrow: "Creator workspace",
-      title: "Keep your Creator profile campaign-ready",
+      eyebrow: "Creator",
+      title: "Find campaigns you can join",
       description:
         "Keep your X profile, follower count, XScore and Sorsa score current, then discover relevant Ambassador Campaigns.",
       to: "/campaigns",
-      actionLabel: "Browse Creator campaigns",
+      actionLabel: "Browse campaigns",
     });
   }
   if (user.roles.includes("investor")) {
     actions.push({
-      eyebrow: "Investor workspace",
-      title: "Set your investment preferences",
+      eyebrow: "Investor",
+      title: "Discover relevant opportunities",
       description:
-        "Define the sectors, stages, regions and privacy choices that should shape your Investor experience before reviewing opportunities.",
-      to: "/settings/investor",
-      actionLabel: "Set Investor preferences",
+        "Review Founder opportunities and use your Investor preferences to improve what AKARI brings into view.",
+      to: "/deals",
+      actionLabel: "Explore opportunities",
     });
   }
 
   actions.push(
     {
-      eyebrow: "Member directory",
-      title: "Find people by role",
+      eyebrow: "People",
+      title: "Discover members",
       description:
-        "Discover Founders, Creators and Investors by role, expertise or optional shared location without exposing private profiles.",
+        "Find Founders, Creators and Investors by role, expertise or optional shared location without exposing private profiles.",
       to: "/members",
       actionLabel: "Discover members",
     },
     {
-      eyebrow: "Your network",
-      title: "Continue connections",
+      eyebrow: "Connections",
+      title: "Build your AKARI network",
       description:
-        "Review mutual connections and respond to requests waiting for you.",
+        "Review your connections and respond to requests waiting for you.",
       to: "/connections",
       actionLabel: "Open connections",
     },
     {
-      eyebrow: "Gatherings",
-      title: "See upcoming events",
+      eyebrow: "Events",
+      title: "Join upcoming gatherings",
       description:
-        "Reserve a place at approved online and in-person gatherings.",
+        "Reserve a place at approved online and in-person AKARI gatherings.",
       to: "/events",
       actionLabel: "Browse events",
     },

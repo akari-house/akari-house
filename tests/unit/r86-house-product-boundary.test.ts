@@ -22,9 +22,10 @@ describe("R86 AKARI House product boundary", () => {
     expect(sidebar).toContain('label: "Members"');
     expect(sidebar).toContain('label: "Connections"');
     expect(sidebar).toContain('label: "Projects"');
-    expect(sidebar).toContain('label: "Creator Campaigns"');
+    expect(sidebar).toContain('label: "Campaigns"');
     expect(sidebar).toContain('label: "Events"');
-    expect(sidebar).toContain('label: "Deals Room"');
+    expect(sidebar).toContain('label: "Investor opportunities"');
+    expect(sidebar).toContain('label: "Opportunities"');
   });
 
   it("does not expose retired CRM product routes in House", () => {

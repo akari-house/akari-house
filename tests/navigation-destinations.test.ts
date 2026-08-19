@@ -61,18 +61,20 @@ describe("navigation destinations", () => {
     expect(directorySource).toContain("requireSuperAdmin");
   });
 
-  it("keeps the primary and footer navigation on valid destinations", () => {
+  it("keeps the simplified primary navigation and footer on valid destinations", () => {
     for (const destination of [
       "/projects",
-      "/deals",
       "/campaigns",
       "/events",
-      "/archive",
       "/membership",
     ]) {
       expect(headerSource).toContain(`"${destination}"`);
       expect(footerSource).toContain(`"${destination}"`);
     }
+
+    expect(headerSource).toContain('["Members", "/members"]');
+    expect(headerSource).toContain('["Opportunities", "/deals"]');
+    expect(footerSource).toContain('"/archive"');
   });
 
   it("keeps schema-safe behaviour in the canonical deal routes", () => {
