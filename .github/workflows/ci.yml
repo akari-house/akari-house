@@ -27,9 +27,9 @@ jobs:
       - run: npm run format:check
       - run: npm test
       - run: npm run build
-      - name: Install pinned Playwright browsers
+      - name: Install pinned Playwright browsers and host dependencies
         timeout-minutes: 10
-        run: npx playwright install chromium firefox webkit
+        run: npx playwright install --with-deps chromium firefox webkit
       - name: Run Playwright E2E
         run: npm run test:e2e -- --reporter=json > playwright-results.json
       - name: Upload Playwright diagnostics
