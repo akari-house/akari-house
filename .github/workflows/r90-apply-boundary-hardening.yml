@@ -1,0 +1,108 @@
+name: R90 Apply Boundary Hardening
+
+on:
+  push:
+    branches:
+      - r90-house-crm-boundary-hardening
+
+permissions:
+  contents: write
+
+concurrency:
+  group: r90-house-boundary-patch
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r90-house-crm-boundary-hardening
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Patch production bridge configuration
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('.github/workflows/deploy-production.yml')
+          text = path.read_text()
+          old = '''            vars: {
+              APP_ENV: "production",
+              APP_URL: "https://akarihouse.com",
+              TURNSTILE_HOSTNAME: "akarihouse.com",
+            },'''
+          new = '''            vars: {
+              APP_ENV: "production",
+              APP_URL: "https://akarihouse.com",
+              TURNSTILE_HOSTNAME: "akarihouse.com",
+              CRM_API_URL: "https://crmakari.pages.dev/api/v1",
+              CRM_NDA_BRIDGE_MODE: "legacy",
+            },'''
+          if old not in text:
+              raise SystemExit('production vars block not found')
+          text = text.replace(old, new, 1)
+
+          old_verify = '''          if (generated.vars?.APP_URL !== "https://akarihouse.com")
+            throw new Error("Generated Worker has the wrong APP_URL.");
+
+          console.log('''
+          new_verify = '''          if (generated.vars?.APP_URL !== "https://akarihouse.com")
+            throw new Error("Generated Worker has the wrong APP_URL.");
+          if (generated.vars?.CRM_API_URL !== "https://crmakari.pages.dev/api/v1")
+            throw new Error("Generated Worker has the wrong CRM_API_URL.");
+          if (generated.vars?.CRM_NDA_BRIDGE_MODE !== "legacy")
+            throw new Error("Generated Worker has the wrong CRM NDA bridge mode.");
+
+          console.log('''
+          if old_verify not in text:
+              raise SystemExit('production verification block not found')
+          text = text.replace(old_verify, new_verify, 1)
+          path.write_text(text)
+          PY
+      - name: Remove temporary R90 planning noise
+        run: |
+          rm -f \
+            docs/operations/R90_BOUNDARY_VALIDATION.md \
+            docs/operations/R90_EXECUTION.md \
+            docs/operations/R90_FINAL_SCOPE.md \
+            docs/operations/R90_IMPLEMENTATION_TARGETS.md \
+            docs/operations/R90_NON_DESTRUCTIVE_SCOPE.md \
+            docs/operations/R90_NOTE.md \
+            docs/operations/R90_PROGRESS.md \
+            docs/operations/R90_READY.md \
+            docs/operations/R90_RELEASE_INTENT.md \
+            docs/operations/R90_STATUS.md \
+            docs/operations/R90_WORKING_NOTE.md
+      - name: Install and format changed source
+        run: |
+          npm ci
+          npx prettier --write app/lib/email.server.ts app/routes/login.tsx tests/unit/r90-house-crm-boundary.test.ts .github/workflows/deploy-production.yml docs/R90_HOUSE_CRM_BOUNDARY_HARDENING.md docs/operations/R90_DESTRUCTIVE_CLEANUP_GATE.md scripts/check-house-crm-boundary.mjs
+      - name: Boundary check
+        run: node scripts/check-house-crm-boundary.mjs
+      - name: TypeScript
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Formatting
+        run: npm run format:check
+      - name: Unit and integration tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Remove temporary patch workflow and commit
+        run: |
+          rm -f .github/workflows/r90-apply-boundary-hardening.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No patch changes to commit."
+            exit 0
+          fi
+          git commit -m "R90: harden House CRM product boundary"
+          git push origin HEAD:r90-house-crm-boundary-hardening
