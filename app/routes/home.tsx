@@ -270,9 +270,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               <h2 id="common-title">See what is moving through the House.</h2>
             </div>
             <p>
-              Projects, gatherings and verified outcomes move through one
-              shared network. Your role changes what you can act on, not who
-              you are.
+              Projects, gatherings and verified outcomes move through one shared
+              network. Your role changes what you can act on, not who you are.
             </p>
           </div>
           <HouseInMotion
