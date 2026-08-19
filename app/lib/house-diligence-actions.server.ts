@@ -1,7 +1,9 @@
 import { redirect } from "react-router";
-import { action as trustedDiligenceAction } from "~/routes/project-diligence";
 import { requireApprovedMember } from "~/lib/auth.server";
-import { cloudflareContext } from "~/lib/cloudflare-context";
+import {
+  cloudflareContext,
+  type AkariCloudflareContext,
+} from "~/lib/cloudflare-context";
 import { isDiligenceCategory } from "~/lib/diligence-completion";
 import { ensureDiligenceSchema } from "~/lib/diligence-schema.server";
 import { recordOpportunityAudit } from "~/lib/opportunity-access.server";
@@ -9,16 +11,13 @@ import { userCanManageProject } from "~/lib/project-access.server";
 import { assertSameOrigin } from "~/lib/security.server";
 import { formText } from "~/lib/validation";
 
-type HouseDiligenceActionArgs = Parameters<typeof trustedDiligenceAction>[0];
-
-const trustedAccessIntents = new Set([
-  "request-data-room",
-  "grant-document",
-  "revoke-grant",
-  "approve-data-room",
-  "decline-data-room",
-  "revoke-data-room",
-]);
+type HouseDiligenceActionArgs = {
+  request: Request;
+  context: {
+    get: (context: typeof cloudflareContext) => AkariCloudflareContext;
+  };
+  params: { slug: string };
+};
 
 /**
  * House-native diligence actions that are unrelated to NDA provenance.
@@ -29,13 +28,6 @@ const trustedAccessIntents = new Set([
  * CRM-era agreement route implementation.
  */
 export async function houseDiligenceAction(args: HouseDiligenceActionArgs) {
-  const preview = await args.request.clone().formData();
-  const previewIntent = formText(preview.get("intent"));
-
-  if (trustedAccessIntents.has(previewIntent)) {
-    return trustedDiligenceAction(args);
-  }
-
   assertSameOrigin(args.request);
   const db = args.context.get(cloudflareContext).env.DB;
   await ensureDiligenceSchema(db);
