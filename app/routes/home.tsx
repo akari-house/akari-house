@@ -209,9 +209,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               <span className="chapter">Chapter 01 · The invitation</span>
               <h1 id="arrival-title">Welcome to AKARI House</h1>
               <p>
-                A private Web3 professional network where Founders, Creators and
-                Investors discover relevant people, opportunities and trusted
-                collaborations.
+                A private place where Founders, Creators and Investors build
+                trusted relationships and turn strategy into measurable traction.
               </p>
               <div>
                 <Link className="button button-primary" to="/register">
@@ -240,27 +239,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         </section>
 
         <section
-          className="role-orientation"
-          aria-label="What AKARI makes possible"
-        >
-          <p>Choose the role that best reflects how you participate.</p>
-          <div>
-            <Link to="/register?role=founder">
-              <span>Founder</span>
-              <strong>Find relevant support</strong>
-            </Link>
-            <Link to="/register?role=creator">
-              <span>Creator</span>
-              <strong>Present work with context</strong>
-            </Link>
-            <Link to="/register?role=investor">
-              <span>Investor</span>
-              <strong>Review considered opportunities</strong>
-            </Link>
-          </div>
-        </section>
-
-        <section
           className="home-trust-strip"
           aria-label="AKARI membership principles"
         >
@@ -285,11 +263,11 @@ export default function Home({ loaderData }: Route.ComponentProps) {
           <div className="section-intro">
             <div>
               <span className="chapter">Chapter 03 · The Common Table</span>
-              <h2 id="common-title">Take your seat at the shared table.</h2>
+              <h2 id="common-title">See what is moving through the House.</h2>
             </div>
             <p>
-              Your seat changes with your role, while your identity stays whole.
-              See how the House brings the right work into view.
+              Projects, gatherings and verified outcomes move through one shared
+              network. Your role changes what you can act on, not who you are.
             </p>
           </div>
           <HouseInMotion
@@ -306,10 +284,10 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         >
           <div>
             <span className="chapter">Chapter 04 · The Blossom Journey</span>
-            <h2 id="journey-title">A path through the House.</h2>
+            <h2 id="journey-title">Build trust, then create momentum.</h2>
             <p>
-              Trust grows through identity, intent, discovery, private
-              collaboration and evidence. Follower counts are not the measure.
+              Build your identity, define what matters, discover relevant people,
+              collaborate privately and leave evidence behind.
             </p>
           </div>
           <BlossomJourney />
@@ -335,23 +313,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         <PartnerStrip entries={loaderData.partners} />
 
         <MembershipDesk />
-
-        <section className="final-welcome" aria-labelledby="final-title">
-          <img
-            src="/assets/optimized/akari-mark.webp"
-            alt=""
-            width={160}
-            height={150}
-            loading="lazy"
-          />
-          <span className="chapter">Epilogue · The light stays on</span>
-          <h2 id="final-title">
-            Your role. Your network.
-            <br />
-            Your next opportunity.
-          </h2>
-          <p>When you are ready, the Membership Desk is waiting above.</p>
-        </section>
       </main>
       <PublicFooter />
     </div>
