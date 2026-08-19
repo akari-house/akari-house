@@ -125,7 +125,7 @@ test.describe("launch visual evidence", () => {
       page,
       testInfo,
       "Find campaigns, workspace navigation",
-      /Keep your Creator profile campaign-ready|Become campaign-ready|Discover Ambassador Campaigns|Track your campaign applications|Continue your accepted campaign work/,
+      /Find campaigns you can join|Become campaign-ready|Discover Ambassador Campaigns|Track your campaign applications|Continue your accepted campaign work/,
     );
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-creator");
@@ -137,8 +137,8 @@ test.describe("launch visual evidence", () => {
     await expectRoleEntry(
       page,
       testInfo,
-      "Explore matched Deals, workspace navigation",
-      /Set your investment preferences|Complete your investment preferences|Submit your Investor profile for verification|Your Investor verification is under review|Review relevant opportunities|Track your expressed Project interest|Continue your active Founder relationships/,
+      "Opportunities, workspace navigation",
+      /Discover relevant opportunities|Review relevant opportunities|Track your expressed Project interest|Continue your active Founder relationships/,
     );
     await expectNoHorizontalOverflow(page);
     await capture(page, testInfo, "workspace-investor");
@@ -150,7 +150,7 @@ test.describe("launch visual evidence", () => {
     await expectRoleEntry(
       page,
       testInfo,
-      "Manage projects, workspace navigation",
+      "My projects, workspace navigation",
       /Create or manage your projects|Create your first Project|Track your Project relationship claim|Finish your Project profile|Activate your published Project|Keep your Project needs current/,
     );
     await expectNoHorizontalOverflow(page);
