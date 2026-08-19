@@ -111,11 +111,6 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
         </span>
         <span>My House</span>
       </Link>
-      {workspaceSidebar && (
-        <Link className="header-update-link" to="/connections">
-          Connections
-        </Link>
-      )}
       <Link className="header-update-link" to="/notifications">
         Updates
       </Link>
