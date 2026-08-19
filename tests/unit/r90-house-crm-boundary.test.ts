@@ -39,9 +39,7 @@ describe("R90 House / CRM boundary hardening", () => {
   it("keeps canonical House hosts and redirects noncanonical production hosts", () => {
     const worker = read("worker/index.ts");
     const root = read("app/root.tsx");
-    expect(root).toContain(
-      'const productionOrigin = "https://akarihouse.com"',
-    );
+    expect(root).toContain('const productionOrigin = "https://akarihouse.com"');
     expect(worker).toContain(
       'const productionCanonicalHost = "akarihouse.com"',
     );
