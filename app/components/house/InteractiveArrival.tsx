@@ -50,15 +50,24 @@ export function InteractiveArrival() {
 
   return (
     <div className="arrival-media" ref={sceneRef}>
-      <img
-        className="arrival-scene"
-        src="/assets/optimized/arrival.webp"
-        alt=""
-        aria-hidden="true"
-        fetchPriority="high"
-        width={1672}
-        height={941}
-      />
+      <picture>
+        <source
+          media="(max-width: 768px)"
+          srcSet="/assets/optimized/arrival-960.webp"
+        />
+        <source srcSet="/assets/optimized/arrival-1440.webp" />
+        <img
+          className="arrival-scene"
+          src="/assets/optimized/arrival.webp"
+          alt=""
+          aria-hidden="true"
+          fetchPriority="high"
+          loading="eager"
+          decoding="async"
+          width={1440}
+          height={811}
+        />
+      </picture>
     </div>
   );
 }
