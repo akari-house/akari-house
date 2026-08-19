@@ -2,11 +2,17 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 describe("R91 discovery and installability foundation", () => {
-  it("removes the render-blocking remote font stylesheet", () => {
+  it("removes remote fonts and avoids global homepage-art preloads", () => {
     const root = readFileSync("app/root.tsx", "utf8");
+    const arrival = readFileSync(
+      "app/components/house/InteractiveArrival.tsx",
+      "utf8",
+    );
     expect(root).not.toContain("fonts.googleapis.com");
-    expect(root).toContain("arrival-960.webp");
-    expect(root).toContain("arrival-1440.webp");
+    expect(root).not.toContain('rel: "preload"');
+    expect(arrival).toContain("arrival-960.webp");
+    expect(arrival).toContain("arrival-1440.webp");
+    expect(arrival).toContain('fetchPriority="high"');
   });
 
   it("keeps authenticated member discovery out of search indexing", () => {
