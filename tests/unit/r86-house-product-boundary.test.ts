@@ -42,9 +42,9 @@ describe("R86 AKARI House product boundary", () => {
   });
 
   it("removes the retired CRM-era diligence route implementation", () => {
-    expect(
-      existsSync("app/routes/project-diligence-completion.tsx"),
-    ).toBe(false);
+    expect(existsSync("app/routes/project-diligence-completion.tsx")).toBe(
+      false,
+    );
     expect(
       existsSync("app/routes/+types/project-diligence-completion.ts"),
     ).toBe(false);
@@ -57,34 +57,26 @@ describe("R86 AKARI House product boundary", () => {
     expect(actions).not.toContain("counterparty_email");
   });
 
-  it(
-    "keeps CRM implementation language out of the House diligence experience",
-    () => {
-      const route = read("app/routes/project-diligence-bridge.tsx");
-      expect(route).not.toContain("CRM by AKARI");
-      expect(route).not.toContain("CRM by Akari");
-      expect(route).not.toContain("One CRM source of truth");
-      expect(route).toContain("External NDA verification");
-      expect(route).toContain("Agreements are handled outside the House.");
-    },
-  );
+  it("keeps CRM implementation language out of the House diligence experience", () => {
+    const route = read("app/routes/project-diligence-bridge.tsx");
+    expect(route).not.toContain("CRM by AKARI");
+    expect(route).not.toContain("CRM by Akari");
+    expect(route).not.toContain("One CRM source of truth");
+    expect(route).toContain("External NDA verification");
+    expect(route).toContain("Agreements are handled outside the House.");
+  });
 
-  it(
-    "keeps the temporary server bridge and frozen tables until reconciliation is proven",
-    () => {
-      expect(existsSync("app/lib/crm-nda-bridge.server.ts")).toBe(true);
-      expect(read("wrangler.jsonc")).toContain(
-        '"CRM_NDA_BRIDGE_MODE": "legacy"',
-      );
-      expect(read("migrations/0116_agreement_tracking.sql")).toContain(
-        "CREATE TABLE agreement_records",
-      );
-      expect(read("migrations/0119_relationship_intelligence.sql")).toContain(
-        "CREATE TABLE relationship_records",
-      );
-      expect(read("migrations/0121_commercial_saas_completion.sql")).toContain(
-        "CREATE TABLE saas_workspaces",
-      );
-    },
-  );
+  it("keeps the temporary server bridge and frozen tables until reconciliation is proven", () => {
+    expect(existsSync("app/lib/crm-nda-bridge.server.ts")).toBe(true);
+    expect(read("wrangler.jsonc")).toContain('"CRM_NDA_BRIDGE_MODE": "legacy"');
+    expect(read("migrations/0116_agreement_tracking.sql")).toContain(
+      "CREATE TABLE agreement_records",
+    );
+    expect(read("migrations/0119_relationship_intelligence.sql")).toContain(
+      "CREATE TABLE relationship_records",
+    );
+    expect(read("migrations/0121_commercial_saas_completion.sql")).toContain(
+      "CREATE TABLE saas_workspaces",
+    );
+  });
 });
