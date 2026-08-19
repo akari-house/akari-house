@@ -212,7 +212,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               <h1 id="arrival-title">Welcome to AKARI House</h1>
               <p>
                 A private place where Founders, Creators and Investors build
-                trusted relationships and turn strategy into measurable traction.
+                trusted relationships and turn strategy into measurable
+                traction.
               </p>
               <div>
                 <Link className="button button-primary" to="/register">
@@ -269,8 +270,9 @@ export default function Home({ loaderData }: Route.ComponentProps) {
               <h2 id="common-title">See what is moving through the House.</h2>
             </div>
             <p>
-              Projects, gatherings and verified outcomes move through one shared
-              network. Your role changes what you can act on, not who you are.
+              Projects, gatherings and verified outcomes move through one
+              shared network. Your role changes what you can act on, not who
+              you are.
             </p>
           </div>
           <HouseInMotion
@@ -289,8 +291,8 @@ export default function Home({ loaderData }: Route.ComponentProps) {
             <span className="chapter">Chapter 04 · The Blossom Journey</span>
             <h2 id="journey-title">Build trust, then create momentum.</h2>
             <p>
-              Build your identity, define what matters, discover relevant people,
-              collaborate privately and leave evidence behind.
+              Build your identity, define what matters, discover relevant
+              people, collaborate privately and leave evidence behind.
             </p>
           </div>
           <BlossomJourney />
