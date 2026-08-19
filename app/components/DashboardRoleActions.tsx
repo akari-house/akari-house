@@ -36,8 +36,7 @@ export function dashboardRoleActions(user: SessionUser): WorkspaceAction[] {
       {
         eyebrow: "Events",
         title: "See what is happening in the House",
-        description:
-          "Explore approved online and in-person AKARI gatherings.",
+        description: "Explore approved online and in-person AKARI gatherings.",
         to: "/events",
         actionLabel: "Browse events",
       },
