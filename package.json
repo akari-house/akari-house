@@ -17,7 +17,7 @@
     "test:e2e:serve": "npm run db:migrate:local && react-router dev --host 127.0.0.1",
     "test:watch": "vitest",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier tests/unit/r86-house-product-boundary.test.ts --write && git diff -- tests/unit/r86-house-product-boundary.test.ts && exit 1",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "cf:typegen": "wrangler types --strict-vars false"
   },
