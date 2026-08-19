@@ -8,16 +8,28 @@ import { Icon } from "~/components/Icon";
 import { JourneyBack } from "~/components/JourneyBack";
 import type { SessionUser } from "~/lib/domain";
 
-const links = [
+const publicLinks = [
   ["The House", "/"],
   ["Projects", "/projects"],
-  ["Opportunities", "/deals"],
   ["Campaigns", "/campaigns"],
   ["Events", "/events"],
-  ["Archive", "/archive"],
-  ["Team", "/team"],
   ["Membership", "/membership"],
 ];
+
+function primaryLinksForUser(user: SessionUser | null) {
+  if (!user) return publicLinks;
+
+  return [
+    ["The House", "/"],
+    ["Members", "/members"],
+    ["Projects", "/projects"],
+    ["Campaigns", "/campaigns"],
+    ...(user.roles.includes("founder") || user.roles.includes("investor")
+      ? [["Opportunities", "/deals"]]
+      : []),
+    ["Events", "/events"],
+  ];
+}
 
 export function SiteHeader({ user }: { user: SessionUser | null }) {
   const location = useLocation();
@@ -28,6 +40,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
   const workspaceSidebar = Boolean(
     user && isHouseWorkspacePath(location.pathname),
   );
+  const primaryLinks = primaryLinksForUser(user);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => setInteractive(true));
@@ -128,21 +141,23 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
 
   const memberLinks = user
     ? [
-        ["Dashboard", "/app"],
-        ["Projects", "/projects"],
-        ["Opportunities", "/deals"],
-        ["Campaigns", "/campaigns"],
+        ["My House", "/app"],
+        ["Members", "/members"],
+        ["Connections", "/connections"],
         ...(user.accessTier === "member" && user.roles.includes("founder")
           ? [["My projects", "/projects/manage"]]
+          : []),
+        ["Projects", "/projects"],
+        ["Campaigns", "/campaigns"],
+        ...(user.accessTier === "member" &&
+        (user.roles.includes("founder") || user.roles.includes("investor"))
+          ? [["Opportunities", "/deals"]]
           : []),
         ...(user.accessTier === "member" && user.roles.includes("investor")
           ? [["Investor preferences", "/settings/investor"]]
           : []),
         ["Events", "/events"],
-        ["Connections", "/connections"],
-        ["Discover members", "/members"],
         ["Notifications", "/notifications"],
-        ["Telegram", "/settings/telegram"],
         ["Account & privacy", "/settings/account"],
       ]
     : [];
@@ -185,7 +200,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
           <span>House</span>
         </Link>
         <nav className="desktop-nav" aria-label="Primary navigation">
-          {links.map(([label, href]) => (
+          {primaryLinks.map(([label, href]) => (
             <a
               href={href}
               key={label}
@@ -236,7 +251,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
           <span>Close menu</span>
         </button>
         <nav aria-label="Mobile navigation">
-          {links.map(([label, href]) => (
+          {primaryLinks.map(([label, href]) => (
             <a
               href={href}
               key={label}
