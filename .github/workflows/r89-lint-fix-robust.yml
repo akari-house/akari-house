@@ -1,0 +1,103 @@
+name: R89 Robust Lint Fix
+
+on:
+  push:
+    branches:
+      - r89-profile-card-credibility
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r89-profile-card-credibility
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Apply lint corrections
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('app/components/ProfileShareCard.tsx')
+          text = path.read_text()
+
+          profile_barcode = '''function ProfileBarcode({ value }: { value: string }) {
+            const bars = barcodePattern(value);
+            const positionedBars = bars.reduce<
+              Array<{ width: number; gap: number; x: number }>
+            >((items, bar) => {
+              const previous = items.at(-1);
+              const x = previous
+                ? previous.x + previous.width + previous.gap
+                : 0;
+              return [...items, { ...bar, x }];
+            }, []);
+            const total = positionedBars.reduce(
+              (sum, bar) => sum + bar.width + bar.gap,
+              0,
+            );
+            return (
+              <svg
+                viewBox={`0 0 ${total} 32`}
+                preserveAspectRatio="none"
+                aria-hidden="true"
+                focusable="false"
+              >
+                {positionedBars.map((bar, index) => {
+                  const inset = index % 7 === 0 ? 3 : index % 5 === 0 ? 1.5 : 0;
+                  return (
+                    <rect
+                      key={`${bar.x}-${index}`}
+                      x={bar.x}
+                      y={inset}
+                      width={bar.width}
+                      height={32 - inset * 2}
+                      rx={0.2}
+                    />
+                  );
+                })}
+              </svg>
+            );
+          }
+
+          function SocialIcon'''
+          text, count = re.subn(
+            r'function ProfileBarcode\(\{ value \}: \{ value: string \}\) \{.*?\n\}\n\nfunction SocialIcon',
+            profile_barcode,
+            text,
+            count=1,
+            flags=re.S,
+          )
+          if count != 1:
+            raise SystemExit('ProfileBarcode regex did not match')
+
+          text, count = re.subn(
+            r'\nfunction LinkGlyph\(\{ size = 20 \}: \{ size\?: number \}\) \{.*?\n\}\n\nfunction avatarUrl',
+            '\nfunction avatarUrl',
+            text,
+            count=1,
+            flags=re.S,
+          )
+          if count != 1:
+            raise SystemExit('LinkGlyph regex did not match')
+
+          path.write_text(text)
+          PY
+          npx prettier --write app/components/ProfileShareCard.tsx
+          npm run lint
+      - name: Commit correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/components/ProfileShareCard.tsx
+          git commit -m "R89: fix profile card lint"
+          git push origin HEAD:r89-profile-card-credibility
