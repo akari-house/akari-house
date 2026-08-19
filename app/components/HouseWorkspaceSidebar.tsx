@@ -10,7 +10,7 @@ export type WorkspaceItem = {
 };
 
 const houseHomeItem: WorkspaceItem = {
-  label: "House",
+  label: "My House",
   href: "/app",
   glyph: "⌂",
   exact: true,
@@ -20,17 +20,15 @@ const discoveryItems: WorkspaceItem[] = [
   { label: "Members", href: "/members", glyph: "◎" },
   { label: "Connections", href: "/connections", glyph: "∞" },
   { label: "Projects", href: "/projects", glyph: "◇" },
-  { label: "Creator Campaigns", href: "/campaigns", glyph: "✦" },
+  { label: "Campaigns", href: "/campaigns", glyph: "✦" },
   { label: "Events", href: "/events", glyph: "□" },
-  { label: "Deals Room", href: "/deals", glyph: "❀" },
   { label: "Notifications", href: "/notifications", glyph: "◌" },
 ];
 
 const profileItems: WorkspaceItem[] = [
   { label: "Edit profile", href: "/app#profile-editor", glyph: "◉" },
-  { label: "Profile sharing card", href: "/profile-card", glyph: "▣" },
-  { label: "Telegram", href: "/settings/telegram", glyph: "↗" },
-  { label: "Account & Privacy", href: "/settings/account", glyph: "⚙" },
+  { label: "Profile card", href: "/profile-card", glyph: "▣" },
+  { label: "Account & privacy", href: "/settings/account", glyph: "⚙" },
 ];
 
 function uniqueWorkspaceItems(items: WorkspaceItem[]) {
@@ -47,7 +45,7 @@ export function workspaceRoleItems(user: SessionUser): WorkspaceItem[] {
     ...(user.roles.includes("founder")
       ? [
           {
-            label: "Manage projects",
+            label: "My projects",
             href: "/projects/manage",
             glyph: "◈",
           },
@@ -57,7 +55,7 @@ export function workspaceRoleItems(user: SessionUser): WorkspaceItem[] {
             glyph: "✦",
           },
           {
-            label: "Deals & investors",
+            label: "Investor opportunities",
             href: "/deals",
             glyph: "❀",
           },
@@ -75,7 +73,7 @@ export function workspaceRoleItems(user: SessionUser): WorkspaceItem[] {
     ...(user.roles.includes("investor")
       ? [
           {
-            label: "Explore matched Deals",
+            label: "Opportunities",
             href: "/deals",
             glyph: "❀",
           },
@@ -214,9 +212,7 @@ export function HouseWorkspaceSidebar({
 
         {roleItems.length > 0 && (
           <>
-            <span className="house-workspace-sidebar-section">
-              Start with your role
-            </span>
+            <span className="house-workspace-sidebar-section">Your role</span>
             {roleItems.map((item) => (
               <SidebarLink
                 key={item.label}
@@ -228,9 +224,7 @@ export function HouseWorkspaceSidebar({
           </>
         )}
 
-        <span className="house-workspace-sidebar-section">
-          Network & discovery
-        </span>
+        <span className="house-workspace-sidebar-section">Discover</span>
         {remainingDiscoveryItems.map((item) => (
           <SidebarLink
             key={item.label}
@@ -240,9 +234,7 @@ export function HouseWorkspaceSidebar({
           />
         ))}
 
-        <span className="house-workspace-sidebar-section">
-          Profile & settings
-        </span>
+        <span className="house-workspace-sidebar-section">Profile</span>
         {profileItems.map((item) => (
           <SidebarLink
             key={item.label}
