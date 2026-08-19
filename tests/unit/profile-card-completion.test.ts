@@ -51,7 +51,7 @@ describe("completed AKARI profile card", () => {
     ]);
   });
 
-  it("renders the requested credit-card identity and privacy features", () => {
+  it("renders the requested shareable identity and privacy features", () => {
     const component = read("app/components/ProfileShareCard.tsx");
     const styles = read("app/styles/profile-card-glass.css");
     const route = read("app/routes/profile-card.tsx");
@@ -61,6 +61,10 @@ describe("completed AKARI profile card", () => {
     expect(component).toContain("profile-card-avatar");
     expect(component).toContain("profile-card-headline");
     expect(component).toContain("Connected social platforms");
+    expect(component).toContain("glass-profile-barcode");
+    expect(component).toContain("Profile credibility signals");
+    expect(component).toContain("Built for sharing.");
+    expect(component).not.toContain("credit-card profile");
     expect(component).toContain("akarihouse.com/profiles/${model.username}");
     expect(component).toContain("/assets/brand/akari-logo-horizontal.png");
     expect(component).toContain("/assets/brand/akari-flower-mark.png");
