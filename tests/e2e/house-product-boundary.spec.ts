@@ -16,8 +16,8 @@ async function activatePersona(page: Page, persona: string) {
 }
 
 // prettier-ignore
-test.describe("R82 CRM boundary", () => {
-  test("removes CRM operations from House", async ({ page }) => {
+test.describe("R86 House product boundary", () => {
+  test("keeps retired CRM operations out of House", async ({ page }) => {
     await activatePersona(page, "superadmin");
 
     for (const legacyRoute of [
@@ -57,7 +57,7 @@ test.describe("R82 CRM boundary", () => {
     ).toHaveCount(0);
   });
 
-  test("hides retired CRM routes from Founders", async ({ page }) => {
+  test("keeps retired CRM routes hidden from Founders", async ({ page }) => {
     await activatePersona(page, "founder");
     for (const legacyRoute of [
       "/admin/agreements",

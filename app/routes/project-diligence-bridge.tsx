@@ -1,6 +1,5 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
 import type { Route } from "./+types/project-diligence-bridge";
-import { action as legacyDiligenceAction } from "./project-diligence-completion";
 import { SiteHeader } from "~/components/SiteHeader";
 import { requireApprovedMember } from "~/lib/auth.server";
 import { cloudflareContext } from "~/lib/cloudflare-context";
@@ -13,6 +12,7 @@ import {
   isDiligenceCategory,
 } from "~/lib/diligence-completion";
 import { ensureDiligenceSchema } from "~/lib/diligence-schema.server";
+import { houseDiligenceAction } from "~/lib/house-diligence-actions.server";
 import {
   isVerifiedInvestor,
   opportunityAccessStateForUserId,
@@ -230,7 +230,7 @@ export async function action(args: Route.ActionArgs) {
   const preview = await args.request.clone().formData();
   const intent = formText(preview.get("intent"));
   if (intent !== "ask-diligence-question") {
-    return legacyDiligenceAction(args);
+    return houseDiligenceAction(args);
   }
 
   assertSameOrigin(args.request);
@@ -353,7 +353,7 @@ export default function ProjectDiligenceCompletion({
       <main id="main-content" className="admin-main">
         <header className="admin-heading">
           <div>
-            <span className="eyebrow">R72 · Data Room & Diligence</span>
+            <span className="eyebrow">Data Room & Diligence</span>
             <h1>{loaderData.project.title}</h1>
             <p>
               Complete institutional diligence without creating a second data
@@ -412,7 +412,7 @@ export default function ProjectDiligenceCompletion({
 
         <section className="admin-panel">
           <span className="chapter">Access governance</span>
-          <h2>NDA dependency</h2>
+          <h2>External NDA verification</h2>
           {loaderData.isFounder ? (
             <Form method="post" className="form-stack">
               <label className="inline-choice">
@@ -422,12 +422,12 @@ export default function ProjectDiligenceCompletion({
                   value="yes"
                   defaultChecked={loaderData.ndaRequired}
                 />
-                Require a current signed external NDA record before Investor
+                Require a current verified external NDA before Investor
                 diligence Q&A.
               </label>
               <p className="form-hint">
-                NDA records remain external legal references in CRM by AKARI.
-                AKARI House does not draft or sign the agreement.
+                AKARI House only checks whether a current external NDA has been
+                verified. Agreements are handled outside the House.
               </p>
               <button
                 className="button button-primary"
@@ -442,9 +442,9 @@ export default function ProjectDiligenceCompletion({
             <p>
               {loaderData.ndaRequired
                 ? loaderData.ndaSigned
-                  ? "A current signed NDA reference is on record for your access."
-                  : "This Project requires a current signed NDA reference before diligence Q&A."
-                : "This Project does not require an NDA reference in AKARI for diligence Q&A."}
+                  ? "A current external NDA has been verified for your access."
+                  : "This Project requires a current verified external NDA before diligence Q&A."
+                : "This Project does not require an external NDA check for diligence Q&A."}
             </p>
           )}
           <p>
