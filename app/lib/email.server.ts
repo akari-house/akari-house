@@ -105,24 +105,3 @@ export async function sendApprovalEmail(
     text: `Your membership request has been approved. Enter AKARI House: ${loginUrl}`,
   });
 }
-
-export async function sendWorkspaceInvitationEmail(
-  env: EmailEnvironment,
-  recipient: string,
-  token: string,
-  workspaceName: string,
-  role: string,
-) {
-  if (!env.APP_URL)
-    return { sent: false as const, reason: "not-configured" as const };
-  const invitationUrl = new URL("/workspace-invitations/accept", env.APP_URL);
-  invitationUrl.searchParams.set("token", token);
-  return queueEmail(env, {
-    recipient,
-    messageType: "workspace_invitation",
-    idempotencyMaterial: token,
-    subject: `Join ${workspaceName} on AKARI`,
-    html: `<p>You have been invited to join <strong>${workspaceName}</strong> as ${role}.</p><p><a href="${invitationUrl.toString()}">Accept workspace invitation</a></p><p>Sign in with the same email address this invitation was sent to. The link can only be used once.</p>`,
-    text: `You have been invited to join ${workspaceName} as ${role}. Accept the workspace invitation: ${invitationUrl.toString()}\n\nSign in with the same email address this invitation was sent to. The link can only be used once.`,
-  });
-}

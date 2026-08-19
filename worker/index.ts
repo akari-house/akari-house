@@ -28,6 +28,27 @@ const requestHandler = createRequestHandler(
   import.meta.env.MODE,
 );
 
+const productionCanonicalHost = "akarihouse.com";
+const nonCanonicalProductionHosts = new Set([
+  "www.akarihouse.com",
+  "akari-house.spacematesxyz.workers.dev",
+]);
+
+function canonicalProductionRedirect(
+  request: Request,
+  env: CloudflareEnvironment,
+) {
+  if (env.APP_ENV !== "production") return null;
+  const url = new URL(request.url);
+  if (url.pathname === "/health") return null;
+  if (!nonCanonicalProductionHosts.has(url.hostname)) return null;
+
+  url.protocol = "https:";
+  url.hostname = productionCanonicalHost;
+  url.port = "";
+  return Response.redirect(url.toString(), 308);
+}
+
 function runScheduledJob(job: ScheduledJobName, env: CloudflareEnvironment) {
   switch (job) {
     case "social_metrics":
@@ -49,6 +70,9 @@ function runScheduledJob(job: ScheduledJobName, env: CloudflareEnvironment) {
 
 export default {
   async fetch(request, env, ctx) {
+    const canonicalRedirect = canonicalProductionRedirect(request, env);
+    if (canonicalRedirect) return canonicalRedirect;
+
     if (isPublicLoginRequest(request)) {
       try {
         return await handlePublicLoginRequest(request, env);
