@@ -165,9 +165,15 @@ describe("house interactions", () => {
     expect(
       screen.getByRole("dialog", { name: "Site navigation" }),
     ).toHaveAttribute("aria-modal", "true");
-    expect(screen.getAllByRole("link", { name: "Projects" }).length).toBeGreaterThan(0);
-    expect(screen.queryByRole("link", { name: "Archive" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Team" })).not.toBeInTheDocument();
+    expect(
+      screen.getAllByRole("link", { name: "Projects" }).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole("link", { name: "Archive" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Team" }),
+    ).not.toBeInTheDocument();
     await waitFor(() =>
       expect(screen.getByRole("button", { name: "Close menu" })).toHaveFocus(),
     );
@@ -230,6 +236,8 @@ describe("house interactions", () => {
     expect(
       screen.getByRole("link", { name: "Account & privacy" }),
     ).toHaveAttribute("href", "/settings/account");
-    expect(screen.queryByRole("link", { name: "Telegram" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Telegram" }),
+    ).not.toBeInTheDocument();
   });
 });
