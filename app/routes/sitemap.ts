@@ -60,10 +60,16 @@ export async function loader({ context }: Route.LoaderArgs) {
   const entries = [
     ...staticPaths.map((path) => sitemapEntry(path)),
     ...projects.results.map((item) =>
-      sitemapEntry(`/projects/${encodeURIComponent(item.slug)}`, item.updatedAt),
+      sitemapEntry(
+        `/projects/${encodeURIComponent(item.slug)}`,
+        item.updatedAt,
+      ),
     ),
     ...campaigns.results.map((item) =>
-      sitemapEntry(`/campaigns/${encodeURIComponent(item.slug)}`, item.updatedAt),
+      sitemapEntry(
+        `/campaigns/${encodeURIComponent(item.slug)}`,
+        item.updatedAt,
+      ),
     ),
     ...events.results.map((item) =>
       sitemapEntry(`/events/${encodeURIComponent(item.slug)}`, item.updatedAt),
