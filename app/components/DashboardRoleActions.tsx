@@ -42,7 +42,7 @@ const roleJourneys: Record<Role, WorkspaceAction[]> = {
       eyebrow: "01 · Signal",
       title: "Make your profile useful",
       description:
-        "Keep your X profile, audience signals, expertise and availability current.",
+        "Keep your X profile, follower count, XScore, Sorsa score, expertise and availability current.",
       to: "/app#profile-editor",
       actionLabel: "Update profile",
     },
