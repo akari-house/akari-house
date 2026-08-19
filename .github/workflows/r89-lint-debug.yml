@@ -1,0 +1,111 @@
+name: R89 Lint Diagnostic
+
+on:
+  push:
+    branches:
+      - r89-profile-card-credibility
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r89-profile-card-credibility
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Apply lint correction with diagnostics
+        run: |
+          python - <<'PY' > /tmp/fix-output.txt 2>&1
+          from pathlib import Path
+          import re
+
+          path = Path('app/components/ProfileShareCard.tsx')
+          text = path.read_text()
+          replacement = '''function ProfileBarcode({ value }: { value: string }) {
+            const bars = barcodePattern(value);
+            const positionedBars = bars.reduce<
+              Array<{ width: number; gap: number; x: number }>
+            >((items, bar) => {
+              const previous = items.at(-1);
+              const x = previous ? previous.x + previous.width + previous.gap : 0;
+              return [...items, { ...bar, x }];
+            }, []);
+            const total = positionedBars.reduce(
+              (sum, bar) => sum + bar.width + bar.gap,
+              0,
+            );
+            return (
+              <svg
+                viewBox={`0 0 ${total} 32`}
+                preserveAspectRatio="none"
+                aria-hidden="true"
+                focusable="false"
+              >
+                {positionedBars.map((bar, index) => {
+                  const inset = index % 7 === 0 ? 3 : index % 5 === 0 ? 1.5 : 0;
+                  return (
+                    <rect
+                      key={`${bar.x}-${index}`}
+                      x={bar.x}
+                      y={inset}
+                      width={bar.width}
+                      height={32 - inset * 2}
+                      rx={0.2}
+                    />
+                  );
+                })}
+              </svg>
+            );
+          }
+
+          function SocialIcon'''
+          text, count1 = re.subn(
+            r'function ProfileBarcode\(\{ value \}: \{ value: string \}\) \{.*?\n\}\n\nfunction SocialIcon',
+            replacement,
+            text,
+            count=1,
+            flags=re.S,
+          )
+          text, count2 = re.subn(
+            r'\nfunction LinkGlyph\(\{ size = 20 \}: \{ size\?: number \}\) \{.*?\n\}\n\nfunction avatarUrl',
+            '\nfunction avatarUrl',
+            text,
+            count=1,
+            flags=re.S,
+          )
+          print(f'ProfileBarcode matches: {count1}')
+          print(f'LinkGlyph matches: {count2}')
+          if count1 != 1 or count2 != 1:
+            raise SystemExit(2)
+          path.write_text(text)
+          PY
+          fix_status=$?
+          if [ "$fix_status" -eq 0 ]; then
+            npx prettier --write app/components/ProfileShareCard.tsx >> /tmp/fix-output.txt 2>&1 || true
+            npm run lint >> /tmp/fix-output.txt 2>&1
+            lint_status=$?
+          else
+            lint_status=99
+          fi
+          {
+            echo "fix_status=$fix_status"
+            echo "lint_status=$lint_status"
+            cat /tmp/fix-output.txt
+            echo "--- diff stat ---"
+            git diff --stat
+          } > .r89-lint-diagnostic.txt
+      - name: Commit diagnostic and correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .r89-lint-diagnostic.txt app/components/ProfileShareCard.tsx
+          git commit -m "R89: capture lint correction diagnostic"
+          git push origin HEAD:r89-profile-card-credibility
