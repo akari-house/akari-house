@@ -112,7 +112,7 @@ export async function action({ request, context }: Route.ActionArgs) {
   const safeReturnTo = isSafeReturnPath(returnTo) ? returnTo : null;
   const destination = firstEntry
     ? "/app?welcome=1"
-    : (safeReturnTo ?? "/app");
+    : safeReturnTo ?? "/app";
   return redirect(destination, { headers: { "Set-Cookie": cookie } });
 }
 
