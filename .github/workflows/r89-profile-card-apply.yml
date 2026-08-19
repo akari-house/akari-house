@@ -1,0 +1,145 @@
+name: R89 Profile Card Apply
+
+on:
+  push:
+    branches:
+      - r89-profile-card-identity
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r89-profile-card-identity
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Apply R89 profile card design
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('app/components/ProfileShareCard.tsx')
+          s = p.read_text()
+
+          replacements = [
+          (
+          '''          <p>\n            A premium AKARI credit-card profile built from your real member\n            data. Choose your glass color, control private details, then\n            download or share.\n          </p>''',
+          '''          <p>\n            A premium AKARI member identity built from your real profile data.\n            Choose your glass color, control what stays public, then download or\n            share it anywhere.\n          </p>'''
+          ),
+          (
+          '''              <div className="glass-profile-link" aria-label="Profile link">\n                <span className="glass-profile-link-icon">\n                  <LinkGlyph size={22} />\n                </span>\n                <small>Profile link</small>\n                <strong>Connect on AKARI</strong>\n                <span>{canonicalUrl}</span>\n              </div>''',
+          '''              <div className="glass-profile-link" aria-label="AKARI profile identity">\n                <div className="glass-barcode" aria-hidden="true" />\n                <span className="glass-profile-id">\n                  AKARI ID · {model.username.toUpperCase().slice(0, 14)}\n                </span>\n                <span className="glass-profile-link-icon">\n                  <LinkGlyph size={22} />\n                </span>\n                <small>Scan or open</small>\n                <strong>Connect on AKARI</strong>\n                <span>{canonicalUrl}</span>\n              </div>'''
+          ),
+          (
+          '''          <div className="glass-card-note">\n            <strong>Credit-card format</strong>\n            <span>\n              85.6 × 54 proportion. The downloaded PNG uses the same branded\n              glass design.\n            </span>\n          </div>''',
+          '''          <div className="glass-card-note">\n            <strong>Built for sharing.</strong>\n            <span>Export as PNG and share your AKARI identity anywhere.</span>\n          </div>'''
+          ),
+          (
+          'ctx.fillText("A private ecosystem for high-signal connections.", 1470, 925);',
+          'ctx.fillText("A private membership for high-signal connections.", 1470, 925);'
+          ),
+          ]
+
+          for old, new in replacements:
+              if old not in s:
+                  raise SystemExit(f'missing expected ProfileShareCard snippet: {old[:80]!r}')
+              s = s.replace(old, new, 1)
+
+          old = '''  roundedRect(ctx, 1190, 260, 280, 310, 38);\n  ctx.fillStyle = palette.surface;\n  ctx.fill();\n  ctx.strokeStyle = `${palette.accent}99`;\n  ctx.lineWidth = 2;\n  ctx.stroke();\n  ctx.fillStyle = palette.accent;\n  ctx.font = "700 17px Inter, sans-serif";\n  ctx.fillText("PROFILE LINK", 1230, 320);\n  try {\n    const flower = await loadImage("/assets/brand/akari-flower-mark.png");\n    ctx.drawImage(flower, 1278, 345, 100, 100);\n  } catch {\n    // Brand mark is decorative here.\n  }\n  ctx.fillStyle = palette.ink;\n  ctx.font = "650 21px Inter, sans-serif";\n  ctx.textAlign = "center";\n  ctx.fillText("Connect on AKARI", 1330, 480);\n  ctx.font = "500 15px Inter, sans-serif";\n  ctx.globalAlpha = 0.72;\n  ctx.fillText(canonicalUrl.slice(0, 34), 1330, 514);\n  ctx.globalAlpha = 1;\n  ctx.textAlign = "left";'''
+
+          new = '''  roundedRect(ctx, 1190, 260, 280, 310, 38);\n  ctx.fillStyle = palette.surface;\n  ctx.fill();\n  ctx.strokeStyle = `${palette.accent}99`;\n  ctx.lineWidth = 2;\n  ctx.stroke();\n\n  ctx.fillStyle = palette.accent;\n  ctx.font = "700 15px Inter, sans-serif";\n  ctx.fillText("AKARI ID", 1220, 304);\n\n  const barcodeSeed = [...model.username].reduce(\n    (sum, char) => sum + char.charCodeAt(0),\n    0,\n  );\n  let barcodeX = 1220;\n  for (let index = 0; index < 42; index += 1) {\n    const width = 2 + ((barcodeSeed + index * 17) % 5);\n    const gap = 2 + ((barcodeSeed + index * 11) % 3);\n    ctx.fillStyle = palette.ink;\n    ctx.fillRect(barcodeX, 326, width, 62);\n    barcodeX += width + gap;\n    if (barcodeX > 1440) break;\n  }\n\n  ctx.fillStyle = palette.ink;\n  ctx.font = "600 13px Inter, sans-serif";\n  ctx.globalAlpha = 0.72;\n  ctx.fillText(\n    `AKARI-ID · ${model.username.toUpperCase().slice(0, 14)}`,\n    1220,\n    414,\n  );\n  ctx.globalAlpha = 1;\n\n  roundedRect(ctx, 1253, 437, 154, 58, 18);\n  ctx.strokeStyle = `${palette.ink}44`;\n  ctx.stroke();\n  ctx.fillStyle = palette.ink;\n  ctx.font = "700 14px Inter, sans-serif";\n  ctx.textAlign = "center";\n  ctx.fillText("SCAN TO CONNECT", 1330, 472);\n  ctx.font = "500 13px Inter, sans-serif";\n  ctx.globalAlpha = 0.7;\n  ctx.fillText(canonicalUrl.slice(0, 34), 1330, 526);\n  ctx.globalAlpha = 1;\n  ctx.textAlign = "left";'''
+
+          if old not in s:
+              raise SystemExit('missing canvas profile-link block')
+          s = s.replace(old, new, 1)
+          p.write_text(s)
+
+          css = Path('app/styles/profile-card-glass.css')
+          c = css.read_text()
+          addon = r'''
+
+/* R89 premium AKARI identity barcode treatment */
+.glass-barcode {
+  width: 78%;
+  height: clamp(1rem, 4.4cqi, 2.8rem);
+  border-radius: clamp(2px, 0.45cqi, 5px);
+  background:
+    repeating-linear-gradient(
+      90deg,
+      var(--card-ink) 0 2px,
+      transparent 2px 4px,
+      var(--card-ink) 4px 7px,
+      transparent 7px 9px,
+      var(--card-ink) 9px 10px,
+      transparent 10px 13px
+    );
+  box-shadow: 0 0 12px color-mix(in srgb, var(--card-accent) 16%, transparent);
+  opacity: 0.94;
+}
+
+.glass-profile-id {
+  max-width: 90%;
+  overflow: hidden;
+  color: var(--card-accent);
+  font-size: clamp(0.38rem, 0.9cqi, 0.62rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.glass-profile-link-icon {
+  width: 42%;
+  margin-top: clamp(0.12rem, 0.35cqi, 0.28rem);
+}
+
+.glass-profile-link small {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.glass-card-note strong {
+  color: var(--card-highlight, #ffd33d);
+}
+'''
+          if 'R89 premium AKARI identity barcode treatment' not in c:
+              css.write_text(c + addon)
+
+          t = Path('tests/unit/profile-card-completion.test.ts')
+          ts = t.read_text()
+          ts = ts.replace(
+              'it("renders the requested credit-card identity and privacy features", () => {',
+              'it("renders the requested premium identity and privacy features", () => {',
+          )
+          needle = '    expect(component).toContain("Connected social platforms");\n'
+          if needle in ts and 'glass-barcode' not in ts:
+              ts = ts.replace(
+                  needle,
+                  needle + '    expect(component).toContain("glass-barcode");\n    expect(component).not.toContain("Credit-card format");\n',
+                  1,
+              )
+          t.write_text(ts)
+          PY
+
+          npx prettier --write app/components/ProfileShareCard.tsx app/styles/profile-card-glass.css tests/unit/profile-card-completion.test.ts
+
+      - name: Commit R89 implementation
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/components/ProfileShareCard.tsx app/styles/profile-card-glass.css tests/unit/profile-card-completion.test.ts
+          git commit -m "R89: refine AKARI profile sharing identity"
+          git push origin HEAD:r89-profile-card-identity
