@@ -1,0 +1,50 @@
+name: R94 Profile Form Scope Fix
+
+on:
+  push:
+    branches:
+      - r94-launch-polish
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r94-launch-polish
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Narrow My House form hiding to the profile editor only
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('app/styles/r91-launch-experience.css')
+          text = path.read_text()
+          old = '''.dashboard-shell .profile-photo-editor,
+.dashboard-shell .profile-form {
+  display: none;
+}'''
+          new = '''.dashboard-shell .profile-photo-editor,
+.dashboard-shell #profile-editor.profile-form {
+  display: none;
+}'''
+          if old not in text:
+              raise SystemExit('R94 broad profile-form selector not found')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          npx prettier --write app/styles/r91-launch-experience.css
+      - name: Commit selector correction
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/styles/r91-launch-experience.css
+          git commit -m "fix: scope My House profile form hiding"
+          git push origin HEAD:r94-launch-polish
