@@ -11,7 +11,7 @@ describe("public Inari homepage isolation", () => {
     expect(homeSource).not.toContain("PublicCommunityProof");
   });
 
-  it("counts every approved role while previewing public profiles only", () => {
+  it("counts every approved role while previewing a small public profile set", () => {
     expect(homeSource).toContain("HouseMemberPresence");
     expect(homeSource).toContain("ma.status = 'approved'");
     expect(homeSource).toContain("COUNT(DISTINCT u.id) AS totalCount");
@@ -19,7 +19,7 @@ describe("public Inari homepage isolation", () => {
       "COALESCE(pv.visibility, p.visibility) = 'public'",
     );
     expect(homeSource).toContain("COUNT(*) OVER() AS publicCount");
-    expect(homeSource).toContain("LIMIT 10");
+    expect(homeSource).toContain("LIMIT 4");
   });
 
   it("preserves the approved AKARI House journey", () => {

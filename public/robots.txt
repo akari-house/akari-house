@@ -3,6 +3,7 @@ Allow: /
 
 Disallow: /app
 Disallow: /admin/
+Disallow: /members
 Disallow: /connections
 Disallow: /notifications
 Disallow: /settings/

@@ -32,16 +32,18 @@ import "./styles/admin-operations-spacing.css";
 import "./styles/launch-candidate-cleanup.css";
 import "./styles/r77-launch-completion.css";
 import "./styles/r78-authenticated-density.css";
+import "./styles/r91-launch-experience.css";
 
 const productionOrigin = "https://akarihouse.com";
-const socialImage = `${productionOrigin}/assets/optimized/arrival.webp`;
+const socialImage = `${productionOrigin}/assets/optimized/arrival-1440.webp`;
 const siteDescription =
-  "A private Web3 professional network where Founders, Creators and Investors build trusted relationships and measurable traction.";
+  "A private professional network where Founders, Creators and Investors discover trusted people, opportunities and collaborations.";
 
 const noIndexPrefixes = [
   "/app",
   "/admin",
   "/connections",
+  "/members",
   "/notifications",
   "/settings",
   "/profile-card",
@@ -84,7 +86,7 @@ type PageSeo = {
 function pageSeo(pathname: string): PageSeo {
   if (pathname === "/") {
     return {
-      title: "AKARI House | Trusted Web3 Collaboration",
+      title: "AKARI House | Founder, Creator & Investor Network",
       description: siteDescription,
     };
   }
@@ -104,16 +106,16 @@ function pageSeo(pathname: string): PageSeo {
   }
   if (pathname === "/deals") {
     return {
-      title: "Selected Deal Rooms | AKARI House",
+      title: "Investor Opportunities | AKARI House",
       description:
-        "Review approved opportunity previews and request controlled Deal Room access through AKARI House.",
+        "Review selected Founder opportunity previews and request controlled diligence access through AKARI House.",
     };
   }
   if (/^\/deals\/[^/]+$/.test(pathname)) {
     return {
-      title: "Private Deal Room | AKARI House",
+      title: "Private Opportunity Room | AKARI House",
       description:
-        "A permissioned AKARI House Deal Room for approved investors and authorised diligence access.",
+        "A permissioned AKARI House diligence space for approved Investors and authorised access.",
     };
   }
   if (pathname === "/projects") {
@@ -151,6 +153,13 @@ function pageSeo(pathname: string): PageSeo {
         "Discover approved Founders, Creators and Investors through privacy-aware AKARI House profiles.",
     };
   }
+  if (/^\/profiles\/[^/]+$/.test(pathname)) {
+    return {
+      title: "Member Profile | AKARI House",
+      description:
+        "A privacy-aware AKARI House member profile with professional context and collaboration interests.",
+    };
+  }
   if (pathname === "/archive" || pathname.startsWith("/archive/")) {
     return {
       title: "Evidence Archive | AKARI House",
@@ -177,6 +186,34 @@ function pageSeo(pathname: string): PageSeo {
       title: "The House | AKARI House",
       description:
         "Explore the rooms and collaboration journey that shape the AKARI House experience.",
+    };
+  }
+  if (pathname === "/contact") {
+    return {
+      title: "Contact | AKARI House",
+      description:
+        "Contact the AKARI House team about membership and the network.",
+    };
+  }
+  if (pathname === "/privacy") {
+    return {
+      title: "Privacy Notice | AKARI House",
+      description:
+        "Read how AKARI House handles privacy and member information.",
+    };
+  }
+  if (pathname === "/terms") {
+    return {
+      title: "Terms | AKARI House",
+      description:
+        "Read the terms that apply to AKARI House membership and use.",
+    };
+  }
+  if (pathname === "/community-guidelines") {
+    return {
+      title: "Community Guidelines | AKARI House",
+      description:
+        "Read the standards that support trusted collaboration inside AKARI House.",
     };
   }
   if (pathname === "/login") {
@@ -251,25 +288,10 @@ export const links: Route.LinksFunction = () => [
   {
     rel: "apple-touch-icon",
     href: "/assets/brand/apple-touch-icon.png",
+    sizes: "180x180",
   },
   { rel: "manifest", href: "/site.webmanifest" },
   { rel: "sitemap", type: "application/xml", href: "/sitemap.xml" },
-  { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  {
-    rel: "preconnect",
-    href: "https://fonts.gstatic.com",
-    crossOrigin: "anonymous",
-  },
-  {
-    rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap",
-  },
-  {
-    rel: "preload",
-    href: "/assets/optimized/arrival.webp",
-    as: "image",
-    type: "image/webp",
-  },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

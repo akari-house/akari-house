@@ -18,15 +18,17 @@ const houseHomeItem: WorkspaceItem = {
 
 const discoveryItems: WorkspaceItem[] = [
   { label: "Members", href: "/members", glyph: "◎" },
-  { label: "Connections", href: "/connections", glyph: "∞" },
   { label: "Projects", href: "/projects", glyph: "◇" },
   { label: "Campaigns", href: "/campaigns", glyph: "✦" },
   { label: "Events", href: "/events", glyph: "□" },
+];
+
+const activityItems: WorkspaceItem[] = [
+  { label: "Connections", href: "/connections", glyph: "∞" },
   { label: "Notifications", href: "/notifications", glyph: "◌" },
 ];
 
 const profileItems: WorkspaceItem[] = [
-  { label: "Edit profile", href: "/app#profile-editor", glyph: "◉" },
   { label: "Profile card", href: "/profile-card", glyph: "▣" },
   { label: "Account & privacy", href: "/settings/account", glyph: "⚙" },
 ];
@@ -226,6 +228,16 @@ export function HouseWorkspaceSidebar({
 
         <span className="house-workspace-sidebar-section">Discover</span>
         {remainingDiscoveryItems.map((item) => (
+          <SidebarLink
+            key={item.label}
+            item={item}
+            pathname={pathname}
+            hash={hash}
+          />
+        ))}
+
+        <span className="house-workspace-sidebar-section">Activity</span>
+        {activityItems.map((item) => (
           <SidebarLink
             key={item.label}
             item={item}

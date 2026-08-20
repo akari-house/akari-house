@@ -23,11 +23,11 @@ import type { Role } from "~/lib/domain";
 import { Link } from "react-router";
 
 export const meta: Route.MetaFunction = () => [
-  { title: "AKARI House | A private Web3 professional network" },
+  { title: "AKARI House | Founder, Creator & Investor Network" },
   {
     name: "description",
     content:
-      "A private place where Founders, Creators and Investors build trusted relationships and measurable traction.",
+      "A private professional network where Founders, Creators and Investors build trusted relationships and measurable traction.",
   },
 ];
 
@@ -89,7 +89,7 @@ export async function loadHomepageRolePresence(
          FROM visible_members
          ORDER BY CASE WHEN avatarKey = '' THEN 1 ELSE 0 END,
                   updatedAt DESC, displayName COLLATE NOCASE
-         LIMIT 10`,
+         LIMIT 4`,
       )
       .bind(role)
       .all<HomepageMemberRow>(),
