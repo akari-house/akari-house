@@ -495,7 +495,7 @@
 
 /* The full profile editor remains available, but it no longer dominates My House. */
 .dashboard-shell .profile-photo-editor,
-.dashboard-shell .profile-form {
+.dashboard-shell #profile-editor.profile-form {
   display: none;
 }
 
