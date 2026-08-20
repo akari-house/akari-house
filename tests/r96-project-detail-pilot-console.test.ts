@@ -42,9 +42,15 @@ describe("R96 project detail and pilot console", () => {
     );
     expect(seed).toContain("AS approvedMember");
     expect(seed).toContain("Creator profiles checked");
-    expect(seed).toContain("COALESCE(r.x_score_source, '') <> 'unavailable'");
-    expect(seed).toContain("COALESCE(r.sorsa_source, '') <> 'unavailable'");
-    expect(seed).toContain("All active Creator profiles meet campaign eligibility data");
+    expect(seed).toContain(
+      "COALESCE(r.x_score_source, '') <> 'unavailable'",
+    );
+    expect(seed).toContain(
+      "COALESCE(r.sorsa_source, '') <> 'unavailable'",
+    );
+    expect(seed).toContain(
+      "All active Creator profiles meet campaign eligibility data",
+    );
   });
 
   it("does not introduce a migration or CRM dependency", () => {
