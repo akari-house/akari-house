@@ -17,7 +17,10 @@ describe("R95 discovery density", () => {
   });
 
   it("keeps discovery compact on desktop and responsive on mobile", () => {
-    const css = readFileSync("app/styles/r78-authenticated-density.css", "utf8");
+    const css = readFileSync(
+      "app/styles/r78-authenticated-density.css",
+      "utf8",
+    );
 
     expect(css).toContain(".member-card-grid.is-list .member-card");
     expect(css).toContain("min-height: 86px");

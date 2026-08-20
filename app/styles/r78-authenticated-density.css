@@ -502,7 +502,11 @@
   overflow: hidden;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   background:
-    radial-gradient(circle at 78% 30%, rgba(240, 79, 135, 0.14), transparent 45%),
+    radial-gradient(
+      circle at 78% 30%,
+      rgba(240, 79, 135, 0.14),
+      transparent 45%
+    ),
     #0a0e17;
 }
 
@@ -530,12 +534,17 @@
   font-size: clamp(1.02rem, 1.35vw, 1.25rem);
 }
 
-.directory-room--projects .project-lantern-card.is-compact .discovery-card-meta {
+.directory-room--projects
+  .project-lantern-card.is-compact
+  .discovery-card-meta {
   gap: 0.35rem;
   font-size: 0.6rem;
 }
 
-.directory-room--projects .project-lantern-card.is-compact .project-lantern-body > p {
+.directory-room--projects
+  .project-lantern-card.is-compact
+  .project-lantern-body
+  > p {
   display: -webkit-box;
   margin: 0.25rem 0 0.55rem;
   overflow: hidden;
@@ -545,12 +554,17 @@
   line-height: 1.42;
 }
 
-.directory-room--projects .project-lantern-card.is-compact .project-lantern-seeking {
+.directory-room--projects
+  .project-lantern-card.is-compact
+  .project-lantern-seeking {
   margin-top: 0.45rem;
   padding: 0.55rem;
 }
 
-.directory-room--projects .project-lantern-card.is-compact .project-lantern-seeking > strong {
+.directory-room--projects
+  .project-lantern-card.is-compact
+  .project-lantern-seeking
+  > strong {
   font-size: 0.6rem;
 }
 
