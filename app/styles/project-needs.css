@@ -161,6 +161,207 @@
   margin-top: 0.75rem;
 }
 
+/* R96 — Founder project readiness */
+.founder-project-desk .directory-heading {
+  align-items: flex-start;
+}
+
+.founder-project-desk .directory-heading p {
+  max-width: 720px;
+  margin: 0.45rem 0 0;
+}
+
+.project-manage-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.project-manage-card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.project-manage-banner {
+  width: 100%;
+  aspect-ratio: 8 / 2.25;
+  display: block;
+  object-fit: cover;
+  border-bottom: 1px solid var(--hair);
+}
+
+.project-manage-card-body {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.9rem;
+}
+
+.project-manage-card-body > p {
+  margin: 0;
+}
+
+.project-manage-title-row {
+  display: flex;
+  min-width: 0;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.project-manage-title-row h2 {
+  margin: 0;
+}
+
+.project-manage-logo {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  padding: 0.25rem;
+  border: 1px solid var(--hair);
+  border-radius: 12px;
+  background: rgba(8, 11, 19, 0.72);
+}
+
+.project-readiness-card {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.15rem;
+  padding: 0.7rem;
+  border: 1px solid rgba(255, 211, 61, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 211, 61, 0.035);
+}
+
+.project-readiness-card.is-ready {
+  border-color: rgba(240, 79, 135, 0.32);
+  background: rgba(240, 79, 135, 0.055);
+}
+
+.project-readiness-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.78rem;
+}
+
+.project-readiness-heading strong {
+  font-size: 1rem;
+}
+
+.project-readiness-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.project-readiness-track > span {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--yellow), var(--pink));
+}
+
+.project-readiness-next,
+.project-readiness-complete {
+  width: fit-content;
+  margin-top: 0.1rem;
+  font-size: 0.76rem;
+}
+
+.project-readiness-checklist summary,
+.project-founder-tools summary {
+  width: fit-content;
+  color: var(--muted);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.project-readiness-checklist ul {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.74rem;
+}
+
+.project-manage-signals {
+  display: grid;
+  gap: 0.2rem;
+  color: var(--muted);
+}
+
+.project-manage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.8rem;
+  margin-top: 0.1rem;
+  font-size: 0.76rem;
+}
+
+.project-founder-tools {
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--hair);
+}
+
+.project-founder-tools-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.8rem;
+  margin-top: 0.55rem;
+  font-size: 0.74rem;
+}
+
+.project-onboarding-main > p {
+  max-width: 760px;
+}
+
+.project-onboarding-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 1rem 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-onboarding-steps li {
+  display: grid;
+  min-height: 92px;
+  gap: 0.35rem;
+  padding: 0.8rem;
+  border: 1px solid var(--hair);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.project-onboarding-steps li.is-current {
+  border-color: rgba(240, 79, 135, 0.38);
+  background: rgba(240, 79, 135, 0.055);
+}
+
+.project-onboarding-steps span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.project-onboarding-note {
+  margin: 0;
+  padding: 0.7rem 0.8rem;
+  border-left: 2px solid var(--yellow);
+  background: rgba(255, 211, 61, 0.035);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 900px) {
+  .project-manage-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 760px) {
   .project-needs-grid {
     grid-template-columns: 1fr;
@@ -174,5 +375,13 @@
   .project-directory-filter .button,
   .project-directory-filter .quiet-link {
     width: 100%;
+  }
+
+  .project-onboarding-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .project-onboarding-steps li {
+    min-height: 0;
   }
 }
