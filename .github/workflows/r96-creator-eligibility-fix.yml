@@ -1,0 +1,106 @@
+name: R96 Creator Eligibility Alignment
+
+on:
+  push:
+    branches:
+      - r96-project-detail-pilot-console
+
+permissions:
+  contents: write
+
+jobs:
+  align:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r96-project-detail-pilot-console
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Align Seed the House with campaign eligibility rules
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("app/routes/admin-seed-house.tsx")
+          text = path.read_text()
+
+          text = text.replace(
+              '  hasSorsaScore: number;\n};',
+              '  hasSorsaScore: number;\n  approvedMember: number;\n};',
+          )
+
+          text = text.replace(
+              """                EXISTS(
+                  SELECT 1 FROM profile_reputation_signals r
+                  WHERE r.user_id = u.id AND r.x_score IS NOT NULL
+                ) AS hasXScore,
+                EXISTS(
+                  SELECT 1 FROM profile_reputation_signals r
+                  WHERE r.user_id = u.id AND r.sorsa_score IS NOT NULL
+                ) AS hasSorsaScore
+         FROM users u
+         JOIN profiles p ON p.user_id = u.id
+         JOIN membership_applications ma
+           ON ma.user_id = u.id AND ma.status = 'approved'
+         JOIN user_roles ur ON ur.user_id = u.id AND ur.role = 'creator'""",
+              """                EXISTS(
+                  SELECT 1 FROM profile_reputation_signals r
+                  WHERE r.user_id = u.id AND r.x_score IS NOT NULL
+                    AND COALESCE(r.x_score_source, '') <> 'unavailable'
+                ) AS hasXScore,
+                EXISTS(
+                  SELECT 1 FROM profile_reputation_signals r
+                  WHERE r.user_id = u.id AND r.sorsa_score IS NOT NULL
+                    AND COALESCE(r.sorsa_source, '') <> 'unavailable'
+                ) AS hasSorsaScore,
+                EXISTS(
+                  SELECT 1 FROM membership_applications ma
+                  WHERE ma.user_id = u.id AND ma.status = 'approved'
+                ) AS approvedMember
+         FROM users u
+         JOIN profiles p ON p.user_id = u.id
+         JOIN user_roles ur ON ur.user_id = u.id AND ur.role = 'creator'""",
+          )
+
+          text = text.replace(
+              '<small>{loaderData.summary.creators} approved Creators</small>',
+              '<small>{loaderData.creators.length} Creator profiles checked</small>',
+          )
+
+          text = text.replace(
+              """                        <Link to={`/profiles/${creator.username}`}>
+                          {creator.displayName}
+                        </Link>""",
+              """                        {creator.approvedMember ? (
+                          <Link to={`/profiles/${creator.username}`}>
+                            {creator.displayName}
+                          </Link>
+                        ) : (
+                          <Link to="/admin/applications">
+                            {creator.displayName}
+                          </Link>
+                        )}""",
+          )
+
+          text = text.replace(
+              """                All approved Creators meet campaign eligibility data
+                requirements.""",
+              """                All active Creator profiles meet campaign eligibility data
+                requirements.""",
+          )
+
+          path.write_text(text)
+          PY
+          npx prettier --write app/routes/admin-seed-house.tsx
+      - name: Commit eligibility alignment
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/routes/admin-seed-house.tsx
+          git diff --cached --quiet || git commit -m "fix: align Creator pilot readiness with campaign eligibility"
+          git push origin HEAD:r96-project-detail-pilot-console
