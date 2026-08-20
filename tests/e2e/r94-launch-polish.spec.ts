@@ -47,9 +47,9 @@ test("public House chapters never render as hidden dead-scroll content", async (
     const transform = await chapter.evaluate(
       (element) => getComputedStyle(element).transform,
     );
-    expect(transform === "none" || transform === "matrix(1, 0, 0, 1, 0, 0)").toBe(
-      true,
-    );
+    expect(
+      transform === "none" || transform === "matrix(1, 0, 0, 1, 0, 0)",
+    ).toBe(true);
   }
 
   const widths = await page.evaluate(() => ({
