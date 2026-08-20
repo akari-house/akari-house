@@ -31,6 +31,7 @@ type CreatorRow = {
   hasFollowerCount: number;
   hasXScore: number;
   hasSorsaScore: number;
+  approvedMember: number;
 };
 
 async function scalar(db: D1Database, sql: string) {
@@ -153,15 +154,19 @@ export async function loader({ request, context }: Route.LoaderArgs) {
                 EXISTS(
                   SELECT 1 FROM profile_reputation_signals r
                   WHERE r.user_id = u.id AND r.x_score IS NOT NULL
+                    AND COALESCE(r.x_score_source, '') <> 'unavailable'
                 ) AS hasXScore,
                 EXISTS(
                   SELECT 1 FROM profile_reputation_signals r
                   WHERE r.user_id = u.id AND r.sorsa_score IS NOT NULL
-                ) AS hasSorsaScore
+                    AND COALESCE(r.sorsa_source, '') <> 'unavailable'
+                ) AS hasSorsaScore,
+                EXISTS(
+                  SELECT 1 FROM membership_applications ma
+                  WHERE ma.user_id = u.id AND ma.status = 'approved'
+                ) AS approvedMember
          FROM users u
          JOIN profiles p ON p.user_id = u.id
-         JOIN membership_applications ma
-           ON ma.user_id = u.id AND ma.status = 'approved'
          JOIN user_roles ur ON ur.user_id = u.id AND ur.role = 'creator'
          WHERE u.status = 'active'
          ORDER BY p.display_name`,
@@ -335,7 +340,7 @@ export default function AdminSeedHouse({ loaderData }: Route.ComponentProps) {
           <article className="seed-house-stat">
             <span className="eyebrow">Campaign-ready creators</span>
             <strong>{loaderData.summary.creatorsReady}</strong>
-            <small>{loaderData.summary.creators} approved Creators</small>
+            <small>{loaderData.creators.length} Creator profiles checked</small>
           </article>
           <article className="seed-house-stat">
             <span className="eyebrow">Live opportunities</span>
@@ -441,9 +446,15 @@ export default function AdminSeedHouse({ loaderData }: Route.ComponentProps) {
                   return (
                     <li key={creator.username}>
                       <span>
-                        <Link to={`/profiles/${creator.username}`}>
-                          {creator.displayName}
-                        </Link>
+                        {creator.approvedMember ? (
+                          <Link to={`/profiles/${creator.username}`}>
+                            {creator.displayName}
+                          </Link>
+                        ) : (
+                          <Link to="/admin/applications">
+                            {creator.displayName}
+                          </Link>
+                        )}
                         <br />
                         <small>Missing: {missing.join(", ")}</small>
                       </span>
@@ -454,7 +465,7 @@ export default function AdminSeedHouse({ loaderData }: Route.ComponentProps) {
               </ul>
             ) : (
               <p>
-                All approved Creators meet campaign eligibility data
+                All active Creator profiles meet campaign eligibility data
                 requirements.
               </p>
             )}
