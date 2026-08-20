@@ -2,8 +2,8 @@ export type ProjectReadinessInput = {
   slug: string;
   title: string;
   summary: string;
-  description: string;
-  seeking: string;
+  description: string | null;
+  seeking: string | null;
   logoKey: string | null;
   bannerKey: string | null;
   hasWebsite: boolean;
@@ -31,6 +31,8 @@ export function buildProjectReadiness(
 ): ProjectReadiness {
   const editHref = `/projects/${project.slug}/edit`;
   const brandHref = `/projects/${project.slug}/edit/brand`;
+  const description = project.description ?? "";
+  const seeking = project.seeking ?? "";
 
   const items: ProjectReadinessItem[] = [
     {
@@ -39,13 +41,13 @@ export function buildProjectReadiness(
       complete:
         project.title.trim().length >= 3 &&
         project.summary.trim().length >= 20 &&
-        project.description.trim().length >= 80,
+        description.trim().length >= 80,
       href: editHref,
     },
     {
       key: "needs",
       label: "Choose current support needs",
-      complete: project.seeking.trim().length > 0,
+      complete: seeking.trim().length > 0,
       href: `/projects/${project.slug}/needs`,
     },
     {
