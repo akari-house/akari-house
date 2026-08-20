@@ -129,23 +129,28 @@ export function DashboardRoleActions({ user }: { user: SessionUser }) {
 
   return (
     <div className="house-compass" aria-live="polite">
-      {user.accessTier === "member" && roles.length > 1 && (
-        <div
-          className="house-compass-role-switch"
-          aria-label="Choose your active AKARI role"
-        >
-          {roles.map((role) => (
-            <button
-              key={role}
-              type="button"
-              aria-pressed={activeRole === role}
-              onClick={() => setActiveRole(role)}
-            >
-              {role}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="house-compass-toolbar">
+        {user.accessTier === "member" && roles.length > 1 && (
+          <div
+            className="house-compass-role-switch"
+            aria-label="Choose your active AKARI role"
+          >
+            {roles.map((role) => (
+              <button
+                key={role}
+                type="button"
+                aria-pressed={activeRole === role}
+                onClick={() => setActiveRole(role)}
+              >
+                {role}
+              </button>
+            ))}
+          </div>
+        )}
+        <Link className="house-compass-profile-action" to="/app#profile-editor">
+          Edit profile &amp; privacy <span aria-hidden="true">→</span>
+        </Link>
+      </div>
 
       <div className="dashboard-role-actions house-compass-steps">
         {actions.map((action, index) => (
