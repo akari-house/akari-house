@@ -1,0 +1,36 @@
+name: R93 Format Helper
+
+on:
+  push:
+    branches:
+      - r93-house-polish-and-credibility
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r93-house-polish-and-credibility
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Format R93 files
+        run: npx prettier --write app/styles/r91-launch-experience.css app/routes/profile-card.tsx tests/e2e/profile-card-events-r79.spec.ts tests/workspace-visual-polish.test.ts
+      - name: Commit exact formatter output
+        run: |
+          if git diff --quiet; then
+            echo "Already formatted."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/styles/r91-launch-experience.css app/routes/profile-card.tsx tests/e2e/profile-card-events-r79.spec.ts tests/workspace-visual-polish.test.ts
+          git commit -m "chore: apply repository formatting to R93"
+          git push origin HEAD:r93-house-polish-and-credibility
