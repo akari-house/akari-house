@@ -339,3 +339,298 @@
     grid-template-columns: 44px minmax(0, 1fr);
   }
 }
+
+/* R95 — discovery should scan like a directory, not a sequence of landing cards. */
+.member-directory-filters {
+  padding: 0.75rem 0.85rem;
+  gap: 0.65rem;
+}
+
+.member-directory-filters label {
+  gap: 0.3rem;
+}
+
+.member-directory-filters label > span {
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.member-directory-filters :is(input, select) {
+  min-height: 42px;
+  padding-block: 0.55rem;
+}
+
+.member-directory-filter-actions {
+  gap: 0.5rem;
+}
+
+.member-card-grid.is-list {
+  gap: 0.45rem;
+  max-width: none;
+}
+
+.member-card-grid.is-list .member-card {
+  min-height: 86px;
+  padding: 0.65rem 0.8rem;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 0.8rem;
+  align-items: center;
+  border-radius: 12px;
+}
+
+.member-card-grid.is-list .member-card-photo,
+.member-card-grid.is-list .member-card-monogram {
+  width: 46px;
+  height: 46px;
+}
+
+.member-card-grid.is-list .member-card-body {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.72fr) minmax(260px, 1.35fr) auto;
+  gap: 0.75rem 1rem;
+  align-items: center;
+}
+
+.member-card-grid.is-list .member-card-identity {
+  min-width: 0;
+}
+
+.member-card-grid.is-list .member-card-identity h2 {
+  margin: 0.18rem 0 0;
+  font-size: 0.96rem;
+  line-height: 1.15;
+}
+
+.member-card-grid.is-list .member-card-handle {
+  margin: 0.14rem 0 0;
+  overflow: hidden;
+  font-size: 0.72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member-card-grid.is-list .role-pills {
+  gap: 0.25rem;
+}
+
+.member-card-grid.is-list .role-pills span {
+  padding: 0.2rem 0.42rem;
+  font-size: 0.58rem;
+}
+
+.member-card-grid.is-list .member-card-summary {
+  min-width: 0;
+  max-width: none;
+  font-size: 0.77rem;
+  text-align: left;
+}
+
+.member-card-grid.is-list .member-card-summary p {
+  margin: 0;
+}
+
+.member-card-grid.is-list .member-card-summary > p:not(.member-card-languages) {
+  -webkit-line-clamp: 1;
+}
+
+.member-card-grid.is-list .member-card-languages {
+  display: none;
+}
+
+.member-card-grid.is-list .member-card-expertise {
+  margin-top: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member-card-grid.is-list .member-card-expertise strong {
+  margin-right: 0.35rem;
+}
+
+.member-card-grid.is-list .member-card footer {
+  min-width: max-content;
+  gap: 0.45rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.member-card-grid.is-list .member-card footer :is(.quiet-link, .status-pill) {
+  font-size: 0.68rem;
+}
+
+.member-card-grid.is-list .member-card footer .button-small {
+  min-height: 36px;
+  padding: 0.4rem 0.58rem;
+  font-size: 0.68rem;
+}
+
+/* Project discovery uses compact visual cards. The existing Deal Room banner is
+   reused here; no new media storage or migration is required. */
+.directory-room--projects .project-directory-filter {
+  max-width: 760px;
+  margin-block: 0.8rem 1rem;
+  padding: 0.75rem 0.8rem;
+}
+
+.directory-room--projects .project-lantern-gallery {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.directory-room--projects .project-lantern-card.is-compact {
+  min-height: 0;
+  padding: 0.8rem;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 0.7rem;
+  align-content: start;
+  border-radius: 14px;
+}
+
+.directory-room--projects .project-lantern-card.is-compact.has-banner {
+  padding-top: 0.8rem;
+}
+
+.directory-room--projects .project-lantern-banner {
+  height: 118px;
+  margin: -0.8rem -0.8rem 0.05rem;
+  grid-column: 1 / -1;
+  display: block;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(
+      circle at 78% 30%,
+      rgba(240, 79, 135, 0.14),
+      transparent 45%
+    ),
+    #0a0e17;
+}
+
+.directory-room--projects .project-lantern-banner img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 220ms ease;
+}
+
+.directory-room--projects
+  .project-lantern-card:hover
+  .project-lantern-banner
+  img,
+.directory-room--projects
+  .project-lantern-card:focus-within
+  .project-lantern-banner
+  img {
+  transform: scale(1.025);
+}
+
+.directory-room--projects .project-lantern-card.is-compact h3 {
+  margin-block: 0.32rem 0.25rem;
+  font-size: clamp(1.02rem, 1.35vw, 1.25rem);
+}
+
+.directory-room--projects
+  .project-lantern-card.is-compact
+  .discovery-card-meta {
+  gap: 0.35rem;
+  font-size: 0.6rem;
+}
+
+.directory-room--projects
+  .project-lantern-card.is-compact
+  .project-lantern-body
+  > p {
+  display: -webkit-box;
+  margin: 0.25rem 0 0.55rem;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 0.78rem;
+  line-height: 1.42;
+}
+
+.directory-room--projects
+  .project-lantern-card.is-compact
+  .project-lantern-seeking {
+  margin-top: 0.45rem;
+  padding: 0.55rem;
+}
+
+.directory-room--projects
+  .project-lantern-card.is-compact
+  .project-lantern-seeking
+  > strong {
+  font-size: 0.6rem;
+}
+
+.directory-room--projects
+  .project-lantern-card.is-compact
+  .project-need-chips
+  > span:nth-child(n + 5) {
+  display: none;
+}
+
+.directory-room--projects .project-lantern-card.is-compact footer {
+  margin-top: 0.55rem;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+}
+
+@media (max-width: 1180px) {
+  .directory-room--projects .project-lantern-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .member-card-grid.is-list .member-card-body {
+    grid-template-columns: minmax(160px, 0.8fr) minmax(220px, 1.2fr);
+  }
+
+  .member-card-grid.is-list .member-card footer {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 700px) {
+  .member-directory-filters {
+    padding: 0.7rem;
+  }
+
+  .member-card-grid.is-list .member-card {
+    min-height: 0;
+    padding: 0.75rem;
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .member-card-grid.is-list .member-card-photo,
+  .member-card-grid.is-list .member-card-monogram {
+    width: 42px;
+    height: 42px;
+  }
+
+  .member-card-grid.is-list .member-card-body {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
+  .member-card-grid.is-list .member-card footer {
+    grid-column: 1;
+    flex-wrap: wrap;
+  }
+
+  .directory-room--projects .project-lantern-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .directory-room--projects .project-lantern-banner {
+    height: 132px;
+  }
+}
