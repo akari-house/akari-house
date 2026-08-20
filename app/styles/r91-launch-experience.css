@@ -207,32 +207,21 @@
 /* R93 — final House QA polish.
    Keep the public cinematic identity intact while making practical House
    surfaces feel deliberate, readable and resilient at real content lengths. */
-:where(
-    .dashboard-shell,
-    .investor-house-shell,
-    .site-shell:has(> .house-workspace-sidebar),
-    .directory-room,
-    .member-directory
-  )
-  :is(
-    main,
-    section,
-    article,
-    header,
-    footer,
-    form,
-    fieldset,
-    .project-lantern-body,
-    .event-invitation-body,
-    .member-card-body,
-    .campaign-directory-card,
-    .dashboard-role-card
-  ) {
+.dashboard-shell :is(main, section, article, header, footer, form, fieldset),
+.investor-house-shell
+  :is(main, section, article, header, footer, form, fieldset),
+.directory-room :is(main, section, article, header, footer, form, fieldset),
+.member-directory :is(main, section, article, header, footer, form, fieldset),
+.project-lantern-body,
+.event-invitation-body,
+.member-card-body,
+.campaign-directory-card,
+.dashboard-role-card {
   min-width: 0;
 }
 
-:where(.directory-room, .member-directory)
-  :is(h1, h2, h3, p, dd, a, span) {
+.directory-room :is(h1, h2, h3, p, dd, a, span),
+.member-directory :is(h1, h2, h3, p, dd, a, span) {
   overflow-wrap: anywhere;
 }
 
@@ -247,7 +236,11 @@
   border: 1px solid rgba(255, 255, 255, 0.09);
   border-radius: 14px;
   background:
-    radial-gradient(circle at 5% 0%, rgba(240, 79, 135, 0.055), transparent 15rem),
+    radial-gradient(
+      circle at 5% 0%,
+      rgba(240, 79, 135, 0.055),
+      transparent 15rem
+    ),
     rgba(15, 20, 32, 0.82);
   box-shadow: 0 16px 42px rgba(0, 0, 0, 0.14);
 }
@@ -330,7 +323,11 @@
   border-color: rgba(255, 255, 255, 0.09);
   border-radius: 16px;
   background:
-    radial-gradient(circle at 7% 20%, rgba(240, 79, 135, 0.08), transparent 15rem),
+    radial-gradient(
+      circle at 7% 20%,
+      rgba(240, 79, 135, 0.08),
+      transparent 15rem
+    ),
     linear-gradient(135deg, rgba(17, 22, 35, 0.93), rgba(10, 14, 23, 0.95));
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.15);
 }
@@ -368,26 +365,29 @@
 }
 
 /* A single accessible focus language across practical House surfaces. */
-:where(
-    .dashboard-shell,
-    .investor-house-shell,
-    .site-shell:has(> .house-workspace-sidebar),
-    .directory-room,
-    .member-directory
-  )
+.dashboard-shell
+  :is(a, button, input, select, textarea):focus-visible,
+.investor-house-shell
+  :is(a, button, input, select, textarea):focus-visible,
+.directory-room
+  :is(a, button, input, select, textarea):focus-visible,
+.member-directory
   :is(a, button, input, select, textarea):focus-visible {
   outline: 2px solid rgba(255, 211, 61, 0.86);
   outline-offset: 3px;
 }
 
 /* Prevent common real-data overflow without clipping useful content. */
-:where(.directory-room, .member-directory)
+.directory-room
+  :is(.discovery-card-meta, .campaign-directory-facts, .member-card footer),
+.member-directory
   :is(.discovery-card-meta, .campaign-directory-facts, .member-card footer) {
   min-width: 0;
   max-width: 100%;
 }
 
-:where(.directory-room, .member-directory) img {
+.directory-room img,
+.member-directory img {
   max-width: 100%;
 }
 
