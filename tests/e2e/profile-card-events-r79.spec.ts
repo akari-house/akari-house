@@ -55,10 +55,14 @@ test.describe("R83 profile sharing and event publishing", () => {
       metrics.getByText("AKARI signal", { exact: true }),
     ).toBeVisible();
 
-    // The final card uses one role treatment, removes the tiny brand tagline,
-    // and keeps verification as the explicit trust marker.
+    // The final card uses one role treatment and removes the tiny brand tagline.
+    // The verification badge remains explicit on larger cards and is removed on
+    // compact phone cards where the credibility band already carries trust.
     await expect(card.locator(".glass-role-pills")).toBeHidden();
-    await expect(card.locator(".glass-card-verification")).toBeVisible();
+    const verification = card.locator(".glass-card-verification");
+    const compactCard = (page.viewportSize()?.width ?? 1024) <= 700;
+    if (compactCard) await expect(verification).toBeHidden();
+    else await expect(verification).toBeVisible();
     const brandTaglineDisplay = await card
       .locator(".glass-card-brand")
       .evaluate((element) => getComputedStyle(element, "::after").display);
