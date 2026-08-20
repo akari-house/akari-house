@@ -620,3 +620,246 @@
     height: 4.5cqi !important;
   }
 }
+
+/* R93b: screenshot-led final card composition.
+   Remove duplicated micro-copy and give identity, credibility and actions
+   separate visual jobs at real preview sizes. */
+html body .glass-share-page .glass-card-brand::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body .glass-share-page .glass-card-topline {
+  top: 7.3% !important;
+  right: auto !important;
+  left: 36.3% !important;
+  width: 34% !important;
+}
+
+html body .glass-share-page .glass-card-brand {
+  padding-bottom: 0 !important;
+}
+
+html body .glass-share-page .glass-card-brand img {
+  width: clamp(5.15rem, 18.2cqi, 7.35rem) !important;
+}
+
+html body .glass-share-page .glass-card-brand span {
+  font-size: clamp(0.42rem, 1.22cqi, 0.56rem) !important;
+  letter-spacing: 0.14em !important;
+}
+
+html body .glass-share-page .glass-card-person {
+  top: 19.1% !important;
+  left: 7.7% !important;
+  width: 25.2% !important;
+}
+
+html body .glass-share-page .glass-card-identity {
+  top: 25.2% !important;
+  left: 36.3% !important;
+  width: 38% !important;
+}
+
+html body .glass-share-page .glass-card-identity h2 {
+  font-size: clamp(1.12rem, 4.65cqi, 1.9rem) !important;
+  line-height: 1 !important;
+}
+
+html body .glass-share-page .glass-card-handle {
+  margin-bottom: 0.8cqi !important;
+  font-size: clamp(0.54rem, 1.55cqi, 0.72rem) !important;
+}
+
+html body .glass-share-page .glass-role-line {
+  font-size: clamp(0.55rem, 1.62cqi, 0.74rem) !important;
+  line-height: 1.2 !important;
+}
+
+html body .glass-share-page .glass-card-headline {
+  max-width: 31ch !important;
+  margin-top: 0.65cqi !important;
+  font-size: clamp(0.46rem, 1.27cqi, 0.6rem) !important;
+}
+
+html body .glass-share-page .glass-role-pills {
+  display: none !important;
+}
+
+html body .glass-share-page .glass-card-verification {
+  width: fit-content !important;
+  margin-top: 0.85cqi !important;
+  padding: 0.4cqi 0.72cqi !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  border: 1px solid color-mix(in srgb, var(--card-highlight) 50%, transparent) !important;
+  border-radius: 999px !important;
+  color: var(--card-highlight) !important;
+  background: color-mix(in srgb, var(--card-highlight) 9%, transparent) !important;
+  font-size: clamp(0.32rem, 0.84cqi, 0.42rem) !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.055em !important;
+  line-height: 1 !important;
+}
+
+html body .glass-share-page .glass-profile-qr-panel {
+  top: 22.8% !important;
+  right: 6.6% !important;
+  width: 18.5% !important;
+  min-height: 35.5% !important;
+  padding: 0.9cqi !important;
+  gap: 0.35cqi !important;
+}
+
+html body .glass-share-page .glass-profile-qr {
+  width: 11.2cqi !important;
+}
+
+html body .glass-share-page .glass-profile-qr-panel small {
+  margin-top: 0.18cqi !important;
+  font-size: clamp(0.29rem, 0.7cqi, 0.36rem) !important;
+}
+
+html body .glass-share-page .glass-profile-qr-panel strong {
+  font-size: clamp(0.31rem, 0.78cqi, 0.4rem) !important;
+}
+
+html body .glass-share-page .glass-profile-qr-url {
+  display: none !important;
+}
+
+html body .glass-share-page .glass-card-metrics {
+  right: 7.5% !important;
+  bottom: 19.2% !important;
+  left: 7.5% !important;
+  min-height: 13.2% !important;
+  padding: 0 0.7cqi !important;
+  border-color: color-mix(in srgb, var(--card-ink) 22%, transparent) !important;
+  background: color-mix(in srgb, var(--card-bg) 79%, var(--card-surface)) !important;
+}
+
+html body .glass-share-page .glass-card-metrics > div {
+  padding: 0.7cqi 1.35cqi !important;
+  gap: 0.18cqi !important;
+}
+
+html body .glass-share-page .glass-card-metrics strong {
+  font-size: clamp(0.68rem, 2.28cqi, 1rem) !important;
+}
+
+html body .glass-share-page .glass-card-metrics span {
+  font-size: clamp(0.3rem, 0.78cqi, 0.39rem) !important;
+  letter-spacing: 0.065em !important;
+}
+
+html body .glass-share-page .glass-connect-strip {
+  left: 7.5% !important;
+  bottom: 8.4% !important;
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: auto !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+html body .glass-share-page .glass-connect-strip > strong {
+  display: none !important;
+}
+
+html body .glass-share-page .glass-connect-strip::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body .glass-share-page .glass-card-socials {
+  gap: clamp(0.4rem, 1.35cqi, 0.66rem) !important;
+}
+
+html body .glass-share-page .glass-card-socials a,
+html body .glass-share-page .glass-social-more {
+  width: clamp(1.24rem, 3.85cqi, 1.68rem) !important;
+  height: clamp(1.24rem, 3.85cqi, 1.68rem) !important;
+}
+
+html body .glass-share-page .glass-card-socials a {
+  border-color: color-mix(in srgb, var(--card-ink) 30%, transparent) !important;
+  background: color-mix(in srgb, var(--card-bg) 76%, transparent) !important;
+}
+
+html body .glass-share-page .glass-card-footer {
+  right: 7.5% !important;
+  bottom: 3.1% !important;
+  left: auto !important;
+  width: auto !important;
+  min-height: auto !important;
+  justify-content: flex-end !important;
+}
+
+html body .glass-share-page .glass-card-footer::after {
+  display: none !important;
+  content: none !important;
+}
+
+html body .glass-share-page .glass-card-footer-brand {
+  font-size: clamp(0.31rem, 0.8cqi, 0.4rem) !important;
+  opacity: 0.62 !important;
+}
+
+html body .glass-share-page .glass-card-controls {
+  align-content: start !important;
+}
+
+html body .glass-share-page .glass-card-controls > fieldset:first-of-type label {
+  min-height: 44px !important;
+  padding: 0.58rem 0.68rem !important;
+}
+
+html body .glass-share-page .glass-palette-choice {
+  min-height: 54px !important;
+}
+
+html body .glass-share-page .share-card-check {
+  grid-column: 1 / -1 !important;
+  min-height: 44px !important;
+  white-space: nowrap !important;
+}
+
+html body .glass-share-page .profile-card-language-control {
+  padding-top: 0.15rem !important;
+}
+
+html body .glass-share-page .profile-card-language-control > span {
+  color: #f4f5f8 !important;
+  font-size: 0.72rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+}
+
+@media (max-width: 700px) {
+  html body .glass-share-page .glass-card-topline {
+    left: 36% !important;
+    width: 35% !important;
+  }
+
+  html body .glass-share-page .glass-card-verification {
+    display: none !important;
+  }
+
+  html body .glass-share-page .glass-card-metrics {
+    bottom: 19% !important;
+    min-height: 13% !important;
+  }
+
+  html body .glass-share-page .glass-connect-strip {
+    bottom: 8% !important;
+  }
+
+  html body .glass-share-page .share-card-check {
+    white-space: normal !important;
+  }
+}
