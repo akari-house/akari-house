@@ -55,12 +55,22 @@ test.describe("R83 profile sharing and event publishing", () => {
       metrics.getByText("AKARI signal", { exact: true }),
     ).toBeVisible();
 
+    // The final card uses one role treatment, removes the tiny brand tagline,
+    // and keeps verification as the explicit trust marker.
+    await expect(card.locator(".glass-role-pills")).toBeHidden();
+    await expect(card.locator(".glass-card-verification")).toBeVisible();
+    const brandTaglineDisplay = await card
+      .locator(".glass-card-brand")
+      .evaluate((element) => getComputedStyle(element, "::after").display);
+    expect(brandTaglineDisplay).toBe("none");
+
     // The old decorative divider crossed the social icons. It is intentionally
     // removed and the metrics/social bands must occupy separate vertical space.
     const dividerDisplay = await connect.evaluate(
       (element) => getComputedStyle(element, "::after").display,
     );
     expect(dividerDisplay).toBe("none");
+    await expect(connect.getByText("Connect", { exact: true })).toBeHidden();
     const metricsBox = await metrics.boundingBox();
     const connectBox = await connect.boundingBox();
     expect(metricsBox).not.toBeNull();
@@ -97,6 +107,13 @@ test.describe("R83 profile sharing and event publishing", () => {
         expect(controlsBox.x).toBeGreaterThan(stageBox.x + stageBox.width - 4);
         expect(Math.abs(controlsBox.y - stageBox.y)).toBeLessThanOrEqual(8);
       }
+
+      const languageToggle = page.getByText("Show spoken languages", {
+        exact: true,
+      });
+      const toggleBox = await languageToggle.boundingBox();
+      expect(toggleBox).not.toBeNull();
+      if (toggleBox) expect(toggleBox.height).toBeLessThanOrEqual(48);
 
       const screenshot = await page.locator(".share-card-layout").screenshot();
       await testInfo.attach("r93-profile-card-credibility-and-socials", {
