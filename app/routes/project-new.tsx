@@ -97,13 +97,32 @@ export default function ProjectNew({
   return (
     <div className="dashboard-shell">
       <SiteHeader user={loaderData.user} />
-      <main id="main-content" className="editor-main">
+      <main id="main-content" className="editor-main project-onboarding-main">
         <span className="eyebrow">Founder project desk</span>
-        <h1>Light a project lantern.</h1>
+        <h1>Start with the project people need to understand.</h1>
         <p>
-          Projects enter review before becoming discoverable across the House.
+          This first step creates the project and sends it for review. After
+          that, AKARI will guide you through identity, official links and the
+          remaining discovery-readiness items without asking you to repeat the
+          same information.
         </p>
-        <Form method="post" className="profile-form">
+
+        <ol className="project-onboarding-steps" aria-label="Project onboarding steps">
+          <li className="is-current">
+            <strong>1. Project story</strong>
+            <span>Name, summary, stage and what support you need.</span>
+          </li>
+          <li>
+            <strong>2. Identity & links</strong>
+            <span>Logo, banner, website and official social channels.</span>
+          </li>
+          <li>
+            <strong>3. Readiness</strong>
+            <span>AKARI shows what is missing and the next useful action.</span>
+          </li>
+        </ol>
+
+        <Form method="post" className="profile-form project-onboarding-form">
           {actionData?.error && (
             <p className="form-error" role="alert">
               {actionData.error}
@@ -122,10 +141,18 @@ export default function ProjectNew({
               maxLength={280}
               required
             />
+            <small>
+              Explain the project in plain language so a Creator, Founder or
+              Investor can understand it quickly.
+            </small>
           </label>
           <label>
             The fuller story
             <textarea name="description" rows={8} maxLength={4000} />
+            <small>
+              Aim for at least a short paragraph covering the problem, product
+              and who it is for. You can refine this later.
+            </small>
           </label>
           <label>
             Stage
@@ -137,13 +164,17 @@ export default function ProjectNew({
             </select>
           </label>
           <ProjectNeedsFieldset />
+          <p className="project-onboarding-note">
+            Submitting does not make the project public immediately. Existing
+            AKARI review and permission rules remain unchanged.
+          </p>
           <button
             className="button button-primary"
             disabled={navigation.state !== "idle"}
           >
             {navigation.state === "idle"
-              ? "Submit for review"
-              : "Submitting project..."}
+              ? "Create project and continue"
+              : "Creating project..."}
           </button>
         </Form>
       </main>
