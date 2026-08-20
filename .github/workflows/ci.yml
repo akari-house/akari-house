@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
@@ -15,8 +15,6 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: r93-house-polish-and-credibility
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -26,19 +24,6 @@ jobs:
         run: npm audit --audit-level=high
       - run: npm run typecheck
       - run: npm run lint
-      - name: Apply exact R93 formatting
-        run: npx prettier --write app/styles/profile-card-enhancements.css tests/e2e/profile-card-events-r79.spec.ts
-      - name: Commit exact formatter output
-        run: |
-          if git diff --quiet; then
-            echo "Already formatted."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/styles/profile-card-enhancements.css tests/e2e/profile-card-events-r79.spec.ts
-          git commit -m "chore: apply exact R93 repository formatting"
-          git push origin HEAD:r93-house-polish-and-credibility
       - run: npm run format:check
       - run: npm test
       - run: npm run build
