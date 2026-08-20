@@ -36,7 +36,7 @@ test.describe("R83 profile sharing and event publishing", () => {
     // must not expose a public QR until that profile is explicitly published.
     await expect(card.locator(".glass-profile-qr")).toHaveCount(0);
     await expect(
-      card.getByText("Private profile", { exact: true }),
+      card.locator('[aria-label="Private AKARI profile"]'),
     ).toBeVisible();
     await expect(
       card.getByText("Publish to enable QR", { exact: true }),
