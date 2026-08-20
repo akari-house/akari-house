@@ -34,6 +34,19 @@ describe("R96 project detail and pilot console", () => {
     expect(seed).toContain("5 campaign-ready Creators");
   });
 
+  it("keeps Creator campaign readiness independent from membership approval", () => {
+    const seed = readFileSync("app/routes/admin-seed-house.tsx", "utf8");
+
+    expect(seed).toContain(
+      "JOIN user_roles ur ON ur.user_id = u.id AND ur.role = 'creator'",
+    );
+    expect(seed).toContain("AS approvedMember");
+    expect(seed).toContain("Creator profiles checked");
+    expect(seed).toContain("COALESCE(r.x_score_source, '') <> 'unavailable'");
+    expect(seed).toContain("COALESCE(r.sorsa_source, '') <> 'unavailable'");
+    expect(seed).toContain("All active Creator profiles meet campaign eligibility data");
+  });
+
   it("does not introduce a migration or CRM dependency", () => {
     const detail = readFileSync("app/routes/project-detail-v2.tsx", "utf8");
     const seed = readFileSync("app/routes/admin-seed-house.tsx", "utf8");
