@@ -203,3 +203,349 @@
     padding-inline: 0.45rem;
   }
 }
+
+/* R93 — final House QA polish.
+   Keep the public cinematic identity intact while making practical House
+   surfaces feel deliberate, readable and resilient at real content lengths. */
+.dashboard-shell :is(main, section, article, header, footer, form, fieldset),
+.investor-house-shell
+  :is(main, section, article, header, footer, form, fieldset),
+.directory-room :is(main, section, article, header, footer, form, fieldset),
+.member-directory :is(main, section, article, header, footer, form, fieldset),
+.project-lantern-body,
+.event-invitation-body,
+.member-card-body,
+.campaign-directory-card,
+.dashboard-role-card {
+  min-width: 0;
+}
+
+.directory-room :is(h1, h2, h3, p, dd, a, span),
+.member-directory :is(h1, h2, h3, p, dd, a, span) {
+  overflow-wrap: anywhere;
+}
+
+/* Filters should look like product controls, not loose form fields. */
+.project-directory-filter {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.05rem;
+  display: grid;
+  grid-template-columns: minmax(250px, 1fr) auto auto;
+  gap: 0.75rem;
+  align-items: end;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 14px;
+  background:
+    radial-gradient(
+      circle at 5% 0%,
+      rgba(240, 79, 135, 0.055),
+      transparent 15rem
+    ),
+    rgba(15, 20, 32, 0.82);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.14);
+}
+
+.project-directory-filter label {
+  min-width: 0;
+  display: grid;
+  gap: 0.4rem;
+  color: rgba(244, 246, 252, 0.72);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.project-directory-filter select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.65rem 0.78rem;
+  border-radius: 9px;
+  background: rgba(8, 12, 21, 0.88);
+  font-size: 0.84rem;
+}
+
+.project-directory-filter .button {
+  min-height: 44px;
+}
+
+.project-directory-filter .quiet-link {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Card collections should align even when real summaries and metadata differ. */
+.directory-room :is(.project-lantern-gallery, .event-invitation-list) {
+  align-items: stretch;
+}
+
+.directory-room :is(.project-lantern-card, .campaign-directory-card) {
+  height: 100%;
+}
+
+.project-lantern-card,
+.event-invitation-card,
+.campaign-directory-card,
+.member-card {
+  border-color: rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 16px 42px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.018);
+}
+
+.project-lantern-card,
+.event-invitation-card {
+  overflow: hidden;
+}
+
+.project-lantern-body > p,
+.event-invitation-body > p,
+.campaign-directory-card > p,
+.member-card-summary {
+  color: rgba(244, 246, 252, 0.72);
+  line-height: 1.55;
+}
+
+.project-lantern-card footer,
+.event-invitation-card footer {
+  row-gap: 0.5rem;
+}
+
+.event-card-action,
+.campaign-directory-action {
+  text-underline-offset: 0.22em;
+}
+
+/* Empty states get breathing room and remain unmistakably intentional. */
+.directory-room .directory-empty,
+.campaign-directory-empty {
+  min-height: 180px;
+  padding: clamp(1.25rem, 2.5vw, 1.8rem);
+  border-color: rgba(255, 255, 255, 0.09);
+  border-radius: 16px;
+  background:
+    radial-gradient(
+      circle at 7% 20%,
+      rgba(240, 79, 135, 0.08),
+      transparent 15rem
+    ),
+    linear-gradient(135deg, rgba(17, 22, 35, 0.93), rgba(10, 14, 23, 0.95));
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.15);
+}
+
+.directory-room .directory-empty h2,
+.campaign-directory-empty h3 {
+  margin-bottom: 0.45rem;
+}
+
+.directory-room .directory-empty p,
+.campaign-directory-empty p {
+  max-width: 60ch;
+  line-height: 1.55;
+}
+
+/* Member result controls should not jump as counts and filters change. */
+.member-directory-toolbar {
+  min-height: 44px;
+  gap: 0.75rem;
+}
+
+.member-view-toggle {
+  flex: 0 0 auto;
+}
+
+.member-view-toggle a {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.member-card :is(.button, button) {
+  white-space: normal;
+  text-align: center;
+}
+
+/* A single accessible focus language across practical House surfaces. */
+.dashboard-shell :is(a, button, input, select, textarea):focus-visible,
+.investor-house-shell :is(a, button, input, select, textarea):focus-visible,
+.directory-room :is(a, button, input, select, textarea):focus-visible,
+.member-directory :is(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid rgba(255, 211, 61, 0.86);
+  outline-offset: 3px;
+}
+
+/* Prevent common real-data overflow without clipping useful content. */
+.directory-room
+  :is(.discovery-card-meta, .campaign-directory-facts, .member-card footer),
+.member-directory
+  :is(.discovery-card-meta, .campaign-directory-facts, .member-card footer) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.directory-room img,
+.member-directory img {
+  max-width: 100%;
+}
+
+@media (max-width: 900px) {
+  .project-directory-filter {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .project-directory-filter label {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 700px) {
+  .project-directory-filter {
+    grid-template-columns: 1fr;
+    padding: 0.9rem;
+  }
+
+  .project-directory-filter label,
+  .project-directory-filter .button,
+  .project-directory-filter .quiet-link {
+    grid-column: 1;
+    width: 100%;
+  }
+
+  .project-directory-filter .button,
+  .project-directory-filter .quiet-link {
+    justify-content: center;
+  }
+
+  .member-directory-toolbar {
+    align-items: flex-start;
+  }
+
+  .member-directory-filter-actions {
+    width: 100%;
+  }
+
+  .member-directory-filter-actions .button {
+    width: 100%;
+  }
+
+  .directory-room .directory-empty :is(.button, .quiet-link),
+  .campaign-directory-empty :is(.button, .quiet-link) {
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .event-invitation-card footer {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .member-directory-toolbar {
+    flex-direction: column;
+  }
+
+  .member-view-toggle {
+    width: 100%;
+  }
+
+  .member-view-toggle a {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .project-lantern-card,
+  .event-invitation-card,
+  .campaign-directory-card,
+  .member-card {
+    scroll-behavior: auto;
+  }
+}
+
+/* R94 — launch polish. Keep My House action-first and make profile editing intentional. */
+.dashboard-shell .house-compass-toolbar {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dashboard-shell .house-compass-profile-action {
+  min-height: 40px;
+  padding: 0.5rem 0.75rem;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(244, 246, 252, 0.78);
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.dashboard-shell .house-compass-profile-action:hover,
+.dashboard-shell .house-compass-profile-action:focus-visible {
+  border-color: rgba(240, 79, 135, 0.38);
+  color: #fff;
+  background: rgba(240, 79, 135, 0.06);
+}
+
+/* The full profile editor remains available, but it no longer dominates My House. */
+.dashboard-shell .profile-photo-editor,
+.dashboard-shell #profile-editor.profile-form {
+  display: none;
+}
+
+.dashboard-shell:has(#profile-editor:target) .profile-photo-editor {
+  display: block;
+}
+
+.dashboard-shell #profile-editor:target {
+  display: grid;
+}
+
+.dashboard-shell:has(#profile-editor:target) .dashboard-workspace {
+  margin-bottom: 0.85rem;
+}
+
+/* Public chapter copy must never disappear into an apparently empty scroll zone.
+   Hero depth and petals remain; only decorative entry fading is removed. */
+main:has(> .arrival) .chapter-section {
+  padding-block: clamp(3.75rem, 6vw, 5.75rem);
+}
+
+main:has(> .arrival) .common-section,
+main:has(> .arrival) .journey-section,
+main:has(> .arrival) .archive-section {
+  min-height: 0 !important;
+}
+
+@supports (animation-timeline: view()) {
+  main:has(> .arrival) .story-chapter .section-intro,
+  main:has(> .arrival) .story-chapter > .archive-copy,
+  main:has(> .arrival) .story-chapter > .membership-copy,
+  main:has(> .arrival) .journey-section > div:first-child {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .dashboard-shell .house-compass-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dashboard-shell .house-compass-profile-action {
+    width: 100%;
+    justify-content: center;
+  }
+
+  main:has(> .arrival) .chapter-section {
+    padding-block: 3.25rem;
+  }
+}

@@ -29,14 +29,13 @@
   }
 }
 
-/* Skip layout and paint work for story chapters that begin below the fold.
-   The browser retains an intrinsic placeholder, so scroll position remains stable. */
+/* R94 launch evidence showed that deferring core House chapters could reserve
+   large intrinsic placeholders before the browser painted their content.
+   Keep the actual journey continuously rendered. Only an optional epilogue may
+   use content-visibility when it exists. */
 @supports (content-visibility: auto) {
-  .common-section,
-  .journey-section,
-  .archive-section,
   .final-welcome {
     content-visibility: auto;
-    contain-intrinsic-size: 900px;
+    contain-intrinsic-size: 700px;
   }
 }

@@ -293,9 +293,204 @@ export async function action({ request, context }: Route.ActionArgs) {
 }
 
 const profileCardWorkspaceStyles = `
+/* R93: make the sharing card read like a credible identity object, not a decoration. */
+.glass-share-page .glass-card-metrics {
+  position: absolute !important;
+  right: 7.5% !important;
+  bottom: 21.2% !important;
+  left: 7.5% !important;
+  z-index: 2 !important;
+  min-height: 11.5% !important;
+  padding: 0 1.5cqi !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid color-mix(in srgb, var(--card-ink) 28%, transparent) !important;
+  border-radius: clamp(9px, 2cqi, 14px) !important;
+  background: color-mix(in srgb, var(--card-bg) 72%, var(--card-surface)) !important;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--card-ink) 18%, transparent),
+    0 10px 22px rgb(0 0 0 / 13%) !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.glass-share-page .glass-card-metrics > div {
+  min-width: 0;
+  padding: 0.55cqi 1.45cqi;
+  display: grid;
+  align-content: center;
+  gap: 0.08cqi;
+}
+
+.glass-share-page .glass-card-metrics > div + div {
+  border-left: 1px solid color-mix(in srgb, var(--card-ink) 20%, transparent);
+}
+
+.glass-share-page .glass-card-metrics strong {
+  overflow: hidden;
+  color: var(--card-highlight);
+  font-size: clamp(0.62rem, 2.15cqi, 0.94rem) !important;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.glass-share-page .glass-card-metrics > div:nth-child(2) strong,
+.glass-share-page .glass-card-metrics > div:nth-child(3) strong {
+  color: var(--card-accent);
+}
+
+.glass-share-page .glass-card-metrics span {
+  overflow: hidden;
+  color: var(--card-ink);
+  font-size: clamp(0.3rem, 0.82cqi, 0.4rem) !important;
+  font-weight: 750;
+  line-height: 1.1;
+  letter-spacing: 0.075em;
+  opacity: 0.62;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.glass-share-page .glass-profile-qr-panel {
+  top: 22.7% !important;
+  min-height: 38.5% !important;
+}
+
+.glass-share-page .glass-connect-strip {
+  left: 7.5% !important;
+  bottom: 9.5% !important;
+  width: 63.5% !important;
+  min-height: 8.9% !important;
+  padding-inline: 1.8cqi !important;
+  gap: 1.7cqi !important;
+}
+
+.glass-share-page .glass-connect-strip::after {
+  display: none !important;
+  content: none !important;
+}
+
+.glass-share-page .glass-connect-strip > strong {
+  width: auto !important;
+  flex: 0 0 auto !important;
+  padding-right: 0.35cqi;
+  font-size: clamp(0.42rem, 1.08cqi, 0.58rem) !important;
+}
+
+.glass-share-page .glass-card-socials {
+  min-width: 0;
+  gap: clamp(0.36rem, 1.25cqi, 0.62rem) !important;
+}
+
+.glass-share-page .glass-card-socials a,
+.glass-share-page .glass-social-more {
+  width: clamp(1.18rem, 3.75cqi, 1.6rem) !important;
+  height: clamp(1.18rem, 3.75cqi, 1.6rem) !important;
+}
+
+.glass-share-page .glass-card-socials a {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--card-ink) 14%, transparent),
+    0 5px 12px rgb(0 0 0 / 14%) !important;
+}
+
+.glass-share-page .glass-card-socials svg {
+  width: clamp(0.56rem, 1.5cqi, 0.7rem) !important;
+  height: clamp(0.56rem, 1.5cqi, 0.7rem) !important;
+}
+
+.glass-share-page .glass-card-footer {
+  right: 7.5% !important;
+  bottom: 3.2% !important;
+  left: 7.5% !important;
+  min-height: 3.3% !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.glass-share-page .glass-card-footer::before {
+  display: none !important;
+  content: none !important;
+}
+
+.glass-share-page .glass-card-footer::after {
+  content: "AKARI member identity" !important;
+  font-size: clamp(0.28rem, 0.72cqi, 0.36rem) !important;
+  letter-spacing: 0.02em;
+  opacity: 0.52;
+}
+
+.glass-share-page .glass-card-footer-brand {
+  font-size: clamp(0.3rem, 0.8cqi, 0.4rem) !important;
+  letter-spacing: 0.03em;
+  opacity: 0.72;
+}
+
+.glass-share-page .glass-card-note {
+  align-items: flex-start !important;
+  line-height: 1.45;
+}
+
+.glass-share-page .share-card-confidence {
+  color: color-mix(in srgb, var(--muted) 82%, white 18%);
+  line-height: 1.45;
+  text-align: center;
+}
+
+.glass-share-page .glass-card-controls > fieldset:first-of-type {
+  grid-column: 1 / -1 !important;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.glass-share-page .glass-card-controls > fieldset:first-of-type legend {
+  grid-column: 1 / -1;
+}
+
+.glass-share-page .glass-card-controls > fieldset:first-of-type label {
+  min-height: 46px;
+  margin: 0;
+  padding: 0.65rem 0.72rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 11px;
+  background: rgb(255 255 255 / 2.5%);
+}
+
+.glass-share-page .share-card-check {
+  min-height: 44px;
+  padding: 0.6rem 0.72rem !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.55rem !important;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 11px;
+  background: rgb(255 255 255 / 2.5%);
+  line-height: 1.25;
+}
+
+.glass-share-page .share-card-check input {
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+}
+
 @media (min-width: 981px) {
   .glass-share-page.share-card-main {
-    width: min(980px, calc(100% - 2rem)) !important;
+    width: min(1120px, calc(100% - 2rem)) !important;
   }
 
   .glass-share-page .share-card-heading {
@@ -310,13 +505,13 @@ const profileCardWorkspaceStyles = `
   }
 
   .glass-share-page .share-card-heading p {
-    max-width: 56ch;
+    max-width: 58ch;
     font-size: 0.94rem;
     line-height: 1.5;
   }
 
   .glass-share-page .share-card-layout {
-    grid-template-columns: minmax(0, 540px) minmax(300px, 340px) !important;
+    grid-template-columns: minmax(0, 620px) minmax(320px, 360px) !important;
     justify-content: center !important;
     align-items: start !important;
     gap: 1.25rem !important;
@@ -325,17 +520,17 @@ const profileCardWorkspaceStyles = `
   .glass-share-page .share-card-stage.glass-card-stage {
     width: 100% !important;
     margin: 0 !important;
-    padding: 0.75rem !important;
+    padding: 0.8rem !important;
     border-radius: 18px !important;
   }
 
   .glass-card-stage .glass-profile-card.akari-share-card {
-    width: min(100%, 500px) !important;
+    width: min(100%, 580px) !important;
   }
 
   .glass-share-page .glass-card-note {
-    margin-top: 0.6rem !important;
-    font-size: 0.68rem !important;
+    margin-top: 0.65rem !important;
+    font-size: 0.7rem !important;
   }
 
   .glass-share-page .share-card-confidence {
@@ -346,7 +541,7 @@ const profileCardWorkspaceStyles = `
   .glass-share-page .share-card-controls.glass-card-controls {
     width: 100% !important;
     margin: 0 !important;
-    padding: 0.95rem !important;
+    padding: 1rem !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 0.75rem !important;
     border-radius: 18px !important;
@@ -377,6 +572,33 @@ const profileCardWorkspaceStyles = `
   .glass-share-page .glass-palette-swatch {
     width: 1.7rem !important;
     height: 1.7rem !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .glass-share-page .glass-card-metrics {
+    bottom: 21% !important;
+    min-height: 11.2% !important;
+    padding-inline: 1cqi !important;
+  }
+
+  .glass-share-page .glass-card-metrics > div {
+    padding-inline: 0.8cqi;
+  }
+
+  .glass-share-page .glass-connect-strip {
+    bottom: 9.4% !important;
+    min-height: 8.6% !important;
+    padding-inline: 1.4cqi !important;
+    gap: 1.05cqi !important;
+  }
+
+  .glass-share-page .glass-card-socials {
+    gap: 0.95cqi !important;
+  }
+
+  .glass-share-page .glass-card-footer::after {
+    display: none !important;
   }
 }
 `;

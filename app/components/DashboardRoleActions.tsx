@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router";
+import { useEffect, useState } from "react";
+import { Link, useLocation } from "react-router";
 import type { Role, SessionUser } from "~/lib/domain";
 
 type WorkspaceAction = {
@@ -124,28 +124,60 @@ export function dashboardRoleActions(
 
 export function DashboardRoleActions({ user }: { user: SessionUser }) {
   const roles = user.roles;
+  const location = useLocation();
   const [activeRole, setActiveRole] = useState<Role>(roles[0] ?? "founder");
   const actions = dashboardRoleActions(user, activeRole);
+  const editingProfile = location.hash === "#profile-editor";
+
+  useEffect(() => {
+    const shell = document.querySelector<HTMLElement>(".dashboard-shell");
+    const photoEditor = shell?.querySelector<HTMLElement>(
+      ".profile-photo-editor",
+    );
+    const profileForm = document.getElementById("profile-editor");
+    if (!shell || !profileForm) return;
+
+    shell.classList.toggle("is-editing-profile", editingProfile);
+    if (photoEditor) photoEditor.style.display = editingProfile ? "block" : "";
+    profileForm.style.display = editingProfile ? "grid" : "";
+
+    if (editingProfile) {
+      requestAnimationFrame(() =>
+        profileForm.scrollIntoView({ block: "start", behavior: "auto" }),
+      );
+    }
+
+    return () => {
+      shell.classList.remove("is-editing-profile");
+      photoEditor?.style.removeProperty("display");
+      profileForm.style.removeProperty("display");
+    };
+  }, [editingProfile]);
 
   return (
     <div className="house-compass" aria-live="polite">
-      {user.accessTier === "member" && roles.length > 1 && (
-        <div
-          className="house-compass-role-switch"
-          aria-label="Choose your active AKARI role"
-        >
-          {roles.map((role) => (
-            <button
-              key={role}
-              type="button"
-              aria-pressed={activeRole === role}
-              onClick={() => setActiveRole(role)}
-            >
-              {role}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="house-compass-toolbar">
+        {user.accessTier === "member" && roles.length > 1 && (
+          <div
+            className="house-compass-role-switch"
+            aria-label="Choose your active AKARI role"
+          >
+            {roles.map((role) => (
+              <button
+                key={role}
+                type="button"
+                aria-pressed={activeRole === role}
+                onClick={() => setActiveRole(role)}
+              >
+                {role}
+              </button>
+            ))}
+          </div>
+        )}
+        <Link className="house-compass-profile-action" to="/app#profile-editor">
+          Edit profile &amp; privacy <span aria-hidden="true">→</span>
+        </Link>
+      </div>
 
       <div className="dashboard-role-actions house-compass-steps">
         {actions.map((action, index) => (

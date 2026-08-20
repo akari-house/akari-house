@@ -22,12 +22,13 @@ describe("R77 launch hardening", () => {
     expect(source).not.toContain("siteverify");
   });
 
-  it("defers only below-fold story chapters", async () => {
+  it("keeps core House chapters rendered while deferring only the optional epilogue", async () => {
     const css = await readFile("app/styles/r77-launch-completion.css", "utf8");
     expect(css).toContain("content-visibility: auto");
-    expect(css).toContain(".common-section");
-    expect(css).toContain(".journey-section");
-    expect(css).toContain(".archive-section");
+    expect(css).toContain(".final-welcome");
+    expect(css).not.toContain(".common-section");
+    expect(css).not.toContain(".journey-section");
+    expect(css).not.toContain(".archive-section");
     expect(css).not.toContain(".arrival {\n    content-visibility");
   });
 

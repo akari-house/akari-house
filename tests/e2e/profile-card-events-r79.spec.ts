@@ -16,7 +16,7 @@ function localInput(date: Date) {
 }
 
 test.describe("R83 profile sharing and event publishing", () => {
-  test("renders an optimized AKARI sharing-card workspace and respects profile privacy", async ({
+  test("renders an optimized AKARI sharing-card workspace with visible credibility and clean socials", async ({
     page,
   }, testInfo) => {
     await activateSuperadmin(page);
@@ -28,6 +28,8 @@ test.describe("R83 profile sharing and event publishing", () => {
     const card = page.locator(".glass-profile-card");
     const stage = page.locator(".glass-card-stage");
     const controls = page.locator(".glass-card-controls");
+    const metrics = card.locator(".glass-card-metrics");
+    const connect = card.locator(".glass-connect-strip");
     await expect(card).toBeVisible();
     await expect(controls).toBeVisible();
     await expect(card.locator('img[alt="AKARI"]')).toBeVisible();
@@ -41,6 +43,47 @@ test.describe("R83 profile sharing and event publishing", () => {
     await expect(
       card.getByText("Publish to enable QR", { exact: true }),
     ).toBeVisible();
+
+    // R93 keeps credibility on the actual share object instead of hiding the
+    // already-computed member signals below the preview.
+    await expect(metrics).toBeVisible();
+    await expect(
+      metrics.getByText("Opportunities", { exact: true }),
+    ).toBeVisible();
+    await expect(metrics.getByText("Reach", { exact: true })).toBeVisible();
+    await expect(
+      metrics.getByText("AKARI signal", { exact: true }),
+    ).toBeVisible();
+
+    // The final card uses one role treatment and removes the tiny brand tagline.
+    // The verification badge remains explicit on larger cards and is removed on
+    // compact phone cards where the credibility band already carries trust.
+    await expect(card.locator(".glass-role-pills")).toBeHidden();
+    const verification = card.locator(".glass-card-verification");
+    const compactCard = (page.viewportSize()?.width ?? 1024) <= 700;
+    if (compactCard) await expect(verification).toBeHidden();
+    else await expect(verification).toBeVisible();
+    const brandTaglineDisplay = await card
+      .locator(".glass-card-brand")
+      .evaluate((element) => getComputedStyle(element, "::after").display);
+    expect(brandTaglineDisplay).toBe("none");
+
+    // The old decorative divider crossed the social icons. It is intentionally
+    // removed and the metrics/social bands must occupy separate vertical space.
+    const dividerDisplay = await connect.evaluate(
+      (element) => getComputedStyle(element, "::after").display,
+    );
+    expect(dividerDisplay).toBe("none");
+    await expect(connect.getByText("Connect", { exact: true })).toBeHidden();
+    const metricsBox = await metrics.boundingBox();
+    const connectBox = await connect.boundingBox();
+    expect(metricsBox).not.toBeNull();
+    expect(connectBox).not.toBeNull();
+    if (metricsBox && connectBox) {
+      expect(metricsBox.y + metricsBox.height).toBeLessThanOrEqual(
+        connectBox.y + 2,
+      );
+    }
 
     await expect(
       page.getByText("Midnight Glass", { exact: true }),
@@ -56,7 +99,7 @@ test.describe("R83 profile sharing and event publishing", () => {
       const ratio = box.width / box.height;
       expect(ratio).toBeGreaterThan(1.55);
       expect(ratio).toBeLessThan(1.63);
-      expect(box.width).toBeLessThanOrEqual(510);
+      expect(box.width).toBeLessThanOrEqual(590);
     }
 
     if (testInfo.project.name === "desktop-chromium") {
@@ -69,8 +112,15 @@ test.describe("R83 profile sharing and event publishing", () => {
         expect(Math.abs(controlsBox.y - stageBox.y)).toBeLessThanOrEqual(8);
       }
 
+      const languageToggle = page.getByText("Show spoken languages", {
+        exact: true,
+      });
+      const toggleBox = await languageToggle.boundingBox();
+      expect(toggleBox).not.toBeNull();
+      if (toggleBox) expect(toggleBox.height).toBeLessThanOrEqual(48);
+
       const screenshot = await page.locator(".share-card-layout").screenshot();
-      await testInfo.attach("r83-optimized-akari-profile-card-workspace", {
+      await testInfo.attach("r93-profile-card-credibility-and-socials", {
         body: screenshot,
         contentType: "image/png",
       });
