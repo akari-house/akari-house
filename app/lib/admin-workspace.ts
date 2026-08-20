@@ -43,6 +43,14 @@ export const adminWorkspaceItems: AdminWorkspaceItem[] = [
     superadminOnly: true,
   },
   {
+    key: "seed-house",
+    label: "Seed the House",
+    description:
+      "See which real people, projects, campaigns, opportunities and events are still missing for the controlled pilot.",
+    to: "/admin/seed-house",
+    superadminOnly: true,
+  },
+  {
     key: "fundraising-readiness",
     label: "Fundraising readiness",
     description:
