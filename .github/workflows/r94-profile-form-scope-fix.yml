@@ -23,24 +23,9 @@ jobs:
       - run: npm ci
       - name: Narrow My House form hiding to the profile editor only
         shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          path = Path('app/styles/r91-launch-experience.css')
-          text = path.read_text()
-          old = '''.dashboard-shell .profile-photo-editor,
-.dashboard-shell .profile-form {
-  display: none;
-}'''
-          new = '''.dashboard-shell .profile-photo-editor,
-.dashboard-shell #profile-editor.profile-form {
-  display: none;
-}'''
-          if old not in text:
-              raise SystemExit('R94 broad profile-form selector not found')
-          path.write_text(text.replace(old, new, 1))
-          PY
-          npx prettier --write app/styles/r91-launch-experience.css
+        run: >-
+          python -c 'from pathlib import Path; p=Path("app/styles/r91-launch-experience.css"); s=p.read_text(); old=".dashboard-shell .profile-photo-editor,\n.dashboard-shell .profile-form {\n  display: none;\n}"; new=".dashboard-shell .profile-photo-editor,\n.dashboard-shell #profile-editor.profile-form {\n  display: none;\n}"; assert old in s, "R94 broad profile-form selector not found"; p.write_text(s.replace(old,new,1))'
+      - run: npx prettier --write app/styles/r91-launch-experience.css
       - name: Commit selector correction
         run: |
           git config user.name "github-actions[bot]"
