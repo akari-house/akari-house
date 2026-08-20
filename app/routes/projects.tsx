@@ -19,6 +19,7 @@ type PublicProjectRow = {
   founderUsername: string;
   followerCount: number;
   logoKey: string | null;
+  bannerKey: string | null;
 };
 
 export const meta: Route.MetaFunction = () => [
@@ -37,6 +38,7 @@ async function readPublishedProjects(db: D1Database) {
         `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
                 pr.support_status_json AS supportStatus,
                 pr.logo_key AS logoKey,
+                pr.banner_key AS bannerKey,
                 p.display_name AS founderName, u.username AS founderUsername,
                 COUNT(DISTINCT pf.user_id) AS followerCount
          FROM projects pr
@@ -59,6 +61,7 @@ async function readPublishedProjects(db: D1Database) {
         `SELECT pr.slug, pr.title, pr.summary, pr.stage, pr.seeking,
                 COALESCE(pr.support_status_json, '{}') AS supportStatus,
                 pr.logo_key AS logoKey,
+                pr.banner_key AS bannerKey,
                 COALESCE(p.display_name, u.username, 'AKARI Founder') AS founderName,
                 u.username AS founderUsername,
                 0 AS followerCount
@@ -148,7 +151,11 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
         <section className="project-lantern-gallery" aria-label="Projects">
           {loaderData.projects.length ? (
             loaderData.projects.map((project) => (
-              <ProjectLanternCard project={project} key={project.slug} />
+              <ProjectLanternCard
+                project={project}
+                compact
+                key={project.slug}
+              />
             ))
           ) : (
             <div className="directory-empty is-project">
