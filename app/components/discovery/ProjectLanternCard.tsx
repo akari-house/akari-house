@@ -16,6 +16,7 @@ export type ProjectLantern = {
   founderUsername: string;
   followerCount: number;
   logoKey?: string | null;
+  bannerKey?: string | null;
 };
 
 export function ProjectLanternCard({
@@ -35,7 +36,23 @@ export function ProjectLanternCard({
   );
 
   return (
-    <article className={`project-lantern-card${compact ? " is-compact" : ""}`}>
+    <article
+      className={`project-lantern-card${compact ? " is-compact" : ""}${project.bannerKey ? " has-banner" : ""}`}
+    >
+      {project.bannerKey && (
+        <Link
+          className="project-lantern-banner"
+          to={`/projects/${project.slug}`}
+          aria-label={`View ${project.title}`}
+        >
+          <img
+            src={`/media/projects/${project.slug}/banner`}
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
+        </Link>
+      )}
       {project.logoKey ? (
         <div
           className="project-logo-mark"
