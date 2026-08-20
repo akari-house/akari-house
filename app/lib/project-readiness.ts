@@ -33,6 +33,10 @@ export function buildProjectReadiness(
   const brandHref = `/projects/${project.slug}/edit/brand`;
   const description = project.description ?? "";
   const seeking = project.seeking ?? "";
+  const nonWebsiteSocialCount = Math.max(
+    0,
+    project.socialCount - (project.hasWebsite ? 1 : 0),
+  );
 
   const items: ProjectReadinessItem[] = [
     {
@@ -66,13 +70,13 @@ export function buildProjectReadiness(
       key: "website",
       label: "Add the official website",
       complete: project.hasWebsite,
-      href: `${editHref}#project-channels`,
+      href: editHref,
     },
     {
       key: "socials",
       label: "Add at least one social channel",
-      complete: project.socialCount >= 2,
-      href: `${editHref}#project-channels`,
+      complete: nonWebsiteSocialCount >= 1,
+      href: editHref,
     },
   ];
 
