@@ -461,3 +461,91 @@
     scroll-behavior: auto;
   }
 }
+
+/* R94 — launch polish. Keep My House action-first and make profile editing intentional. */
+.dashboard-shell .house-compass-toolbar {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dashboard-shell .house-compass-profile-action {
+  min-height: 40px;
+  padding: 0.5rem 0.75rem;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: rgba(244, 246, 252, 0.78);
+  background: rgba(255, 255, 255, 0.025);
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.dashboard-shell .house-compass-profile-action:hover,
+.dashboard-shell .house-compass-profile-action:focus-visible {
+  border-color: rgba(240, 79, 135, 0.38);
+  color: #fff;
+  background: rgba(240, 79, 135, 0.06);
+}
+
+/* The full profile editor remains available, but it no longer dominates My House. */
+.dashboard-shell .profile-photo-editor,
+.dashboard-shell .profile-form {
+  display: none;
+}
+
+.dashboard-shell:has(#profile-editor:target) .profile-photo-editor {
+  display: block;
+}
+
+.dashboard-shell #profile-editor:target {
+  display: grid;
+}
+
+.dashboard-shell:has(#profile-editor:target) .dashboard-workspace {
+  margin-bottom: 0.85rem;
+}
+
+/* Public chapter copy must never disappear into an apparently empty scroll zone.
+   Hero depth and petals remain; only decorative entry fading is removed. */
+main:has(> .arrival) .chapter-section {
+  padding-block: clamp(3.75rem, 6vw, 5.75rem);
+}
+
+main:has(> .arrival) .common-section,
+main:has(> .arrival) .journey-section,
+main:has(> .arrival) .archive-section {
+  min-height: 0 !important;
+}
+
+@supports (animation-timeline: view()) {
+  main:has(> .arrival) .story-chapter .section-intro,
+  main:has(> .arrival) .story-chapter > .archive-copy,
+  main:has(> .arrival) .story-chapter > .membership-copy,
+  main:has(> .arrival) .journey-section > div:first-child {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .dashboard-shell .house-compass-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .dashboard-shell .house-compass-profile-action {
+    width: 100%;
+    justify-content: center;
+  }
+
+  main:has(> .arrival) .chapter-section {
+    padding-block: 3.25rem;
+  }
+}
