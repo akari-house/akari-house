@@ -1,0 +1,309 @@
+.project-detail-v2 {
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1.5rem 0 4rem;
+}
+
+.project-detail-hero {
+  overflow: hidden;
+  border: 1px solid var(--hair);
+  border-radius: 28px;
+  background: rgba(9, 11, 20, 0.82);
+}
+
+.project-detail-banner,
+.project-detail-banner-fallback {
+  width: 100%;
+  aspect-ratio: 8 / 3;
+}
+
+.project-detail-banner {
+  display: block;
+  object-fit: cover;
+}
+
+.project-detail-banner-fallback {
+  background:
+    radial-gradient(circle at 18% 24%, rgba(240, 79, 135, 0.22), transparent 34%),
+    radial-gradient(circle at 82% 18%, rgba(255, 211, 61, 0.15), transparent 30%),
+    linear-gradient(135deg, rgba(28, 20, 35, 0.96), rgba(8, 11, 19, 0.98));
+}
+
+.project-detail-hero-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.25rem;
+  align-items: end;
+  padding: 1.35rem;
+}
+
+.project-detail-identity {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.project-detail-logo,
+.project-detail-logo-fallback {
+  width: 84px;
+  height: 84px;
+  flex: 0 0 84px;
+  margin-top: -3.25rem;
+  border: 1px solid var(--hair);
+  border-radius: 22px;
+  background: rgba(8, 11, 19, 0.96);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.24);
+}
+
+.project-detail-logo {
+  object-fit: contain;
+  padding: 0.55rem;
+}
+
+.project-detail-logo-fallback {
+  display: grid;
+  place-items: center;
+  color: var(--yellow);
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.project-detail-identity h1 {
+  margin: 0.25rem 0 0.4rem;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  line-height: 1;
+}
+
+.project-detail-meta,
+.project-detail-founder,
+.project-detail-role-note {
+  color: var(--muted);
+}
+
+.project-detail-founder a {
+  font-weight: 700;
+}
+
+.project-detail-primary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  max-width: 360px;
+}
+
+.project-detail-primary-actions form {
+  margin: 0;
+}
+
+.project-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: 1.25rem;
+  align-items: start;
+  margin-top: 1.25rem;
+}
+
+.project-detail-main-column,
+.project-detail-side-column {
+  display: grid;
+  gap: 1rem;
+}
+
+.project-detail-section,
+.seed-house-panel,
+.seed-house-stat {
+  border: 1px solid var(--hair);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.project-detail-section,
+.seed-house-panel {
+  padding: 1.15rem;
+}
+
+.project-detail-section h2,
+.seed-house-panel h2 {
+  margin: 0.25rem 0 0.75rem;
+}
+
+.project-detail-story {
+  white-space: pre-line;
+  line-height: 1.72;
+}
+
+.project-detail-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.project-detail-links a {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  text-transform: capitalize;
+}
+
+.project-detail-team-list,
+.project-detail-campaign-list,
+.project-detail-interest-list {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.project-detail-team-card,
+.project-detail-campaign-card,
+.project-detail-interest-card {
+  padding: 0.8rem;
+  border: 1px solid var(--hair);
+  border-radius: 14px;
+  background: rgba(7, 9, 17, 0.45);
+}
+
+.project-detail-team-card h3,
+.project-detail-campaign-card h3,
+.project-detail-interest-card h3 {
+  margin: 0;
+}
+
+.project-detail-side-column .project-seeking-panel {
+  margin: 0;
+}
+
+.seed-house-main {
+  width: min(1280px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 1.5rem 0 4rem;
+}
+
+.seed-house-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0 1.25rem;
+}
+
+.seed-house-stat {
+  padding: 1rem;
+}
+
+.seed-house-stat strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1.8rem;
+}
+
+.seed-house-readiness {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1rem;
+  align-items: center;
+}
+
+.seed-house-readiness-score {
+  font-size: clamp(2.2rem, 6vw, 4.8rem);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.seed-house-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.seed-house-gap-list,
+.seed-house-project-list {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0;
+  list-style: none;
+}
+
+.seed-house-gap-list li,
+.seed-house-project-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: center;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--hair);
+}
+
+.seed-house-project-list li:last-child,
+.seed-house-gap-list li:last-child {
+  border-bottom: 0;
+}
+
+.seed-house-badge {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 0.25rem 0.55rem;
+  border: 1px solid var(--hair);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .project-detail-hero-body,
+  .project-detail-layout,
+  .seed-house-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-detail-primary-actions {
+    justify-content: flex-start;
+    max-width: none;
+  }
+
+  .seed-house-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .project-detail-v2,
+  .seed-house-main {
+    width: min(100% - 1rem, 1280px);
+  }
+
+  .project-detail-hero {
+    border-radius: 20px;
+  }
+
+  .project-detail-identity {
+    gap: 0.75rem;
+  }
+
+  .project-detail-logo,
+  .project-detail-logo-fallback {
+    width: 64px;
+    height: 64px;
+    flex-basis: 64px;
+    margin-top: -2.5rem;
+    border-radius: 16px;
+  }
+
+  .project-detail-primary-actions .button,
+  .project-detail-primary-actions form,
+  .project-detail-primary-actions form .button {
+    width: 100%;
+  }
+
+  .seed-house-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .seed-house-readiness {
+    grid-template-columns: 1fr;
+  }
+}
