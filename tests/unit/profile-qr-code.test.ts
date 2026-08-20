@@ -41,7 +41,9 @@ describe("AKARI profile QR generator", () => {
 
   it("keeps encoded profile URLs inside the fixed safe capacity", () => {
     expect(PROFILE_QR_MAX_BYTES).toBe(106);
-    expect(() => buildProfileQrMatrix("x".repeat(PROFILE_QR_MAX_BYTES))).not.toThrow();
+    expect(() =>
+      buildProfileQrMatrix("x".repeat(PROFILE_QR_MAX_BYTES)),
+    ).not.toThrow();
     expect(() =>
       buildProfileQrMatrix("x".repeat(PROFILE_QR_MAX_BYTES + 1)),
     ).toThrow(/exceeds 106 UTF-8 bytes/);
