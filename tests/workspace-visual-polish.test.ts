@@ -3,14 +3,22 @@ import { describe, expect, it } from "vitest";
 
 const root = readFileSync("app/root.tsx", "utf8");
 const polish = readFileSync("app/styles/house-workspace-polish.css", "utf8");
+const launchExperience = readFileSync(
+  "app/styles/r91-launch-experience.css",
+  "utf8",
+);
 const contact = readFileSync("app/routes/admin-contact.tsx", "utf8");
 
 describe("AKARI workspace visual polish", () => {
-  it("loads the refinement layer after the workspace styles", () => {
+  it("loads the refinement layers after the workspace styles", () => {
     expect(root).toContain('import "./styles/house-workspace-art.css"');
     expect(root).toContain('import "./styles/house-workspace-polish.css"');
+    expect(root).toContain('import "./styles/r91-launch-experience.css"');
     expect(root.indexOf("house-workspace-polish.css")).toBeGreaterThan(
       root.indexOf("house-workspace-art.css"),
+    );
+    expect(root.indexOf("r91-launch-experience.css")).toBeGreaterThan(
+      root.indexOf("house-workspace-polish.css"),
     );
   });
 
@@ -41,5 +49,17 @@ describe("AKARI workspace visual polish", () => {
     expect(polish).toContain(".member-card-grid.is-list");
     expect(polish).toContain(".house-workspace-sidebar-link");
     expect(polish).toContain("@media (max-width: 680px)");
+  });
+
+  it("applies the R93 final QA layer to practical House surfaces", () => {
+    expect(launchExperience).toContain("R93 — final House QA polish");
+    expect(launchExperience).toContain(".project-directory-filter");
+    expect(launchExperience).toContain(".project-lantern-card");
+    expect(launchExperience).toContain(".event-invitation-card");
+    expect(launchExperience).toContain(".campaign-directory-card");
+    expect(launchExperience).toContain(".member-directory-toolbar");
+    expect(launchExperience).toContain(":focus-visible");
+    expect(launchExperience).toContain("outline-offset: 3px");
+    expect(launchExperience).toContain("@media (max-width: 700px)");
   });
 });
