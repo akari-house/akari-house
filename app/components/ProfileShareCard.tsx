@@ -11,6 +11,12 @@ import {
   type ProfileCardSettings,
   type ProfileCardSocialPlatform,
 } from "~/lib/profile-card";
+import {
+  buildProfileQrMatrix,
+  profileQrPath,
+  PROFILE_QR_MODULES,
+  PROFILE_QR_QUIET_ZONE,
+} from "~/lib/qr-code";
 import "~/styles/profile-card-enhancements.css";
 import "~/styles/profile-card-glass.css";
 
@@ -86,6 +92,8 @@ const socialLabels: Record<ProfileCardSocialPlatform, string> = {
   facebook: "Facebook",
   youtube: "YouTube",
 };
+
+const CARD_SOCIAL_LIMIT = 4;
 
 function flagFor(code: string) {
   return /^[A-Z]{2}$/.test(code)
@@ -186,6 +194,24 @@ function LinkGlyph({ size = 20 }: { size?: number }) {
   );
 }
 
+function ProfileQrCode({ value }: { value: string }) {
+  const matrix = useMemo(() => buildProfileQrMatrix(value), [value]);
+  const viewBoxSize = PROFILE_QR_MODULES + PROFILE_QR_QUIET_ZONE * 2;
+
+  return (
+    <svg
+      className="glass-profile-qr"
+      viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
+      role="img"
+      aria-label="QR code for public AKARI profile"
+      shapeRendering="crispEdges"
+    >
+      <rect width={viewBoxSize} height={viewBoxSize} rx="1.25" fill="#fff" />
+      <path d={profileQrPath(matrix, PROFILE_QR_QUIET_ZONE)} fill="#111" />
+    </svg>
+  );
+}
+
 function avatarUrl(model: ProfileCardModel) {
   return model.avatarKey
     ? `/media/profile/${encodeURIComponent(model.username)}?v=${encodeURIComponent(model.avatarKey)}`
@@ -210,6 +236,37 @@ function roundedRect(
 ) {
   ctx.beginPath();
   ctx.roundRect(x, y, width, height, radius);
+}
+
+function drawProfileQr(
+  ctx: CanvasRenderingContext2D,
+  value: string,
+  x: number,
+  y: number,
+  size: number,
+) {
+  const matrix = buildProfileQrMatrix(value);
+  const totalModules = PROFILE_QR_MODULES + PROFILE_QR_QUIET_ZONE * 2;
+  const moduleSize = Math.max(1, Math.floor(size / totalModules));
+  const renderedSize = moduleSize * totalModules;
+  const offsetX = x + (size - renderedSize) / 2;
+  const offsetY = y + (size - renderedSize) / 2;
+
+  roundedRect(ctx, x, y, size, size, 16);
+  ctx.fillStyle = "#fff";
+  ctx.fill();
+  ctx.fillStyle = "#111";
+  matrix.forEach((row, rowIndex) => {
+    row.forEach((dark, columnIndex) => {
+      if (!dark) return;
+      ctx.fillRect(
+        offsetX + (columnIndex + PROFILE_QR_QUIET_ZONE) * moduleSize,
+        offsetY + (rowIndex + PROFILE_QR_QUIET_ZONE) * moduleSize,
+        moduleSize,
+        moduleSize,
+      );
+    });
+  });
 }
 
 function drawSocialMark(
@@ -279,10 +336,14 @@ async function drawCard(
     .map((state) => titleCaseRole(state.role));
   const opportunities =
     model.opportunityStats.created + model.opportunityStats.received;
-  const canonicalUrl =
-    model.accessTier === "member" && model.visibility === "public"
-      ? `akarihouse.com/profiles/${model.username}`
-      : "Private AKARI profile";
+  const canSharePublicProfile =
+    model.accessTier === "member" && model.visibility === "public";
+  const publicProfileUrl = canSharePublicProfile
+    ? `https://akarihouse.com/profiles/${model.username}`
+    : "";
+  const canonicalUrl = canSharePublicProfile
+    ? publicProfileUrl.replace(/^https?:\/\//, "")
+    : "Private AKARI profile";
 
   ctx.fillStyle = palette.background;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -503,29 +564,37 @@ async function drawCard(
     pillX += width + 16;
   });
 
-  roundedRect(ctx, 1190, 260, 280, 310, 38);
+  roundedRect(ctx, 1190, 235, 280, 350, 38);
   ctx.fillStyle = palette.surface;
   ctx.fill();
   ctx.strokeStyle = `${palette.accent}99`;
   ctx.lineWidth = 2;
   ctx.stroke();
-  ctx.fillStyle = palette.accent;
-  ctx.font = "700 17px Inter, sans-serif";
-  ctx.fillText("PROFILE LINK", 1230, 320);
-  try {
-    const flower = await loadImage("/assets/brand/akari-flower-mark.png");
-    ctx.drawImage(flower, 1278, 345, 100, 100);
-  } catch {
-    // Brand mark is decorative here.
-  }
-  ctx.fillStyle = palette.ink;
-  ctx.font = "650 21px Inter, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText("Connect on AKARI", 1330, 480);
-  ctx.font = "500 15px Inter, sans-serif";
-  ctx.globalAlpha = 0.72;
-  ctx.fillText(canonicalUrl.slice(0, 34), 1330, 514);
-  ctx.globalAlpha = 1;
+  if (canSharePublicProfile) {
+    drawProfileQr(ctx, publicProfileUrl, 1218, 255, 224);
+    ctx.fillStyle = palette.accent;
+    ctx.font = "800 15px Inter, sans-serif";
+    ctx.fillText("SCAN TO CONNECT", 1330, 515);
+    ctx.fillStyle = palette.ink;
+    ctx.font = "650 18px Inter, sans-serif";
+    ctx.fillText("AKARI PROFILE", 1330, 547);
+    ctx.globalAlpha = 0.62;
+    ctx.font = "500 13px Inter, sans-serif";
+    ctx.fillText(canonicalUrl.slice(0, 34), 1330, 570);
+    ctx.globalAlpha = 1;
+  } else {
+    ctx.fillStyle = palette.accent;
+    ctx.font = "800 17px Inter, sans-serif";
+    ctx.fillText("PRIVATE PROFILE", 1330, 355);
+    ctx.fillStyle = palette.ink;
+    ctx.font = "650 19px Inter, sans-serif";
+    ctx.fillText("Publish to enable QR", 1330, 405);
+    ctx.globalAlpha = 0.64;
+    ctx.font = "500 14px Inter, sans-serif";
+    ctx.fillText("AKARI keeps private profiles private.", 1330, 442);
+    ctx.globalAlpha = 1;
+  }
   ctx.textAlign = "left";
 
   const metrics = [
@@ -563,18 +632,33 @@ async function drawCard(
   ctx.stroke();
   ctx.fillStyle = palette.ink;
   ctx.font = "600 23px Inter, sans-serif";
-  ctx.fillText("Connect with me", 165, 827);
-  const visibleSocials = model.socials.slice(0, 6);
+  ctx.fillText("Connect", 165, 827);
+  const visibleSocials = model.socials.slice(0, CARD_SOCIAL_LIMIT);
   visibleSocials.forEach((social, index) => {
-    const circleX = 475 + index * 76;
+    const circleX = 430 + index * 92;
     ctx.beginPath();
-    ctx.arc(circleX, 817, 28, 0, Math.PI * 2);
+    ctx.arc(circleX, 817, 30, 0, Math.PI * 2);
     ctx.fillStyle = `${palette.ink}0d`;
     ctx.fill();
     ctx.strokeStyle = `${palette.ink}45`;
     ctx.stroke();
     drawSocialMark(ctx, social.platform, circleX - 12, 805, palette.ink);
   });
+  const hiddenSocialCount = model.socials.length - visibleSocials.length;
+  if (hiddenSocialCount > 0) {
+    const circleX = 430 + visibleSocials.length * 92;
+    ctx.beginPath();
+    ctx.arc(circleX, 817, 30, 0, Math.PI * 2);
+    ctx.fillStyle = `${palette.ink}0d`;
+    ctx.fill();
+    ctx.strokeStyle = `${palette.ink}45`;
+    ctx.stroke();
+    ctx.fillStyle = palette.ink;
+    ctx.font = "700 18px Inter, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`+${hiddenSocialCount}`, circleX, 823);
+    ctx.textAlign = "left";
+  }
 
   roundedRect(ctx, 1150, 625, 320, 244, 30);
   ctx.fillStyle = palette.surface;
@@ -611,7 +695,7 @@ async function drawCard(
   ctx.font = "500 17px Inter, sans-serif";
   ctx.fillText("akarihouse.com", 118, 925);
   ctx.textAlign = "right";
-  ctx.fillText("A private ecosystem for high-signal connections.", 1470, 925);
+  ctx.fillText("A private membership for high-signal connections.", 1470, 925);
   ctx.textAlign = "left";
   ctx.globalAlpha = 1;
 }
@@ -646,8 +730,11 @@ export function ProfileShareCard({
     settings.showLocation && model.location
       ? `${flagFor(settings.countryCode)} ${model.location}`.trim()
       : "Location private";
+  const publicProfileUrl = canSharePublicProfile
+    ? `https://akarihouse.com/profiles/${model.username}`
+    : "";
   const canonicalUrl = canSharePublicProfile
-    ? `akarihouse.com/profiles/${model.username}`
+    ? publicProfileUrl.replace(/^https?:\/\//, "")
     : "Private AKARI profile";
   const availableLanguages = PROFILE_CARD_LANGUAGE_OPTIONS.filter(
     (language) =>
@@ -733,9 +820,8 @@ export function ProfileShareCard({
           <span className="eyebrow">Your AKARI identity</span>
           <h1>Profile sharing card</h1>
           <p>
-            A premium AKARI credit-card profile built from your real member
-            data. Choose your glass color, control private details, then
-            download or share.
+            A shareable AKARI member card built from your live profile. Choose a
+            finish, decide what stays public, then download or share.
           </p>
         </div>
         <Link className="quiet-link" to={`/profiles/${model.username}`}>
@@ -828,13 +914,35 @@ export function ProfileShareCard({
                 </div>
               </div>
 
-              <div className="glass-profile-link" aria-label="Profile link">
-                <span className="glass-profile-link-icon">
-                  <LinkGlyph size={22} />
-                </span>
-                <small>Profile link</small>
-                <strong>Connect on AKARI</strong>
-                <span>{canonicalUrl}</span>
+              <div
+                className={`glass-profile-link${
+                  canSharePublicProfile
+                    ? " glass-profile-qr-panel"
+                    : " is-private"
+                }`}
+                aria-label={
+                  canSharePublicProfile
+                    ? "Scan to view public AKARI profile"
+                    : "Private AKARI profile"
+                }
+              >
+                {canSharePublicProfile ? (
+                  <>
+                    <ProfileQrCode value={publicProfileUrl} />
+                    <small>Scan to connect</small>
+                    <strong>AKARI profile</strong>
+                    <span className="glass-profile-qr-url">{canonicalUrl}</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="glass-profile-link-icon">
+                      <LinkGlyph size={22} />
+                    </span>
+                    <small>Private profile</small>
+                    <strong>Publish to enable QR</strong>
+                    <span>AKARI keeps private profiles private</span>
+                  </>
+                )}
               </div>
             </div>
 
@@ -858,24 +966,34 @@ export function ProfileShareCard({
             </div>
 
             <div className="glass-connect-strip">
-              <strong>Connect with me</strong>
+              <strong>Connect</strong>
               <div
                 className="profile-card-socials glass-card-socials"
                 aria-label="Connected social platforms"
               >
                 {model.socials.length ? (
-                  model.socials.map((social) => (
-                    <a
-                      key={social.platform}
-                      href={social.profileUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={socialLabels[social.platform]}
-                      title={socialLabels[social.platform]}
-                    >
-                      <SocialIcon platform={social.platform} />
-                    </a>
-                  ))
+                  <>
+                    {model.socials.slice(0, CARD_SOCIAL_LIMIT).map((social) => (
+                      <a
+                        key={social.platform}
+                        href={social.profileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={socialLabels[social.platform]}
+                        title={socialLabels[social.platform]}
+                      >
+                        <SocialIcon platform={social.platform} />
+                      </a>
+                    ))}
+                    {model.socials.length > CARD_SOCIAL_LIMIT && (
+                      <span
+                        className="glass-social-more"
+                        aria-label={`${model.socials.length - CARD_SOCIAL_LIMIT} more social profiles`}
+                      >
+                        +{model.socials.length - CARD_SOCIAL_LIMIT}
+                      </span>
+                    )}
+                  </>
                 ) : (
                   <span className="glass-no-socials">
                     Add social links to your profile
@@ -896,10 +1014,11 @@ export function ProfileShareCard({
           </article>
 
           <div className="glass-card-note">
-            <strong>Credit-card format</strong>
+            <strong>Built for sharing</strong>
             <span>
-              85.6 × 54 proportion. The downloaded PNG uses the same branded
-              glass design.
+              {canSharePublicProfile
+                ? "Export as PNG or scan the QR to open your public AKARI profile."
+                : "Export as PNG. Publish your profile to enable a scannable QR."}
             </span>
           </div>
           <p className="share-card-confidence">
@@ -915,7 +1034,7 @@ export function ProfileShareCard({
           <input type="hidden" name="orientation" value="landscape" />
 
           <fieldset>
-            <legend>Card detail</legend>
+            <legend>Card style</legend>
             <label>
               <input
                 type="radio"

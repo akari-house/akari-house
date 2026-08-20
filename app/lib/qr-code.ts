@@ -214,7 +214,7 @@ function maskApplies(mask: number, row: number, column: number) {
     case 6:
       return ((product % 2) + (product % 3)) % 2 === 0;
     default:
-      return ((row + column) % 2 + (product % 3)) % 2 === 0;
+      return (((row + column) % 2) + (product % 3)) % 2 === 0;
   }
 }
 

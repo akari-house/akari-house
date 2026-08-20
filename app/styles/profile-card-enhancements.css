@@ -464,3 +464,159 @@
     display: none !important;
   }
 }
+
+/* R92: functional QR and calmer social sharing. */
+.glass-profile-qr-panel {
+  top: 24% !important;
+  right: 6.6% !important;
+  width: 19.5% !important;
+  min-height: 43% !important;
+  padding: 1.05cqi !important;
+  gap: 0.45cqi !important;
+  background: color-mix(
+    in srgb,
+    var(--card-bg) 76%,
+    var(--card-surface)
+  ) !important;
+}
+
+.glass-profile-qr {
+  width: min(100%, 12cqi);
+  aspect-ratio: 1;
+  display: block;
+  overflow: hidden;
+  border-radius: clamp(5px, 0.95cqi, 9px);
+  background: #fff;
+  box-shadow:
+    0 7px 18px rgb(0 0 0 / 24%),
+    0 0 0 1px rgb(255 255 255 / 72%);
+}
+
+.glass-profile-qr-panel small {
+  margin-top: 0.28cqi !important;
+  color: var(--card-accent) !important;
+  font-size: clamp(0.3rem, 0.78cqi, 0.4rem) !important;
+  letter-spacing: 0.095em !important;
+}
+
+.glass-profile-qr-panel strong {
+  font-size: clamp(0.36rem, 0.92cqi, 0.48rem) !important;
+}
+
+.glass-profile-qr-url {
+  width: 100%;
+  overflow: hidden;
+  color: var(--card-ink);
+  font-size: clamp(0.25rem, 0.58cqi, 0.32rem) !important;
+  opacity: 0.58;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.glass-profile-link.is-private .glass-profile-link-icon {
+  width: 36% !important;
+  color: var(--card-ink) !important;
+  background: color-mix(in srgb, var(--card-ink) 7%, transparent) !important;
+  background-image: none !important;
+  border: 1px solid color-mix(in srgb, var(--card-ink) 22%, transparent) !important;
+  border-radius: 50% !important;
+}
+
+.glass-profile-link.is-private .glass-profile-link-icon::before,
+.glass-profile-link.is-private .glass-profile-link-icon::after {
+  display: none !important;
+}
+
+.glass-profile-link.is-private .glass-profile-link-icon svg {
+  display: block !important;
+  width: 46% !important;
+  height: 46% !important;
+}
+
+.glass-connect-strip {
+  width: 63.5% !important;
+  padding-inline: 2.1cqi !important;
+  gap: 1.45cqi !important;
+}
+
+.glass-connect-strip::after {
+  left: 23% !important;
+}
+
+.glass-connect-strip > strong {
+  width: 18% !important;
+  flex-basis: 18% !important;
+  font-size: clamp(0.46rem, 1.2cqi, 0.62rem) !important;
+}
+
+.glass-card-socials {
+  gap: clamp(0.45rem, 1.3cqi, 0.72rem) !important;
+}
+
+.glass-card-socials a,
+.glass-social-more {
+  width: clamp(1.35rem, 4.45cqi, 1.78rem) !important;
+  height: clamp(1.35rem, 4.45cqi, 1.78rem) !important;
+  flex: 0 0 auto;
+}
+
+.glass-card-socials a {
+  border-color: color-mix(in srgb, var(--card-ink) 38%, transparent) !important;
+  background: color-mix(in srgb, var(--card-bg) 66%, transparent) !important;
+}
+
+.glass-card-socials svg {
+  width: clamp(0.64rem, 1.75cqi, 0.78rem) !important;
+  height: clamp(0.64rem, 1.75cqi, 0.78rem) !important;
+}
+
+.glass-social-more {
+  display: grid;
+  place-items: center;
+  border: 1px dashed color-mix(in srgb, var(--card-ink) 38%, transparent);
+  border-radius: 50%;
+  color: var(--card-ink);
+  background: color-mix(in srgb, var(--card-ink) 7%, transparent);
+  font-size: clamp(0.38rem, 1.05cqi, 0.5rem);
+  font-weight: 800;
+}
+
+.glass-card-footer::after {
+  content: "A private membership for high-signal connections." !important;
+}
+
+@media (max-width: 700px) {
+  .glass-profile-qr-panel {
+    top: 27% !important;
+    min-height: 37% !important;
+    padding: 0.85cqi !important;
+  }
+
+  .glass-profile-qr {
+    width: 11.5cqi !important;
+  }
+
+  .glass-profile-qr-panel small,
+  .glass-profile-qr-panel strong {
+    display: block !important;
+  }
+
+  .glass-profile-qr-url {
+    display: none !important;
+  }
+
+  .glass-connect-strip {
+    padding-inline: 1.7cqi !important;
+    gap: 1.1cqi !important;
+  }
+
+  .glass-card-socials {
+    gap: 0.85cqi !important;
+  }
+
+  .glass-card-socials a,
+  .glass-social-more {
+    width: 4.5cqi !important;
+    height: 4.5cqi !important;
+  }
+}

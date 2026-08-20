@@ -16,7 +16,7 @@ function localInput(date: Date) {
 }
 
 test.describe("R83 profile sharing and event publishing", () => {
-  test("renders an optimized AKARI card workspace in credit-card proportions", async ({
+  test("renders an optimized AKARI sharing-card workspace", async ({
     page,
   }, testInfo) => {
     await activateSuperadmin(page);
@@ -31,6 +31,12 @@ test.describe("R83 profile sharing and event publishing", () => {
     await expect(card).toBeVisible();
     await expect(controls).toBeVisible();
     await expect(card.locator('img[alt="AKARI"]')).toBeVisible();
+    const qr = card.locator(".glass-profile-qr");
+    await expect(qr).toBeVisible();
+    await expect(qr.locator("path")).toHaveAttribute("d", /M/);
+    await expect(
+      page.getByText("Scan to connect", { exact: true }),
+    ).toBeVisible();
     await expect(
       page.getByText("Midnight Glass", { exact: true }),
     ).toBeVisible();
