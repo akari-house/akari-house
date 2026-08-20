@@ -24,6 +24,13 @@ jobs:
         run: npm audit --audit-level=high
       - run: npm run typecheck
       - run: npm run lint
+      - name: Produce exact R93 formatted CSS
+        run: npx prettier --write app/styles/profile-card-enhancements.css
+      - name: Upload exact R93 formatted CSS
+        uses: actions/upload-artifact@v4
+        with:
+          name: r93-formatted-profile-card-css
+          path: app/styles/profile-card-enhancements.css
       - run: npm run format:check
       - run: npm test
       - run: npm run build
