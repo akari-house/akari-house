@@ -107,7 +107,10 @@ export default function ProjectNew({
           same information.
         </p>
 
-        <ol className="project-onboarding-steps" aria-label="Project onboarding steps">
+        <ol
+          className="project-onboarding-steps"
+          aria-label="Project onboarding steps"
+        >
           <li className="is-current">
             <strong>1. Project story</strong>
             <span>Name, summary, stage and what support you need.</span>

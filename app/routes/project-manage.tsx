@@ -112,7 +112,10 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
               });
 
               return (
-                <article className="project-card project-manage-card" key={project.slug}>
+                <article
+                  className="project-card project-manage-card"
+                  key={project.slug}
+                >
                   {project.bannerKey && (
                     <img
                       className="project-manage-banner"
@@ -241,7 +244,9 @@ export default function ProjectManage({ loaderData }: Route.ComponentProps) {
                           Deal preview submission
                         </Link>
                         {project.opportunityStatus && (
-                          <Link to={`/projects/${project.slug}/opportunity/manage`}>
+                          <Link
+                            to={`/projects/${project.slug}/opportunity/manage`}
+                          >
                             Deal Room operations
                           </Link>
                         )}
