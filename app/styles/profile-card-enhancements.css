@@ -695,7 +695,11 @@ html body .glass-share-page .glass-card-verification {
   border: 1px solid color-mix(in srgb, var(--card-highlight) 50%, transparent) !important;
   border-radius: 999px !important;
   color: var(--card-highlight) !important;
-  background: color-mix(in srgb, var(--card-highlight) 9%, transparent) !important;
+  background: color-mix(
+    in srgb,
+    var(--card-highlight) 9%,
+    transparent
+  ) !important;
   font-size: clamp(0.32rem, 0.84cqi, 0.42rem) !important;
   font-weight: 800 !important;
   letter-spacing: 0.055em !important;
@@ -735,7 +739,11 @@ html body .glass-share-page .glass-card-metrics {
   min-height: 13.2% !important;
   padding: 0 0.7cqi !important;
   border-color: color-mix(in srgb, var(--card-ink) 22%, transparent) !important;
-  background: color-mix(in srgb, var(--card-bg) 79%, var(--card-surface)) !important;
+  background: color-mix(
+    in srgb,
+    var(--card-bg) 79%,
+    var(--card-surface)
+  ) !important;
 }
 
 html body .glass-share-page .glass-card-metrics > div {
@@ -814,7 +822,12 @@ html body .glass-share-page .glass-card-controls {
   align-content: start !important;
 }
 
-html body .glass-share-page .glass-card-controls > fieldset:first-of-type label {
+html
+  body
+  .glass-share-page
+  .glass-card-controls
+  > fieldset:first-of-type
+  label {
   min-height: 44px !important;
   padding: 0.58rem 0.68rem !important;
 }
