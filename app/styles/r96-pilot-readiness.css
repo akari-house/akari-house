@@ -24,8 +24,16 @@
 
 .project-detail-banner-fallback {
   background:
-    radial-gradient(circle at 18% 24%, rgba(240, 79, 135, 0.22), transparent 34%),
-    radial-gradient(circle at 82% 18%, rgba(255, 211, 61, 0.15), transparent 30%),
+    radial-gradient(
+      circle at 18% 24%,
+      rgba(240, 79, 135, 0.22),
+      transparent 34%
+    ),
+    radial-gradient(
+      circle at 82% 18%,
+      rgba(255, 211, 61, 0.15),
+      transparent 30%
+    ),
     linear-gradient(135deg, rgba(28, 20, 35, 0.96), rgba(8, 11, 19, 0.98));
 }
 

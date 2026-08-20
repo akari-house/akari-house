@@ -70,7 +70,10 @@ export default function ProjectDetailV2({
               alt={`${project.title} banner`}
             />
           ) : (
-            <div className="project-detail-banner-fallback" aria-hidden="true" />
+            <div
+              className="project-detail-banner-fallback"
+              aria-hidden="true"
+            />
           )}
 
           <div className="project-detail-hero-body">
@@ -82,7 +85,10 @@ export default function ProjectDetailV2({
                   alt={`${project.title} logo`}
                 />
               ) : (
-                <div className="project-detail-logo-fallback" aria-hidden="true">
+                <div
+                  className="project-detail-logo-fallback"
+                  aria-hidden="true"
+                >
                   {project.title.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -138,11 +144,16 @@ export default function ProjectDetailV2({
                       name="intent"
                       value={loaderData.following ? "unfollow" : "follow"}
                     >
-                      {loaderData.following ? "Following project" : "Follow project"}
+                      {loaderData.following
+                        ? "Following project"
+                        : "Follow project"}
                     </button>
                   </Form>
                   {loaderData.campaigns.length > 0 && (
-                    <a className="button button-quiet" href="#creator-opportunities">
+                    <a
+                      className="button button-quiet"
+                      href="#creator-opportunities"
+                    >
                       View campaigns
                     </a>
                   )}
@@ -151,7 +162,9 @@ export default function ProjectDetailV2({
 
               {isInvestor && !isFounder && (
                 <a className="button button-primary" href="#investor-interest">
-                  {loaderData.ownInterest ? "Update interest" : "Express interest"}
+                  {loaderData.ownInterest
+                    ? "Update interest"
+                    : "Express interest"}
                 </a>
               )}
 
@@ -178,7 +191,10 @@ export default function ProjectDetailV2({
               <section className="project-detail-section">
                 <span className="eyebrow">Official channels</span>
                 <h2>Project links</h2>
-                <nav className="project-detail-links" aria-label="Project links">
+                <nav
+                  className="project-detail-links"
+                  aria-label="Project links"
+                >
                   {loaderData.socials.map((social) => (
                     <a
                       href={social.url}
@@ -409,7 +425,8 @@ export default function ProjectDetailV2({
                         )}
                         {!interest.investorSharesContact && (
                           <small>
-                            This investor has not shared private contact details.
+                            This investor has not shared private contact
+                            details.
                           </small>
                         )}
                         {!interest.founderSharesContact && (

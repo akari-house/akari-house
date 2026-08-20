@@ -242,7 +242,9 @@ export async function loader({ request, context }: Route.LoaderArgs) {
   ];
 
   const completedCriteria = criteria.filter((item) => item.complete).length;
-  const pilotReadiness = Math.round((completedCriteria / criteria.length) * 100);
+  const pilotReadiness = Math.round(
+    (completedCriteria / criteria.length) * 100,
+  );
 
   return {
     user,
@@ -415,7 +417,9 @@ export default function AdminSeedHouse({ loaderData }: Route.ComponentProps) {
                 ))}
               </ul>
             ) : (
-              <p>Every active project currently meets the discovery checklist.</p>
+              <p>
+                Every active project currently meets the discovery checklist.
+              </p>
             )}
             <Link className="quiet-link" to="/admin/interests">
               Open project review tools
@@ -449,7 +453,10 @@ export default function AdminSeedHouse({ loaderData }: Route.ComponentProps) {
                 })}
               </ul>
             ) : (
-              <p>All approved Creators meet campaign eligibility data requirements.</p>
+              <p>
+                All approved Creators meet campaign eligibility data
+                requirements.
+              </p>
             )}
             <Link className="quiet-link" to="/members?role=creator">
               Open Creator directory
