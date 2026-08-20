@@ -1,0 +1,46 @@
+name: R92 Apply Profile Card Polish
+
+on:
+  push:
+    branches:
+      - r92-profile-card-ux-polish
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r92-profile-card-ux-polish
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.0
+          cache: npm
+      - run: npm ci
+      - run: node scripts/r92-profile-card-polish.mjs
+      - run: >-
+          npx prettier --write
+          app/components/ProfileShareCard.tsx
+          app/lib/qr-code.ts
+          app/styles/profile-card-enhancements.css
+          tests/unit/profile-card-completion.test.ts
+          tests/e2e/profile-card-events-r79.spec.ts
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test -- tests/unit/profile-card-completion.test.ts
+      - name: Commit R92 implementation
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/components/ProfileShareCard.tsx app/lib/qr-code.ts app/styles/profile-card-enhancements.css tests/unit/profile-card-completion.test.ts tests/e2e/profile-card-events-r79.spec.ts
+          if git diff --cached --quiet; then
+            echo "No R92 changes to commit."
+            exit 0
+          fi
+          git commit -m "R92: finish profile sharing card UX [r92-applied]"
+          git push origin HEAD:r92-profile-card-ux-polish
