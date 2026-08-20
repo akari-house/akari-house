@@ -16,7 +16,7 @@ function localInput(date: Date) {
 }
 
 test.describe("R83 profile sharing and event publishing", () => {
-  test("renders an optimized AKARI sharing-card workspace", async ({
+  test("renders an optimized AKARI sharing-card workspace and respects profile privacy", async ({
     page,
   }, testInfo) => {
     await activateSuperadmin(page);
@@ -31,12 +31,17 @@ test.describe("R83 profile sharing and event publishing", () => {
     await expect(card).toBeVisible();
     await expect(controls).toBeVisible();
     await expect(card.locator('img[alt="AKARI"]')).toBeVisible();
-    const qr = card.locator(".glass-profile-qr");
-    await expect(qr).toBeVisible();
-    await expect(qr.locator("path")).toHaveAttribute("d", /M/);
+
+    // The launch-gate Superadmin fixture is members-only, so the sharing card
+    // must not expose a public QR until that profile is explicitly published.
+    await expect(card.locator(".glass-profile-qr")).toHaveCount(0);
     await expect(
-      page.getByText("Scan to connect", { exact: true }),
+      card.getByText("Private profile", { exact: true }),
     ).toBeVisible();
+    await expect(
+      card.getByText("Publish to enable QR", { exact: true }),
+    ).toBeVisible();
+
     await expect(
       page.getByText("Midnight Glass", { exact: true }),
     ).toBeVisible();
