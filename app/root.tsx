@@ -34,6 +34,7 @@ import "./styles/r77-launch-completion.css";
 import "./styles/r78-authenticated-density.css";
 import "./styles/r91-launch-experience.css";
 import "./styles/r96-member-directory-density.css";
+import "./styles/r96-creator-investor-readiness.css";
 
 const productionOrigin = "https://akarihouse.com";
 const socialImage = `${productionOrigin}/assets/optimized/arrival-1440.webp`;

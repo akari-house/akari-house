@@ -16,6 +16,7 @@ import {
 } from "~/lib/validation";
 import { cloudflareContext } from "~/lib/cloudflare-context";
 import { DashboardRoleActions } from "~/components/DashboardRoleActions";
+import { CreatorReadinessPanel } from "~/components/CreatorReadinessPanel";
 import { profileCompletion } from "~/lib/profile-completion";
 import {
   interestTypes,
@@ -785,6 +786,13 @@ export default function Dashboard({
               <span style={{ width: `${completion.percent}%` }} />
             </div>
           </section>
+          {loaderData.user.roles.includes("creator") && (
+            <CreatorReadinessPanel
+              socialAccounts={loaderData.socialAccounts}
+              reputationSignals={loaderData.reputationSignals}
+              accessTier={loaderData.user.accessTier}
+            />
+          )}
           <section
             aria-labelledby="role-workspaces-title"
             className="dashboard-workspace"
