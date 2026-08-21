@@ -218,30 +218,34 @@
   letter-spacing: 0.08em;
 }
 
-.deal-card-content {
-  display: grid;
-  gap: 0.65rem;
-  padding: 0.85rem;
-}
-
 .investor-house-content .deal-card-art {
   display: none;
 }
 
-.investor-house-content .deal-card-topline {
+.investor-house-content
+  .deal-card
+  > :not(.deal-card-media):not(.deal-card-art) {
+  margin-right: 0.85rem;
+  margin-left: 0.85rem;
+}
+
+.investor-house-content .deal-card > .deal-card-topline {
+  margin-top: 0.8rem;
   font-size: 0.58rem;
   letter-spacing: 0.075em;
 }
 
 .investor-house-content .deal-card h2 {
-  margin: 0;
+  margin-top: 0;
+  margin-bottom: 0;
   font-size: 1.12rem;
   line-height: 1.15;
 }
 
-.investor-house-content .deal-card-content > p:not(.deal-founder) {
+.investor-house-content .deal-card > p:not(.deal-founder) {
   display: -webkit-box;
-  margin: 0;
+  margin-top: 0;
+  margin-bottom: 0;
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -251,7 +255,8 @@
 }
 
 .investor-house-content .deal-profile-match {
-  margin: 0;
+  margin-top: 0;
+  margin-bottom: 0;
   padding: 0.45rem 0.55rem;
   border-radius: 8px;
   font-size: 0.65rem;
@@ -269,7 +274,8 @@
 .investor-house-content .deal-card dl {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.4rem;
-  margin: 0;
+  margin-top: 0;
+  margin-bottom: 0;
   padding: 0;
 }
 
@@ -291,12 +297,14 @@
 }
 
 .investor-house-content .deal-founder {
-  margin: 0;
+  margin-top: 0;
+  margin-bottom: 0;
   font-size: 0.66rem;
 }
 
 .investor-house-content .deal-card-actions {
   margin-top: 0;
+  margin-bottom: 0.8rem;
   gap: 0.4rem;
 }
 
@@ -306,7 +314,9 @@
   font-size: 0.66rem;
 }
 
-.investor-house-content .deal-card-content > small {
+.investor-house-content .deal-card > small {
+  margin-top: -0.35rem;
+  margin-bottom: 0.8rem;
   font-size: 0.6rem;
 }
 
@@ -334,38 +344,16 @@
   .deal-card-media {
     height: 132px;
   }
-}
 
-@media (min-width: 901px) {
   .investor-house-content
     .deal-card
     > :not(.deal-card-media):not(.deal-card-art) {
-    margin-right: 0.85rem;
-    margin-left: 0.85rem;
+    margin-right: 0.75rem;
+    margin-left: 0.75rem;
   }
 
-  .investor-house-content .deal-card > .deal-card-topline {
-    margin-top: 0.8rem;
-  }
-
-  .investor-house-content .deal-card > p:not(.deal-founder) {
-    display: -webkit-box;
-    margin-top: 0;
-    margin-bottom: 0;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    color: var(--muted);
-    font-size: 0.72rem;
-    line-height: 1.4;
-  }
-
-  .investor-house-content .deal-card > .deal-card-actions {
-    margin-bottom: 0.8rem;
-  }
-
+  .investor-house-content .deal-card > .deal-card-actions,
   .investor-house-content .deal-card > small {
-    margin-top: -0.35rem;
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.75rem;
   }
 }
