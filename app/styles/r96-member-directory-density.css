@@ -204,7 +204,9 @@
     gap: 0.42rem;
   }
 
-  .member-card-grid.is-list .member-card-summary > p:not(.member-card-expertise) {
+  .member-card-grid.is-list
+    .member-card-summary
+    > p:not(.member-card-expertise) {
     -webkit-line-clamp: 1;
   }
 
