@@ -1,1 +1,0 @@
-Run the one-shot R96.2 regression-test formatter, then remove this trigger before merge.
