@@ -1,1 +1,0 @@
-Format the final R96.3 stylesheet, then remove this helper before merge.
