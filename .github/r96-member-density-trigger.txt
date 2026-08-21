@@ -1,1 +1,0 @@
-Run the one-shot member directory density wiring and formatter, then remove the helper files before merge.
