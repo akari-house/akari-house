@@ -1,0 +1,1 @@
+Run the one-shot R96.3 Creator readiness and Investor discovery wiring, then remove helper files before merge.
