@@ -1,5 +1,5 @@
 import { Form, Link, redirect, useNavigation } from "react-router";
-import type { Route } from "./+types/project-detail";
+import type { Route } from "./+types/project-detail-v2";
 import { ProjectNeedChips } from "~/components/projects/ProjectNeedChips";
 import { SiteHeader } from "~/components/SiteHeader";
 import { getOptionalUser, requireUser } from "~/lib/auth.server";
