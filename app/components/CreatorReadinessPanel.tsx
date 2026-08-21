@@ -30,13 +30,17 @@ export function CreatorReadinessPanel({
     {
       label: "Primary X profile",
       detail: "A valid X profile identifies you for campaign applications.",
-      complete: Boolean(xAccount?.profileUrl && isXProfileUrl(xAccount.profileUrl)),
+      complete: Boolean(
+        xAccount?.profileUrl && isXProfileUrl(xAccount.profileUrl),
+      ),
       href: "#social-links",
     },
     {
       label: "X follower count",
       detail: "A recorded follower count is required; zero is a valid value.",
-      complete: xAccount?.followerCount !== null && xAccount?.followerCount !== undefined,
+      complete:
+        xAccount?.followerCount !== null &&
+        xAccount?.followerCount !== undefined,
       href: "#social-links",
     },
     {
@@ -69,14 +73,19 @@ export function CreatorReadinessPanel({
         <div>
           <span className="chapter">Creator campaign readiness</span>
           <h2 id="creator-readiness-title">
-            {ready ? "You are campaign-ready." : "Complete your campaign profile."}
+            {ready
+              ? "You are campaign-ready."
+              : "Complete your campaign profile."}
           </h2>
           <p>
             Campaign eligibility is based on Creator profile data, not AKARI
             membership approval. There is no minimum follower threshold.
           </p>
         </div>
-        <div className="creator-readiness-score" aria-label={`${percent}% ready`}>
+        <div
+          className="creator-readiness-score"
+          aria-label={`${percent}% ready`}
+        >
           <strong>{percent}%</strong>
           <span>{completed}/4 signals</span>
         </div>
@@ -120,7 +129,9 @@ export function CreatorReadinessPanel({
           </a>
         )}
         <span className="status-pill">
-          {accessTier === "member" ? "Membership approved" : "Membership review separate"}
+          {accessTier === "member"
+            ? "Membership approved"
+            : "Membership review separate"}
         </span>
       </div>
     </section>

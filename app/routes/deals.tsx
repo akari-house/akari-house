@@ -26,6 +26,8 @@ import { formText } from "~/lib/validation";
 
 type OpportunityRow = {
   projectId: string;
+  logoKey: string | null;
+  bannerKey: string | null;
   slug: string;
   title: string;
   summary: string;
@@ -319,7 +321,8 @@ export async function loader({ request, context }: Route.LoaderArgs) {
 
   const result = await db
     .prepare(
-      `SELECT pr.id AS projectId, pr.slug, pr.title, pr.summary,
+      `SELECT pr.id AS projectId, pr.logo_key AS logoKey,
+              pr.banner_key AS bannerKey, pr.slug, pr.title, pr.summary,
               pr.seeking, pr.support_status_json AS supportStatus,
               ol.public_summary AS publicSummary, pr.stage, ol.sector,
               ol.geography, ol.funding_instrument AS fundingInstrument,
@@ -805,6 +808,30 @@ export default function Deals({ loaderData }: Route.ComponentProps) {
                   data-sector={opportunity.sector}
                   key={opportunity.projectId}
                 >
+                  <div className="deal-card-media">
+                    {opportunity.bannerKey ? (
+                      <img
+                        src={`/media/projects/${opportunity.slug}/banner`}
+                        alt=""
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div
+                        className="deal-card-media-fallback"
+                        aria-hidden="true"
+                      >
+                        {opportunity.sector?.slice(0, 2).toUpperCase() || "AK"}
+                      </div>
+                    )}
+                    {opportunity.logoKey && (
+                      <img
+                        className="deal-card-media-logo"
+                        src={`/media/projects/${opportunity.slug}/logo`}
+                        alt={`${opportunity.title} logo`}
+                        loading="lazy"
+                      />
+                    )}
+                  </div>
                   <div className="deal-card-art" aria-hidden="true">
                     <span>
                       {opportunity.sector?.slice(0, 2).toUpperCase() || "AK"}

@@ -14,7 +14,9 @@ describe("R96.3 Creator readiness and Investor discovery", () => {
     expect(panel).toContain("XScore");
     expect(panel).toContain("Sorsa score");
     expect(panel).toContain("There is no minimum follower threshold");
-    expect(panel).toContain("Campaign eligibility is based on Creator profile data");
+    expect(panel).toContain(
+      "Campaign eligibility is based on Creator profile data",
+    );
     expect(panel).toContain('accessTier === "member"');
     expect(dashboard).toContain("CreatorReadinessPanel");
     expect(dashboard).toContain('roles.includes("creator")');
