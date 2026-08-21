@@ -1,0 +1,81 @@
+name: R96 Creator Investor Wire
+
+on:
+  push:
+    branches:
+      - r96-creator-investor-readiness
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: r96-creator-investor-readiness
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Wire Creator readiness and Investor media
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          dashboard = Path('app/routes/dashboard.tsx')
+          text = dashboard.read_text()
+          import_needle = 'import { DashboardRoleActions } from "~/components/DashboardRoleActions";\n'
+          import_addition = 'import { CreatorReadinessPanel } from "~/components/CreatorReadinessPanel";\n'
+          if import_addition not in text:
+              text = text.replace(import_needle, import_needle + import_addition)
+          section_needle = '          <section\n            aria-labelledby="role-workspaces-title"\n            className="dashboard-workspace"\n          >'
+          readiness = '''          {loaderData.user.roles.includes("creator") && (\n            <CreatorReadinessPanel\n              socialAccounts={loaderData.socialAccounts}\n              reputationSignals={loaderData.reputationSignals}\n              accessTier={loaderData.user.accessTier}\n            />\n          )}\n'''
+          if 'socialAccounts={loaderData.socialAccounts}' not in text:
+              text = text.replace(section_needle, readiness + section_needle)
+          dashboard.write_text(text)
+
+          deals = Path('app/routes/deals.tsx')
+          text = deals.read_text()
+          if 'logoKey: string | null;' not in text:
+              text = text.replace(
+                  '  projectId: string;\n  slug: string;',
+                  '  projectId: string;\n  logoKey: string | null;\n  bannerKey: string | null;\n  slug: string;',
+              )
+          if 'pr.logo_key AS logoKey' not in text:
+              text = text.replace(
+                  '`SELECT pr.id AS projectId, pr.slug, pr.title, pr.summary,',
+                  '`SELECT pr.id AS projectId, pr.logo_key AS logoKey,\n              pr.banner_key AS bannerKey, pr.slug, pr.title, pr.summary,',
+              )
+          media_needle = '''                >\n                  <div className="deal-card-art" aria-hidden="true">'''
+          media_block = '''                >\n                  <div className="deal-card-media">\n                    {opportunity.bannerKey ? (\n                      <img\n                        src={`/media/projects/${opportunity.slug}/banner`}\n                        alt=""\n                        loading="lazy"\n                      />\n                    ) : (\n                      <div className="deal-card-media-fallback" aria-hidden="true">\n                        {opportunity.sector?.slice(0, 2).toUpperCase() || "AK"}\n                      </div>\n                    )}\n                    {opportunity.logoKey && (\n                      <img\n                        className="deal-card-media-logo"\n                        src={`/media/projects/${opportunity.slug}/logo`}\n                        alt={`${opportunity.title} logo`}\n                        loading="lazy"\n                      />\n                    )}\n                  </div>\n                  <div className="deal-card-art" aria-hidden="true">'''
+          if 'className="deal-card-media"' not in text:
+              text = text.replace(media_needle, media_block)
+          deals.write_text(text)
+
+          root = Path('app/root.tsx')
+          text = root.read_text()
+          css_import = 'import "./styles/r96-creator-investor-readiness.css";\n'
+          if css_import not in text:
+              needle = 'import "./styles/r96-member-directory-density.css";\n'
+              text = text.replace(needle, needle + css_import)
+          root.write_text(text)
+
+          styles = Path('app/styles/r96-creator-investor-readiness.css')
+          text = styles.read_text()
+          addition = '''\n@media (min-width: 901px) {\n  .investor-house-content .deal-card > :not(.deal-card-media):not(.deal-card-art) {\n    margin-right: 0.85rem;\n    margin-left: 0.85rem;\n  }\n\n  .investor-house-content .deal-card > .deal-card-topline {\n    margin-top: 0.8rem;\n  }\n\n  .investor-house-content .deal-card > p:not(.deal-founder) {\n    display: -webkit-box;\n    margin-top: 0;\n    margin-bottom: 0;\n    overflow: hidden;\n    -webkit-box-orient: vertical;\n    -webkit-line-clamp: 2;\n    color: var(--muted);\n    font-size: 0.72rem;\n    line-height: 1.4;\n  }\n\n  .investor-house-content .deal-card > .deal-card-actions {\n    margin-bottom: 0.8rem;\n  }\n\n  .investor-house-content .deal-card > small {\n    margin-top: -0.35rem;\n    margin-bottom: 0.8rem;\n  }\n}\n'''
+          if '.deal-card > :not(.deal-card-media)' not in text:
+              text += addition
+          styles.write_text(text)
+          PY
+          npx prettier --write app/components/CreatorReadinessPanel.tsx app/routes/dashboard.tsx app/routes/deals.tsx app/root.tsx app/styles/r96-creator-investor-readiness.css tests/r96-creator-investor-readiness.test.ts
+      - name: Commit R96.3 wiring
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/components/CreatorReadinessPanel.tsx app/routes/dashboard.tsx app/routes/deals.tsx app/root.tsx app/styles/r96-creator-investor-readiness.css tests/r96-creator-investor-readiness.test.ts
+          git diff --cached --quiet || git commit -m "feat: wire Creator readiness and Investor discovery"
+          git push origin HEAD:r96-creator-investor-readiness
